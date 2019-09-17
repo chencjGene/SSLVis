@@ -1,0 +1,21 @@
+##############################
+## Folders                  ##
+##############################
+.idea
+venv
+*.pyc
+*.txt
+result*
+result
+data/
+*.zip
+*.rar
+flask_session/
+test/
+*.vsdx
+venv/
+frontend/
+KnowledgeGraphVenv/
+logs/
+docs/falcon/
+DataProcessing/ForTest/
