@@ -4,7 +4,6 @@
 .idea
 __pycache__
 *.pyc
-*.txt
 result*
 result
 data/
