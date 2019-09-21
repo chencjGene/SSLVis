@@ -2,7 +2,7 @@
 ## Folders                  ##
 ##############################
 .idea
-venv
+__pycache__
 *.pyc
 *.txt
 result*
@@ -13,9 +13,5 @@ data/
 flask_session/
 test/
 *.vsdx
-venv/
-frontend/
-KnowledgeGraphVenv/
 logs/
 docs/falcon/
-DataProcessing/ForTest/
