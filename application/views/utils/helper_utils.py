@@ -36,8 +36,8 @@ def json_save_data(filename, data):
     return True
 
 
-def json_load_data(filename):
-    return json.load(open(filename, "r"))
+def json_load_data(filename, encoding=None):
+    return json.load(open(filename, "r", encoding=encoding))
 
 
 # directory

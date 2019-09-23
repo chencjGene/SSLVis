@@ -6,8 +6,7 @@ SERVER_ROOT = os.path.join(SERVER_ROOT, "..")
 class Config(object):
     def __init__(self):
         #raw data root
-        self.raw_data_root = os.path.normpath(os.path.join(SERVER_ROOT,"../../../../RawData"))
-        # self.cropping_root = os.path.join(SERVER_ROOT, "../../Codes/mingming/test_images")
+        self.raw_data_root = os.path.normpath("F:/WSL2019-Raw-data")
 
         # first-level directory
         self.data_root = os.path.normpath(os.path.join(SERVER_ROOT,"../../../data/"))
@@ -22,35 +21,8 @@ class Config(object):
         self.pkl_ext = ".pkl"
 
         # second-level directory
-        self.breast_cancer = "BreastCancer"
-        self.pidd = "PIDD"
-        self.three_dim = "ThreeDim"
-        self.two_dim = "TwoDim"
-        self.two_dim_iris = "TwoDimIris"
-        self.mnist = "MNIST"
-        self.cifar10 = "CIFAR10"
-        self.mnist_1_2 = "MNIST-1-2"
-        self.mnist_3_5 = "MNIST-3-5"
-        self.mnist_vgg = "MNIST-vgg"
-        self.mnist_1_2_vgg = "MNIST-1-2-vgg"
-        self.mnist_3_5_vgg = "MNIST-3-5-vgg"
-        self.dog_cat = "Dog-Cat"
-        self.animals = "Animals"
-        self.animals_step1 = "Animals-step1"
-        self.animals_step2 = "Animals-step2"
-        self.animals_step3 = "Animals-step3"
-        self.animals_step4 = "Animals-step4"
-        self.animals_leopard = "Animals-leopard"
-        self.animals_add4 = "Animals-add4"
-        self.dog_cat_extension = "Dog-Cat-Extension"
-        self.dog_cat_imagenet = "Dog-Cat-Imagenet"
-        self.dog_cat_combine = "Dog-Cat-Combine"
-        self.dog_cat_normal_train = "Dog-Cat-Normal-Train"
-        self.svhn = "SVHN"
-        self.svhn_imagenet = "SVHN-Imagenet"
-        self.svhn_combine = "SVHN-Combine"
-        self.lipsticks = "Lipsticks"
-        self.rea = "REA"
+        self.yelp = "Yelp"
+        self.imdb = "IMDB"
 
         # third-level directory
         self.train_path_name = "train"
@@ -95,14 +67,5 @@ class Config(object):
         self.superpixel_feature = "superpixel_feature"
 
 
-        self.infrastructure = 'neo4j'
-        self.neo4j_bolt_address = "bolt://166.111.81.96:7687"
-        self.jena_fuseki_address = "http://localhost:3030/db/query"
-        # self.rdf_prefix = 'PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> ' \
-        #                    'PREFIX wikidata: <http://wikidata/20190506/partial/ontology/> '
-        # self.rdf_ontology_prefix_notation = 'wikidata'
-        # debug
-        self.debug_dataname = 'Wikidata_By_subclassof_extract_actor_by_movie_castMember_selectedItems_country_film_university_PerformingArtsSchool_filmActor_city_language'
-        # self.debug_dataname = 'Country_from_siemens'
 
 config = Config()
