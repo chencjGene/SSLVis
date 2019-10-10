@@ -9,7 +9,7 @@ class Config(object):
         self.raw_data_root = os.path.normpath("F:/WSL2019-Raw-data")
 
         # first-level directory
-        self.data_root = os.path.normpath(os.path.join(SERVER_ROOT,"../../../data/"))
+        self.data_root = os.path.normpath(os.path.join(SERVER_ROOT,"../../data/"))
         # self.data_root = r"H:\backup\data"
         # self.scripts_root = os.path.join(SERVER_ROOT, "../scripts/")
         self.log_root = os.path.normpath(os.path.join(SERVER_ROOT,"../../../logs/"))
@@ -23,6 +23,7 @@ class Config(object):
         # second-level directory
         self.yelp = "Yelp"
         self.imdb = "IMDB"
+        self.cifar10 = "cifar10"
 
         # third-level directory
         self.train_path_name = "train"
