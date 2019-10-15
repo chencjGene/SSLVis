@@ -14,7 +14,7 @@ DataLoaderClass = function (dataset) {
 
     // Request nodes
     that.manifest_node = null;
-    that.instance_graph_node = null;
+    that.graph_node = null;
 
     // views
     that.graph_view = null;
