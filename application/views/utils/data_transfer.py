@@ -10,7 +10,7 @@ ssh = paramiko.SSHClient()
 user = 'zhaowei'
 ip = '166.111.80.25'
 remote_path = '/home/zhaowei/'
-local_path = '../../'
+local_path = '../../../'
 ssh.load_system_host_keys()
 ssh.connect(hostname=ip, username='zhaowei')
 def upload():
