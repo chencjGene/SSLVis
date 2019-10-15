@@ -2,97 +2,43 @@
 * added by Changjian Chen, 20191015
 * */
 
-/*
-    System information
-*/
-let ManifestApi = "/api/manifest";
+let ImageLayout = function (container){
+    let that = this;
+    that.container = container;
 
+    let bbox = that.container.node().getBoundingClientRect();
+    let width = bbox.width;
+    let height = bbox.height;
+    let layout_width = width - 20;
+    let layout_height = height - 20;
+    console.log("GraphLayout", "layout width", layout_width, "layout height", layout_height);
 
-/*
-*  View Object
-* */
-let ConceptGraphView = null;
-let FilterView = null;
-let InstanceView = null;
-let SearchView = null;
+    let data_manager = null;
 
-/*
-    Const letiables for data storage
-*/
-let DatasetName = null;
-let DataLoader = null;
+    that._init = function(){
 
-/*
-*  Color
-* */
-let CategoryColor = [
-    "#4fa7ff",
-    "#ffa953",
-    "#55ff99",
-    "#ba9b96",
-    "#c982ce",
-    "#bcbd22",
-    "#e377c2",
-    "#990099",
-    "#17becf",
-    "#8c564b"
-];
+    };
 
-// 蓝色
-// ["#deebf7",
-// "#60a9ce",
-// "#225982"],
+    that.set_data_manager = function(_data_manager){
+        data_manager = _data_manager;
+    };
 
-// 橙色
-//     ["#fef2e6",
-//     "#fd9036",
-//     "#f36c29"]
+    that.component_update = function(state){
+        console.log("graph component update");
+        that._update_data(data);
+        that._update_view();
+    };
 
-// ["#dfefff",
-// "#4fa7ff",
-// "#0063c6"], //蓝色
-//
-// ["#ffe5cc",
-// "#ffa953",
-// "#cc6600"], // 橙色； shixia
+    that._update_data = function(state){
 
+    };
 
-let CategorySequentialColor = [
-    ["#c8e3ff",
-        "#4fa7ff",
-        "#0063c6"], //蓝色
+    that._update_view = function(){
 
-    ["#ffe5cc",
-        "#ffa953",
-        "#cc6600"], //
+    };
 
-    ["#bfffd9",
-        "#22ff7a",
-        "#00993e"], //
+    that.init = function(){
+        that._init();
+    }.call();
 
-    ["#e6dbd9",
-        "#ba9b96",
-        "#7a5650"], //
-
-    ["#ecd3ed",
-        "#c982ce",
-        "#8b3892"], //
-];
-
-let ThemeColor = "#9bcbff";
-let Gray = "#a8a8a8";
-let testColor = "#7f7f7f";
-
-/*
-    variables that debug needed
-*/
-let AnimationDuration = 500;
-
-
-/*
-    Keyboard status
- */
-let ControlPressed = false;
-
-
-let ClickFlag = null;
+};

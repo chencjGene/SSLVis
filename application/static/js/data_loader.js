@@ -17,21 +17,22 @@ DataLoaderClass = function (dataset) {
     that.instance_graph_node = null;
 
     // views
-    that.concept_graph_view = null;
+    that.graph_view = null;
 
     // Data storage
     that.state = {
         manifest_data: null,
+        graph_data: null
     };
 
     // Define topological structure of data retrieval
     that._init = function () {
         let params = "?dataset=" + that.dataset;
         that.manifest_node = new request_node(that.manifest_url + params,
-            function(){}, "json", "GET");
+            that.get_manifest_handler(), "json", "GET");
 
         that.graph_node = new request_node(that.graph_url + params,
-            function(){}, "json", "GET");
+            that.get_graph_handler(that.update_graph_view), "json", "GET");
         that.graph_node.depend_on(that.manifest_node);
     };
 
@@ -39,6 +40,17 @@ DataLoaderClass = function (dataset) {
         that.manifest_node.notify();
     };
 
+    that.set_graph_view = function (v) {
+        that.graph_view = v;
+        v.set_data_manager(that);
+    };
+
+    that.update_graph_view = function(){
+        console.log("update graph view");
+        that.graph_view.component_update({
+            "graph_data": that.state.graph_data
+        })
+    };
 
     that.init = function () {
         that._init();

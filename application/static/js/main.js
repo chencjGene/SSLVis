@@ -10,6 +10,9 @@ function load_data() {
 
 function set_up(dataset) {
     DataLoader = new DataLoaderClass(dataset);
+    GraphView = new GraphLayout(d3.select("#graph-row"));
+
+    DataLoader.set_graph_view(GraphView);
 }
 
 function clean_dom() {
