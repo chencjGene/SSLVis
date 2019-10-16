@@ -1,16 +1,17 @@
 import paramiko
 import shutil
 from scp import SCPClient
+import local_config
 # * 1. If you have no ssh private key, use "ssh-keygen -p -m PEM -f ~/.ssh/id_rsa" to generate.
 #       No passphrase for convenience!
 #       If you already have ssh private key, skip this step otherwise your old key will be replaced.
 # * 2. Use "ssh-copy-id yourusername@server" to send your public key to server.
 # * 3. config user, ip and remote_path in this file. Note: default local path is 'SSLVis/application/data'
 ssh = paramiko.SSHClient()
-user = 'changjian'
-ip = '166.111.80.25'
-remote_path = '/large/SSL/'
-local_path = './'
+user = local_config.user
+ip = local_config.server
+remote_path = local_config.remote_path
+local_path = local_config.local_path
 ssh.load_system_host_keys()
 ssh.connect(hostname=ip, username=user)
 def upload():
