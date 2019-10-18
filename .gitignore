@@ -15,3 +15,4 @@ test/
 logs/
 docs/falcon/
 venv/
+data_transfer_upload.py

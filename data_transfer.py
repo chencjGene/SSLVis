@@ -13,15 +13,12 @@ remote_path = '/large/SSL/'
 local_path = './'
 ssh.load_system_host_keys()
 ssh.connect(hostname=ip, username=user)
-def upload():
-    with SCPClient(ssh.get_transport()) as scp:
-        ssh.exec_command('rm -r '+remote_path+'data')
-        scp.put(local_path+'data', recursive=True, remote_path=remote_path)
 
 def download():
     with SCPClient(ssh.get_transport()) as scp:
         shutil.rmtree(path=local_path+'./data')
         scp.get(local_path=local_path, recursive=True, remote_path=remote_path+'data')
 
+if __name__ == "__main__":
 # upload or download
-upload()
+	download()
