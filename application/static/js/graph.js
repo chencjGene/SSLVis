@@ -12,12 +12,43 @@ let GraphLayout = function (container){
     let layout_width = width - 20;
     let layout_height = height - 20;
     console.log("GraphLayout", "layout width", layout_width, "layout height", layout_height);
-
+    let color_unlabel = "#A9A9A9";
+    let color_label = d3.schemeCategory20;
     let graph_data = null;
     let data_manager = null;
 
     that._init = function(){
 
+    };
+    that.all_paired_shortest_path = function(nodes, links){
+        let i=0;
+        let n=nodes.length;
+        let D = nodes.map(n => nodes.map(m => 10241024));
+
+        //id 2 idx
+        let id2idx = {};
+        i=0;
+        for(let node of nodes){
+            id2idx[node.id] = i++;
+        }
+
+        // init
+        for(let link of links){
+            D[id2idx[link.source]][id2idx[link.target]] = 1;
+            D[id2idx[link.target]][id2idx[link.source]] = 1;
+        }
+        for(let i=0;i<n;i++){
+            D[i][i] = 0;
+        }
+        // floyd-warshall
+        for(let k=0;k<n;k++){
+            for(let i=0;i<n;i++){
+                for(let j=0;j<n;j++){
+                    D[i][j] = D[i][j]>D[i][k]+D[j][k]?D[i][k]+D[j][k]:D[i][j];
+                }
+            }
+        }
+        return D;
     };
 
     that.set_data_manager = function(_data_manager){
@@ -35,13 +66,35 @@ let GraphLayout = function (container){
         console.log("graph_data", graph_data);
     };
 
+    that.centralize = function(nodes, width, height){
+        let avx = 0;
+        let avy = 0;
+        for(let node of nodes){
+            avx += node.x;
+            avy += node.y;
+        }
+        avx /= nodes.length;
+        avy /= nodes.length;
+        let delx = width/2-avx;
+        let dely = height/2 - avy;
+        for (let node of nodes){
+            node.x += delx;
+            node.y += dely;
+        }
+    }
+
     that._update_view = function(){
         container.select("#graph-view-svg").remove();
         let svg = container.append("svg")
                             .attr("id", "graph-view-svg")
                             .attr("width", width)
                             .attr("height", height);
+        let area = width*height;
         // node data
+        // graph_data = {
+        //     node:[{c:-1, id:0, p:1},{c:-1, id:1, p:2},{c:-1, id:2, p:2},{c:-1, id:3, p:3},{c:-1, id:4, p:3}],
+        //     link:[[0, 1, 1], [1, 2, 1], [2, 3, 1], [3, 4, 1], [4, 0, 1]]
+        // };
         let nodes_data = JSON.parse(JSON.stringify(graph_data.node));
         for(let node of nodes_data){
                 node.x = (Math.random()-0.5)*20+width/2;
@@ -68,108 +121,98 @@ let GraphLayout = function (container){
                 value:link[2]
             })
         }
-        let area = width*height;
-        let k = Math.sqrt(area/nodes_data.length);
-        function tick() {
-            function fa(d) {
-                return d*d/k;
-            }
-            function fr(d) {
-                return k*k/d;
-            }
-            function dis(a, b){
-                let x = a.x-b.x;
-                let y = a.y-b.y;
-                return Math.sqrt(x*x+y*y);
-            }
-            // init
-            let df = [];
-            for(let node of nodes_data) df.push({x:0, y:0});
-            // attractive
-            for(let link of links_data){
-                let uidx = id2idx[link.source];
-                let vidx = id2idx[link.target];
-                let u = nodes_data[uidx];
-                let v = nodes_data[vidx];
-                let d = dis(u, v);
-                if(d===0) d=0.01;
-                let a = fa(d);
-                df[uidx].x -= (u.x-v.x)/d*a;
-                df[uidx].y -= (u.y-v.y)/d*a;
-                df[vidx].x += (u.x-v.x)/d*a;
-                df[vidx].y += (u.y-v.y)/d*a;
-            }
-            // repulsive
-            i = 0;
-            for(let u of nodes_data){
-                for(let v of nodes_data){
-                    if(u.id === v.id) continue;
-                    let d = dis(u, v);
-                    if(d===0) continue;
-                    let r = fr(d);
-                    df[i].x += (u.x-v.x)/d*r;
-                    df[i].y += (u.y-v.y)/d*r;
-                }
-                i++;
-            }
-            // move
-            for(let idx in nodes_data){
-                df[idx].x =df[idx].x/Math.abs(df[idx].x)*Math.min(Math.abs(df[idx].x)/30, width/10);
-                df[idx].y =df[idx].y/Math.abs(df[idx].y)*Math.min(Math.abs(df[idx].y)/30, height/10);
-                nodes_data[idx].x = Math.min(width, Math.max(0, nodes_data[idx].x + df[idx].x));
-                nodes_data[idx].y = Math.min(height, Math.max(0, nodes_data[idx].y + df[idx].y));
-            }
-            console.log(df)
-        }
-        console.log(width, height);
-        for (let iternum=0;iternum<50; iternum++){
-            tick();
-        }
-        // let simulation = d3.forceSimulation(nodes_data)
-        //       .force("link", d3.forceLink(links_data).id(d => d.id))
-        //       .force("charge", d3.forceManyBody().strength(-10))
-        //       .force("center", d3.forceCenter(width / 2, height / 2));
-        let links = svg.append("g")
-            .attr("id", "graph-view-link-g")
-            .selectAll("line")
-            .data(links_data).enter().append("line")
-            .attr("x1", d => nodes_data[id2idx[d.source]].x)
-            .attr("y1", d => nodes_data[id2idx[d.source]].y)
-            .attr("x2", d => nodes_data[id2idx[d.target]].x)
-            .attr("y2", d => nodes_data[id2idx[d.target]].y)
-            .attr("stroke-width", 1)
-            .attr("stroke", "gray")
-            .attr("stroke-opacity", "0.4");
-        let nodes = svg.append("g")
-            .attr("id", "graph-view-node-g")
-            .selectAll("circle")
-            .data(nodes_data).enter().append("circle")
-            .attr("class", "graph-view-node")
-            .attr("cx", d => d.x)
-            .attr("cy", d => d.y)
-            .attr("fill", d => d.c===-1?color_unlabel:color_label[d.c])
-            .on("mouseover", function (d) {
-                console.log(d);
-            });
 
-        // simulation.on("tick", () => {
-        //
-        //         links
-        //             .attr("x1", d => d.source.x)
-        //             .attr("y1", d => d.source.y)
-        //             .attr("x2", d => d.target.x)
-        //             .attr("y2", d => d.target.y);
-        //
-        //         nodes
-        //             .attr("cx", d => d.x)
-        //             .attr("cy", d => d.y);
-        //       });
-        function parsedata(data) {
-            let res=[];
-            for(let i=0;i<11;i++) res.push([]);
-            for(let d of data) res[d.c+1].push(d)
-            return res;
+        // get D
+        let n = nodes_data.length;
+        let D = that.all_paired_shortest_path(nodes_data, links_data);
+        // get max d
+        let maxd = 0;
+        for(let a of D){
+            for(let b of a){
+                if(b>maxd) maxd = b;
+            }
         }
+
+        let L0 = Math.sqrt(area)/maxd;
+        D = D.map(row => row.map(d => L0*d));
+        let W = D.map(row => row.map(d => d===0?0:Math.pow(d, -2)));
+        let L = D.map(row => row.map(d => d===0?0:-2*Math.pow(d, -2)));
+        let center_weight = 0.001;
+        let no_center_weight = 0.0001;
+        let center_count = 0;
+        let C = [];
+        for(let rowidx=0; rowidx<n; rowidx++){
+            let row = L[rowidx];
+            let sum = 0;
+            for(let colidx=0; colidx<n; colidx++){
+                if(colidx===rowidx) continue;
+                sum -= row[colidx];
+            }
+            row[rowidx] = sum;
+            if(nodes_data[rowidx].p===2){
+                row[rowidx] += center_weight;
+                center_count++;
+                C.push([width/2*center_weight, height/2*center_weight]);
+            }
+            else {
+                row[rowidx] += no_center_weight;
+                C.push([width/2*no_center_weight, height/2*no_center_weight]);
+            }
+        }
+        console.log("center count:", center_count);
+        console.log("D: ", D);
+        console.log("W: ", W);
+        console.log("L: ", L);
+        console.log("C: ", C);
+        let X = nodes_data.map(d => [d.x, d.y]);
+        let postdata = {
+            D:D,
+            W:W,
+            L:L,
+            C:C,
+            X:X
+        };
+        $.post('/graph/StressMajorization',{
+            data:JSON.stringify(postdata)
+        } , function (data) {
+            console.log(data);
+            for(let rowidx=0; rowidx < n; rowidx++){
+                nodes_data[rowidx].x = data[rowidx][0];
+                nodes_data[rowidx].y = data[rowidx][1];
+            }
+            // that.centralize(nodes_data, width, height);
+            let links = svg.append("g")
+                .attr("id", "graph-view-link-g")
+                .selectAll("line")
+                .data(links_data).enter().append("line")
+                .attr("x1", d => nodes_data[id2idx[d.source]].x)
+                .attr("y1", d => nodes_data[id2idx[d.source]].y)
+                .attr("x2", d => nodes_data[id2idx[d.target]].x)
+                .attr("y2", d => nodes_data[id2idx[d.target]].y)
+                .attr("stroke-width", 1)
+                .attr("stroke", "gray")
+                .attr("stroke-opacity", "0.4");
+            let nodes = svg.append("g")
+                .attr("id", "graph-view-node-g")
+                .selectAll("circle")
+                .data(nodes_data).enter().append("circle")
+                .attr("class", "graph-view-node")
+                .attr("cx", d => d.x)
+                .attr("cy", d => d.y)
+                .attr("fill", function (d) {
+                    if(d.p===2) return "#000000";
+                    if(d.c===-1){
+                        return color_unlabel;
+                    }
+                    else return color_label[d.c];
+                })
+                .on("mouseover", function (d) {
+                    console.log(d);
+                });
+        })
+
+
+
     };
 
     that.init = function(){
