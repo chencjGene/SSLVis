@@ -95,23 +95,25 @@ let GraphLayout = function (container){
         //     node:[{c:-1, id:0, p:1},{c:-1, id:1, p:2},{c:-1, id:2, p:2},{c:-1, id:3, p:3},{c:-1, id:4, p:3}],
         //     link:[[0, 1, 1], [1, 2, 1], [2, 3, 1], [3, 4, 1], [4, 0, 1]]
         // };
-        let nodes_data = JSON.parse(JSON.stringify(graph_data.node));
-        for(let node of nodes_data){
-                node.x = (Math.random()-0.5)*20+width/2;
-                node.y = (Math.random()-0.5)*20+height/2;
-        }
+        // let nodes_data = JSON.parse(JSON.stringify(graph_data.node));
+        //
+        // for(let node of nodes_data){
+        //         node.x = (Math.random()-0.5)*20+width/2;
+        //         node.y = (Math.random()-0.5)*20+height/2;
+        // }
+        $.post('/graph/GetNodes', {}, function (nodes_data) {
         let id2idx = {};
         let i=0;
         for(let node of nodes_data){
             id2idx[node.id] = i++;
         }
         // create focus data for test
-        let focus_nodes_data = [];
-        for(let node of nodes_data){
-            if(node.p === 1){
-                focus_nodes_data.push(node);
-            }
-        }
+        // let focus_nodes_data = [];
+        // for(let node of nodes_data){
+        //     if(node.p === 1){
+        //         focus_nodes_data.push(node);
+        //     }
+        // }
         // link data
         let links_data = [];
         for(let link of graph_data.link){
@@ -172,14 +174,16 @@ let GraphLayout = function (container){
             C:C,
             X:X
         };
+        let a=1;
         $.post('/graph/StressMajorization',{
+            test:a++,
             data:JSON.stringify(postdata)
         } , function (data) {
-            console.log(data);
-            for(let rowidx=0; rowidx < n; rowidx++){
-                nodes_data[rowidx].x = data[rowidx][0];
-                nodes_data[rowidx].y = data[rowidx][1];
-            }
+            // console.log(data);
+            // for(let rowidx=0; rowidx < n; rowidx++){
+            //     nodes_data[rowidx].x = data[rowidx][0];
+            //     nodes_data[rowidx].y = data[rowidx][1];
+            // }
             // that.centralize(nodes_data, width, height);
             let links = svg.append("g")
                 .attr("id", "graph-view-link-g")
@@ -210,7 +214,7 @@ let GraphLayout = function (container){
                     console.log(d);
                 });
         })
-
+        });
 
 
     };
