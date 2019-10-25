@@ -176,7 +176,7 @@ let GraphLayout = function (container){
         };
         let a=1;
         $.post('/graph/StressMajorization',{
-            test:a++,
+            test:1,
             data:JSON.stringify(postdata)
         } , function (data) {
             // console.log(data);
@@ -185,6 +185,7 @@ let GraphLayout = function (container){
             //     nodes_data[rowidx].y = data[rowidx][1];
             // }
             // that.centralize(nodes_data, width, height);
+            console.log(nodes_data)
             let links = svg.append("g")
                 .attr("id", "graph-view-link-g")
                 .selectAll("line")
@@ -195,7 +196,12 @@ let GraphLayout = function (container){
                 .attr("y2", d => nodes_data[id2idx[d.target]].y)
                 .attr("stroke-width", 1)
                 .attr("stroke", "gray")
-                .attr("stroke-opacity", "0.4");
+                .attr("stroke-opacity", "0.4")
+                .each(function (d) {
+                    if(d.source !== nodes_data[id2idx[d.source]].id) console.log('err');
+                    if(d.target !== nodes_data[id2idx[d.target]].id) console.log('err');
+
+                });
             let nodes = svg.append("g")
                 .attr("id", "graph-view-node-g")
                 .selectAll("circle")
