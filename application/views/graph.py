@@ -23,8 +23,6 @@ def app_get_graph():
 
 @graph.route('/graph/StressMajorization', methods=["POST"])
 def app_stress_majorization():
-    print(request.form['test'])
-    return jsonify({})
     data = json.loads(request.form['data'])
     L = data['L']
     W = data['W']
@@ -36,5 +34,5 @@ def app_stress_majorization():
 
 @graph.route('/graph/GetNodes', methods=["POST"])
 def app_get_node():
-    with open('nodes.json', 'r') as f:
+    with open('graph.json', 'r') as f:
         return jsonify(json.load(f))

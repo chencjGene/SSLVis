@@ -69,7 +69,7 @@ def stress_majorization_solve(L, W, D, C, X):
         alltime['root'] += time.time() - lasttime
         X = res['x'].reshape((n, 2))
         lasttime = time.time()
-        print(i, X[1], stress(X, W, D))
+        print(i, X[1])
         alltime['stress'] += time.time() - lasttime
     print(alltime)
     with open('save.bak', 'wb+') as savefile:

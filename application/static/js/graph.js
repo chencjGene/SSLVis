@@ -89,6 +89,7 @@ let GraphLayout = function (container){
                             .attr("id", "graph-view-svg")
                             .attr("width", width)
                             .attr("height", height);
+        console.log("width: ", width, "height: ", height);
         let area = width*height;
         // node data
         // graph_data = {
@@ -101,7 +102,14 @@ let GraphLayout = function (container){
         //         node.x = (Math.random()-0.5)*20+width/2;
         //         node.y = (Math.random()-0.5)*20+height/2;
         // }
-        $.post('/graph/GetNodes', {}, function (nodes_data) {
+        $.post('/graph/GetNodes', {}, function (data) {
+        let nodes_data = data['nodes'];
+        let links_data = data['links'];
+        for(let link of links_data){
+            link.source = link.source.id;
+            link.target = link.target.id;
+        }
+        console.log(data);
         let id2idx = {};
         let i=0;
         for(let node of nodes_data){
@@ -115,34 +123,36 @@ let GraphLayout = function (container){
         //     }
         // }
         // link data
-        let links_data = [];
-        for(let link of graph_data.link){
-            links_data.push({
-                source:link[0],
-                target:link[1],
-                value:link[2]
-            })
-        }
+        // let links_data = [];
+        // for(let link of graph_data.link){
+        //     links_data.push({
+        //         source:link[0],
+        //         target:link[1],
+        //         value:link[2]
+        //     })
+        // }
 
         // get D
         let n = nodes_data.length;
-        let D = that.all_paired_shortest_path(nodes_data, links_data);
-        // get max d
-        let maxd = 0;
-        for(let a of D){
-            for(let b of a){
-                if(b>maxd) maxd = b;
-            }
-        }
-
-        let L0 = Math.sqrt(area)/maxd;
-        D = D.map(row => row.map(d => L0*d));
+        // let D = that.all_paired_shortest_path(nodes_data, links_data);
+        // // get max d
+        // let maxd = 0;
+        // for(let a of D){
+        //     for(let b of a){
+        //         if(b>maxd) maxd = b;
+        //     }
+        // }
+        //
+        // let L0 = Math.sqrt(area)/maxd;
+        // D = D.map(row => row.map(d => L0*d));
+        let D = nodes_data.map(u => nodes_data.map(v => Math.sqrt(Math.pow(u.x-v.x, 2)+Math.pow(u.y-v.y, 2))));
         let W = D.map(row => row.map(d => d===0?0:Math.pow(d, -2)));
         let L = D.map(row => row.map(d => d===0?0:-2*Math.pow(d, -2)));
-        let center_weight = 0.001;
-        let no_center_weight = 0.0001;
+        let center_weight = 0.005;
+        let no_center_weight = 0.1;
         let center_count = 0;
         let C = [];
+        let r = Math.min(width/2, height/2)*0.9;
         for(let rowidx=0; rowidx<n; rowidx++){
             let row = L[rowidx];
             let sum = 0;
@@ -151,14 +161,15 @@ let GraphLayout = function (container){
                 sum -= row[colidx];
             }
             row[rowidx] = sum;
-            if(nodes_data[rowidx].p===2){
+            if(nodes_data[rowidx].p===2 || nodes_data[rowidx].p===1){
                 row[rowidx] += center_weight;
                 center_count++;
                 C.push([width/2*center_weight, height/2*center_weight]);
             }
             else {
                 row[rowidx] += no_center_weight;
-                C.push([width/2*no_center_weight, height/2*no_center_weight]);
+                let len = Math.sqrt(Math.pow(nodes_data[rowidx].x-width/2, 2)+Math.pow(nodes_data[rowidx].y-height/2, 2));
+                C.push([((nodes_data[rowidx].x-width/2)/len*r+width/2)*no_center_weight, ((nodes_data[rowidx].y-height/2)/len*r+height/2)*no_center_weight]);
             }
         }
         console.log("center count:", center_count);
@@ -176,16 +187,15 @@ let GraphLayout = function (container){
         };
         let a=1;
         $.post('/graph/StressMajorization',{
-            test:1,
             data:JSON.stringify(postdata)
         } , function (data) {
             // console.log(data);
-            // for(let rowidx=0; rowidx < n; rowidx++){
-            //     nodes_data[rowidx].x = data[rowidx][0];
-            //     nodes_data[rowidx].y = data[rowidx][1];
-            // }
+            for(let rowidx=0; rowidx < n; rowidx++){
+                nodes_data[rowidx].x = data[rowidx][0];
+                nodes_data[rowidx].y = data[rowidx][1];
+            }
             // that.centralize(nodes_data, width, height);
-            console.log(nodes_data)
+            console.log(nodes_data);
             let links = svg.append("g")
                 .attr("id", "graph-view-link-g")
                 .selectAll("line")
@@ -196,12 +206,7 @@ let GraphLayout = function (container){
                 .attr("y2", d => nodes_data[id2idx[d.target]].y)
                 .attr("stroke-width", 1)
                 .attr("stroke", "gray")
-                .attr("stroke-opacity", "0.4")
-                .each(function (d) {
-                    if(d.source !== nodes_data[id2idx[d.source]].id) console.log('err');
-                    if(d.target !== nodes_data[id2idx[d.target]].id) console.log('err');
-
-                });
+                .attr("stroke-opacity", "0.4");
             let nodes = svg.append("g")
                 .attr("id", "graph-view-node-g")
                 .selectAll("circle")
@@ -210,7 +215,7 @@ let GraphLayout = function (container){
                 .attr("cx", d => d.x)
                 .attr("cy", d => d.y)
                 .attr("fill", function (d) {
-                    if(d.p===2) return "#000000";
+                    if(d.p===2||d.p===1) return "#000000";
                     if(d.c===-1){
                         return color_unlabel;
                     }
