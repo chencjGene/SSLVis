@@ -4,8 +4,8 @@ import abc
 
 from sklearn.neighbors import kneighbors_graph
 
-from ..utils.config_utils import config
-from ..utils.helper_utils import pickle_save_data, json_load_data, pickle_load_data, json_save_data
+from application.views.utils.config_utils import config
+from application.views.utils.helper_utils import pickle_save_data, json_load_data, pickle_load_data, json_save_data
 
 
 def read_data(data_root, data_type="train"):

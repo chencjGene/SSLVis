@@ -1,3 +1,6 @@
+"""
+This class is not used in our SSL Project
+"""
 import os
 import numpy as np
 
