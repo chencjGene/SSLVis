@@ -44,8 +44,7 @@ def stress_majorization_solve(L, W, D, C, X):
         return (np.dot(W, x.reshape((n, 2)))-C).reshape((n*2))
         # save
     savetpl = (L, W, D, C, X)
-    with open('tmp.bak', 'wb+') as f:
-        pickle.dump(savetpl, f)
+
     # to numpy
     L = np.array(L)
     W = np.array(W)
@@ -72,8 +71,7 @@ def stress_majorization_solve(L, W, D, C, X):
         print(i, X[1])
         alltime['stress'] += time.time() - lasttime
     print(alltime)
-    with open('save.bak', 'wb+') as savefile:
-        pickle.dump(X, savefile)
+
     return X.tolist()
 
 if __name__ == '__main__':

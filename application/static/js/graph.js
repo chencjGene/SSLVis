@@ -61,6 +61,68 @@ let GraphLayout = function (container){
         that._update_view();
     };
 
+    that.getConvexHull = function(nodes) {
+        nodes.sort(function (a, b) {
+            if(a.x !== b.x){
+                return a.x-b.x
+            }
+            else {
+                return a.y-b.y
+            }
+        });
+
+        if(nodes.length <= 2){
+            return nodes
+        }
+//    get lower hull
+        let lowerhull = (nodes.length<2)?nodes:[nodes[0], nodes[1]];
+        for (let i=2; i<nodes.length; i++){
+            let node = nodes[i];
+            while (true) {
+                if(lowerhull.length <= 1){
+                    lowerhull.push(node);
+                    break;
+                }
+                let last = lowerhull[lowerhull.length-1];
+                let lastlast = lowerhull[lowerhull.length-2];
+                let vec1 = [last.x-lastlast.x, last.y-lastlast.y];
+                let vec2 = [node.x-last.x, node.y-last.y];
+                if(vec1[0]*vec2[1]-vec1[1]*vec2[0] <=0){
+                    lowerhull.pop();
+                }else {
+                    lowerhull.push(node);
+                    break
+                }
+            }
+        }
+// get higher hull
+        let higherhull = (nodes.length<2)?nodes:[nodes[nodes.length-1], nodes[nodes.length-2]];
+        for (let i=nodes.length-3; i>=0; i--){
+            let node = nodes[i];
+            while (true) {
+                if(higherhull.length <= 1){
+                    higherhull.push(node);
+                    break;
+                }
+                let last = higherhull[higherhull.length-1];
+                let lastlast = higherhull[higherhull.length-2];
+                let vec1 = [last.x-lastlast.x, last.y-lastlast.y];
+                let vec2 = [node.x-last.x, node.y-last.y];
+                if(vec1[0]*vec2[1]-vec1[1]*vec2[0] <=0){
+                    higherhull.pop();
+                }else {
+                    higherhull.push(node);
+                    break
+                }
+            }
+        }
+
+//    merge
+        higherhull.pop();
+        higherhull.shift();
+        return lowerhull.concat(higherhull);
+    };
+
     that._update_data = function(state){
         graph_data = state.graph_data;
         console.log("graph_data", graph_data);
@@ -149,7 +211,7 @@ let GraphLayout = function (container){
         let W = D.map(row => row.map(d => d===0?0:Math.pow(d, -2)));
         let L = D.map(row => row.map(d => d===0?0:-2*Math.pow(d, -2)));
         let center_weight = 0.005;
-        let no_center_weight = 0.1;
+        let no_center_weight = 0.030;
         let center_count = 0;
         let C = [];
         let r = Math.min(width/2, height/2)*0.9;
@@ -196,6 +258,45 @@ let GraphLayout = function (container){
             }
             // that.centralize(nodes_data, width, height);
             console.log(nodes_data);
+
+            svg
+              .append('defs')
+              .append('pattern')
+                .attr('id', 'diagonalHatch')
+                .attr('patternUnits', 'userSpaceOnUse')
+                .attr('width', 4)
+                .attr('height', 4)
+              .append('path')
+                .attr('d', 'M-1,1 l2,-2 M0,4 l4,-4 M3,5 l2,-2')
+                .attr('stroke', '#000000')
+                .attr('stroke-width', 1);
+            let partitions = [];
+            for(let i=0;i<10;i++) partitions.push([]);
+            for(let node of nodes_data){
+                partitions[node.p].push(node);
+            }
+            let polygons = svg.append("g")
+                .attr("id", "graph-view-partition-polygons")
+                .selectAll("polygon")
+                .data(partitions)
+                .enter()
+                .append("polygon")
+                .attr("points", function (nodes) {
+                    let convexhull = that.getConvexHull(nodes);
+                    let points_str = '';
+                    for(let node of convexhull){
+                        points_str+=node.x+', '+node.y+' '
+                    }
+                    return points_str
+                })
+                .attr("fill", function (nodes) {
+                    for(let node of nodes){
+                        if(node.c !== -1) return color_label[node.c];
+                    }
+                    return "gray";
+                })
+                .attr("stroke-width", 0)
+                .attr("opacity", 0.2);
             let links = svg.append("g")
                 .attr("id", "graph-view-link-g")
                 .selectAll("line")
@@ -214,6 +315,7 @@ let GraphLayout = function (container){
                 .attr("class", "graph-view-node")
                 .attr("cx", d => d.x)
                 .attr("cy", d => d.y)
+                .attr("r", d => d.c===-1?3:7)
                 .attr("fill", function (d) {
                     if(d.p===2||d.p===1) return "#000000";
                     if(d.c===-1){
@@ -224,6 +326,74 @@ let GraphLayout = function (container){
                 .on("mouseover", function (d) {
                     console.log(d);
                 });
+            let labelnode = svg.append("g");
+            nodes.each(function (d) {
+                    if(d.c !== -1){
+                        labelnode.append("circle")
+                            .attr("cx", d.x)
+                            .attr("cy", d.y)
+                            .attr("r", 7)
+                            .attr("fill", 'url(#diagonalHatch)')
+                            .on("mouseover", function (dd) {
+                                console.log(d);
+                            })
+                    }
+                });
+            let legend = svg.append("g").attr("id", "legend");
+            let pie =d3.pie()
+                .sort(null)
+                .value(function(d){ return 1 });
+            let legenddata = [];
+            let arc = d3.arc().innerRadius(35).outerRadius(70);
+            for(let i=-1;i<10;i++) legenddata.push(i);
+            let piedata = pie(legenddata);
+            let arcs = legend.selectAll("g")
+                            .data(piedata)
+                            .enter()
+                            .append("g")
+                            .attr("transform", function(){
+                                return `translate(${ 80 }, ${ 80})`;
+                            });
+            arcs.append("path")
+                .attr("fill", function (d, i) {
+                       if(d.data === -1) return "gray";
+                       else return color_label[d.data];
+                   })
+                .attr("opacity", 0.8)
+                .attr("d", function (d) { return arc(d) })
+                .on("mouseover", function (d) {
+                        let path = d3.select(this);
+                        let scale = 1.2;
+                        let x = (1-scale)*arc.centroid(d)[0];
+                        let y = (1-scale)*arc.centroid(d)[1];
+                        path.attr("transform", `translate(${x},${y}) scale(${scale})`);
+                        polygons.each(function (nodes) {
+                            let polygon = d3.select(this);
+                            if(nodes[0].p===d.data){
+                                polygon.attr("opacity", 0.8);
+                            }
+                        })
+                })
+                .on("mouseout", function (d) {
+                    let path = d3.select(this);
+                    path.attr("transform", " ");
+                    polygons.each(function (nodes) {
+                            let polygon = d3.select(this);
+                            polygon.attr("opacity", 0.2);
+                        })
+                });
+            arcs.append("text")
+                   .attr("transform", function(d){
+                       let x = arc.centroid(d)[0];
+                       let y = arc.centroid(d)[1];
+                       return `translate(${x}, ${y})`
+                   })
+                  .text(function(d){
+                        return d.data;
+                  })
+                  .attr("text-anchor", "middle")
+                  .attr("fill", "#fff")
+                  .style("font-size", "10px")
         })
         });
 
