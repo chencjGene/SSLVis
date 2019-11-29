@@ -13,24 +13,26 @@
         <link type="text/css" rel="stylesheet" href="../static/css/layout.css">
         <link type="text/css" rel="stylesheet" href="../static/css/graph.css">
         <link type="text/css" rel="stylesheet" href="../static/css/image.css">
-        <link type="text/css" rel="stylesheet" href="../static/css/control_panel.css">
+        <link type="text/css" rel="stylesheet" href="../static/css/history.css">
         <meta charset="UTF-8">
     </head>
 
 <!-- <body style="overflow:hidden;"> -->
     <body>
-        <div class="self-column" id="control-column">
-            <div class="self-row" id="control-panel-row">
-                {% include 'control_panel.html'%}
+        <div class="self-column" id="control-graph-column">
+            <div class="self-row" id="loss-row">
+                {% include 'loss.html'%}
+
+            </div>
+            <div class="self-row" id="graph-row">
+                {% include 'graph.html'%}
 
             </div>
         </div>
-        <div class="self-column" id="main-column">
-            <div class="self-row" id="graph-row">
-                {% include 'graph.html'%}
+        <div class="self-column" id="history-info-column">
+            <div class="self-row" id="history-row">
+                {% include 'history.html'%}
             </div>
-        </div>
-        <div class="self-column" id="info-column">
             <div class="self-row" id="image-row">
                 {% include 'image.html'%}
             </div>
@@ -53,7 +55,7 @@
     <script src="../static/js/graph.js"></script>
     <script src="../static/js/image.js"></script>
     <script src="../static/js/matrix.js"></script>
-    <script src="../static/js/control.js"></script>
+    <script src="../static/js/loss.js"></script>
     <script src="../static/js/helper.js"></script>
     <script src="../static/js/handler.js"></script>
     <script src="../static/js/global.js"></script>

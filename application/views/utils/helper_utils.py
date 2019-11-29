@@ -46,6 +46,8 @@ def check_dir(dirname):
         os.makedirs(dirname)
     return True
 
+def check_exist(filename):
+    return os.path.exists(filename)
 
 # normalization
 def unit_norm_for_each_col(X):

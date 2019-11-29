@@ -23,6 +23,7 @@ class Config(object):
         self.yelp = "Yelp"
         self.imdb = "IMDB"
         self.cifar10 = "cifar10"
+        self.oct = "OCT"
 
         # third-level directory
         self.train_path_name = "train"
@@ -33,22 +34,24 @@ class Config(object):
         self.processed_dataname = "processed_data"+ self.pkl_ext
         self.grid_dataname = "grid_data" + self.pkl_ext
         self.concept_graph_filename = "concept_graph.json"
+        self.signal_filename = "SIGNAL"
+
+        # buffer
+        self.ssl_model_buffer_name = "ssl_model_buffer" + self.pkl_ext
+        self.projection_buffer_name = "projection_buffer" + self.pkl_ext
 
         # variable
         self.class_name = "class_name"
+        self.class_name_encoding = "class_name_encoding"
         self.X_name ="X_name"
         self.embed_X_name = "embed_X"
         self.all_embed_X_name = "all_embed_X"
         self.y_name = "y_name"
         self.train_idx_name = "train_idx"
-        self.train_redundant_idx_name = "train_redundant_idx"
         self.valid_idx_name = "valid_idx"
-        self.valid_redundant_idx_name = "valid_redundant_idx"
         self.test_idx_name = "test_idx"
-        self.test_redundant_idx_name = "test_redundant_idx"
+        self.labeled_idx_name = "labeled_idx"
         self.add_info_name = "add_info"
-        self.grid_X_train_name = "grid_X_train"
-        self.grid_X_test_name = "grid_X_test"
 
         self.train_x_name = "X_train"
         self.train_y_name = "y_train"

@@ -30,15 +30,12 @@ body {
     margin: 0.5% 0 0 0.5%;
 }
 
-#control-column{
-    width: 19%;
+#control-graph-column{
+    width: 79%;
 }
 
-#main-column{
-    width: 60%;
-}
 
-#info-column{
+#history-info-column{
     width: 19%;
 }
 
@@ -46,17 +43,20 @@ body {
     width: 100%;
 }
 
-#control-panel-row {
-    height: 100%;
+#loss-row {
+    height: 12%;
 }
 
-#graph-row{
-    height: 100%;
+#graph-row {
+    height: 87%;
 }
 
+#history-row{
+    height: 60%;
+}
 
 #image-row{
-    height: 100%;
+    height: 39%;
 }
 
 
@@ -67,11 +67,12 @@ body {
 
 .my-panel-heading {
     color: white;
-    background-color: #9bcbff;
+    background-color: #c1c1c1;
     padding: 4px;
     display: inline-block;
     -ms-border-radius: 8px 8px 0 0;
-    border-radius: 8px 8px 0 0;
+    border-radius: 5px 5px 0 0;
+    font-size:16px;
 }
 
 .my-panel-seg {

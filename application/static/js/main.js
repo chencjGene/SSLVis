@@ -22,7 +22,8 @@ function clean_dom() {
 
 // main (entry of the application)
 $(document).ready(function () {
-    DatasetName = "cifar10";
+    // DatasetName = "cifar10";
+    DatasetName = "OCT";
     // DatasetName = "Country_from_siemens";
 
     set_up(DatasetName);

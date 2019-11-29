@@ -11,9 +11,11 @@ data/
 *.rar
 flask_session/
 test/
+scripts/
 *.vsdx
 logs/
 docs/falcon/
 venv/
 data_transfer_upload.py
 local_config.py
+scikit-learn/
