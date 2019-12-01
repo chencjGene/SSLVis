@@ -2,6 +2,7 @@ import numpy as np
 import os
 from scipy import sparse
 from scipy.sparse import csgraph
+from scipy.stats import entropy
 from time import time
 from tqdm import tqdm
 import warnings
@@ -11,6 +12,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.utils.extmath import safe_sparse_dot
 from sklearn.neighbors.unsupervised import NearestNeighbors
 from sklearn.exceptions import ConvergenceWarning
+from sklearn.metrics.pairwise import euclidean_distances, paired_distances
 
 from ..utils.config_utils import config
 from ..utils.log_utils import logger
@@ -122,14 +124,18 @@ class SSLModel(object):
 
         train_gt = self.data.get_train_ground_truth()
         train_gt = np.array(train_gt)
-        pred_dist, iter, process_data = self._propagation(laplacian, process_record=True)
+        pred_dist, loss, process_data = self._propagation(laplacian, affinity_matrix, process_record=True)
+        self.loss = loss
+        self.process_data = process_data
+        self.graph = affinity_matrix
+        iter = len(loss)
         print(process_data.shape)
         pred_y = pred_dist.argmax(axis=1)
         acc = accuracy_score(train_gt, pred_y)
         logger.info("model accuracy: {}, iter: {}".format(acc, iter))
 
 
-    def _propagation(self, graph_matrix, process_record=False, alpha=0.2, max_iter=30,
+    def _propagation(self, graph_matrix, affinity_matrix, process_record=False, alpha=0.2, max_iter=30,
                      tol=1e-3):
         train_y = self.data.get_train_label()
         y = np.array(train_y)
@@ -139,6 +145,13 @@ class SSLModel(object):
         classes = (classes[classes != -1])
         process_data = None
 
+
+        # D = affinity_matrix.sum(axis=0).getA1() - affinity_matrix.diagonal()
+        # affinity_matrix = affinity_matrix.tocoo(copy=True)
+        # D = np.sqrt(D)
+        # D[D==0] = 1
+
+
         n_samples, n_classes = len(y), len(classes)
 
         if (alpha is None or alpha <= 0.0 or alpha >= 1.0):
@@ -146,14 +159,15 @@ class SSLModel(object):
                              'the open interval (0, 1)' % alpha)
         y = np.asarray(y)
         unlabeled = y == -1
+        labeled = (y > -1)
 
         # initialize distributions
         label_distributions_ = np.zeros((n_samples, n_classes))
         for label in classes:
             label_distributions_[y == label, classes == label] = 1
 
-        y_static = np.copy(label_distributions_)
-        y_static *= 1 - alpha
+        y_static_labeled = np.copy(label_distributions_)
+        y_static = y_static_labeled * (1 - alpha)
 
         l_previous = np.zeros((n_samples, n_classes))
 
@@ -165,19 +179,38 @@ class SSLModel(object):
             process_data = [label_distributions_]
 
         n_iter_ = 0
+        all_loss = []
+        label_distributions_a = safe_sparse_dot(
+            graph_matrix, label_distributions_)
+        loss = (label_distributions_ ** 2).sum() - \
+               np.dot(label_distributions_.reshape(-1),
+                      label_distributions_a.reshape(-1))
+        loss = loss + paired_distances(label_distributions_[labeled],
+                                       y_static_labeled[labeled]).sum()
+        all_loss.append(loss)
+
         for _ in range(max_iter):
             if np.abs(label_distributions_ - l_previous).sum() < tol:
                 break
 
             l_previous = label_distributions_
-            label_distributions_ = safe_sparse_dot(
+            label_distributions_a = safe_sparse_dot(
                 graph_matrix, label_distributions_)
 
             label_distributions_ = np.multiply(
-                alpha, label_distributions_) + y_static
+                alpha, label_distributions_a) + y_static
             n_iter_ += 1
             if process_record:
                 process_data.append(label_distributions_)
+
+            # loss = entropy(label_distributions_.T).sum()
+            loss = (label_distributions_**2).sum() - \
+                   np.dot(label_distributions_.reshape(-1),
+                          label_distributions_a.reshape(-1))
+            loss = loss + paired_distances(label_distributions_[labeled],
+                                           y_static_labeled[labeled]).sum()
+            all_loss.append(loss)
+
         else:
             warnings.warn(
                 'max_iter=%d was reached without convergence.' % max_iter,
@@ -188,10 +221,12 @@ class SSLModel(object):
         normalizer = np.sum(label_distributions_, axis=1)[:, np.newaxis]
         label_distributions_ /= normalizer
 
+        all_loss = np.array(all_loss)
+
         if process_data is not None:
             process_data = np.array(process_data)
 
-        return label_distributions_, n_iter_, process_data
+        return label_distributions_, all_loss, process_data
 
     def _training_old(self, n_neighbor):
         ssl_model_filepath = os.path.join(self.data_root, config.ssl_model_buffer_name)
@@ -218,7 +253,6 @@ class SSLModel(object):
         pred_y = self.model.label_distributions_.argmax(axis=1)
         acc = accuracy_score(train_gt, pred_y)
         logger.info("model accuracy: {}".format(acc))
-
 
         # save ssl model buffer
         pickle_save_data(ssl_model_filepath, self.model)
@@ -248,7 +282,7 @@ class SSLModel(object):
         return
 
     def get_graph_and_process_data(self):
-        return 0,1
+        return self.graph, self.process_data
 
     def get_loss(self):
-        return 0
+        return self.loss
