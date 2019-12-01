@@ -1,8 +1,16 @@
 import numpy as np
 import os
+from scipy import sparse
+from scipy.sparse import csgraph
+from time import time
+from tqdm import tqdm
+import warnings
 
 from sklearn.neighbors import kneighbors_graph
 from sklearn.metrics import accuracy_score
+from sklearn.utils.extmath import safe_sparse_dot
+from sklearn.neighbors.unsupervised import NearestNeighbors
+from sklearn.exceptions import ConvergenceWarning
 
 from ..utils.config_utils import config
 from ..utils.log_utils import logger
@@ -20,6 +28,7 @@ class SSLModel(object):
         self.model = None
         self.embed_X = None
         self.n_neighbor = 200
+        self.max_neighbors = 1000
         # signal is used to indicate that all data should be updated
         self.signal_state = False
 
@@ -29,8 +38,10 @@ class SSLModel(object):
         self._init()
 
     def _init(self):
-        self._training(self.n_neighbor)
-        self._projection()
+        # self._training_old(self.n_neighbor)
+        self._preprocess_neighbors()
+        self._training()
+        # self._projection()
 
     def _get_signal_state(self):
         signal_filepath = os.path.join(self.data_root, config.signal_filename)
@@ -42,7 +53,147 @@ class SSLModel(object):
             os.remove(signal_filepath)
         return
 
-    def _training(self, n_neighbor):
+    def _preprocess_neighbors(self):
+        neighbors_path = os.path.join(self.data_root, "neighbors.npy")
+        neighbors_weight_path = os.path.join(self.data_root, "neighbors_weight.npy")
+        if os.path.exists(neighbors_path) and os.path.exists(neighbors_weight_path):
+            logger.info("neighbors and neighbor_weight exist!!!")
+            return
+        logger.info("neighbors and neighbor_weight do not exist, preprocessing!")
+        train_X = self.data.get_train_X()
+        train_y = self.data.get_train_label()
+        train_y = np.array(train_y)
+        logger.info("data shape: {}, labeled_num: {}"
+                    .format(str(train_X.shape), sum(train_y != -1)))
+        nn_fit = NearestNeighbors(self.n_neighbor, n_jobs=-4).fit(train_X)
+        logger.info("nn construction finished!")
+        neighbor_result = nn_fit.kneighbors_graph(nn_fit._fit_X,
+                                                   self.max_neighbors,
+                                                  # 2,
+                                                   mode="distance")
+        logger.info("neighbor_result got!")
+        neighbors = np.zeros((train_X.shape[0], self.max_neighbors)).astype(int)
+        neighbors_weight = np.zeros((train_X.shape[0], self.max_neighbors))
+        for i in range(train_X.shape[0]):
+            start = neighbor_result.indptr[i]
+            end = neighbor_result.indptr[i+1]
+            j_in_this_row = neighbor_result.indices[start:end]
+            data_in_this_row = neighbor_result.data[start:end]
+            sorted_idx = data_in_this_row.argsort()
+            assert(len(sorted_idx) == self.max_neighbors)
+            j_in_this_row = j_in_this_row[sorted_idx]
+            data_in_this_row = data_in_this_row[sorted_idx]
+            neighbors[i,:] = j_in_this_row
+            neighbors_weight[i,:] = data_in_this_row
+
+        logger.info("preprocessed neighbors got!")
+
+        # save neighbors information
+        np.save(neighbors_path, neighbors)
+        np.save(neighbors_weight_path, neighbors_weight)
+
+    def _training(self):
+        # load neighbors information
+        neighbors_path = os.path.join(self.data_root, "neighbors.npy")
+        neighbors_weight_path = os.path.join(self.data_root, "neighbors_weight.npy")
+        neighbors = np.load(neighbors_path)
+        neighbors_weight = np.load(neighbors_weight_path)
+        instance_num = neighbors.shape[0]
+
+        # get knn graph in a csr form
+        indptr = [i * self.n_neighbor for i in range(instance_num+1)]
+        logger.info("get indptr")
+        indices = neighbors[:,:self.n_neighbor].reshape(-1).tolist()
+        logger.info("get indices")
+        data = neighbors_weight[:,:self.n_neighbor].reshape(-1)
+        logger.info("get data")
+        data = (data * 0 + 1.0).tolist()
+        logger.info("get data in connectivity")
+        affinity_matrix = sparse.csr_matrix((data, indices, indptr),
+                                            shape=(instance_num, instance_num))
+        logger.info("affinity_matrix construction finished!!")
+        laplacian = csgraph.laplacian(affinity_matrix, normed=True)
+        laplacian = -laplacian
+        if sparse.isspmatrix(laplacian):
+            diag_mask = (laplacian.row == laplacian.col)
+            laplacian.data[diag_mask] = 0.0
+        else:
+            laplacian.flat[::instance_num + 1] = 0.0  # set diag to 0.0
+
+        train_gt = self.data.get_train_ground_truth()
+        train_gt = np.array(train_gt)
+        pred_dist, iter, process_data = self._propagation(laplacian, process_record=True)
+        print(process_data.shape)
+        pred_y = pred_dist.argmax(axis=1)
+        acc = accuracy_score(train_gt, pred_y)
+        logger.info("model accuracy: {}, iter: {}".format(acc, iter))
+
+
+    def _propagation(self, graph_matrix, process_record=False, alpha=0.2, max_iter=30,
+                     tol=1e-3):
+        train_y = self.data.get_train_label()
+        y = np.array(train_y)
+        # label construction
+        # construct a categorical distribution for classification only
+        classes = np.unique(y)
+        classes = (classes[classes != -1])
+        process_data = None
+
+        n_samples, n_classes = len(y), len(classes)
+
+        if (alpha is None or alpha <= 0.0 or alpha >= 1.0):
+            raise ValueError('alpha=%s is invalid: it must be inside '
+                             'the open interval (0, 1)' % alpha)
+        y = np.asarray(y)
+        unlabeled = y == -1
+
+        # initialize distributions
+        label_distributions_ = np.zeros((n_samples, n_classes))
+        for label in classes:
+            label_distributions_[y == label, classes == label] = 1
+
+        y_static = np.copy(label_distributions_)
+        y_static *= 1 - alpha
+
+        l_previous = np.zeros((n_samples, n_classes))
+
+        unlabeled = unlabeled[:, np.newaxis]
+        if sparse.isspmatrix(graph_matrix):
+            graph_matrix = graph_matrix.tocsr()
+
+        if process_record:
+            process_data = [label_distributions_]
+
+        n_iter_ = 0
+        for _ in range(max_iter):
+            if np.abs(label_distributions_ - l_previous).sum() < tol:
+                break
+
+            l_previous = label_distributions_
+            label_distributions_ = safe_sparse_dot(
+                graph_matrix, label_distributions_)
+
+            label_distributions_ = np.multiply(
+                alpha, label_distributions_) + y_static
+            n_iter_ += 1
+            if process_record:
+                process_data.append(label_distributions_)
+        else:
+            warnings.warn(
+                'max_iter=%d was reached without convergence.' % max_iter,
+                category=ConvergenceWarning
+            )
+            n_iter_ += 1
+
+        normalizer = np.sum(label_distributions_, axis=1)[:, np.newaxis]
+        label_distributions_ /= normalizer
+
+        if process_data is not None:
+            process_data = np.array(process_data)
+
+        return label_distributions_, n_iter_, process_data
+
+    def _training_old(self, n_neighbor):
         ssl_model_filepath = os.path.join(self.data_root, config.ssl_model_buffer_name)
         if check_exist(ssl_model_filepath) \
             and (not self.signal_state):
@@ -74,6 +225,7 @@ class SSLModel(object):
         return
 
     def _projection(self):
+        # this function is disabled
         projection_filepath = os.path.join(self.data_root, config.projection_buffer_name)
         if check_exist(projection_filepath) \
             and (not self.signal_state):
@@ -95,6 +247,8 @@ class SSLModel(object):
         pickle_save_data(projection_filepath, self.embed_X)
         return
 
-    def get_graph_data(self):
-        return 0
+    def get_graph_and_process_data(self):
+        return 0,1
 
+    def get_loss(self):
+        return 0

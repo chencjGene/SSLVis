@@ -120,12 +120,17 @@ class BaseLabelPropagation(BaseEstimator, ClassifierMixin, metaclass=ABCMeta):
                 return rbf_kernel(X, y, gamma=self.gamma)
         elif self.kernel == "knn":
             if self.nn_fit is None:
+                t0 = time()
                 self.nn_fit = NearestNeighbors(self.n_neighbors,
                                                n_jobs=self.n_jobs).fit(X)
+                print("NearestNeighbors fit time cost:", time() - t0)
             if y is None:
-                return self.nn_fit.kneighbors_graph(self.nn_fit._fit_X,
+                t0 = time()
+                result = self.nn_fit.kneighbors_graph(self.nn_fit._fit_X,
                                                     self.n_neighbors,
                                                     mode='connectivity')
+                print("construct kNN graph time cost:", time() - t0)
+                return result
             else:
                 return self.nn_fit.kneighbors(y, return_distance=False)
         elif callable(self.kernel):
@@ -314,6 +319,7 @@ class LSLabelSpreading(BaseLabelPropagation):
             self.nn_fit = None
         n_samples = self.X_.shape[0]
         affinity_matrix = self._get_kernel(self.X_)
+        t0 = time()
         laplacian = csgraph.laplacian(affinity_matrix, normed=True)
         laplacian = -laplacian
         if sparse.isspmatrix(laplacian):
@@ -321,7 +327,7 @@ class LSLabelSpreading(BaseLabelPropagation):
             laplacian.data[diag_mask] = 0.0
         else:
             laplacian.flat[::n_samples + 1] = 0.0  # set diag to 0.0
-
+        print("laplacian construction time cost: ", time() - t0)
         self.graph_matrix = laplacian
 
         return laplacian

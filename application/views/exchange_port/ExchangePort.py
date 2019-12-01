@@ -25,5 +25,10 @@ class ExchangePortClass(object):
         return jsonify(manifest)
 
     def get_graph(self):
-        graph = self.model.get_graph_data()
+        graph, process_data = self.model.get_graph_and_process_data()
+        # TODO: anchor graph and layout
         return jsonify(graph)
+
+    def get_loss(self):
+        loss = self.model.get_loss()
+        return jsonify(loss)
