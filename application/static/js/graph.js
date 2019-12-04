@@ -16,6 +16,7 @@ let GraphLayout = function (container){
     let color_label = d3.schemeCategory20;
     let graph_data = null;
     let data_manager = null;
+    let kklayout = window.KKlayout;
 
     that._init = function(){
 
@@ -66,24 +67,37 @@ let GraphLayout = function (container){
         console.log("graph_data", graph_data);
     };
 
-    that.centralize = function(nodes, width, height){
+    that.centralize_and_scale = function(nodes, width, height){
         let avx = 0;
         let avy = 0;
-        for(let node of nodes){
+        let scale = 10000;
+        let nodenum = Object.values(nodes).length;
+        for(let nodeid in nodes){
+            let node = nodes[nodeid];
             avx += node.x;
             avy += node.y;
         }
-        avx /= nodes.length;
-        avy /= nodes.length;
+        avx /= nodenum;
+        avy /= nodenum;
         let delx = width/2-avx;
         let dely = height/2 - avy;
-        for (let node of nodes){
+        for (let nodeid in nodes){
+            let node = nodes[nodeid];
             node.x += delx;
             node.y += dely;
+            let xscale = (width/2)/Math.abs(node.x-width/2);
+            let yscale = (height/2)/Math.abs(node.y-height/2);
+            scale = Math.min(scale, xscale, yscale);
         }
-    }
+        scale *= 0.95;
+        for(let nodeid in nodes){
+            let node = nodes[nodeid];
+            node.x += (node.x-width/2)*scale;
+            node.y += (node.y-height/2)*scale;
+        }
+    };
 
-    that._update_view = function(){
+    that._draw_layout = function(graph){
         container.select("#graph-view-svg").remove();
         let svg = container.append("svg")
                             .attr("id", "graph-view-svg")
@@ -91,119 +105,28 @@ let GraphLayout = function (container){
                             .attr("height", height);
         console.log("width: ", width, "height: ", height);
         let area = width*height;
-        // node data
-        // graph_data = {
-        //     node:[{c:-1, id:0, p:1},{c:-1, id:1, p:2},{c:-1, id:2, p:2},{c:-1, id:3, p:3},{c:-1, id:4, p:3}],
-        //     link:[[0, 1, 1], [1, 2, 1], [2, 3, 1], [3, 4, 1], [4, 0, 1]]
-        // };
-        // let nodes_data = JSON.parse(JSON.stringify(graph_data.node));
-        //
-        // for(let node of nodes_data){
-        //         node.x = (Math.random()-0.5)*20+width/2;
-        //         node.y = (Math.random()-0.5)*20+height/2;
-        // }
-        $.post('/graph/GetNodes', {}, function (data) {
-        let nodes_data = data['nodes'];
-        let links_data = data['links'];
-        for(let link of links_data){
-            link.source = link.source.id;
-            link.target = link.target.id;
-        }
-        console.log(data);
+
+        let nodes_data = graph['node'];
+        let links_data = graph['link'];
+
         let id2idx = {};
         let i=0;
-        for(let node of nodes_data){
+        for(let nodeid in nodes_data){
+            let node = nodes_data[nodeid];
             id2idx[node.id] = i++;
         }
-        // create focus data for test
-        // let focus_nodes_data = [];
-        // for(let node of nodes_data){
-        //     if(node.p === 1){
-        //         focus_nodes_data.push(node);
-        //     }
-        // }
-        // link data
-        // let links_data = [];
-        // for(let link of graph_data.link){
-        //     links_data.push({
-        //         source:link[0],
-        //         target:link[1],
-        //         value:link[2]
-        //     })
-        // }
+        let n = Object.values(nodes_data).length;
 
-        // get D
-        let n = nodes_data.length;
-        // let D = that.all_paired_shortest_path(nodes_data, links_data);
-        // // get max d
-        // let maxd = 0;
-        // for(let a of D){
-        //     for(let b of a){
-        //         if(b>maxd) maxd = b;
-        //     }
-        // }
-        //
-        // let L0 = Math.sqrt(area)/maxd;
-        // D = D.map(row => row.map(d => L0*d));
-        let D = nodes_data.map(u => nodes_data.map(v => Math.sqrt(Math.pow(u.x-v.x, 2)+Math.pow(u.y-v.y, 2))));
-        let W = D.map(row => row.map(d => d===0?0:Math.pow(d, -2)));
-        let L = D.map(row => row.map(d => d===0?0:-2*Math.pow(d, -2)));
-        let center_weight = 0.005;
-        let no_center_weight = 0.1;
-        let center_count = 0;
-        let C = [];
-        let r = Math.min(width/2, height/2)*0.9;
-        for(let rowidx=0; rowidx<n; rowidx++){
-            let row = L[rowidx];
-            let sum = 0;
-            for(let colidx=0; colidx<n; colidx++){
-                if(colidx===rowidx) continue;
-                sum -= row[colidx];
-            }
-            row[rowidx] = sum;
-            if(nodes_data[rowidx].p===2 || nodes_data[rowidx].p===1){
-                row[rowidx] += center_weight;
-                center_count++;
-                C.push([width/2*center_weight, height/2*center_weight]);
-            }
-            else {
-                row[rowidx] += no_center_weight;
-                let len = Math.sqrt(Math.pow(nodes_data[rowidx].x-width/2, 2)+Math.pow(nodes_data[rowidx].y-height/2, 2));
-                C.push([((nodes_data[rowidx].x-width/2)/len*r+width/2)*no_center_weight, ((nodes_data[rowidx].y-height/2)/len*r+height/2)*no_center_weight]);
-            }
-        }
-        console.log("center count:", center_count);
-        console.log("D: ", D);
-        console.log("W: ", W);
-        console.log("L: ", L);
-        console.log("C: ", C);
-        let X = nodes_data.map(d => [d.x, d.y]);
-        let postdata = {
-            D:D,
-            W:W,
-            L:L,
-            C:C,
-            X:X
-        };
-        let a=1;
-        $.post('/graph/StressMajorization',{
-            data:JSON.stringify(postdata)
-        } , function (data) {
-            // console.log(data);
-            for(let rowidx=0; rowidx < n; rowidx++){
-                nodes_data[rowidx].x = data[rowidx][0];
-                nodes_data[rowidx].y = data[rowidx][1];
-            }
             // that.centralize(nodes_data, width, height);
             console.log(nodes_data);
             let links = svg.append("g")
                 .attr("id", "graph-view-link-g")
                 .selectAll("line")
                 .data(links_data).enter().append("line")
-                .attr("x1", d => nodes_data[id2idx[d.source]].x)
-                .attr("y1", d => nodes_data[id2idx[d.source]].y)
-                .attr("x2", d => nodes_data[id2idx[d.target]].x)
-                .attr("y2", d => nodes_data[id2idx[d.target]].y)
+                .attr("x1", d => nodes_data[d[0]].x)
+                .attr("y1", d => nodes_data[d[0]].y)
+                .attr("x2", d => nodes_data[d[1]].x)
+                .attr("y2", d => nodes_data[d[1]].y)
                 .attr("stroke-width", 1)
                 .attr("stroke", "gray")
                 .attr("stroke-opacity", "0.4");
@@ -215,6 +138,7 @@ let GraphLayout = function (container){
                 .attr("cx", d => d.x)
                 .attr("cy", d => d.y)
                 .attr("fill", function (d) {
+                    return "gray";
                     if(d.p===2||d.p===1) return "#000000";
                     if(d.c===-1){
                         return color_unlabel;
@@ -224,10 +148,89 @@ let GraphLayout = function (container){
                 .on("mouseover", function (d) {
                     console.log(d);
                 });
-        })
-        });
+    };
+
+    that.d3_layout = function(graph) {
+        container.select("#graph-view-svg").remove();
+        let svg = container.append("svg")
+            .attr("id", "graph-view-svg")
+            .attr("width", width)
+            .attr("height", height);
+        console.log("width: ", width, "height: ", height);
+        let area = width * height;
+
+        let nodes_data = Object.values(graph['node']);
+        let links_data = graph['link'];
+        for(let link of links_data){
+            link.source = link[0];
+            link.target = link[1];
+        }
+
+        let id2idx = {};
+        let i = 0;
+        for (let nodeid in nodes_data) {
+            let node = nodes_data[nodeid];
+            id2idx[node.id] = i++;
+        }
+        let n = Object.values(nodes_data).length;
+        //
+
+        let simulation = d3.forceSimulation()
+            .force("link", d3.forceLink().id(function (d) {
+                return d.id;
+            }))
+            .force("charge", d3.forceManyBody())
+            .force("center", d3.forceCenter(width / 2, height / 2));
+
+        var link = svg.append("g")
+            .attr("class", "links")
+            .selectAll("line")
+            .data(links_data)
+            .enter().append("line")
+            .attr("stroke", "gray")
+            .attr("stroke-width", function (d) {
+                return 1
+            });
+
+        var node = svg.append("g")
+            .attr("class", "nodes")
+            .selectAll("g")
+            .data(nodes_data)
+            .enter().append("g");
+
+        var circles = node.append("circle")
+            .attr("r", 2)
+            .attr("fill", function (d) {
+                return "gray";
+            });
 
 
+          simulation
+              .nodes(nodes_data)
+              .on("tick", ticked);
+
+          simulation.force("link")
+              .links(links_data);
+
+          function ticked() {
+            link
+                .attr("x1", function(d) { return d.source.x; })
+                .attr("y1", function(d) { return d.source.y; })
+                .attr("x2", function(d) { return d.target.x; })
+                .attr("y2", function(d) { return d.target.y; });
+
+            node
+                .attr("transform", function(d) {
+                  return "translate(" + d.x + "," + d.y + ")";
+                })
+          }
+
+    };
+
+    that._update_view = function(){
+        kklayout.layoutFast(graph_data);
+        that.centralize_and_scale(graph_data.node, width, height);
+        that._draw_layout(graph_data);
     };
 
     that.init = function(){

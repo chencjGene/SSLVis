@@ -40,8 +40,6 @@ def stress_majorization_solve(L, W, D, C, X):
         n = L.shape[0]
         return (np.dot(L, x.reshape((n, 2)))-C-B).reshape((2*n))
 
-    def testobjf(x, W, C):
-        return (np.dot(W, x.reshape((n, 2)))-C).reshape((n*2))
         # save
     savetpl = (L, W, D, C, X)
     with open('tmp.bak', 'wb+') as f:
@@ -75,6 +73,49 @@ def stress_majorization_solve(L, W, D, C, X):
     with open('save.bak', 'wb+') as savefile:
         pickle.dump(X, savefile)
     return X.tolist()
+
+def class_to_dict(node, nodes):
+    node_dict = {
+        "anchor_idx": node.anchor_idx,
+        "connection": node.connection
+    }
+    return node_dict
+
+class AnchorGraph:
+    def __init__(self):
+        self.root = []
+        self.now = []
+        self.now_level = 0
+
+    def getNowGraph(self):
+        nodes = {}
+        links = []
+        for node in self.now:
+            now_dict = {
+                "id": node.anchor_idx,
+                "x":-1,
+                "y":-1,
+                "degree":0
+            }
+            now_dict["id"] = node.anchor_idx
+            for neighbor_anchor_idx, val in node.connection.items():
+                neighbor_anchor = val["anchor_idx"]
+                weight = val["weight"]
+                for tnode in self.now:
+                    if tnode.anchor_idx == neighbor_anchor:
+                        now_dict["degree"] += 1
+                        if node.anchor_idx < neighbor_anchor:
+                            links.append([node.anchor_idx, tnode.anchor_idx, weight])
+                        break
+            nodes[node.anchor_idx] = now_dict
+        return {
+            "node":nodes,
+            "link":links
+        }
+
+
+
+anchorGraph = AnchorGraph()
 
 if __name__ == '__main__':
     with open('tmp.bak', 'rb') as f:

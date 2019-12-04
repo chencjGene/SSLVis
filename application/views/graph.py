@@ -34,5 +34,15 @@ def app_stress_majorization():
 
 @graph.route('/graph/GetNodes', methods=["POST"])
 def app_get_node():
-    with open('graph.json', 'r') as f:
-        return jsonify(json.load(f))
+    try:
+        with open(os.path.join(config.buffer_root, "graph.json"), 'r') as f:
+            return jsonify({"graph": json.load(f), "status": 1})
+    except:
+        return jsonify({"status": 0})
+
+@graph.route('/graph/SaveLayout', methods=["POST"])
+def app_save_layout():
+    graph = json.loads(request.form['graph'])
+    with open(os.path.join(config.buffer_root, "graph.json"), "w+") as f:
+        json.dump(graph, f, indent=4)
+    return jsonify({"status":1})
