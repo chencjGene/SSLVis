@@ -1,3 +1,63 @@
+#my-graph-all {
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+}
+
+#my-graph-left {
+    display: flex;
+    flex-direction: column;
+    flex: 0 1 160px;
+    border-width: 2px;
+    border-color: #5e5e5e;
+}
+
+#graph-view-svg {
+    flex: 100 1 auto;
+}
+
+#graph-overview {
+    flex: 0 1 200px;
+}
+
+#graph-toolbar {
+    flex: auto;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+}
+
 .graph-view-node {
-    r:3;
+
+}
+
+.possible {
+    fill: #EC888C;
+    r: 5;
+}
+
+.selected {
+    fill: steelblue;
+    r: 7;
+}
+
+.lasso path {
+    stroke: rgb(80,80,80);
+    stroke-width:2px;
+}
+
+.lasso .drawn {
+    fill-opacity:.05 ;
+}
+
+.lasso .loop_close {
+    fill:none;
+    stroke-dasharray: 4,4;
+}
+
+.lasso .origin {
+    fill:#3399FF;
+    fill-opacity:.5;
 }

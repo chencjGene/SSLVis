@@ -17,10 +17,185 @@ let GraphLayout = function (container){
     let graph_data = null;
     let data_manager = null;
     let kklayout = window.KKlayout;
+    let focus_radius = 50;
+    let focus_path = [];
+    let iter = 1;
+    let svg = null;
+
+    let lasso = d3.lasso()
+        .closePathSelect(true)
+        .closePathDistance(100);
 
     that._init = function(){
+        $("#zoom-out-btn").click(function (event) {
+                 $.post("/graph/ZoomOut", {}, function (data) {
+                     let d = data.data;
+                     let status = data.status;
+                     if(status === 0){
+                        console.log("Can not zoom out！");
+                        return
+                     }
+                     let focus_node = focus_path.pop();
+                     let opacity_promise = function(){
+                         return new Promise(function (resolve, reject) {
+                             svg.select("#graph-view-link-g").selectAll("line")
+                                .transition()
+                                 .duration(500)
+                                .attr("opacity", 0)
+                                 .on("end", resolve);
+                             svg.select("#graph-view-node-g").selectAll("circle")
+                                 .each(function (d) {
+                                     let svg_node = d3.select(this);
+                                     if(focus_node.indexOf(d.id) !== -1){
+                                         svg_node.classed("selected", true)
+                                     }
+                                     else {
+                                         svg_node.transition()
+                                             .duration(500)
+                                             .attr("opacity", 0)
+                                     }
+                                 })
+                         })
+                     };
+                     let move_opacity = function(){
+                         return new Promise(function (resolve, reject) {
+                             graph_data = d;
+                             kklayout.layoutFast(graph_data);
+                             that.centralize_and_scale(graph_data.node, width, height);
+                             console.log("Zoom Out Nodes", graph_data);
+                             svg.select("#graph-view-node-g").selectAll("circle")
+                                 .each(function (d) {
+                                     let svg_node = d3.select(this);
+                                     if(focus_node.indexOf(d.id) !== -1){
+                                         svg_node.transition()
+                                             .duration(800)
+                                             .attr("cx", function (d) {
+                                                 return graph_data.node[d.id].x
+                                             })
+                                             .attr("cy", function (d) {
+                                                 return graph_data.node[d.id].y
+                                             })
+                                             .on("end", resolve)
+                                     }
+                                 })
+                         })
+                     };
+                     opacity_promise().then(function () {
+                         return move_opacity()
+                     }).then(function (d) {
+                         that._draw_layout(graph_data, false);
+                         svg.select("#graph-view-node-g")
+                            .selectAll("circle")
+                            .each(function (d) {
+                                let circle = d3.select(this);
+                                if(focus_node.indexOf(d.id) !== -1){
+                                    circle.classed("selected", true)
+                                }
+                            })
+                     });
+                 })
+            });
+    };
+
+    that.lasso_start = function() {
+        lasso.items()
+            .attr("r",3.5) // reset size
+            .classed("not_possible",true)
+            .classed("selected",false);
+    };
+
+    that.lasso_draw = function() {
+        // Style the possible dots
+        lasso.possibleItems()
+            .classed("not_possible",false)
+            .classed("possible",true);
+
+        // Style the not possible dot
+        lasso.notPossibleItems()
+            .classed("not_possible",true)
+            .classed("possible",false);
 
     };
+
+    that.lasso_end = function() {
+        lasso.items()
+            .classed("not_possible",false)
+            .classed("possible",false);
+
+        // Style the selected dots
+        lasso.selectedItems()
+            .classed("selected",true)
+            .attr("r",7);
+
+        // Reset the style of the not selected dots
+        lasso.notSelectedItems()
+            .attr("r",3.5);
+
+        let focus_node = lasso.selectedItems().data().map(d => d.id);
+        if(focus_node.length===0){
+            console.log("No node need focus.");
+            return
+        }
+        $.post("/graph/ZoomIn", {
+            "nodes":JSON.stringify(focus_node)
+        }, function (data) {
+            let d = data.data;
+            let status = data.status;
+            if(status === 0){
+                console.log("Can not zoom in！");
+                return
+            }
+            focus_path.push(focus_node);
+            // transition
+            let no_select_node_promise = function(){
+                return new Promise(function (resolve, reject) {
+                     lasso.notSelectedItems()
+                         .transition()
+                         .duration(500)
+                         .attr("opacity", 0);
+                     svg.select("#graph-view-link-g").selectAll("line")
+                        .transition()
+                         .duration(500)
+                        .attr("opacity", 0)
+                         .on("end", resolve)
+                })
+            };
+            let select_node_promise = function(){
+                return new Promise(function (resolve, reject) {
+                    graph_data = d;
+                    console.log("Zoom In Nodes", graph_data);
+                    kklayout.layoutFast(graph_data);
+                    that.centralize_and_scale(graph_data.node, width, height);
+                    lasso.selectedItems()
+                        .transition()
+                        .duration(800)
+                        .attr("cx", function (d) {
+                            return graph_data.node[d.id].x
+                        })
+                        .attr("cy", function (d) {
+                            return graph_data.node[d.id].y
+                        })
+                        .on("end", resolve)
+                })
+            };
+            no_select_node_promise()
+                .then(function () {
+                    return select_node_promise()
+                })
+                .then(function () {
+                    that._draw_layout(graph_data, false);
+                    svg.select("#graph-view-node-g")
+                        .selectAll("circle")
+                        .each(function (d) {
+                            let circle = d3.select(this);
+                            if(focus_node.indexOf(d.id) !== -1){
+                                circle.classed("selected", true)
+                            }
+                        })
+                });
+        })
+    };
+
     that.all_paired_shortest_path = function(nodes, links){
         let i=0;
         let n=nodes.length;
@@ -89,7 +264,7 @@ let GraphLayout = function (container){
             let yscale = (height/2)/Math.abs(node.y-height/2);
             scale = Math.min(scale, xscale, yscale);
         }
-        scale *= 0.95;
+        scale *= 0.85;
         for(let nodeid in nodes){
             let node = nodes[nodeid];
             node.x += (node.x-width/2)*scale;
@@ -97,17 +272,23 @@ let GraphLayout = function (container){
         }
     };
 
-    that._draw_layout = function(graph){
+    that._draw_layout = function(graph, transform = true){
         container.select("#graph-view-svg").remove();
-        let svg = container.append("svg")
+        svg = container.append("svg")
                             .attr("id", "graph-view-svg")
-                            .attr("width", width)
-                            .attr("height", height);
+                            .on("mousemove", function () {
+                            });
+        width = $('#graph-view-svg').width();
+        height = $('#graph-view-svg').height();
         console.log("width: ", width, "height: ", height);
+        if(transform){
+            that.centralize_and_scale(graph_data.node, width, height);
+        }
         let area = width*height;
 
         let nodes_data = graph['node'];
         let links_data = graph['link'];
+        let process_data = graph['process'];
 
         let id2idx = {};
         let i=0;
@@ -118,7 +299,6 @@ let GraphLayout = function (container){
         let n = Object.values(nodes_data).length;
 
             // that.centralize(nodes_data, width, height);
-            console.log(nodes_data);
             let links = svg.append("g")
                 .attr("id", "graph-view-link-g")
                 .selectAll("line")
@@ -129,25 +309,37 @@ let GraphLayout = function (container){
                 .attr("y2", d => nodes_data[d[1]].y)
                 .attr("stroke-width", 1)
                 .attr("stroke", "gray")
-                .attr("stroke-opacity", "0.4");
+                .attr("opacity", 0.4);
             let nodes = svg.append("g")
                 .attr("id", "graph-view-node-g")
                 .selectAll("circle")
-                .data(nodes_data).enter().append("circle")
+                .data(Object.values(nodes_data)).enter().append("circle")
                 .attr("class", "graph-view-node")
                 .attr("cx", d => d.x)
                 .attr("cy", d => d.y)
+                .attr("r", 3)
+                .attr("opacity", 1)
                 .attr("fill", function (d) {
-                    return "gray";
-                    if(d.p===2||d.p===1) return "#000000";
-                    if(d.c===-1){
+                    let label = process_data[iter][d.id][0];
+                    if(label === -1){
                         return color_unlabel;
                     }
-                    else return color_label[d.c];
+                    else {
+                        return color_label[label]
+                    }
                 })
                 .on("mouseover", function (d) {
-                    console.log(d);
+                    console.log("node:", d, "label:", process_data[iter][d.id][0], "score:", process_data[iter][d.id][1]);
                 });
+            lasso.items(nodes)
+            .targetArea(svg)
+            .on("start", that.lasso_start)
+            .on("draw", that.lasso_draw)
+            .on("end", that.lasso_end);
+
+            svg.call(lasso);
+
+
     };
 
     that.d3_layout = function(graph) {
@@ -228,8 +420,9 @@ let GraphLayout = function (container){
     };
 
     that._update_view = function(){
+        // that.d3_layout(graph_data);
+        // return;
         kklayout.layoutFast(graph_data);
-        that.centralize_and_scale(graph_data.node, width, height);
         that._draw_layout(graph_data);
     };
 

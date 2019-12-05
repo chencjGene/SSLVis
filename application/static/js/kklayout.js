@@ -25,6 +25,7 @@
         let weightMat = _.stress.getWeightMatrix(idealMatrix);
 
         let newPos = {};
+        Math.seedrandom(nodes.length>0?nodes[0].id+'':'empty nodes');
         if (ref === undefined) {
             for (let i=0;i<nodes.length;++i) {
                 newPos[i] = {

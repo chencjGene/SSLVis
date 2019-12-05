@@ -85,11 +85,18 @@ class AnchorGraph:
     def __init__(self):
         self.root = []
         self.now = []
+        self.action_stack = []
         self.now_level = 0
+        self.process_data = None
+        self.now_graph = None
 
-    def getNowGraph(self):
+    def getNowGraph(self, update = False):
+        if update is False:
+            return self.now_graph
+        iter_cnt = self.process_data.shape[0]
         nodes = {}
         links = []
+        process = [{} for i in range(iter_cnt)]
         for node in self.now:
             now_dict = {
                 "id": node.anchor_idx,
@@ -97,6 +104,13 @@ class AnchorGraph:
                 "y":-1,
                 "degree":0
             }
+            for i in range(iter_cnt):
+                label_score = self.process_data[i][node.anchor_idx]
+                max_score = label_score.max()
+                if max_score < 1e-4:
+                    process[i][node.anchor_idx] = [-1, max_score]
+                else:
+                    process[i][node.anchor_idx] = [int(label_score.argmax()), max_score]
             now_dict["id"] = node.anchor_idx
             for neighbor_anchor_idx, val in node.connection.items():
                 neighbor_anchor = val["anchor_idx"]
@@ -108,10 +122,44 @@ class AnchorGraph:
                             links.append([node.anchor_idx, tnode.anchor_idx, weight])
                         break
             nodes[node.anchor_idx] = now_dict
-        return {
+        self.now_graph = {
             "node":nodes,
-            "link":links
+            "link":links,
+            "process":process
         }
+        return self.now_graph
+
+    def zoom_in(self, anchor_idxes):
+        new_now = []
+        for anchor_idx in anchor_idxes:
+            find = False
+            for now_node in self.now:
+                if now_node.anchor_idx == anchor_idx:
+                    if now_node.is_leaf:
+                        print("Can't zoom in!!!!!!")
+                        print("Now level:", self.now_level)
+                        return self.getNowGraph(update=False), 0
+                    new_now += now_node.children
+                    find =True
+            assert find
+        self.action_stack.append((self.now, self.now_graph))
+        self.now = new_now
+        self.now_level += 1
+        print("Now level:", self.now_level)
+        return self.getNowGraph(update=True), 1
+
+    def zoom_out(self):
+        if self.now_level == 0:
+            print("Can't zoom out !!!!!!!!!!!")
+            print("Now level:", self.now_level)
+
+            return self.getNowGraph(update=False), 0
+        self.now, self.now_graph = self.action_stack.pop()
+        self.now_level -= 1
+        print("Now level:", self.now_level)
+
+        return self.getNowGraph(update=False), 1
+
 
 
 

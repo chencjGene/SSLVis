@@ -10,7 +10,7 @@ function load_data() {
 
 function set_up(dataset) {
     DataLoader = new DataLoaderClass(dataset);
-    GraphView = new GraphLayout(d3.select("#graph-row"));
+    GraphView = new GraphLayout(d3.select("#my-graph-all"));
 
     DataLoader.set_graph_view(GraphView);
 }

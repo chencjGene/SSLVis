@@ -2,7 +2,7 @@ import os
 from flask import abort, session
 from flask import render_template, jsonify
 from flask import Blueprint, request
-from .graph_utils.layout import stress_majorization_solve
+from .graph_utils.layout import stress_majorization_solve, anchorGraph
 from .utils.config_utils import config
 import json
 
@@ -46,3 +46,20 @@ def app_save_layout():
     with open(os.path.join(config.buffer_root, "graph.json"), "w+") as f:
         json.dump(graph, f, indent=4)
     return jsonify({"status":1})
+
+@graph.route('/graph/ZoomIn', methods=["POST"])
+def app_zoom_in():
+    anchor_idxes = json.loads(request.form['nodes'])
+    data, status = anchorGraph.zoom_in(anchor_idxes)
+    return jsonify({
+        "data": data,
+        "status":status
+    })
+
+@graph.route('/graph/ZoomOut', methods=['POST'])
+def app_zoom_out():
+    data, status = anchorGraph.zoom_out()
+    return jsonify({
+        "data": data,
+        "status": status
+    })

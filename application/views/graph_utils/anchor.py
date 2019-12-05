@@ -128,13 +128,14 @@ class AnchorCluster:
         with open(self.cluster_buffer_path, 'rb') as f:
             self.root = pickle.load(f)
 
-def getAnchors(train_x, train_y, raw_graph, dataname, k = 1000):
+def getAnchors(train_x, train_y, raw_graph, process_data, dataname, k = 1000):
 
     clusters = AnchorCluster(raw_graph, train_x, train_y, dataname, k).root
     anchorGraph.root = clusters
     anchorGraph.now = clusters
+    anchorGraph.process_data = process_data
     anchorGraph.now_level = 0
-    graph = anchorGraph.getNowGraph()
+    graph = anchorGraph.getNowGraph(update=True)
     # for i, cluster in enumerate(clusters.root):
     #     nodes = anchor_graph["node"]
     #     links = anchor_graph["link"]
