@@ -32,3 +32,13 @@ DataLoaderClass.prototype.get_graph_handler = function (callback) {
     return _graph_handler;
 };
 
+DataLoaderClass.prototype.get_loss_handler = function (callback) {
+    let that = this;
+
+    function _loss_handler(data) {
+        that.state.loss_data = data;
+        if (callback) callback();
+    }
+
+    return _loss_handler;
+};

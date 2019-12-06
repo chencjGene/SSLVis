@@ -11,7 +11,6 @@ let GraphLayout = function (container){
     let height = bbox.height;
     let layout_width = width - 20;
     let layout_height = height - 20;
-    console.log("GraphLayout", "layout width", layout_width, "layout height", layout_height);
     let color_unlabel = "#A9A9A9";
     let color_label = d3.schemeCategory20;
     let graph_data = null;
@@ -19,12 +18,13 @@ let GraphLayout = function (container){
     let kklayout = window.KKlayout;
     let focus_radius = 50;
     let focus_path = [];
-    let iter = 1;
     let svg = null;
 
     let lasso = d3.lasso()
         .closePathSelect(true)
         .closePathDistance(100);
+
+    let iter = 0;
 
     that._init = function(){
         $("#zoom-out-btn").click(function (event) {
@@ -240,6 +240,7 @@ let GraphLayout = function (container){
     that._update_data = function(state){
         graph_data = state.graph_data;
         console.log("graph_data", graph_data);
+        that._draw_legend();
     };
 
     that.centralize_and_scale = function(nodes, width, height){
@@ -272,12 +273,49 @@ let GraphLayout = function (container){
         }
     };
 
+    that._draw_legend = function() {
+        $.post('/graph/GetLabelNum', {}, function (d) {
+            if(d.status === 1){
+                let label_num = d.label_num;
+                svg.select("#graph-view-legend-g").remove();
+                let legend_area = svg.append("g")
+                    .attr("id", "graph-view-legend-g");
+                let legend_start_x = 10;
+                let legend_start_y = 10;
+                let legend_delta = 45;
+                let rect_width = 45;
+                let rect_height = 30;
+                let text_start_x = legend_start_x+rect_width+15;
+                let text_start_y = legend_start_y+20;
+                for(let i=-1; i<label_num; i++){
+                    legend_area.append("rect")
+                        .attr("x", legend_start_x)
+                        .attr("y", legend_start_y+(i+1)*legend_delta)
+                        .attr("width", rect_width)
+                        .attr("height", rect_height)
+                        .attr("fill", function () {
+                            if(i===-1) return color_unlabel;
+                            else return color_label[i];
+                        });
+                    legend_area.append("text")
+                        .attr("x", text_start_x)
+                        .attr("y", text_start_y+(i+1)*legend_delta)
+                        .attr("text-anchor", "start")
+                        .text(i)
+                }
+
+            }
+        })
+    };
+
     that._draw_layout = function(graph, transform = true){
-        container.select("#graph-view-svg").remove();
-        svg = container.append("svg")
-                            .attr("id", "graph-view-svg")
-                            .on("mousemove", function () {
-                            });
+        svg = container.select("#graph-view-svg");
+        svg.select("#graph-view-link-g").remove();
+        svg.select("#graph-view-node-g").remove();
+        svg.select(".lasso").remove();
+        // that._draw_legend();
+        // svg = container.append("svg")
+        //                     .attr("id", "graph-view-svg");
         width = $('#graph-view-svg').width();
         height = $('#graph-view-svg').height();
         console.log("width: ", width, "height: ", height);
@@ -342,6 +380,11 @@ let GraphLayout = function (container){
 
     };
 
+    that.setIter = function(newiter) {
+        iter = newiter;
+        that._draw_layout(graph_data, false);
+    };
+    
     that.d3_layout = function(graph) {
         container.select("#graph-view-svg").remove();
         let svg = container.append("svg")

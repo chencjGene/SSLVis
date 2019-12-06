@@ -21,6 +21,17 @@ def app_get_manifest():
 def app_get_graph():
     return get_graph()
 
+@graph.route('/graph/GetLoss', methods=['POST', 'GET'])
+def app_get_loss():
+    return get_loss()
+
+@graph.route('/graph/GetLabelNum', methods=['POST'])
+def app_get_label_num():
+    return {
+        "status": 1,
+        "label_num": get_label_num()
+    }
+
 @graph.route('/graph/StressMajorization', methods=["POST"])
 def app_stress_majorization():
     data = json.loads(request.form['data'])
@@ -31,14 +42,6 @@ def app_stress_majorization():
     X = data['X']
     res = stress_majorization_solve(L, W, D, C, X)
     return jsonify(res)
-
-@graph.route('/graph/GetNodes', methods=["POST"])
-def app_get_node():
-    try:
-        with open(os.path.join(config.buffer_root, "graph.json"), 'r') as f:
-            return jsonify({"graph": json.load(f), "status": 1})
-    except:
-        return jsonify({"status": 0})
 
 @graph.route('/graph/SaveLayout', methods=["POST"])
 def app_save_layout():

@@ -10,3 +10,9 @@ def get_graph():
 
 def get_manifest():
     return exchange_port.get_manifest()
+
+def get_loss():
+    return exchange_port.get_loss()
+
+def get_label_num():
+    return exchange_port.get_label_num()

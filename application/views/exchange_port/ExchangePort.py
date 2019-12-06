@@ -78,4 +78,8 @@ class ExchangePortClass(object):
 
     def get_loss(self):
         loss = self.model.get_loss()
-        return jsonify(loss)
+        return jsonify(loss.tolist())
+
+    def get_label_num(self):
+        raw_graph, process_data = self.model.get_graph_and_process_data()
+        return int(process_data.shape[2])
