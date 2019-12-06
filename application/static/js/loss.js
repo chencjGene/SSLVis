@@ -96,6 +96,8 @@ let ControlLayout = function (container){
             svg.select("#loss-view-line").remove();
             svg.select("#loss-view-circle").remove();
             svg.select("#loss-view-iter").remove();
+            svg.select("#legend-text1").remove();
+            svg.select("#legend-text2").remove();
         }
         else {
             container.select("#loss-view-svg").remove();
