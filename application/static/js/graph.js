@@ -12,7 +12,8 @@ let GraphLayout = function (container){
     let layout_width = width - 20;
     let layout_height = height - 20;
     let color_unlabel = "#A9A9A9";
-    let color_label = d3.schemeCategory20;
+    let color_label = d3.schemeCategory10;
+    color_label[7] = "#ffff00";
     let graph_data = null;
     let data_manager = null;
     let kklayout = window.KKlayout;
@@ -82,7 +83,11 @@ let GraphLayout = function (container){
                                              })
                                              .on("end", resolve)
                                      }
-                                 })
+                                 });
+                             if(focus_path.length === 0){
+                                 let overview_svg = d3.select("#graph-overview");
+                                 overview_svg.select("#overview-focus").remove();
+                             }
                          })
                      };
                      opacity_promise().then(function () {
@@ -180,16 +185,48 @@ let GraphLayout = function (container){
                     console.log("Zoom In Nodes", graph_data);
                     kklayout.layoutFast(graph_data);
                     that.centralize_and_scale(graph_data.node, width, height);
+                    let xs = [];
+                    let ys = [];
+                    let center_x = 0;
+                    let center_y = 0;
+                    let r = 0;
                     lasso.selectedItems()
                         .transition()
                         .duration(800)
                         .attr("cx", function (d) {
+                            xs.push(d3.select(this).attr("cx"));
+                            center_x += parseInt(d3.select(this).attr("cx"));
                             return graph_data.node[d.id].x
                         })
                         .attr("cy", function (d) {
+                            ys.push(d3.select(this).attr("cy"));
+                            center_y += parseInt(d3.select(this).attr("cy"));
                             return graph_data.node[d.id].y
                         })
-                        .on("end", resolve)
+                        .on("end", resolve);
+                    center_x /= focus_node.length;
+                    center_y /= focus_node.length;
+                    for(let i=0; i<focus_node.length; i++){
+                        let dis = Math.sqrt(Math.pow(xs[i]-center_x, 2) + Math.pow(ys[i]-center_y, 2));
+                        r = r>dis?r:dis;
+                    }
+                    r += 50;
+                    let overview_svg = d3.select("#graph-overview");
+                    let overview_width = $("#graph-overview").width();
+                    let overview_height = $("#graph-overview").height();
+                    // let scale = Math.min(overview_width/width, overview_height/height);
+                    if(focus_path.length === 1){
+                        overview_svg.select("#overview-density-map")
+                            .append("circle")
+                            .attr("id", "overview-focus")
+                            .attr("cx", center_x)
+                            .attr("cy", center_y)
+                            .attr("r", r)
+                            .attr("fill-opacity", 0)
+                            .attr("stroke-opacity", 1)
+                            .attr("stroke", "black")
+                            .attr("stroke-width", 5);
+                    }
                 })
             };
             no_select_node_promise()
@@ -205,7 +242,7 @@ let GraphLayout = function (container){
                             if(focus_node.indexOf(d.id) !== -1){
                                 circle.classed("selected", true)
                             }
-                        })
+                        });
                 });
         })
     };
@@ -352,10 +389,10 @@ let GraphLayout = function (container){
         let n = Object.values(nodes_data).length;
 
         let density_color = d3.scaleLinear()
-                            .domain([0.000008, 0.0004, 0.02, 1])
-                            .range(["#fbfccb", "#98FB98", "#87CEFA", "#4B0082"]);
+                            .domain([0, 1])
+                            .range(["white", "#696969"]);
 
-            let contour_path = d3.contourDensity()
+            let contour_paths = d3.contourDensity()
                             .x(function (d) {
                                 return d.x;
                             })
@@ -366,17 +403,25 @@ let GraphLayout = function (container){
                                 return d.weight;
                             })
                             .thresholds(40)
-                            .bandwidth(20)
+                            .bandwidth(25)
                             .size([width, height])(Object.values(nodes_data));
-            console.log(contour_path);
+            let max_contour_value = 0;
+            for(let contour_path of contour_paths){
+                if(contour_path.value > max_contour_value){
+                    max_contour_value = contour_path.value;
+                }
+            }
+            for(let contour_path of contour_paths){
+                contour_path.value /= max_contour_value;
+            }
+            console.log("contour path:", contour_paths);
             let contour_svg = svg.append("g")
                 .attr("id", "graph-view-density-map")
                 .selectAll("path")
-                .data(contour_path)
+                .data(contour_paths)
                 .enter()
                 .append("path")
                 .attr("fill", function (d) {
-                    console.log(d);
                     return density_color(d.value)
                 })
                 .attr("d", d3.geoPath());
@@ -424,6 +469,51 @@ let GraphLayout = function (container){
 
 
 
+    };
+
+    that._draw_overview = function(graph_data) {
+        let overview_svg = d3.select("#graph-overview");
+        overview_svg.select("#overview-density-map").remove();
+        let overview_width = $("#graph-overview").width();
+        let overview_height = $("#graph-overview").height();
+        let scale = Math.min(overview_width/width, overview_height/height);
+        let density_color = d3.scaleLinear()
+                            .domain([0, 1])
+                            .range(["white", "gray"]);
+
+            let contour_paths = d3.contourDensity()
+                            .x(function (d) {
+                                return d.x;
+                            })
+                            .y(function (d) {
+                                return d.y;
+                            })
+                            .weight(function (d) {
+                                return d.weight;
+                            })
+                            .thresholds(40)
+                            .size([width, height])(Object.values(graph_data.node));
+            console.log("contour path:", contour_paths);
+            let max_contour_value = 0;
+            for(let contour_path of contour_paths){
+                if(contour_path.value > max_contour_value){
+                    max_contour_value = contour_path.value;
+                }
+            }
+            for(let contour_path of contour_paths){
+                contour_path.value /= max_contour_value;
+            }
+            let contour_svg = overview_svg.append("g")
+                .attr("id", "overview-density-map")
+                .attr("transform", "scale("+scale+")")
+                .selectAll("path")
+                .data(contour_paths)
+                .enter()
+                .append("path")
+                .attr("fill", function (d) {
+                    return density_color(d.value)
+                })
+                .attr("d", d3.geoPath());
     };
 
     that.setIter = function(newiter) {
@@ -513,6 +603,7 @@ let GraphLayout = function (container){
         // return;
         kklayout.layoutFast(graph_data);
         that._draw_layout(graph_data);
+        that._draw_overview(graph_data);
     };
 
     that.init = function(){

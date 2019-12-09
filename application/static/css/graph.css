@@ -34,12 +34,12 @@
 }
 
 .possible {
-    fill: #EC888C;
+    /*fill: #EC888C;*/
     r: 5;
 }
 
 .selected {
-    fill: steelblue;
+    /*fill: steelblue;*/
     r: 7;
 }
 
