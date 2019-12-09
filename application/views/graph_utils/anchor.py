@@ -16,6 +16,15 @@ class AnchorClusterNode:
         self.children = []
         self.parent = None
 
+    def getChildrenNum(self):
+        if self.is_leaf:
+            return 1
+        children_num = 0
+        for child in self.children:
+            children_num += child.getChildrenNum()
+        return children_num
+
+
 class AnchorCluster:
     def __init__(self, raw_graph, train_x, train_y, dataname, k):
         self.raw_graph = raw_graph
@@ -28,13 +37,14 @@ class AnchorCluster:
         if os.path.exists(self.cluster_buffer_path):
             self.load_cluster()
         else:
+            print("Get Hierarchical clusters: {}".format(self.cluster_buffer_path))
             self.HierarchyCluster(np.arange(0, train_x.shape[0]), first=True)
             self.save_cluster()
 
     def HierarchyCluster(self, cluster_idxes, children = None, first = False):
         node_num = cluster_idxes.shape[0]
         dim = self.train_x.shape[1]
-        if node_num < self.k:
+        if node_num < self.k*3:
             self.root = children
             return
 

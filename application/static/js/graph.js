@@ -43,6 +43,11 @@ let GraphLayout = function (container){
                                  .duration(500)
                                 .attr("opacity", 0)
                                  .on("end", resolve);
+                             svg.select("#graph-view-density-map").selectAll("path")
+                                .transition()
+                                 .duration(500)
+                                .attr("opacity", 0)
+                                 .on("end", resolve);
                              svg.select("#graph-view-node-g").selectAll("circle")
                                  .each(function (d) {
                                      let svg_node = d3.select(this);
@@ -149,11 +154,20 @@ let GraphLayout = function (container){
             // transition
             let no_select_node_promise = function(){
                 return new Promise(function (resolve, reject) {
+                    if(lasso.notSelectedItems().size()===0 && svg.select("#graph-view-link-g").selectAll("line").size()===0 && svg.select("#graph-view-density-map").selectAll("path")===0){
+                        resolve()
+                    }
                      lasso.notSelectedItems()
                          .transition()
                          .duration(500)
-                         .attr("opacity", 0);
+                         .attr("opacity", 0)
+                         .on("end", resolve);
                      svg.select("#graph-view-link-g").selectAll("line")
+                        .transition()
+                         .duration(500)
+                        .attr("opacity", 0)
+                         .on("end", resolve);
+                     svg.select("#graph-view-density-map").selectAll("path")
                         .transition()
                          .duration(500)
                         .attr("opacity", 0)
@@ -312,6 +326,7 @@ let GraphLayout = function (container){
         svg = container.select("#graph-view-svg");
         svg.select("#graph-view-link-g").remove();
         svg.select("#graph-view-node-g").remove();
+        svg.select('#graph-view-density-map').remove();
         svg.select(".lasso").remove();
         // that._draw_legend();
         // svg = container.append("svg")
@@ -335,6 +350,36 @@ let GraphLayout = function (container){
             id2idx[node.id] = i++;
         }
         let n = Object.values(nodes_data).length;
+
+        let density_color = d3.scaleLinear()
+                            .domain([0.000008, 0.0004, 0.02, 1])
+                            .range(["#fbfccb", "#98FB98", "#87CEFA", "#4B0082"]);
+
+            let contour_path = d3.contourDensity()
+                            .x(function (d) {
+                                return d.x;
+                            })
+                            .y(function (d) {
+                                return d.y;
+                            })
+                            .weight(function (d) {
+                                return d.weight;
+                            })
+                            .thresholds(40)
+                            .bandwidth(20)
+                            .size([width, height])(Object.values(nodes_data));
+            console.log(contour_path);
+            let contour_svg = svg.append("g")
+                .attr("id", "graph-view-density-map")
+                .selectAll("path")
+                .data(contour_path)
+                .enter()
+                .append("path")
+                .attr("fill", function (d) {
+                    console.log(d);
+                    return density_color(d.value)
+                })
+                .attr("d", d3.geoPath());
 
             // that.centralize(nodes_data, width, height);
             let links = svg.append("g")
@@ -376,6 +421,7 @@ let GraphLayout = function (container){
             .on("end", that.lasso_end);
 
             svg.call(lasso);
+
 
 
     };

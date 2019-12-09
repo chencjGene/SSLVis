@@ -62,7 +62,8 @@ class ExchangePortClass(object):
         raw_graph, process_data = self.model.get_graph_and_process_data()
         train_x, train_y = self.model.get_data()
         # TODO: How to define k?
-        k = 50
+        node_num = train_x.shape[0]
+        k = int(np.sqrt(node_num/51))
         anchor_graph = getAnchors(train_x, train_y, raw_graph, process_data, self.dataname, k)
         # graph["node"][0] = {"id":0, "x":-1, "y":-1}
         # for i in range(1, k):

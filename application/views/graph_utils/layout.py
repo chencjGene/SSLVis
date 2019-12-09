@@ -102,7 +102,8 @@ class AnchorGraph:
                 "id": node.anchor_idx,
                 "x":-1,
                 "y":-1,
-                "degree":0
+                "degree":0,
+                "weight":node.getChildrenNum()
             }
             for i in range(iter_cnt):
                 label_score = self.process_data[i][node.anchor_idx]
