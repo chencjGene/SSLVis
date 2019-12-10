@@ -6,7 +6,7 @@
 }
 
 #loss-controls {
-    flex: 0 1 160px;
+    flex: 0 1 80px;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;

@@ -40,7 +40,7 @@ let ControlLayout = function (container){
                 playing = true;
                 $("#loss-begin-btn span").removeClass("glyphicon-play");
                 $("#loss-begin-btn span").addClass("glyphicon-pause");
-                let i = 0;
+                let i = iter===loss.length-1?0:iter;
                 that.setIter(i++);
                 play_interval = setInterval(function (d) {
                     if(i === loss.length){

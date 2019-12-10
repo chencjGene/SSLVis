@@ -328,20 +328,25 @@ let GraphLayout = function (container){
         $.post('/graph/GetLabelNum', {}, function (d) {
             if(d.status === 1){
                 let label_num = d.label_num;
-                svg.select("#graph-view-legend-g").remove();
-                let legend_area = svg.append("g")
-                    .attr("id", "graph-view-legend-g");
+                d3.select("#graph-legend-g").remove();
+                let legend_area = d3.select("#graph-legend").append("g")
+                    .attr("id", "graph-legend-g");
                 let legend_start_x = 10;
                 let legend_start_y = 10;
+                let x_delta = 100;
                 let legend_delta = 45;
                 let rect_width = 45;
                 let rect_height = 30;
                 let text_start_x = legend_start_x+rect_width+15;
                 let text_start_y = legend_start_y+20;
+                let half = Math.floor(label_num/2);
                 for(let i=-1; i<label_num; i++){
                     legend_area.append("rect")
-                        .attr("x", legend_start_x)
-                        .attr("y", legend_start_y+(i+1)*legend_delta)
+                        .attr("x", function () {
+                            if(i<0) return legend_start_x;
+                            else return Math.floor(i/half)*x_delta+legend_start_x;
+                        })
+                        .attr("y", legend_start_y+(i%half+1)*legend_delta)
                         .attr("width", rect_width)
                         .attr("height", rect_height)
                         .attr("fill", function () {
@@ -349,8 +354,11 @@ let GraphLayout = function (container){
                             else return color_label[i];
                         });
                     legend_area.append("text")
-                        .attr("x", text_start_x)
-                        .attr("y", text_start_y+(i+1)*legend_delta)
+                        .attr("x", function () {
+                            if(i<0) return text_start_x;
+                            else return Math.floor(i/half)*x_delta+text_start_x;
+                        })
+                        .attr("y", text_start_y+(i%half+1)*legend_delta)
                         .attr("text-anchor", "start")
                         .text(i)
                 }
@@ -414,7 +422,6 @@ let GraphLayout = function (container){
             for(let contour_path of contour_paths){
                 contour_path.value /= max_contour_value;
             }
-            console.log("contour path:", contour_paths);
             let contour_svg = svg.append("g")
                 .attr("id", "graph-view-density-map")
                 .selectAll("path")
@@ -493,7 +500,6 @@ let GraphLayout = function (container){
                             })
                             .thresholds(40)
                             .size([width, height])(Object.values(graph_data.node));
-            console.log("contour path:", contour_paths);
             let max_contour_value = 0;
             for(let contour_path of contour_paths){
                 if(contour_path.value > max_contour_value){
@@ -598,12 +604,59 @@ let GraphLayout = function (container){
 
     };
 
+    that.draw_tsne = function() {
+        function centering(){
+            let avx = 0;
+            let avy = 0;
+            let scale = 10000;
+            let nodes = graph_data.nodes;
+            let nodenum = nodes.length;
+            for(let node of nodes){
+                avx += node[0];
+                avy += node[1];
+            }
+            avx /= nodenum;
+            avy /= nodenum;
+            let delx = width/2-avx;
+            let dely = height/2 - avy;
+            for (let node of nodes){
+                node[0] += delx;
+                node[1] += dely;
+                let xscale = (width/2)/Math.abs(node[0]-width/2);
+                let yscale = (height/2)/Math.abs(node[1]-height/2);
+                scale = Math.min(scale, xscale, yscale);
+            }
+            scale *= 0.85;
+            for(let nodeid in nodes){
+                let node = nodes[nodeid];
+                node[0] += (node[0]-width/2)*scale;
+                node[1] += (node[1]-height/2)*scale;
+            }
+        }
+        svg = container.select("#graph-view-svg");
+        let nodes = graph_data.nodes;
+        let labels = graph_data.label;
+        let ground_truth = graph_data.ground_truth;
+        width = $('#graph-view-svg').width();
+        height = $('#graph-view-svg').height();
+        centering();
+        svg.append("g")
+            .attr("id", "graph-view-tsne-point")
+            .selectAll("circle")
+            .data(nodes)
+            .enter()
+            .append("circle")
+            .attr("cx", d => d[0])
+            .attr("cy", d => d[1])
+            .attr("r", 4)
+            .attr("fill", function (d, i) {
+                if(ground_truth[i] === -1) return color_unlabel;
+                else return color_label[ground_truth[i]];
+            })
+    };
+
     that._update_view = function(){
-        // that.d3_layout(graph_data);
-        // return;
-        kklayout.layoutFast(graph_data);
-        that._draw_layout(graph_data);
-        that._draw_overview(graph_data);
+        that.draw_tsne()
     };
 
     that.init = function(){

@@ -3,15 +3,19 @@ import os
 import abc
 from ctypes import *
 from flask import jsonify
+import _thread as thread
 import scipy.cluster.vq as vq
 
 from ..model_utils import SSLModel
 from ..utils.config_utils import config
 from ..graph_utils.anchor import getAnchors
+from ..graph_utils.IncrementalTSNE import IncrementalTSNE
+from sklearn.manifold import TSNE
 
 class ExchangePortClass(object):
     def __init__(self, dataname=None):
         self.dataname = dataname
+        self.running = False
         if self.dataname is None:
             self.model = None
         else:
@@ -61,10 +65,38 @@ class ExchangePortClass(object):
     def get_graph(self):
         raw_graph, process_data = self.model.get_graph_and_process_data()
         train_x, train_y = self.model.get_data()
+        ground_truth = self.model.data.get_train_ground_truth()
         # TODO: How to define k?
         node_num = train_x.shape[0]
-        k = int(np.sqrt(node_num/51))
-        anchor_graph = getAnchors(train_x, train_y, raw_graph, process_data, self.dataname, k)
+        # k = int(np.sqrt(node_num/51))
+        # anchor_graph = getAnchors(train_x, train_y, raw_graph, process_data, self.dataname, k)
+        buf_name = "train_x_tsne.npy"
+        buf_path = os.path.join(config.buffer_root, buf_name)
+        train_x = np.array(train_x, dtype=np.float64)
+        if os.path.exists(buf_path) is False:
+            def get_all_tsne():
+                train_x_tsne = IncrementalTSNE(n_components=2, n_iter=300, n_jobs=20).fit_transform(train_x)
+                np.save(buf_path, train_x_tsne)
+            if self.running is False:
+                self.running = True
+                thread.start_new_thread(get_all_tsne, ())
+            random_idx = np.random.choice(train_x.shape[0], int(train_x.shape[0] / 20))
+            train_x_random = train_x[random_idx]
+            train_x_tsne = TSNE(n_components=2).fit_transform(train_x_random)
+            train_y = train_y[random_idx]
+            ground_truth = ground_truth[random_idx]
+        else:
+            train_x_tsne = np.load(buf_path)
+        train_x_tsne = train_x_tsne.tolist()
+        train_y = train_y.tolist()
+        ground_truth = ground_truth.tolist()
+
+        graph = {
+            "nodes":train_x_tsne,
+            "label":train_y,
+            "ground_truth":ground_truth
+        }
+
         # graph["node"][0] = {"id":0, "x":-1, "y":-1}
         # for i in range(1, k):
         #     anchor_num = len(graph["node"].keys())
@@ -75,7 +107,7 @@ class ExchangePortClass(object):
         #     # assert select not in graph["node"].keys()
         #     graph["node"][select] = {"id":select, "x":-1, "y":-1}
         # graph layout
-        return jsonify(anchor_graph)
+        return jsonify(graph)
 
     def get_loss(self):
         loss = self.model.get_loss()

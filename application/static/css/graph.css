@@ -29,6 +29,10 @@
     flex-wrap: wrap;
 }
 
+#graph-legend {
+    flex: 0 1 320px;
+}
+
 .graph-view-node {
 
 }
