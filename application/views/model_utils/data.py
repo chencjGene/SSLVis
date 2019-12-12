@@ -19,12 +19,13 @@ class Data(object):
         self.valid_idx = []
         self.test_idx = []
         self.labeled_idx = []
-
+        self.class_names = []
         self._load_data()
 
     def _load_data(self):
         processed_data_filename = os.path.join(self.data_root, config.processed_dataname)
         processed_data = pickle_load_data(processed_data_filename)
+        self.class_names = processed_data["class_name"]
         self.X = processed_data[config.X_name]
         self.y = processed_data[config.y_name]
         self.y = np.array(self.y)

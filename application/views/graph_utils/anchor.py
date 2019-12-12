@@ -2,9 +2,12 @@ import numpy as np
 import os
 from sklearn.cluster import KMeans
 import pickle
+from scipy.spatial import distance_matrix
+
 
 from ..utils.config_utils import config
-from ..graph_utils.layout import anchorGraph
+from ..graph_utils.IncrementalTSNE import IncrementalTSNE
+from ..graph_utils.DensityBasedSampler import DensityBasedSampler
 
 class AnchorClusterNode:
     def __init__(self):
@@ -138,32 +141,135 @@ class AnchorCluster:
         with open(self.cluster_buffer_path, 'rb') as f:
             self.root = pickle.load(f)
 
-def getAnchors(train_x, train_y, raw_graph, process_data, dataname, k = 1000):
+class AnchorGraph():
+    def __init__(self):
+        self.level = 0
+        self.max_level = 1
 
-    clusters = AnchorCluster(raw_graph, train_x, train_y, dataname, k).root
-    anchorGraph.root = clusters
-    anchorGraph.now = clusters
-    anchorGraph.process_data = process_data
-    anchorGraph.now_level = 0
-    graph = anchorGraph.getNowGraph(update=True)
-    # for i, cluster in enumerate(clusters.root):
-    #     nodes = anchor_graph["node"]
-    #     links = anchor_graph["link"]
-    #     if cluster["anchor_idx"] == -1:
-    #         print("anchor = -1!!!!!!!!!!!!!!!!")
-    #         continue
-    #     nodes[cluster["anchor_idx"]] = {
-    #         "id": cluster["anchor_idx"],
-    #         "x": -1,
-    #         "y": -1,
-    #         "cluster_id": i,
-    #         "degree":len(cluster["connection"].keys())
-    #     }
-    #     for cluster_id, w in cluster["connection"].items():
-    #         if w<4000:
-    #             continue
-    #         if i < cluster_id:
-    #             links.append([cluster["anchor"], clusters[cluster_id]["anchor"]])
+    def set_value(self, samples_x, samples_x_tsne, samples_y, samples_truth, train_x, train_y, ground_truth, process_data, dataname, clusters, selection):
+        self.level = 0
+        self.samples_x = samples_x
+        self.samples_x_tsne = samples_x_tsne
+        self.samples_y = samples_y
+        self.samples_truth = samples_truth
+        self.train_x = train_x
+        self.train_y = train_y
+        self.ground_truth = ground_truth
+        self.process_data = process_data
+        self.dataname = dataname
+        self.clusters = clusters
+        self.selection = selection
+
+    def zoom_in(self, focus_ides):
+
+        if self.level>=self.max_level:
+            return None, 0
+        self.level += 1
+        node_num = self.clusters.shape[0]
+        focus_idxes = []
+        for id in focus_ides:
+            idx = int(np.argwhere(self.selection==id)[0])
+            focus_idxes.append(idx)
+        focus_idxes = np.array(focus_idxes)
+        mask = []
+        for i in range(node_num):
+            mask.append(self.clusters[i] in focus_idxes)
+        mask = np.array(mask)
+        selection = np.argwhere(mask == True).flatten()
+        samples_x = self.train_x[selection]
+        samples_y = self.train_y[selection]
+        samples_truth = self.ground_truth[selection]
+
+        constrain_x = self.samples_x[focus_idxes]
+        constrain_y = self.samples_x_tsne[focus_idxes]
+        samples_x_tsne = IncrementalTSNE(n_components=2, n_iter=500).fit_transform(samples_x, constraint_X=constrain_x, constraint_Y=constrain_y)
+        samples_x_tsne = samples_x_tsne.tolist()
+        samples_y = samples_y.tolist()
+        samples_truth = samples_truth.tolist()
+
+        samples_nodes = {}
+        for i in range(selection.shape[0]):
+            id = int(selection[i])
+            samples_nodes[id] = {
+                "id": id,
+                "x": samples_x_tsne[i][0],
+                "y": samples_x_tsne[i][1],
+                "label": samples_y[i],
+                "truth": samples_truth[i]
+            }
+        graph = {
+            "nodes": samples_nodes,
+        }
+        return graph, 1
+
+    def zoom_out(self):
+        if self.level == 0:
+            return None, 0
+        self.level -= 1
+        samples_x_tsne = self.samples_x_tsne.tolist()
+        samples_y = self.samples_y.tolist()
+        samples_truth = self.samples_truth.tolist()
+
+        samples_nodes = {}
+        for i in range(self.selection.shape[0]):
+            id = int(self.selection[i])
+            samples_nodes[id] = {
+                "id": id,
+                "x": samples_x_tsne[i][0],
+                "y": samples_x_tsne[i][1],
+                "label": samples_y[i],
+                "truth": samples_truth[i]
+            }
+        graph = {
+            "nodes": samples_nodes,
+        }
+        return graph, 1
+
+
+anchorGraph = AnchorGraph()
+def getAnchors(train_x, train_y, ground_truth, process_data, dataname):
+    buf_name = dataname + "_anchors"+config.pkl_ext
+    buf_path = os.path.join(config.buffer_root, buf_name)
+    train_x = np.array(train_x, dtype=np.float64)
+    node_num = train_x.shape[0]
+    if os.path.exists(buf_path):
+        with open(buf_path, "rb") as f:
+            samples_x, samples_x_tsne, samples_y, samples_truth, clusters, selection = pickle.load(f)
+    else:
+        sampler = DensityBasedSampler(n_samples=int(node_num / 10))
+        selection, estimated_density, prob = sampler.fit_sample(data=train_x, return_others=True)
+        selection = np.argwhere(selection == True).flatten()
+        samples_x = train_x[selection]
+        samples_y = train_y[selection]
+        samples_truth = ground_truth[selection]
+
+        dis_mat = distance_matrix(samples_x, train_x)
+        clusters = dis_mat.argmin(axis=0)
+        samples_x_tsne = IncrementalTSNE(n_components=2).fit_transform(samples_x)
+
+
+        save = (samples_x, samples_x_tsne, samples_y, samples_truth, clusters, selection)
+
+        with open(buf_path, "wb+") as f:
+            pickle.dump(save, f)
+    anchorGraph.set_value(samples_x, samples_x_tsne, samples_y, samples_truth, train_x, train_y, ground_truth, process_data, dataname, clusters, selection)
+    samples_x_tsne = samples_x_tsne.tolist()
+    samples_y = samples_y.tolist()
+    samples_truth = samples_truth.tolist()
+
+    samples_nodes = {}
+    for i in range(selection.shape[0]):
+        id = int(selection[i])
+        samples_nodes[id] = {
+            "id":id,
+            "x":samples_x_tsne[i][0],
+            "y":samples_x_tsne[i][1],
+            "label":samples_y[i],
+            "truth":samples_truth[i]
+        }
+    graph = {
+        "nodes": samples_nodes,
+    }
     return graph
 
 def getClusters(train_x, train_y, raw_graph, dataname, k):

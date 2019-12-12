@@ -2,8 +2,9 @@ import os
 from flask import abort, session
 from flask import render_template, jsonify
 from flask import Blueprint, request
-from .graph_utils.layout import stress_majorization_solve, anchorGraph
+from .graph_utils.layout import stress_majorization_solve
 from .utils.config_utils import config
+from .graph_utils.anchor import anchorGraph
 import json
 
 from .exchange_port import *
@@ -25,12 +26,9 @@ def app_get_graph():
 def app_get_loss():
     return get_loss()
 
-@graph.route('/graph/GetLabelNum', methods=['POST'])
+@graph.route('/graph/GetLabels', methods=['POST'])
 def app_get_label_num():
-    return {
-        "status": 1,
-        "label_num": get_label_num()
-    }
+    return get_labels()
 
 @graph.route('/graph/StressMajorization', methods=["POST"])
 def app_stress_majorization():

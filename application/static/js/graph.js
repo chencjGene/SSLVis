@@ -39,17 +39,7 @@ let GraphLayout = function (container){
                      let focus_node = focus_path.pop();
                      let opacity_promise = function(){
                          return new Promise(function (resolve, reject) {
-                             svg.select("#graph-view-link-g").selectAll("line")
-                                .transition()
-                                 .duration(500)
-                                .attr("opacity", 0)
-                                 .on("end", resolve);
-                             svg.select("#graph-view-density-map").selectAll("path")
-                                .transition()
-                                 .duration(500)
-                                .attr("opacity", 0)
-                                 .on("end", resolve);
-                             svg.select("#graph-view-node-g").selectAll("circle")
+                             svg.select("#graph-view-tsne-point").selectAll("circle")
                                  .each(function (d) {
                                      let svg_node = d3.select(this);
                                      if(focus_node.indexOf(d.id) !== -1){
@@ -59,6 +49,7 @@ let GraphLayout = function (container){
                                          svg_node.transition()
                                              .duration(500)
                                              .attr("opacity", 0)
+                                             .on("end", resolve);
                                      }
                                  })
                          })
@@ -66,34 +57,34 @@ let GraphLayout = function (container){
                      let move_opacity = function(){
                          return new Promise(function (resolve, reject) {
                              graph_data = d;
-                             kklayout.layoutFast(graph_data);
-                             that.centralize_and_scale(graph_data.node, width, height);
-                             console.log("Zoom Out Nodes", graph_data);
-                             svg.select("#graph-view-node-g").selectAll("circle")
-                                 .each(function (d) {
-                                     let svg_node = d3.select(this);
+                            console.log("Zoom out Nodes", graph_data);
+                            that._center_tsne();
+                            let center_x = 0;
+                            let center_y = 0;
+                            let r = 0;
+                            svg.select("#graph-view-tsne-point").selectAll("circle")
+                                .each(function (d) {
+                                    let svg_node = d3.select(this);
                                      if(focus_node.indexOf(d.id) !== -1){
-                                         svg_node.transition()
-                                             .duration(800)
-                                             .attr("cx", function (d) {
-                                                 return graph_data.node[d.id].x
-                                             })
-                                             .attr("cy", function (d) {
-                                                 return graph_data.node[d.id].y
-                                             })
-                                             .on("end", resolve)
+                                         svg_node.classed("selected", true)
+                                         .transition()
+                                        .duration(800)
+                                        .attr("cx", function (d) {
+                                            return graph_data.nodes[d.id].x
+                                        })
+                                        .attr("cy", function (d) {
+                                            return graph_data.nodes[d.id].y
+                                        })
+                                        .on("end", resolve);
                                      }
-                                 });
-                             if(focus_path.length === 0){
-                                 let overview_svg = d3.select("#graph-overview");
-                                 overview_svg.select("#overview-focus").remove();
-                             }
+                                })
+
                          })
                      };
                      opacity_promise().then(function () {
                          return move_opacity()
                      }).then(function (d) {
-                         that._draw_layout(graph_data, false);
+                         that.draw_tsne(false);
                          svg.select("#graph-view-node-g")
                             .selectAll("circle")
                             .each(function (d) {
@@ -116,14 +107,14 @@ let GraphLayout = function (container){
 
     that.lasso_draw = function() {
         // Style the possible dots
-        lasso.possibleItems()
-            .classed("not_possible",false)
-            .classed("possible",true);
-
-        // Style the not possible dot
-        lasso.notPossibleItems()
-            .classed("not_possible",true)
-            .classed("possible",false);
+        // lasso.possibleItems()
+        //     .classed("not_possible",false)
+        //     .classed("possible",true);
+        //
+        // // Style the not possible dot
+        // lasso.notPossibleItems()
+        //     .classed("not_possible",true)
+        //     .classed("possible",false);
 
     };
 
@@ -159,7 +150,7 @@ let GraphLayout = function (container){
             // transition
             let no_select_node_promise = function(){
                 return new Promise(function (resolve, reject) {
-                    if(lasso.notSelectedItems().size()===0 && svg.select("#graph-view-link-g").selectAll("line").size()===0 && svg.select("#graph-view-density-map").selectAll("path")===0){
+                    if(lasso.notSelectedItems().size()===0){
                         resolve()
                     }
                      lasso.notSelectedItems()
@@ -167,26 +158,13 @@ let GraphLayout = function (container){
                          .duration(500)
                          .attr("opacity", 0)
                          .on("end", resolve);
-                     svg.select("#graph-view-link-g").selectAll("line")
-                        .transition()
-                         .duration(500)
-                        .attr("opacity", 0)
-                         .on("end", resolve);
-                     svg.select("#graph-view-density-map").selectAll("path")
-                        .transition()
-                         .duration(500)
-                        .attr("opacity", 0)
-                         .on("end", resolve)
                 })
             };
             let select_node_promise = function(){
                 return new Promise(function (resolve, reject) {
                     graph_data = d;
                     console.log("Zoom In Nodes", graph_data);
-                    kklayout.layoutFast(graph_data);
-                    that.centralize_and_scale(graph_data.node, width, height);
-                    let xs = [];
-                    let ys = [];
+                    that._center_tsne();
                     let center_x = 0;
                     let center_y = 0;
                     let r = 0;
@@ -194,39 +172,13 @@ let GraphLayout = function (container){
                         .transition()
                         .duration(800)
                         .attr("cx", function (d) {
-                            xs.push(d3.select(this).attr("cx"));
-                            center_x += parseInt(d3.select(this).attr("cx"));
-                            return graph_data.node[d.id].x
+                            return graph_data.nodes[d.id].x
                         })
                         .attr("cy", function (d) {
-                            ys.push(d3.select(this).attr("cy"));
-                            center_y += parseInt(d3.select(this).attr("cy"));
-                            return graph_data.node[d.id].y
+                            return graph_data.nodes[d.id].y
                         })
                         .on("end", resolve);
-                    center_x /= focus_node.length;
-                    center_y /= focus_node.length;
-                    for(let i=0; i<focus_node.length; i++){
-                        let dis = Math.sqrt(Math.pow(xs[i]-center_x, 2) + Math.pow(ys[i]-center_y, 2));
-                        r = r>dis?r:dis;
-                    }
-                    r += 50;
-                    let overview_svg = d3.select("#graph-overview");
-                    let overview_width = $("#graph-overview").width();
-                    let overview_height = $("#graph-overview").height();
-                    // let scale = Math.min(overview_width/width, overview_height/height);
-                    if(focus_path.length === 1){
-                        overview_svg.select("#overview-density-map")
-                            .append("circle")
-                            .attr("id", "overview-focus")
-                            .attr("cx", center_x)
-                            .attr("cy", center_y)
-                            .attr("r", r)
-                            .attr("fill-opacity", 0)
-                            .attr("stroke-opacity", 1)
-                            .attr("stroke", "black")
-                            .attr("stroke-width", 5);
-                    }
+
                 })
             };
             no_select_node_promise()
@@ -234,8 +186,8 @@ let GraphLayout = function (container){
                     return select_node_promise()
                 })
                 .then(function () {
-                    that._draw_layout(graph_data, false);
-                    svg.select("#graph-view-node-g")
+                    that.draw_tsne(false);
+                    svg.select("#graph-view-tsne-point")
                         .selectAll("circle")
                         .each(function (d) {
                             let circle = d3.select(this);
@@ -325,19 +277,19 @@ let GraphLayout = function (container){
     };
 
     that._draw_legend = function() {
-        $.post('/graph/GetLabelNum', {}, function (d) {
-            if(d.status === 1){
-                let label_num = d.label_num;
+        $.post('/graph/GetLabels', {}, function (d) {
+                let labels = d;
+                let label_num = labels.length;
                 d3.select("#graph-legend-g").remove();
                 let legend_area = d3.select("#graph-legend").append("g")
                     .attr("id", "graph-legend-g");
                 let legend_start_x = 10;
                 let legend_start_y = 10;
-                let x_delta = 100;
-                let legend_delta = 45;
+                let x_delta = 140;
+                let legend_delta = 55;
                 let rect_width = 45;
                 let rect_height = 30;
-                let text_start_x = legend_start_x+rect_width+15;
+                let text_start_x = legend_start_x+rect_width+5;
                 let text_start_y = legend_start_y+20;
                 let half = Math.floor(label_num/2);
                 for(let i=-1; i<label_num; i++){
@@ -360,10 +312,14 @@ let GraphLayout = function (container){
                         })
                         .attr("y", text_start_y+(i%half+1)*legend_delta)
                         .attr("text-anchor", "start")
-                        .text(i)
+                        .attr("font-size", "17")
+                        .text(function () {
+                            if(i===-1) return "unlabel";
+                            else return labels[i]
+                        })
                 }
 
-            }
+
         })
     };
 
@@ -604,55 +560,68 @@ let GraphLayout = function (container){
 
     };
 
-    that.draw_tsne = function() {
-        function centering(){
+    that._center_tsne = function centering(){
             let avx = 0;
             let avy = 0;
             let scale = 10000;
-            let nodes = graph_data.nodes;
+            let nodes = Object.values(graph_data.nodes);
             let nodenum = nodes.length;
             for(let node of nodes){
-                avx += node[0];
-                avy += node[1];
+                avx += node.x;
+                avy += node.y;
             }
             avx /= nodenum;
             avy /= nodenum;
             let delx = width/2-avx;
             let dely = height/2 - avy;
             for (let node of nodes){
-                node[0] += delx;
-                node[1] += dely;
-                let xscale = (width/2)/Math.abs(node[0]-width/2);
-                let yscale = (height/2)/Math.abs(node[1]-height/2);
+                node.x += delx;
+                node.y += dely;
+                let xscale = (width/2)/Math.abs(node.x-width/2);
+                let yscale = (height/2)/Math.abs(node.y-height/2);
                 scale = Math.min(scale, xscale, yscale);
             }
             scale *= 0.85;
-            for(let nodeid in nodes){
-                let node = nodes[nodeid];
-                node[0] += (node[0]-width/2)*scale;
-                node[1] += (node[1]-height/2)*scale;
+            for(let node of nodes){
+                node.x += (node.x-width/2)*scale;
+                node.y += (node.y-height/2)*scale;
             }
-        }
+        };
+
+    that.draw_tsne = function(center = true) {
+
         svg = container.select("#graph-view-svg");
-        let nodes = graph_data.nodes;
-        let labels = graph_data.label;
-        let ground_truth = graph_data.ground_truth;
+        svg.select("#graph-view-tsne-point").remove();
+        svg.select(".lasso").remove();
+        let nodes = Object.values(graph_data.nodes);
         width = $('#graph-view-svg').width();
         height = $('#graph-view-svg').height();
-        centering();
-        svg.append("g")
+        if(center){
+            that._center_tsne()
+        }
+        let nodes_svg = svg.append("g")
             .attr("id", "graph-view-tsne-point")
             .selectAll("circle")
             .data(nodes)
             .enter()
             .append("circle")
-            .attr("cx", d => d[0])
-            .attr("cy", d => d[1])
+            .attr("cx", d => d.x)
+            .attr("cy", d => d.y)
             .attr("r", 4)
-            .attr("fill", function (d, i) {
-                if(ground_truth[i] === -1) return color_unlabel;
-                else return color_label[ground_truth[i]];
-            })
+            .attr("opacity", 1)
+            .attr("fill", function (d) {
+                if(d.truth === -1) return color_unlabel;
+                else return color_label[d.truth];
+            });
+
+
+        lasso.items(nodes_svg)
+            .targetArea(svg)
+            .on("start", that.lasso_start)
+            .on("draw", that.lasso_draw)
+            .on("end", that.lasso_end);
+
+            svg.call(lasso);
     };
 
     that._update_view = function(){
