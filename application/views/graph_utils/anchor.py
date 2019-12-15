@@ -9,6 +9,7 @@ from ..utils.config_utils import config
 from ..graph_utils.IncrementalTSNE import IncrementalTSNE
 from ..graph_utils.DensityBasedSampler import DensityBasedSampler
 from ..graph_utils.BlueNoiseSampler import BlueNoiseSampC as BlueNoiseSampler
+from sklearn.manifold import TSNE
 from ..graph_utils.RandomSampler import random_sample
 
 class AnchorClusterNode:
@@ -192,7 +193,7 @@ class AnchorGraph():
         for i in range(selection.shape[0]):
             id = int(selection[i])
             iter_num = self.process_data.shape[0]
-            labels = [int(np.argmax(self.process_data[j][id])) for j in range(iter_num)]
+            labels = [int(np.argmax(self.process_data[j][id])) if np.max(self.process_data[j][id])>1e-4 else -1 for j in range(iter_num)]
             scores = [float(np.max(self.process_data[j][id])) for j in range(iter_num)]
             samples_nodes[id] = {
                 "id": id,
@@ -219,7 +220,8 @@ class AnchorGraph():
         for i in range(self.selection.shape[0]):
             id = int(self.selection[i])
             iter_num = self.process_data.shape[0]
-            labels = [int(np.argmax(self.process_data[j][id])) for j in range(iter_num)]
+            labels = [int(np.argmax(self.process_data[j][id])) if np.max(self.process_data[j][id]) > 1e-4 else -1 for j
+                      in range(iter_num)]
             scores = [float(np.max(self.process_data[j][id])) for j in range(iter_num)]
             samples_nodes[id] = {
                 "id": id,
@@ -268,7 +270,7 @@ def getAnchors(train_x, train_y, ground_truth, process_data, dataname, buf_path)
     for i in range(selection.shape[0]):
         id = int(selection[i])
         iter_num = process_data.shape[0]
-        labels = [int(np.argmax(process_data[j][id])) if np.max(process_data[j][id])>0 else -1 for j in range(iter_num)]
+        labels = [int(np.argmax(process_data[j][id])) if np.max(process_data[j][id])>1e-4 else -1 for j in range(iter_num)]
         scores = [float(np.max(process_data[j][id])) for j in range(iter_num)]
         samples_nodes[id] = {
             "id":id,
