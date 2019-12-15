@@ -235,9 +235,7 @@ class AnchorGraph():
         return graph, 1
 
 anchorGraph = AnchorGraph()
-def getAnchors(train_x, train_y, ground_truth, process_data, dataname):
-    buf_name = dataname + "_anchors"+config.pkl_ext
-    buf_path = os.path.join(config.buffer_root, buf_name)
+def getAnchors(train_x, train_y, ground_truth, process_data, dataname, buf_path):
     train_x = np.array(train_x, dtype=np.float64)
     node_num = train_x.shape[0]
     if os.path.exists(buf_path):

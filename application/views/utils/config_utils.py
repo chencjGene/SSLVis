@@ -12,7 +12,6 @@ class Config(object):
         self.data_root = os.path.normpath(os.path.join(SERVER_ROOT,"../../data/"))
         self.lib_root = os.path.normpath(os.path.join(SERVER_ROOT, "../../application/views/lib/"))
         self.log_root = os.path.normpath(os.path.join(SERVER_ROOT,"../../../logs/"))
-        self.buffer_root = os.path.normpath(os.path.join(SERVER_ROOT, "../../buffer"))
         # self.model_root = os.path.join(SERVER_ROOT, "../model/")
 
         # extension

@@ -27,6 +27,8 @@ let GraphLayout = function (container){
 
     let iter = 0;
 
+    let show_ground_truth = true;
+
     that._init = function(){
         $("#zoom-out-btn").click(function (event) {
                  $.post("/graph/ZoomOut", {}, function (data) {
@@ -610,8 +612,14 @@ let GraphLayout = function (container){
             .attr("r", 4)
             .attr("opacity", 1)
             .attr("fill", function (d) {
-                if(d.label[iter] === -1) return color_unlabel;
-                else return color_label[d.label[iter]];
+                if(show_ground_truth){
+                    if(d.truth === -1) return color_unlabel;
+                    else return color_label[d.truth];
+                }
+                else {
+                    if(d.label[iter] === -1) return color_unlabel;
+                    else return color_label[d.label[iter]];
+                }
             });
 
 
@@ -632,5 +640,23 @@ let GraphLayout = function (container){
         that._init();
     }.call();
 
+    that.change_show_mode = function(mode) {
+        if(mode === "truth")
+            show_ground_truth = true;
+        else if(mode === "iter")
+            show_ground_truth = false;
+        svg.select("#graph-view-tsne-point")
+            .selectAll("circle")
+            .attr("fill", function (d) {
+                if(show_ground_truth){
+                    if(d.truth === -1) return color_unlabel;
+                    else return color_label[d.truth];
+                }
+                else {
+                    if(d.label[iter] === -1) return color_unlabel;
+                    else return color_label[d.label[iter]];
+                }
+            });
+    }
 };
 

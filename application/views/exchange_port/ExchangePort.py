@@ -87,8 +87,9 @@ class ExchangePortClass(object):
         # print("connected:", is_connected[is_connected == 1].shape[0])
         # print("labeled:", is_connected[is_connected == 2].shape[0])
         # print(is_connected)
+        buf_path = self.model.data.selected_dir
         ground_truth = self.model.data.get_train_ground_truth()
-        graph = getAnchors(train_x, train_y, ground_truth, process_data, self.dataname)
+        graph = getAnchors(train_x, train_y, ground_truth, process_data, self.dataname, os.path.join(buf_path, "anchors"+config.pkl_ext))
         return jsonify(graph)
 
     def get_loss(self):
