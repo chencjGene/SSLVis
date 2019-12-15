@@ -29,13 +29,15 @@ class SSLModel(object):
 
         self.model = None
         self.embed_X = None
-        self.n_neighbor = 200
+        self.n_neighbor = None
         self.max_neighbors = 1000
         # signal is used to indicate that all data should be updated
         self.signal_state = False
 
         self.data = Data(self.dataname)
         self.selected_dir = self.data.selected_dir
+        self.n_neighbor = int(np.sqrt(self.data.get_train_num()))
+
 
         self._get_signal_state()
         self._init()

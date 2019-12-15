@@ -98,6 +98,8 @@ class Data(object):
         }
         pickle_save_data(idx_info_path, idx_info)
 
+    def get_train_num(self):
+        return len(self.train_idx)
 
     def get_class_names(self):
         return self.class_names
