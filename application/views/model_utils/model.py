@@ -287,3 +287,8 @@ class SSLModel(object):
 
     def get_loss(self):
         return self.loss
+
+    def get_data(self):
+        train_X = self.data.get_train_X()
+        train_y = self.data.get_train_label()
+        return train_X, train_y
