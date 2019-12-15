@@ -35,6 +35,7 @@ class SSLModel(object):
         self.signal_state = False
 
         self.data = Data(self.dataname)
+        self.selected_dir = self.data.selected_dir
 
         self._get_signal_state()
         self._init()
@@ -46,7 +47,7 @@ class SSLModel(object):
         # self._projection()
 
     def _get_signal_state(self):
-        signal_filepath = os.path.join(self.data_root, config.signal_filename)
+        signal_filepath = os.path.join(self.selected_dir, config.signal_filename)
         if check_exist(signal_filepath):
             self.signal_state = True
             logger.info("signal file exists, set signal_state")
@@ -56,8 +57,8 @@ class SSLModel(object):
         return
 
     def _preprocess_neighbors(self):
-        neighbors_path = os.path.join(self.data_root, "neighbors.npy")
-        neighbors_weight_path = os.path.join(self.data_root, "neighbors_weight.npy")
+        neighbors_path = os.path.join(self.selected_dir, "neighbors.npy")
+        neighbors_weight_path = os.path.join(self.selected_dir, "neighbors_weight.npy")
         if os.path.exists(neighbors_path) and os.path.exists(neighbors_weight_path):
             logger.info("neighbors and neighbor_weight exist!!!")
             return
@@ -96,8 +97,8 @@ class SSLModel(object):
 
     def _training(self):
         # load neighbors information
-        neighbors_path = os.path.join(self.data_root, "neighbors.npy")
-        neighbors_weight_path = os.path.join(self.data_root, "neighbors_weight.npy")
+        neighbors_path = os.path.join(self.selected_dir, "neighbors.npy")
+        neighbors_weight_path = os.path.join(self.selected_dir, "neighbors_weight.npy")
         neighbors = np.load(neighbors_path)
         neighbors_weight = np.load(neighbors_weight_path)
         instance_num = neighbors.shape[0]

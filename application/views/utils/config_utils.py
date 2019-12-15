@@ -25,6 +25,7 @@ class Config(object):
         self.imdb = "IMDB"
         self.cifar10 = "cifar10"
         self.oct = "OCT"
+        self.stl = "STL"
 
         # third-level directory
         self.train_path_name = "train"
@@ -52,6 +53,7 @@ class Config(object):
         self.valid_idx_name = "valid_idx"
         self.test_idx_name = "test_idx"
         self.labeled_idx_name = "labeled_idx"
+        self.unlabeled_idx_name = "unlabeled_idx"
         self.add_info_name = "add_info"
 
         self.train_x_name = "X_train"
