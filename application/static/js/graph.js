@@ -480,7 +480,7 @@ let GraphLayout = function (container){
 
     that.setIter = function(newiter) {
         iter = newiter;
-        that._draw_layout(graph_data, false);
+        that.draw_tsne(false);
     };
     
     that.d3_layout = function(graph) {
@@ -610,8 +610,8 @@ let GraphLayout = function (container){
             .attr("r", 4)
             .attr("opacity", 1)
             .attr("fill", function (d) {
-                if(d.truth === -1) return color_unlabel;
-                else return color_label[d.truth];
+                if(d.label[iter] === -1) return color_unlabel;
+                else return color_label[d.label[iter]];
             });
 
 

@@ -64,6 +64,29 @@ class ExchangePortClass(object):
     def get_graph(self):
         raw_graph, process_data = self.model.get_graph_and_process_data()
         train_x, train_y = self.model.get_data()
+        # indptr = raw_graph.indptr
+        # indices = raw_graph.indices
+        # is_connected = []
+        # for i in range(train_x.shape[0]):
+        #     if train_y[i] != -1:
+        #         is_connected.append(2)
+        #         continue
+        #     begin = indptr[i]
+        #     end = indptr[i+1]
+        #     find = False
+        #     for idx in indices[begin:end]:
+        #         if train_y[idx] != -1:
+        #             find = True
+        #             break
+        #     if find:
+        #         is_connected.append(1)
+        #     else:
+        #         is_connected.append(0)
+        # is_connected = np.array(is_connected)
+        # print("not connected:", is_connected[is_connected==0].shape[0])
+        # print("connected:", is_connected[is_connected == 1].shape[0])
+        # print("labeled:", is_connected[is_connected == 2].shape[0])
+        # print(is_connected)
         ground_truth = self.model.data.get_train_ground_truth()
         graph = getAnchors(train_x, train_y, ground_truth, process_data, self.dataname)
         return jsonify(graph)

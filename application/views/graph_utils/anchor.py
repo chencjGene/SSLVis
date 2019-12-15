@@ -8,6 +8,8 @@ from scipy.spatial import distance_matrix
 from ..utils.config_utils import config
 from ..graph_utils.IncrementalTSNE import IncrementalTSNE
 from ..graph_utils.DensityBasedSampler import DensityBasedSampler
+from ..graph_utils.BlueNoiseSampler import BlueNoiseSampC as BlueNoiseSampler
+from ..graph_utils.RandomSampler import random_sample
 
 class AnchorClusterNode:
     def __init__(self):
@@ -26,7 +28,6 @@ class AnchorClusterNode:
         for child in self.children:
             children_num += child.getChildrenNum()
         return children_num
-
 
 class AnchorCluster:
     def __init__(self, raw_graph, train_x, train_y, dataname, k):
@@ -182,7 +183,7 @@ class AnchorGraph():
 
         constrain_x = self.samples_x[focus_idxes]
         constrain_y = self.samples_x_tsne[focus_idxes]
-        samples_x_tsne = IncrementalTSNE(n_components=2, n_iter=500).fit_transform(samples_x, constraint_X=constrain_x, constraint_Y=constrain_y)
+        samples_x_tsne = IncrementalTSNE(n_components=2, n_iter=500, n_jobs=20).fit_transform(samples_x, constraint_X=constrain_x, constraint_Y=constrain_y)
         samples_x_tsne = samples_x_tsne.tolist()
         samples_y = samples_y.tolist()
         samples_truth = samples_truth.tolist()
@@ -190,11 +191,15 @@ class AnchorGraph():
         samples_nodes = {}
         for i in range(selection.shape[0]):
             id = int(selection[i])
+            iter_num = self.process_data.shape[0]
+            labels = [int(np.argmax(self.process_data[j][id])) for j in range(iter_num)]
+            scores = [float(np.max(self.process_data[j][id])) for j in range(iter_num)]
             samples_nodes[id] = {
                 "id": id,
                 "x": samples_x_tsne[i][0],
                 "y": samples_x_tsne[i][1],
-                "label": samples_y[i],
+                "label": labels,
+                "score": scores,
                 "truth": samples_truth[i]
             }
         graph = {
@@ -213,18 +218,21 @@ class AnchorGraph():
         samples_nodes = {}
         for i in range(self.selection.shape[0]):
             id = int(self.selection[i])
+            iter_num = self.process_data.shape[0]
+            labels = [int(np.argmax(self.process_data[j][id])) for j in range(iter_num)]
+            scores = [float(np.max(self.process_data[j][id])) for j in range(iter_num)]
             samples_nodes[id] = {
                 "id": id,
                 "x": samples_x_tsne[i][0],
                 "y": samples_x_tsne[i][1],
-                "label": samples_y[i],
+                "label": labels,
+                "score": scores,
                 "truth": samples_truth[i]
             }
         graph = {
             "nodes": samples_nodes,
         }
         return graph, 1
-
 
 anchorGraph = AnchorGraph()
 def getAnchors(train_x, train_y, ground_truth, process_data, dataname):
@@ -236,8 +244,9 @@ def getAnchors(train_x, train_y, ground_truth, process_data, dataname):
         with open(buf_path, "rb") as f:
             samples_x, samples_x_tsne, samples_y, samples_truth, clusters, selection = pickle.load(f)
     else:
-        sampler = DensityBasedSampler(n_samples=int(node_num / 10))
-        selection, estimated_density, prob = sampler.fit_sample(data=train_x, return_others=True)
+        selection, _ = random_sample(train_x, int(node_num/20))
+        # _, selection = sampler.fit_sample(train_x, return_indices=True)
+        selection = np.array(selection)
         selection = np.argwhere(selection == True).flatten()
         samples_x = train_x[selection]
         samples_y = train_y[selection]
@@ -245,7 +254,7 @@ def getAnchors(train_x, train_y, ground_truth, process_data, dataname):
 
         dis_mat = distance_matrix(samples_x, train_x)
         clusters = dis_mat.argmin(axis=0)
-        samples_x_tsne = IncrementalTSNE(n_components=2).fit_transform(samples_x)
+        samples_x_tsne = IncrementalTSNE(n_components=2, n_jobs=20).fit_transform(samples_x)
 
 
         save = (samples_x, samples_x_tsne, samples_y, samples_truth, clusters, selection)
@@ -253,18 +262,22 @@ def getAnchors(train_x, train_y, ground_truth, process_data, dataname):
         with open(buf_path, "wb+") as f:
             pickle.dump(save, f)
     anchorGraph.set_value(samples_x, samples_x_tsne, samples_y, samples_truth, train_x, train_y, ground_truth, process_data, dataname, clusters, selection)
+
     samples_x_tsne = samples_x_tsne.tolist()
     samples_y = samples_y.tolist()
     samples_truth = samples_truth.tolist()
-
     samples_nodes = {}
     for i in range(selection.shape[0]):
         id = int(selection[i])
+        iter_num = process_data.shape[0]
+        labels = [int(np.argmax(process_data[j][id])) if np.max(process_data[j][id])>0 else -1 for j in range(iter_num)]
+        scores = [float(np.max(process_data[j][id])) for j in range(iter_num)]
         samples_nodes[id] = {
             "id":id,
             "x":samples_x_tsne[i][0],
             "y":samples_x_tsne[i][1],
-            "label":samples_y[i],
+            "label":labels,
+            "score":scores,
             "truth":samples_truth[i]
         }
     graph = {

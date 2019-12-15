@@ -7,10 +7,9 @@ from sklearn.neighbors import BallTree
 import time
 # added by Liu
 import numpy.linalg
-from scripts.The_five_sampling_methods import knn_g
+from .knn_g import Knn, FuncThread
 import random
-
-SO_PATH = "C:/Users/shouxing/PycharmProjects/DQAnalyzer/scripts/The_five_sampling_methods/libs/dll"
+from ..utils.config_utils import config
 
 
 def normalize(X):
@@ -178,7 +177,7 @@ class BlueNoiseSampC:
             """)
         try:
             import os
-            dllpath = os.path.join(SO_PATH,'blueNoiseSam_9-20.dll')
+            dllpath = os.path.join(config.lib_root,'blueNoiseSam_9-20.dll')
             C = ffi.dlopen(dllpath)
             cffi_X1 = ffi.cast('double*', X.ctypes.data)
             N,D = X.shape
@@ -189,7 +188,7 @@ class BlueNoiseSampC:
             if label_error_ratio and label is not None:
                 cffi_label_error_ratio = 1
                 cffi_label = ffi.cast('int*', np.array(label, dtype=np.int32).ctypes.data)
-            t = knn_g.FuncThread(C.blueNoiseSamp, cffi_X1, N, D, self.n_samples, self.r, cffi_label_error_ratio, cffi_label, cffi_selections)
+            t = FuncThread(C.blueNoiseSamp, cffi_X1, N, D, self.n_samples, self.r, cffi_label_error_ratio, cffi_label, cffi_selections)
             t.daemon = True
             t.start()
             while t.is_alive():
@@ -224,12 +223,12 @@ class BlueNoiseSamp_cyCodeBase:
             N,D = X.shape
             if D not in [2, 32, 512, 784, 1000, 4096]:
                 raise Exception(" The dll file corresponding to the dimension of the data was not found. ")
-            dllName = os.path.join(SO_PATH, "cyCodeBase_dll_%d.dll"%(D))
+            dllName = os.path.join(config.lib_root, "cyCodeBase_dll_%d.dll"%(D))
             C = ffi.dlopen(dllName)
             cffi_X1 = ffi.cast('double*', X.ctypes.data)
             selections = np.zeros(N, dtype=np.int32)
             cffi_selections = ffi.cast('int*', selections.ctypes.data)
-            t = knn_g.FuncThread(C.blueNoiseSamp, cffi_X1,  N,self.n_samples , cffi_selections)   ##data dimension must = 4096
+            t = FuncThread(C.blueNoiseSamp, cffi_X1,  N,self.n_samples , cffi_selections)   ##data dimension must = 4096
             t.daemon = True
             t.start()
             while t.is_alive():
