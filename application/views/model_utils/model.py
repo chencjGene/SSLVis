@@ -36,7 +36,7 @@ class SSLModel(object):
 
         self.data = Data(self.dataname)
         self.selected_dir = self.data.selected_dir
-        self.n_neighbor = int(np.sqrt(self.data.get_train_num()))
+        self.n_neighbor = int(np.sqrt(self.data.get_train_num())) // 10
 
 
         self._get_signal_state()
@@ -222,6 +222,7 @@ class SSLModel(object):
             n_iter_ += 1
 
         normalizer = np.sum(label_distributions_, axis=1)[:, np.newaxis]
+        normalizer = normalizer + 1e-20
         label_distributions_ /= normalizer
 
         all_loss = np.array(all_loss)
