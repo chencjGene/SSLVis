@@ -40,7 +40,7 @@ class Data(object):
         self.test_idx = processed_data[config.test_idx_name]
         self.labeled_idx = processed_data[config.labeled_idx_name]
         self.unlabeled_idx = processed_data[config.unlabeled_idx_name]
-        self.class_name = processed_data[config.class_name]
+        self.class_names = processed_data[config.class_name]
         self.add_info = processed_data[config.add_info_name]
 
         if self.selected_labeled_num is None and self.selected_total_num is None:
@@ -99,8 +99,8 @@ class Data(object):
         pickle_save_data(idx_info_path, idx_info)
 
 
-    def get_class_name(self):
-        return self.class_name
+    def get_class_names(self):
+        return self.class_names
 
     def get_train_X(self):
         return self.X[np.array(self.train_idx)].copy()
