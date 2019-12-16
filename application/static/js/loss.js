@@ -299,7 +299,7 @@ let ControlLayout = function (container){
             .attr('class', 'axis x-axis')
             .attr('transform', 'translate(0,' + parseInt(line_height+20+'') + ')')
             .call(xAxis);
-        svg.selectAll("x-axis text")
+        svg.selectAll(".x-axis text")
             .attr("class", "axis-x-text");
 
         const yAxis = d3.axisLeft(yPositionScale);
