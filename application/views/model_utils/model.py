@@ -204,7 +204,11 @@ class SSLModel(object):
                 alpha, label_distributions_a) + y_static
             n_iter_ += 1
             if process_record:
-                process_data.append(label_distributions_)
+                label = label_distributions_.copy()
+                normalizer = np.sum(label, axis=1)[:, np.newaxis]
+                normalizer = normalizer + 1e-20
+                label /= normalizer
+                process_data.append(label)
 
             # loss = entropy(label_distributions_.T).sum()
             loss = (label_distributions_**2).sum() - \
