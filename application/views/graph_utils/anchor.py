@@ -244,7 +244,21 @@ def getAnchors(train_x, train_y, ground_truth, process_data, dataname, buf_path)
         with open(buf_path, "rb") as f:
             samples_x, samples_x_tsne, samples_y, samples_truth, clusters, selection = pickle.load(f)
     else:
-        selection, _ = random_sample(train_x, int(node_num/20))
+        sample_rate = 0.05
+        sample_num = int(train_x.shape[0]*sample_rate)
+        label_idxes = np.argwhere(train_y != -1).flatten()
+        label_num = int(label_idxes.shape[0])
+        sample_p = np.array([1]*train_x.shape[0], dtype=np.float64)
+        for i in label_idxes:
+            sample_p[i] = 0
+        sample_p /= np.linalg.norm(sample_p, 1)
+        if label_num >= sample_num:
+            selection = np.array([False]*train_x.shape[0])
+        else:
+            selection, _ = random_sample(train_x, sample_num-label_num, p = sample_p)
+        for i in label_idxes:
+            assert selection[i] == False
+            selection[i] = True
         # _, selection = sampler.fit_sample(train_x, return_indices=True)
         selection = np.array(selection)
         selection = np.argwhere(selection == True).flatten()
