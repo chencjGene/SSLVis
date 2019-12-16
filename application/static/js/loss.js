@@ -293,12 +293,14 @@ let ControlLayout = function (container){
             .attr("stroke", "#808080")
             .attr("stroke-width", 3)
             .call(d3.drag().on("start", drag_start).on("drag", drag_slider).on("end", drag_slider_end));
-        const xAxis = d3.axisBottom(xPositionScale);
+        const xAxis = d3.axisBottom(xPositionScale).ticks(loss.length);
         svg
             .append('g')
             .attr('class', 'axis x-axis')
             .attr('transform', 'translate(0,' + parseInt(line_height+20+'') + ')')
             .call(xAxis);
+        svg.selectAll("x-axis text")
+            .attr("class", "axis-x-text");
 
         const yAxis = d3.axisLeft(yPositionScale);
         svg

@@ -16,3 +16,7 @@
 #loss-view-svg {
     flex: 100 1 auto;
 }
+
+.axis-x-text{
+    pointer-events: none;
+}
