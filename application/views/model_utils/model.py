@@ -16,11 +16,13 @@ from sklearn.metrics.pairwise import euclidean_distances, paired_distances
 
 from ..utils.config_utils import config
 from ..utils.log_utils import logger
-from ..utils.helper_utils import check_exist, pickle_load_data, pickle_save_data
+from ..utils.helper_utils import check_exist, \
+    pickle_load_data, pickle_save_data
 from ..utils.embedder_utils import Embedder
 
 from .data import Data
 from .LSLabelSpreading import LSLabelSpreading
+from .model_helper import propagation, approximated_influence, exact_influence
 
 class SSLModel(object):
     def __init__(self, dataname):
@@ -33,10 +35,12 @@ class SSLModel(object):
         self.max_neighbors = 1000
         # signal is used to indicate that all data should be updated
         self.signal_state = False
+        self._propagation = propagation
+        self.alpha = 0.2
 
         self.data = Data(self.dataname)
         self.selected_dir = self.data.selected_dir
-        self.n_neighbor = int(np.sqrt(self.data.get_train_num())) // 10
+        self.n_neighbor = int(np.sqrt(self.data.get_train_num()))
 
 
         self._get_signal_state()
@@ -60,11 +64,14 @@ class SSLModel(object):
 
     def _preprocess_neighbors(self):
         neighbors_path = os.path.join(self.selected_dir, "neighbors.npy")
-        neighbors_weight_path = os.path.join(self.selected_dir, "neighbors_weight.npy")
-        if os.path.exists(neighbors_path) and os.path.exists(neighbors_weight_path):
+        neighbors_weight_path = os.path.join(self.selected_dir,
+                                             "neighbors_weight.npy")
+        if os.path.exists(neighbors_path) and \
+                os.path.exists(neighbors_weight_path):
             logger.info("neighbors and neighbor_weight exist!!!")
             return
-        logger.info("neighbors and neighbor_weight do not exist, preprocessing!")
+        logger.info("neighbors and neighbor_weight "
+                    "do not exist, preprocessing!")
         train_X = self.data.get_train_X()
         train_y = self.data.get_train_label()
         train_y = np.array(train_y)
@@ -77,7 +84,8 @@ class SSLModel(object):
                                                   # 2,
                                                    mode="distance")
         logger.info("neighbor_result got!")
-        neighbors = np.zeros((train_X.shape[0], self.max_neighbors)).astype(int)
+        neighbors = np.zeros((train_X.shape[0],
+                              self.max_neighbors)).astype(int)
         neighbors_weight = np.zeros((train_X.shape[0], self.max_neighbors))
         for i in range(train_X.shape[0]):
             start = neighbor_result.indptr[i]
@@ -100,10 +108,13 @@ class SSLModel(object):
     def _training(self):
         # load neighbors information
         neighbors_path = os.path.join(self.selected_dir, "neighbors.npy")
-        neighbors_weight_path = os.path.join(self.selected_dir, "neighbors_weight.npy")
+        neighbors_weight_path = os.path.join(self.selected_dir,
+                                             "neighbors_weight.npy")
         neighbors = np.load(neighbors_path)
         neighbors_weight = np.load(neighbors_weight_path)
         instance_num = neighbors.shape[0]
+        train_y = self.data.get_train_label()
+        train_y = np.array(train_y)
 
         # get knn graph in a csr form
         indptr = [i * self.n_neighbor for i in range(instance_num+1)]
@@ -127,9 +138,13 @@ class SSLModel(object):
 
         train_gt = self.data.get_train_ground_truth()
         train_gt = np.array(train_gt)
-        pred_dist, loss, process_data = self._propagation(laplacian, affinity_matrix, process_record=True)
+        pred_dist, loss, process_data = \
+            self._propagation(laplacian, affinity_matrix, train_y,
+                              alpha=self.alpha, process_record=True,
+                              normalized=False)
         self.loss = loss
         self.process_data = process_data
+        self.pred_dist = pred_dist
         self.graph = affinity_matrix
         iter = len(loss)
         print(process_data.shape)
@@ -138,103 +153,18 @@ class SSLModel(object):
         logger.info("model accuracy: {}, iter: {}".format(acc, iter))
 
 
-    def _propagation(self, graph_matrix, affinity_matrix, process_record=False, alpha=0.2, max_iter=30,
-                     tol=1e-3):
-        train_y = self.data.get_train_label()
-        y = np.array(train_y)
-        # label construction
-        # construct a categorical distribution for classification only
-        classes = np.unique(y)
-        classes = (classes[classes != -1])
-        process_data = None
-
-
-        # D = affinity_matrix.sum(axis=0).getA1() - affinity_matrix.diagonal()
-        # affinity_matrix = affinity_matrix.tocoo(copy=True)
-        # D = np.sqrt(D)
-        # D[D==0] = 1
-
-
-        n_samples, n_classes = len(y), len(classes)
-
-        if (alpha is None or alpha <= 0.0 or alpha >= 1.0):
-            raise ValueError('alpha=%s is invalid: it must be inside '
-                             'the open interval (0, 1)' % alpha)
-        y = np.asarray(y)
-        unlabeled = y == -1
-        labeled = (y > -1)
-
-        # initialize distributions
-        label_distributions_ = np.zeros((n_samples, n_classes))
-        for label in classes:
-            label_distributions_[y == label, classes == label] = 1
-
-        y_static_labeled = np.copy(label_distributions_)
-        y_static = y_static_labeled * (1 - alpha)
-
-        l_previous = np.zeros((n_samples, n_classes))
-
-        unlabeled = unlabeled[:, np.newaxis]
-        if sparse.isspmatrix(graph_matrix):
-            graph_matrix = graph_matrix.tocsr()
-
-        if process_record:
-            process_data = [label_distributions_]
-
-        n_iter_ = 0
-        all_loss = []
-        label_distributions_a = safe_sparse_dot(
-            graph_matrix, label_distributions_)
-        loss = (label_distributions_ ** 2).sum() - \
-               np.dot(label_distributions_.reshape(-1),
-                      label_distributions_a.reshape(-1))
-        loss = loss + paired_distances(label_distributions_[labeled],
-                                       y_static_labeled[labeled]).sum()
-        all_loss.append(loss)
-
-        for _ in range(max_iter):
-            if np.abs(label_distributions_ - l_previous).sum() < tol:
-                break
-
-            l_previous = label_distributions_
-            label_distributions_a = safe_sparse_dot(
-                graph_matrix, label_distributions_)
-
-            label_distributions_ = np.multiply(
-                alpha, label_distributions_a) + y_static
-            n_iter_ += 1
-            if process_record:
-                label = label_distributions_.copy()
-                normalizer = np.sum(label, axis=1)[:, np.newaxis]
-                normalizer = normalizer + 1e-20
-                label /= normalizer
-                process_data.append(label)
-
-            # loss = entropy(label_distributions_.T).sum()
-            loss = (label_distributions_**2).sum() - \
-                   np.dot(label_distributions_.reshape(-1),
-                          label_distributions_a.reshape(-1))
-            loss = loss + paired_distances(label_distributions_[labeled],
-                                           y_static_labeled[labeled]).sum()
-            all_loss.append(loss)
-
-        else:
-            warnings.warn(
-                'max_iter=%d was reached without convergence.' % max_iter,
-                category=ConvergenceWarning
-            )
-            n_iter_ += 1
-
-        normalizer = np.sum(label_distributions_, axis=1)[:, np.newaxis]
-        normalizer = normalizer + 1e-20
-        label_distributions_ /= normalizer
-
-        all_loss = np.array(all_loss)
-
-        if process_data is not None:
-            process_data = np.array(process_data)
-
-        return label_distributions_, all_loss, process_data
+        influence_matrix_path = os.path.join(self.selected_dir, "influence_matrix.pkl")
+        if os.path.exists(influence_matrix_path):
+            logger.info("influence_matrix exist!!!")
+            self.influence_matrix = pickle_load_data(influence_matrix_path)
+            return
+        logger.info("influence matrix  "
+                    "do not exist, preprocessing!")
+        self.influence_matrix = \
+            approximated_influence(pred_dist, affinity_matrix,
+                                   laplacian, self.alpha, train_y)
+        pickle_save_data(influence_matrix_path, self.influence_matrix)
+        return
 
     def _training_old(self, n_neighbor):
         ssl_model_filepath = os.path.join(self.data_root, config.ssl_model_buffer_name)
