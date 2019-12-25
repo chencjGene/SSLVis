@@ -656,6 +656,7 @@ let GraphLayout = function (container){
                     let top = queue.shift();
                     let find = false;
                     for(let next of edges[top].e){
+                        if(graph_data.nodes[next].label[iter] !== predict_label) continue;
                         if(chose[next] === undefined){
                             chose[next] = top;
                             queue.push(next);
