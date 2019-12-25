@@ -24,8 +24,19 @@ from .data import Data
 from .LSLabelSpreading import LSLabelSpreading
 from .model_helper import propagation, approximated_influence, exact_influence
 
+def build_laplacian_graph(affinity_matrix):
+    instance_num = affinity_matrix.shape[0]
+    laplacian = csgraph.laplacian(affinity_matrix, normed=True)
+    laplacian = -laplacian
+    if sparse.isspmatrix(laplacian):
+        diag_mask = (laplacian.row == laplacian.col)
+        laplacian.data[diag_mask] = 0.0
+    else:
+        laplacian.flat[::instance_num + 1] = 0.0  # set diag to 0.0
+    return laplacian
+
 class SSLModel(object):
-    def __init__(self, dataname):
+    def __init__(self, dataname, labeled_num=None, total_num=None):
         self.dataname = dataname
         self.data_root = os.path.join(config.data_root, self.dataname)
 
@@ -38,10 +49,10 @@ class SSLModel(object):
         self._propagation = propagation
         self.alpha = 0.2
 
-        self.data = Data(self.dataname)
+        self.data = Data(self.dataname, labeled_num, total_num)
         self.selected_dir = self.data.selected_dir
         self.n_neighbor = int(np.sqrt(self.data.get_train_num()))
-
+        logger.info("n_neighbor: {}".format(self.n_neighbor))
 
         self._get_signal_state()
         self._init()
@@ -75,6 +86,7 @@ class SSLModel(object):
         train_X = self.data.get_train_X()
         train_y = self.data.get_train_label()
         train_y = np.array(train_y)
+        self.max_neighbors = min(len(train_y), self.max_neighbors)
         logger.info("data shape: {}, labeled_num: {}"
                     .format(str(train_X.shape), sum(train_y != -1)))
         nn_fit = NearestNeighbors(self.n_neighbor, n_jobs=-4).fit(train_X)
@@ -128,13 +140,7 @@ class SSLModel(object):
         affinity_matrix = sparse.csr_matrix((data, indices, indptr),
                                             shape=(instance_num, instance_num))
         logger.info("affinity_matrix construction finished!!")
-        laplacian = csgraph.laplacian(affinity_matrix, normed=True)
-        laplacian = -laplacian
-        if sparse.isspmatrix(laplacian):
-            diag_mask = (laplacian.row == laplacian.col)
-            laplacian.data[diag_mask] = 0.0
-        else:
-            laplacian.flat[::instance_num + 1] = 0.0  # set diag to 0.0
+        laplacian = build_laplacian_graph(affinity_matrix)
 
         train_gt = self.data.get_train_ground_truth()
         train_gt = np.array(train_gt)
@@ -165,6 +171,40 @@ class SSLModel(object):
                                    laplacian, self.alpha, train_y)
         pickle_save_data(influence_matrix_path, self.influence_matrix)
         return
+
+    def simplify_influence_matrix(self, threshold = 0.7):
+        logger.info("begin simplify influence matrix")
+        simplified_affinity_matrix = self.influence_matrix.copy() * 0
+        for i in range(simplified_affinity_matrix.shape[0]):
+            start = self.influence_matrix.indptr[i]
+            end = self.influence_matrix.indptr[i+1]
+            data_in_this_row = self.influence_matrix.data[start:end]
+            sorted_idx = data_in_this_row.argsort()[::-1]
+            max_idx = []
+            for k in range(len(sorted_idx)):
+                max_idx.append(sorted_idx[k])
+                if (data_in_this_row[max_idx].sum() /
+                    data_in_this_row.sum() > threshold):
+                    break
+            for k in max_idx:
+                simplified_affinity_matrix.data[start:end][k] = 1
+        simplified_laplacian_matrix = \
+            build_laplacian_graph(simplified_affinity_matrix)
+        simplified_F, L, _ = self._propagation(simplified_laplacian_matrix,
+                                               simplified_affinity_matrix,
+                                               np.array(self.data.get_train_label()),
+                                               alpha=self.alpha,
+                                               normalized=False)
+        mis_match_idx = simplified_F.argmax(axis=1) != self.pred_dist.argmax(axis=1)
+        logger.info("sparse percent: {}".format(simplified_affinity_matrix.sum() / \
+                                                len(self.influence_matrix.data)))
+        logger.info("simplification error: {}"
+                    .format(sum(mis_match_idx) / self.pred_dist.shape[0]))
+        ground_truth = self.data.get_train_ground_truth()
+        logger.info("pre acc: {}"
+                    .format(accuracy_score(self.pred_dist.argmax(axis=1), ground_truth)))
+        logger.info("now acc: {}".format(accuracy_score(simplified_F.argmax(axis=1), ground_truth)))
+        return simplified_affinity_matrix
 
     def _training_old(self, n_neighbor):
         ssl_model_filepath = os.path.join(self.data_root, config.ssl_model_buffer_name)
@@ -220,7 +260,7 @@ class SSLModel(object):
         return
 
     def get_graph_and_process_data(self):
-        return self.graph, self.process_data
+        return self.graph, self.process_data, self.simplify_influence_matrix(threshold=0.8)
 
     def get_loss(self):
         return self.loss

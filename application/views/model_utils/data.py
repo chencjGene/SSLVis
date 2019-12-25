@@ -65,7 +65,7 @@ class Data(object):
             return
         # selected_labeled_idx = np.random.choice(self.labeled_idx, self.selected_labeled_num, replace=False)
         # class balance selection
-        selected_labeled_num_in_each_class = np.zeros(len(self.class_name))
+        selected_labeled_num_in_each_class = np.zeros(len(self.class_names))
         class_num = len(selected_labeled_num_in_each_class)
         num_per_class = self.selected_labeled_num // class_num
         selected_labeled_num_in_each_class = (np.ones(class_num) * num_per_class).astype(int)

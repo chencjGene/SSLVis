@@ -15,7 +15,15 @@ graph = Blueprint("graph", __name__)
 def app_get_manifest():
     # extract info from request
     dataname = request.args["dataset"]
-    set_dataname(dataname)
+    dataname = dataname.split("-")
+    labeled_num = None
+    total_num = None
+    if len(dataname) > 1:
+        dataname, labeled_num, total_num = dataname
+        labeled_num = int(labeled_num)
+        total_num = int(total_num)
+        print(dataname, labeled_num, total_num)
+    set_model(dataname, labeled_num, total_num)
     return get_manifest()
 
 @graph.route("/graph/GetGraph", methods=["GET", "POST"])

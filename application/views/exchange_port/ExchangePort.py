@@ -27,6 +27,13 @@ class ExchangePortClass(object):
         else:
             self.model = SSLModel(self.dataname)
 
+    def reset_model(self, dataname, labeled_num=None, total_num=None):
+        self.dataname = dataname
+        if self.dataname is None:
+            self.model = None
+        else:
+            self.model = SSLModel(self.dataname, labeled_num, total_num)
+
     def get_manifest(self):
         manifest = [1]
         return jsonify(manifest)
@@ -62,7 +69,8 @@ class ExchangePortClass(object):
         return dist
 
     def get_graph(self):
-        raw_graph, process_data = self.model.get_graph_and_process_data()
+        raw_graph, process_data, influence_matrix \
+            = self.model.get_graph_and_process_data()
         train_x, train_y = self.model.get_data()
         # indptr = raw_graph.indptr
         # indices = raw_graph.indices
@@ -89,7 +97,9 @@ class ExchangePortClass(object):
         # print(is_connected)
         buf_path = self.model.data.selected_dir
         ground_truth = self.model.data.get_train_ground_truth()
-        graph = getAnchors(train_x, train_y, ground_truth, process_data, self.dataname, os.path.join(buf_path, "anchors"+config.pkl_ext))
+        graph = getAnchors(train_x, train_y, ground_truth,
+                           process_data, influence_matrix, self.dataname,
+                           os.path.join(buf_path, "anchors"+config.pkl_ext))
         return jsonify(graph)
 
     def get_loss(self):

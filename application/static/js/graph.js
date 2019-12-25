@@ -622,6 +622,26 @@ let GraphLayout = function (container){
                 }
             });
 
+        let golds = nodes.filter(d => d.label[0]>-1);
+        console.log("golds:", golds);
+        let golds_svg = svg.append("g")
+            .attr("id", "golds-g")
+            .selectAll("path")
+            .data(golds)
+            .enter()
+            .append("path")
+            .attr("d", d => star_path(10,4,d.x, d.y))
+            .attr("fill", function(d){
+                if(show_ground_truth){
+                    if(d.truth === -1) return color_unlabel;
+                    else return color_label[d.truth];
+                }
+                else {
+                    if(d.label[iter] === -1) return color_unlabel;
+                    else return color_label[d.label[iter]];
+                }
+            });
+
 
         lasso.items(nodes_svg)
             .targetArea(svg)
@@ -632,8 +652,30 @@ let GraphLayout = function (container){
             svg.call(lasso);
     };
 
+    // added by Changjian, 201912241956
+    that.draw_edges = function(){
+        let svg = container.select("#graph-view-svg");
+        let links_data = graph_data.edges;
+        let nodes_data = graph_data.nodes;
+        let edges_svg = svg.append("g")
+            .attr("id", "graph-view-link-g")
+            .selectAll("line")
+            .data(links_data)
+            .enter()
+            .append("line")
+            .attr("x1", d => nodes_data[d["s"]].x)
+            .attr("y1", d => nodes_data[d["s"]].y)
+            .attr("x2", d => nodes_data[d["e"]].x)
+            .attr("y2", d => nodes_data[d["e"]].y)
+            .attr("stroke-width", 1)
+            .attr("stroke", "gray")
+            .attr("opacity", 0.4);
+    };
+
     that._update_view = function(){
-        that.draw_tsne()
+        that.draw_tsne();
+        // added by changjian, 201912242007
+        that.draw_edges();
     };
 
     that.init = function(){

@@ -68,7 +68,9 @@ body {
 .my-panel-heading {
     color: white;
     background-color: #c1c1c1;
-    padding: 4px;
+    /*padding: 4px;*/
+    padding-right: 4px;
+    padding-left: 4px;
     display: inline-block;
     -ms-border-radius: 8px 8px 0 0;
     border-radius: 5px 5px 0 0;

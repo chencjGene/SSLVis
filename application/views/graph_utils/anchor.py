@@ -237,14 +237,15 @@ class AnchorGraph():
         return graph, 1
 
 anchorGraph = AnchorGraph()
-def getAnchors(train_x, train_y, ground_truth, process_data, dataname, buf_path):
+def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, dataname, buf_path):
     train_x = np.array(train_x, dtype=np.float64)
     node_num = train_x.shape[0]
     if os.path.exists(buf_path):
         with open(buf_path, "rb") as f:
             samples_x, samples_x_tsne, samples_y, samples_truth, clusters, selection = pickle.load(f)
     else:
-        sample_rate = 0.05
+        # sample_rate = 0.05
+        sample_rate = 1.0
         sample_num = int(train_x.shape[0]*sample_rate)
         label_idxes = np.argwhere(train_y != -1).flatten()
         label_num = int(label_idxes.shape[0])
@@ -294,8 +295,24 @@ def getAnchors(train_x, train_y, ground_truth, process_data, dataname, buf_path)
             "score":scores,
             "truth":samples_truth[i]
         }
+
+    # added by changjian, 201912241926
+    # added edges. A quick and dirty manner
+    edge_matrix = influence_matrix[selection][:, selection]
+    edges = []
+    for i in range(edge_matrix.shape[0]):
+        start = edge_matrix.indptr[i]
+        end = edge_matrix.indptr[i+1]
+        j_in_this_row = edge_matrix.indices[start:end]
+        for idx, j in enumerate(j_in_this_row):
+            edges.append({
+                "s": int(selection[j]),
+                "e": int(selection[i])
+            })
+
     graph = {
         "nodes": samples_nodes,
+        "edges": edges
     }
     return graph
 
