@@ -204,6 +204,7 @@ class SSLModel(object):
         logger.info("pre acc: {}"
                     .format(accuracy_score(self.pred_dist.argmax(axis=1), ground_truth)))
         logger.info("now acc: {}".format(accuracy_score(simplified_F.argmax(axis=1), ground_truth)))
+        simplified_affinity_matrix.eliminate_zeros()
         return simplified_affinity_matrix
 
     def _training_old(self, n_neighbor):
@@ -260,7 +261,7 @@ class SSLModel(object):
         return
 
     def get_graph_and_process_data(self):
-        return self.graph, self.process_data, self.simplify_influence_matrix(threshold=0.8)
+        return self.graph, self.process_data, self.simplify_influence_matrix(threshold=0.9)
 
     def get_loss(self):
         return self.loss

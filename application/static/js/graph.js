@@ -590,12 +590,34 @@ let GraphLayout = function (container){
             }
         };
 
+    that._edge_reformulation = function(edges) {
+        let new_edges = {};
+        for(let edge of edges){
+            if(new_edges[edge.s] === undefined){
+                 new_edges[edge.s] = {
+                     s:[],
+                     e:[]
+                 };
+            }
+            if(new_edges[edge.e] === undefined){
+                 new_edges[edge.e] = {
+                     s:[],
+                     e:[]
+                 };
+            }
+            new_edges[edge.s].s.push(edge.e);
+            new_edges[edge.e].e.push(edge.s);
+        }
+        return new_edges
+    };
+
     that.draw_tsne = function(center = true) {
 
         svg = container.select("#graph-view-svg");
         svg.select("#graph-view-tsne-point").remove();
         svg.select(".lasso").remove();
         let nodes = Object.values(graph_data.nodes);
+        let edges = that._edge_reformulation(graph_data.edges);
         width = $('#graph-view-svg').width();
         height = $('#graph-view-svg').height();
         if(center){
@@ -620,6 +642,65 @@ let GraphLayout = function (container){
                     if(d.label[iter] === -1) return color_unlabel;
                     else return color_label[d.label[iter]];
                 }
+            })
+            .on("mouseover", function (d) {
+                if(d.label[iter] === -1) return;
+                console.log("Node:", d);
+                let eid = d.id;
+                let predict_label = d.label[d.label.length-1];
+                let chose = {};
+                let queue = [eid];
+                let target = undefined;
+                chose[eid] = eid;
+                while (queue.length > 0){
+                    let top = queue.shift();
+                    let find = false;
+                    for(let next of edges[top].e){
+                        if(chose[next] === undefined){
+                            chose[next] = top;
+                            queue.push(next);
+                        }
+                        if(graph_data.nodes[next].label[0] === predict_label){
+                            find = true;
+                            target = next;
+                            break;
+                        }
+                    }
+                    if(find) break;
+                }
+                if(target === undefined){
+                    console.log("Can't find path of node, id:", eid);
+                    return;
+                }
+                let path = [];
+                while (true){
+                    let s = target;
+                    let e = chose[s];
+                    path.unshift([e, s]);
+                    target = e;
+                    if(target === eid) break;
+                }
+                console.log("Find a path:", path, chose);
+                svg.select("#graph-view-link-g")
+                    .selectAll("line")
+                    .each(function (d) {
+                        let tline = d3.select(this);
+                        for(let line of path){
+                            if(d.e === line[0] && d.s === line[1]){
+                                tline.attr("stroke", color_label[predict_label])
+                                    .attr("stroke-width", 5)
+                                    .attr("opacity", 1);
+                                return
+                            }
+                        }
+                    })
+            })
+            .on("mouseout", function (d) {
+                svg.select("#graph-view-link-g")
+                    .selectAll("line")
+                    .attr("stroke", "gray")
+                    .attr("stroke-width", 1)
+                    .attr("opacity", 0.4)
             });
 
         let golds = nodes.filter(d => d.label[0]>-1);
@@ -640,6 +721,9 @@ let GraphLayout = function (container){
                     if(d.label[iter] === -1) return color_unlabel;
                     else return color_label[d.label[iter]];
                 }
+            })
+            .on("mouseover", function (d) {
+                console.log("Label node id:", d.id)
             });
 
 
