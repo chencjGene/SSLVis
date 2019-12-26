@@ -629,6 +629,7 @@ let GraphLayout = function (container){
             .data(nodes)
             .enter()
             .append("circle")
+            .attr("id", d => "id-" + d.id)
             .attr("cx", d => d.x)
             .attr("cy", d => d.y)
             .attr("r", 4)
@@ -694,7 +695,11 @@ let GraphLayout = function (container){
                                 return
                             }
                         }
-                    })
+                    });
+
+                // added by changjian, 20191226
+                // showing image content
+                data_manager.update_image_view(eid);
             })
             .on("mouseout", function (d) {
                 svg.select("#graph-view-link-g")
@@ -712,6 +717,7 @@ let GraphLayout = function (container){
             .data(golds)
             .enter()
             .append("path")
+            .attr("id", d => "gold-" + d.id)
             .attr("d", d => star_path(10,4,d.x, d.y))
             .attr("fill", function(d){
                 if(show_ground_truth){

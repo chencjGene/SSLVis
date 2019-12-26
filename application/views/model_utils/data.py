@@ -113,6 +113,9 @@ class Data(object):
         y = y[np.array(self.train_idx)]
         return y.astype(int)
 
+    def get_train_idx(self):
+        return self.train_idx.copy()
+
     def get_train_ground_truth(self):
         return self.y[np.array(self.train_idx)].copy().astype(int)
 

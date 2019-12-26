@@ -22,6 +22,8 @@ let SearchView = null;
 let DatasetName = null;
 let DataLoader = null;
 let GraphView = null;
+let LossView = null;
+let ImageView = null;
 
 /*
 *  Color

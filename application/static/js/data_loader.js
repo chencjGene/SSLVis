@@ -12,6 +12,7 @@ DataLoaderClass = function (dataset) {
     that.manifest_url = "/graph/GetManifest";
     that.graph_url = "/graph/GetGraph";
     that.loss_url = "/graph/GetLoss";
+    that.image_url = "/info/image";
 
     // Request nodes
     that.manifest_node = null;
@@ -26,7 +27,8 @@ DataLoaderClass = function (dataset) {
     that.state = {
         manifest_data: null,
         graph_data: null,
-        loss_data: null
+        loss_data: null,
+        img_url: null
     };
 
     // Define topological structure of data retrieval
@@ -56,6 +58,19 @@ DataLoaderClass = function (dataset) {
     that.set_loss_view = function(v){
         that.loss_view = v;
         v.set_data_manager(that);
+    };
+
+    that.set_image_view = function(v){
+        that.image_view = v;
+        v.set_data_manager();
+    };
+
+    // update img_url in states and update ImageView
+    that.update_image_view = function(id){
+        that.state.img_url = that.image_url + "?filename=" + id + ".jpg";
+        that.image_view.component_update({
+            "img_url": that.state.img_url
+        });
     };
 
     that.update_graph_view = function(){

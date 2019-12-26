@@ -4,6 +4,7 @@ from flask_session import Session
 from datetime import timedelta
 from .views.admin import admin
 from .views.graph import graph
+from .views.info import info
 
 
 def create_app():
@@ -15,6 +16,7 @@ def create_app():
 
     app.register_blueprint(admin)
     app.register_blueprint(graph)
+    app.register_blueprint(info)
 
     # # this manner is somewhere wrong
     # app.config.update(

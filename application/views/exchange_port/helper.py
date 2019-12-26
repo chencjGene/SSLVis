@@ -19,3 +19,6 @@ def get_loss():
 
 def get_labels():
     return exchange_port.get_labels()
+
+def get_image_path(id):
+    return exchange_port.get_image_path(id)

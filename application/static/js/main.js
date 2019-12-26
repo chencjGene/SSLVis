@@ -13,8 +13,10 @@ function set_up(dataset) {
     GraphView = new GraphLayout(d3.select("#my-graph-all"));
     LossView = new ControlLayout(d3.select("#loss-view"));
     LossView.controlItem = GraphView;
+    ImageView = new ImageLayout(d3.select("#image-row"));
     DataLoader.set_graph_view(GraphView);
     DataLoader.set_loss_view(LossView);
+    DataLoader.set_image_view(ImageView);
 }
 
 function clean_dom() {
