@@ -86,7 +86,7 @@ let GraphLayout = function (container){
                      opacity_promise().then(function () {
                          return move_opacity()
                      }).then(function (d) {
-                         that.draw_tsne(false);
+                         that.draw_tsne();
                          svg.select("#graph-view-node-g")
                             .selectAll("circle")
                             .each(function (d) {
@@ -105,18 +105,20 @@ let GraphLayout = function (container){
             .attr("r",3.5) // reset size
             .classed("not_possible",true)
             .classed("selected",false);
+
+        svg.select("#group-propagation").remove();
     };
 
     that.lasso_draw = function() {
         // Style the possible dots
-        // lasso.possibleItems()
-        //     .classed("not_possible",false)
-        //     .classed("possible",true);
+        lasso.possibleItems()
+            .classed("not_possible",false)
+            .classed("possible",true);
         //
         // // Style the not possible dot
-        // lasso.notPossibleItems()
-        //     .classed("not_possible",true)
-        //     .classed("possible",false);
+        lasso.notPossibleItems()
+            .classed("not_possible",true)
+            .classed("possible",false);
 
     };
 
@@ -128,77 +130,86 @@ let GraphLayout = function (container){
         // Style the selected dots
         lasso.selectedItems()
             .classed("selected",true)
-            .attr("r",7);
+            // .attr("r",7);
 
         // Reset the style of the not selected dots
         lasso.notSelectedItems()
             .attr("r",3.5);
 
-        let focus_node = lasso.selectedItems().data().map(d => d.id);
+        let focus_node = lasso.selectedItems().data();
+        console.log("focus nodes:", focus_node);
         if(focus_node.length===0){
             console.log("No node need focus.");
             return
         }
-        $.post("/graph/ZoomIn", {
-            "nodes":JSON.stringify(focus_node)
-        }, function (data) {
-            let d = data.data;
-            let status = data.status;
-            if(status === 0){
-                console.log("Can not zoom in！");
-                return
-            }
-            focus_path.push(focus_node);
-            // transition
-            let no_select_node_promise = function(){
-                return new Promise(function (resolve, reject) {
-                    if(lasso.notSelectedItems().size()===0){
-                        resolve()
+        let propagate_svg = svg.append("g").attr("id", "group-propagation");
+        let edges = that._edge_reformulation(graph_data.edges);
+        for(let d of focus_node){
+            if(d.label[iter] === -1) continue;
+                let eid = d.id;
+                let predict_label = d.label[d.label.length-1];
+                let chose = {};
+                let queue = [eid];
+                let target = undefined;
+                chose[eid] = eid;
+                while (queue.length > 0){
+                    let top = queue.shift();
+                    let find = false;
+                    for(let next of edges[top].e){
+                        if(graph_data.nodes[next].label[iter] !== predict_label) continue;
+                        if(chose[next] === undefined){
+                            chose[next] = top;
+                            queue.push(next);
+                        }
+                        if(graph_data.nodes[next].label[0] === predict_label){
+                            find = true;
+                            target = next;
+                            break;
+                        }
                     }
-                     lasso.notSelectedItems()
-                         .transition()
-                         .duration(500)
-                         .attr("opacity", 0)
-                         .on("end", resolve);
-                })
-            };
-            let select_node_promise = function(){
-                return new Promise(function (resolve, reject) {
-                    graph_data = d;
-                    console.log("Zoom In Nodes", graph_data);
-                    that._center_tsne();
-                    let center_x = 0;
-                    let center_y = 0;
-                    let r = 0;
-                    lasso.selectedItems()
-                        .transition()
-                        .duration(800)
-                        .attr("cx", function (d) {
-                            return graph_data.nodes[d.id].x
-                        })
-                        .attr("cy", function (d) {
-                            return graph_data.nodes[d.id].y
-                        })
-                        .on("end", resolve);
+                    if(find) break;
+                }
+                if(target === undefined){
+                    console.log("Can't find path of node, id:", eid);
+                    return;
+                }
+                let path = [];
+                while (true){
+                    let s = target;
+                    let e = chose[s];
+                    path.unshift([e, s]);
+                    target = e;
+                    if(target === eid) break;
+                }
+                svg.select("#single-propagate").remove();
+                for(let line of path){
+                    svg.select("#graph-view-link-g")
+                            .selectAll("line")
+                            .each(function (d) {
+                                let tline = d3.select(this);
+                                if(d.e === line[0] && d.s === line[1]){
+                                    line.push(tline);
+                                }
+                            });
+                }
 
-                })
-            };
-            no_select_node_promise()
-                .then(function () {
-                    return select_node_promise()
-                })
-                .then(function () {
-                    that.draw_tsne(false);
-                    svg.select("#graph-view-tsne-point")
-                        .selectAll("circle")
-                        .each(function (d) {
-                            let circle = d3.select(this);
-                            if(focus_node.indexOf(d.id) !== -1){
-                                circle.classed("selected", true)
-                            }
-                        });
-                });
-        })
+                propagate_svg
+                    .append("g")
+                    .attr("class", "single-propagate")
+                    .selectAll("line")
+                    .data(path)
+                    .enter()
+                    .append("line")
+                    .attr("stroke-width", 2)
+                    .attr("stroke", color_label[predict_label])
+                    .attr("opacity", 1)
+                    .attr("marker-end", "url(#arrow-"+predict_label+")")
+                    .attr("x1", d => d[2].attr("x1"))
+                    .attr("x2", d => d[2].attr("x2"))
+                    .attr("y1", d => d[2].attr("y1"))
+                    .attr("y2", d => d[2].attr("y2"));
+        }
+
     };
 
     that.all_paired_shortest_path = function(nodes, links){
@@ -482,7 +493,7 @@ let GraphLayout = function (container){
 
     that.setIter = function(newiter) {
         iter = newiter;
-        that.draw_tsne(false);
+        that.draw_tsne();
     };
     
     that.d3_layout = function(graph) {
@@ -568,6 +579,8 @@ let GraphLayout = function (container){
             let scale = 10000;
             let nodes = Object.values(graph_data.nodes);
             let nodenum = nodes.length;
+            width = $('#graph-view-svg').width();
+            height = $('#graph-view-svg').height();
             for(let node of nodes){
                 avx += node.x;
                 avy += node.y;
@@ -611,6 +624,27 @@ let GraphLayout = function (container){
         return new_edges
     };
 
+    that._add_marker = function() {
+        if($("#markers marker").length !== 0) return;
+        svg = container.select("#graph-view-svg");
+        for(let i=0; i < color_label.length; i++){
+            let color = color_label[i];
+            svg.select("#markers").append("marker")
+                .attr("id", "arrow-"+i)
+                .attr("refX", 6)
+                .attr("refY", 2)
+                .attr("markerWidth", 10)
+                .attr("markerHeight", 10)
+                .attr("orient", "auto")
+                .attr("markerUnits", "strokeWidth")
+                .append("path")
+                .attr("d", "M0,4 L4,2 L0,0")
+                .attr("stroke", color)
+                .attr("fill", "transparent")
+                .attr("stroke-width", 1)
+        }
+    };
+
     that.draw_tsne = function(center = true) {
 
         svg = container.select("#graph-view-svg");
@@ -621,7 +655,7 @@ let GraphLayout = function (container){
         width = $('#graph-view-svg').width();
         height = $('#graph-view-svg').height();
         if(center){
-            that._center_tsne()
+            // that._center_tsne()
         }
 
         let golds = nodes.filter(d => d.label[0]>-1);
@@ -708,30 +742,40 @@ let GraphLayout = function (container){
                     if(target === eid) break;
                 }
                 console.log("Find a path:", path, chose);
-                svg.select("#graph-view-link-g")
+                svg.select("#single-propagate").remove();
+                for(let line of path){
+                    svg.select("#graph-view-link-g")
+                            .selectAll("line")
+                            .each(function (d) {
+                                let tline = d3.select(this);
+                                if(d.e === line[0] && d.s === line[1]){
+                                    line.push(tline);
+                                }
+                            });
+                }
+
+                let single_node_propagate = svg.append("g")
+                    .attr("id", "single-propagate")
                     .selectAll("line")
-                    .each(function (d) {
-                        let tline = d3.select(this);
-                        for(let line of path){
-                            if(d.e === line[0] && d.s === line[1]){
-                                tline.attr("stroke", color_label[predict_label])
-                                    .attr("stroke-width", 5)
-                                    .attr("opacity", 1);
-                                return
-                            }
-                        }
-                    });
+                    .data(path)
+                    .enter()
+                    .append("line")
+                    .attr("stroke-width", 2)
+                    .attr("stroke", color_label[predict_label])
+                    .attr("opacity", 1)
+                    .attr("marker-end", "url(#arrow-"+predict_label+")")
+                    .attr("x1", d => d[2].attr("x1"))
+                    .attr("x2", d => d[2].attr("x2"))
+                    .attr("y1", d => d[2].attr("y1"))
+                    .attr("y2", d => d[2].attr("y2"));
 
                 // added by changjian, 20191226
                 // showing image content
                 data_manager.update_image_view(eid);
             })
             .on("mouseout", function (d) {
-                svg.select("#graph-view-link-g")
-                    .selectAll("line")
-                    .attr("stroke", "gray")
-                    .attr("stroke-width", 1)
-                    .attr("opacity", 0.4)
+                svg.select("#single-propagate").remove();
+
             });
 
 
@@ -765,9 +809,13 @@ let GraphLayout = function (container){
     };
 
     that._update_view = function(){
-        that.draw_tsne();
+        that._add_marker();
+        that._center_tsne();
         // added by changjian, 201912242007
         that.draw_edges();
+
+        that.draw_tsne();
+
     };
 
     that.init = function(){

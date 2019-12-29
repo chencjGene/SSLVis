@@ -39,12 +39,12 @@
 
 .possible {
     /*fill: #EC888C;*/
-    r: 5;
+    /*r: 5;*/
 }
 
 .selected {
     /*fill: steelblue;*/
-    r: 7;
+    /*r: 7;*/
 }
 
 .lasso path {
