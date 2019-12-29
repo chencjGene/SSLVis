@@ -158,7 +158,6 @@ class SSLModel(object):
         acc = accuracy_score(train_gt, pred_y)
         logger.info("model accuracy: {}, iter: {}".format(acc, iter))
 
-
         influence_matrix_path = os.path.join(self.selected_dir, "influence_matrix.pkl")
         if os.path.exists(influence_matrix_path):
             logger.info("influence_matrix exist!!!")

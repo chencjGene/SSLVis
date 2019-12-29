@@ -16,6 +16,7 @@ from sklearn.metrics.pairwise import euclidean_distances, paired_distances
 
 from ..utils.log_utils import logger
 
+
 def build_laplacian_graph(affinity_matrix):
     instance_num = affinity_matrix.shape[0]
     laplacian = csgraph.laplacian(affinity_matrix, normed=True)
@@ -27,106 +28,108 @@ def build_laplacian_graph(affinity_matrix):
         laplacian.flat[::instance_num + 1] = 0.0  # set diag to 0.0
     return laplacian
 
+
 def propagation(graph_matrix, affinity_matrix, train_y,
                 process_record=False, alpha=0.2, max_iter=30,
                 tol=1e-3, normalized=True):
-        y = np.array(train_y)
-        # label construction
-        # construct a categorical distribution for classification only
-        classes = np.unique(y)
-        classes = (classes[classes != -1])
-        process_data = None
+    y = np.array(train_y)
+    # label construction
+    # construct a categorical distribution for classification only
+    classes = np.unique(y)
+    classes = (classes[classes != -1])
+    process_data = None
 
+    D = affinity_matrix.sum(axis=0).getA1() - affinity_matrix.diagonal()
+    D = np.sqrt(D)
+    D[D == 0] = 1
+    affinity_matrix.setdiag(0)
 
-        D = affinity_matrix.sum(axis=0).getA1() - affinity_matrix.diagonal()
-        D = np.sqrt(D)
-        D[D==0] = 1
-        affinity_matrix.setdiag(0)
+    n_samples, n_classes = len(y), len(classes)
 
-        n_samples, n_classes = len(y), len(classes)
+    if (alpha is None or alpha <= 0.0 or alpha >= 1.0):
+        raise ValueError('alpha=%s is invalid: it must be inside '
+                         'the open interval (0, 1)' % alpha)
+    y = np.asarray(y)
+    unlabeled = y == -1
+    labeled = (y > -1)
 
-        if (alpha is None or alpha <= 0.0 or alpha >= 1.0):
-            raise ValueError('alpha=%s is invalid: it must be inside '
-                             'the open interval (0, 1)' % alpha)
-        y = np.asarray(y)
-        unlabeled = y == -1
-        labeled = (y > -1)
+    # initialize distributions
+    label_distributions_ = np.zeros((n_samples, n_classes))
+    for label in classes:
+        label_distributions_[y == label, classes == label] = 1
 
-        # initialize distributions
-        label_distributions_ = np.zeros((n_samples, n_classes))
-        for label in classes:
-            label_distributions_[y == label, classes == label] = 1
+    y_static_labeled = np.copy(label_distributions_)
+    y_static = y_static_labeled * (1 - alpha)
 
-        y_static_labeled = np.copy(label_distributions_)
-        y_static = y_static_labeled * (1 - alpha)
+    l_previous = np.zeros((n_samples, n_classes))
 
-        l_previous = np.zeros((n_samples, n_classes))
+    unlabeled = unlabeled[:, np.newaxis]
+    if sparse.isspmatrix(graph_matrix):
+        graph_matrix = graph_matrix.tocsr()
 
-        unlabeled = unlabeled[:, np.newaxis]
-        if sparse.isspmatrix(graph_matrix):
-            graph_matrix = graph_matrix.tocsr()
+    if process_record:
+        process_data = [label_distributions_]
 
-        if process_record:
-            process_data = [label_distributions_]
+    n_iter_ = 0
+    all_loss = []
+    label_distributions_a = safe_sparse_dot(
+        graph_matrix, label_distributions_)
+    t = ((label_distributions_ / D[:, np.newaxis]) ** 2).sum(axis=1)
+    loss = safe_sparse_dot(affinity_matrix.sum(axis=1).T, t) * 0.5 + \
+           safe_sparse_dot(affinity_matrix.sum(axis=0), t) * 0.5 - \
+           np.dot(label_distributions_.reshape(-1),
+                  label_distributions_a.reshape(-1))
+    loss = loss[0,0] + alpha / (1 - alpha) * paired_distances(label_distributions_[labeled],
+                                                         y_static_labeled[labeled]).sum()
+    all_loss.append(loss)
 
-        n_iter_ = 0
-        all_loss = []
+    for _ in range(max_iter):
+        if np.abs(label_distributions_ - l_previous).sum() < tol:
+            break
+
+        l_previous = label_distributions_
         label_distributions_a = safe_sparse_dot(
             graph_matrix, label_distributions_)
-        loss = (label_distributions_ ** 2).sum() - \
+
+        label_distributions_ = np.multiply(
+            alpha, label_distributions_a) + y_static
+        n_iter_ += 1
+        if process_record:
+            label = label_distributions_.copy()
+            normalizer = np.sum(label, axis=1)[:, np.newaxis]
+            normalizer = normalizer + 1e-20
+            label /= normalizer
+            process_data.append(label)
+
+        # loss = entropy(label_distributions_.T).sum()
+        t = ((label_distributions_ / D[:, np.newaxis]) ** 2).sum(axis=1)
+        loss = safe_sparse_dot(affinity_matrix.sum(axis=1).T, t) * 0.5 + \
+               safe_sparse_dot(affinity_matrix.sum(axis=0), t) * 0.5 - \
                np.dot(label_distributions_.reshape(-1),
                       label_distributions_a.reshape(-1))
-        loss = loss + paired_distances(label_distributions_[labeled],
-                                       y_static_labeled[labeled]).sum()
+        # loss[0, 0]: read the only-one value in a numpy.matrix variable
+        loss = loss[0, 0] + alpha / (1 - alpha) * paired_distances(label_distributions_[labeled],
+                                                                   y_static_labeled[labeled]).sum()
         all_loss.append(loss)
 
-        for _ in range(max_iter):
-            if np.abs(label_distributions_ - l_previous).sum() < tol:
-                break
+    else:
+        warnings.warn(
+            'max_iter=%d was reached without convergence.' % max_iter,
+            category=ConvergenceWarning
+        )
+        n_iter_ += 1
 
-            l_previous = label_distributions_
-            label_distributions_a = safe_sparse_dot(
-                graph_matrix, label_distributions_)
+    if normalized:
+        normalizer = np.sum(label_distributions_, axis=1)[:, np.newaxis]
+        normalizer = normalizer + 1e-20
+        label_distributions_ /= normalizer
 
-            label_distributions_ = np.multiply(
-                alpha, label_distributions_a) + y_static
-            n_iter_ += 1
-            if process_record:
-                label = label_distributions_.copy()
-                normalizer = np.sum(label, axis=1)[:, np.newaxis]
-                normalizer = normalizer + 1e-20
-                label /= normalizer
-                process_data.append(label)
+    all_loss = np.array(all_loss)
 
-            # loss = entropy(label_distributions_.T).sum()
-            t = ((label_distributions_ / D[:, np.newaxis]) ** 2).sum(axis=1)
-            loss = safe_sparse_dot(affinity_matrix.sum(axis=1).T, t) * 0.5 + \
-                   safe_sparse_dot(affinity_matrix.sum(axis=0), t) * 0.5 - \
-                   np.dot(label_distributions_.reshape(-1),
-                          label_distributions_a.reshape(-1))
-            # loss[0, 0]: read the only-one value in a numpy.matrix variable
-            loss = loss[0,0] + alpha/(1-alpha) * paired_distances(label_distributions_[labeled],
-                                           y_static_labeled[labeled]).sum()
-            all_loss.append(loss)
+    if process_data is not None:
+        process_data = np.array(process_data)
 
-        else:
-            warnings.warn(
-                'max_iter=%d was reached without convergence.' % max_iter,
-                category=ConvergenceWarning
-            )
-            n_iter_ += 1
-
-        if normalized:
-            normalizer = np.sum(label_distributions_, axis=1)[:, np.newaxis]
-            normalizer = normalizer + 1e-20
-            label_distributions_ /= normalizer
-
-        all_loss = np.array(all_loss)
-
-        if process_data is not None:
-            process_data = np.array(process_data)
-
-        return label_distributions_, all_loss, process_data
+    return label_distributions_, all_loss, process_data
 
 
 def exact_influence(F, affinity_matrix, laplacian_matrix, alpha, train_y):
@@ -135,7 +138,7 @@ def exact_influence(F, affinity_matrix, laplacian_matrix, alpha, train_y):
     instance_num = affinity_matrix.shape[0]
     for i in tqdm(range(instance_num)):
         start = affinity_matrix.indptr[i]
-        end = affinity_matrix.indptr[i+1]
+        end = affinity_matrix.indptr[i + 1]
         j_in_this_row = affinity_matrix.indices[start:end]
         for idx, j in enumerate(j_in_this_row):
             if i == j:
@@ -169,7 +172,7 @@ def approximated_influence(F, affinity_matrix, laplacian_matrix, alpha, train_y)
     instance_num = affinity_matrix.shape[0]
     for i in tqdm(range(instance_num)):
         start = affinity_matrix.indptr[i]
-        end = affinity_matrix.indptr[i+1]
+        end = affinity_matrix.indptr[i + 1]
         j_in_this_row = affinity_matrix.indices[start:end]
         for idx, j in enumerate(j_in_this_row):
             if i == j:

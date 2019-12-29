@@ -623,6 +623,31 @@ let GraphLayout = function (container){
         if(center){
             that._center_tsne()
         }
+
+        let golds = nodes.filter(d => d.label[0]>-1);
+        console.log("golds:", golds);
+        let golds_svg = svg.append("g")
+            .attr("id", "golds-g")
+            .selectAll("path")
+            .data(golds)
+            .enter()
+            .append("path")
+            .attr("id", d => "gold-" + d.id)
+            .attr("d", d => star_path(10,4,d.x, d.y))
+            .attr("fill", function(d){
+                if(show_ground_truth){
+                    if(d.truth === -1) return color_unlabel;
+                    else return color_label[d.truth];
+                }
+                else {
+                    if(d.label[iter] === -1) return color_unlabel;
+                    else return color_label[d.label[iter]];
+                }
+            })
+            .on("mouseover", function (d) {
+                console.log("Label node id:", d.id)
+            });
+
         let nodes_svg = svg.append("g")
             .attr("id", "graph-view-tsne-point")
             .selectAll("circle")
@@ -707,30 +732,6 @@ let GraphLayout = function (container){
                     .attr("stroke", "gray")
                     .attr("stroke-width", 1)
                     .attr("opacity", 0.4)
-            });
-
-        let golds = nodes.filter(d => d.label[0]>-1);
-        console.log("golds:", golds);
-        let golds_svg = svg.append("g")
-            .attr("id", "golds-g")
-            .selectAll("path")
-            .data(golds)
-            .enter()
-            .append("path")
-            .attr("id", d => "gold-" + d.id)
-            .attr("d", d => star_path(10,4,d.x, d.y))
-            .attr("fill", function(d){
-                if(show_ground_truth){
-                    if(d.truth === -1) return color_unlabel;
-                    else return color_label[d.truth];
-                }
-                else {
-                    if(d.label[iter] === -1) return color_unlabel;
-                    else return color_label[d.label[iter]];
-                }
-            })
-            .on("mouseover", function (d) {
-                console.log("Label node id:", d.id)
             });
 
 
