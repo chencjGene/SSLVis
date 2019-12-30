@@ -67,10 +67,18 @@ DataLoaderClass = function (dataset) {
 
     // update img_url in states and update ImageView
     that.update_image_view = function(id){
-        that.state.img_url = that.image_url + "?filename=" + id + ".jpg";
-        that.image_view.component_update({
-            "img_url": that.state.img_url
-        });
+        if(id instanceof Array){
+            that.state.img_grid_urls = id.map(d => that.image_url + "?filename=" + d + ".jpg");
+            that.image_view.component_update({
+                "img_grid_urls": that.state.img_grid_urls
+            });
+        }
+        else {
+            that.state.img_url = that.image_url + "?filename=" + id + ".jpg";
+            that.image_view.component_update({
+                "img_url": that.state.img_url
+            });
+        }
     };
 
     that.update_graph_view = function(){

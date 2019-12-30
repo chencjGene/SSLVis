@@ -137,11 +137,14 @@ let GraphLayout = function (container){
             .attr("r",3.5);
 
         let focus_node = lasso.selectedItems().data();
-        console.log("focus nodes:", focus_node);
+        let focus_node_ids = focus_node.map(d => d.id);
         if(focus_node.length===0){
-            console.log("No node need focus.");
+            // console.log("No node need focus.");
             return
         }
+        data_manager.update_image_view(focus_node_ids);
+        console.log("focus nodes:", focus_node);
+
         let propagate_svg = svg.append("g").attr("id", "group-propagation");
         let edges = that._edge_reformulation(graph_data.edges);
         for(let d of focus_node){
@@ -196,18 +199,21 @@ let GraphLayout = function (container){
                 propagate_svg
                     .append("g")
                     .attr("class", "single-propagate")
-                    .selectAll("line")
+                    .selectAll("polyline")
                     .data(path)
                     .enter()
-                    .append("line")
+                    .append("polyline")
                     .attr("stroke-width", 2)
                     .attr("stroke", color_label[predict_label])
                     .attr("opacity", 1)
-                    .attr("marker-end", "url(#arrow-"+predict_label+")")
-                    .attr("x1", d => d[2].attr("x1"))
-                    .attr("x2", d => d[2].attr("x2"))
-                    .attr("y1", d => d[2].attr("y1"))
-                    .attr("y2", d => d[2].attr("y2"));
+                    .attr("marker-mid", "url(#arrow-"+predict_label+")")
+                    .attr("fill", "none")
+                    .attr("points", function (d) {
+                        let begin = [Math.round(parseFloat(d[2].attr("x1")),2), Math.round(parseFloat(d[2].attr("y1")),2)];
+                        let end = [Math.round(parseFloat(d[2].attr("x2")),2), Math.round(parseFloat(d[2].attr("y2")),2)];
+                        let mid = [(begin[0]+end[0])/2, (begin[1]+end[1])/2];
+                        return begin[0]+","+begin[1]+" "+mid[0]+","+mid[1]+" "+end[0]+","+end[1];
+                    });
         }
 
     };
@@ -649,6 +655,7 @@ let GraphLayout = function (container){
 
         svg = container.select("#graph-view-svg");
         svg.select("#graph-view-tsne-point").remove();
+        svg.select("#golds-g").remove();
         svg.select(".lasso").remove();
         let nodes = Object.values(graph_data.nodes);
         let edges = that._edge_reformulation(graph_data.edges);
@@ -741,7 +748,7 @@ let GraphLayout = function (container){
                     target = e;
                     if(target === eid) break;
                 }
-                console.log("Find a path:", path, chose);
+                // console.log("Find a path:", path, chose);
                 svg.select("#single-propagate").remove();
                 for(let line of path){
                     svg.select("#graph-view-link-g")
@@ -756,18 +763,21 @@ let GraphLayout = function (container){
 
                 let single_node_propagate = svg.append("g")
                     .attr("id", "single-propagate")
-                    .selectAll("line")
+                    .selectAll("polyline")
                     .data(path)
                     .enter()
-                    .append("line")
+                    .append("polyline")
                     .attr("stroke-width", 2)
                     .attr("stroke", color_label[predict_label])
                     .attr("opacity", 1)
-                    .attr("marker-end", "url(#arrow-"+predict_label+")")
-                    .attr("x1", d => d[2].attr("x1"))
-                    .attr("x2", d => d[2].attr("x2"))
-                    .attr("y1", d => d[2].attr("y1"))
-                    .attr("y2", d => d[2].attr("y2"));
+                    .attr("marker-mid", "url(#arrow-"+predict_label+")")
+                    .attr("fill", "none")
+                    .attr("points", function (d) {
+                        let begin = [Math.round(parseFloat(d[2].attr("x1")),2), Math.round(parseFloat(d[2].attr("y1")),2)];
+                        let end = [Math.round(parseFloat(d[2].attr("x2")),2), Math.round(parseFloat(d[2].attr("y2")),2)];
+                        let mid = [(begin[0]+end[0])/2, (begin[1]+end[1])/2];
+                        return begin[0]+","+begin[1]+" "+mid[0]+","+mid[1]+" "+end[0]+","+end[1];
+                    });
 
                 // added by changjian, 20191226
                 // showing image content
