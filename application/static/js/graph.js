@@ -148,41 +148,36 @@ let GraphLayout = function (container){
         let propagate_svg = svg.append("g").attr("id", "group-propagation");
         let edges = that._edge_reformulation(graph_data.edges);
         for(let d of focus_node){
-            if(d.label[iter] === -1) continue;
+            if(d.label[iter] === -1 || d.label[0] !== -1) continue;
                 let eid = d.id;
                 let predict_label = d.label[d.label.length-1];
-                let chose = {};
-                let queue = [eid];
-                let target = undefined;
-                chose[eid] = eid;
-                while (queue.length > 0){
-                    let top = queue.shift();
-                    let find = false;
-                    for(let next of edges[top].e){
-                        if(graph_data.nodes[next].label[iter] !== predict_label) continue;
-                        if(chose[next] === undefined){
-                            chose[next] = top;
-                            queue.push(next);
-                        }
-                        if(graph_data.nodes[next].label[0] === predict_label){
-                            find = true;
-                            target = next;
-                            break;
+                let path_stack = [eid];
+                let path_keys = [];
+                function findpaths() {
+                    if(path_stack.length===0) return;
+                    let now_node = path_stack[path_stack.length-1];
+                    if(graph_data.nodes[now_node].truth === predict_label){
+                        for(let i=1; i<path_stack.length; i++){
+                            let path_key = path_stack[i-1]+","+path_stack[i];
+                            if(path_keys.indexOf(path_key) === -1){
+                                path_keys.push(path_key)
+                            }
                         }
                     }
-                    if(find) break;
+
+                    for(let next_node of edges[now_node].e){
+                        if(graph_data.nodes[next_node].label[iter] !== predict_label) continue;
+                        if(path_stack.indexOf(next_node) !== -1) continue;
+                        path_stack.push(next_node);
+                        findpaths();
+                    }
+                    path_stack.pop();
                 }
-                if(target === undefined){
-                    console.log("Can't find path of node, id:", eid);
-                    return;
-                }
+                findpaths();
                 let path = [];
-                while (true){
-                    let s = target;
-                    let e = chose[s];
-                    path.unshift([e, s]);
-                    target = e;
-                    if(target === eid) break;
+                for(let path_key of path_keys){
+                    let keys = path_key.split(",");
+                    path.push([parseInt(keys[0]), parseInt(keys[1])]);
                 }
                 svg.select("#single-propagate").remove();
                 for(let line of path){
@@ -195,7 +190,7 @@ let GraphLayout = function (container){
                                 }
                             });
                 }
-
+                console.log("find path", path);
                 propagate_svg
                     .append("g")
                     .attr("class", "single-propagate")
@@ -711,44 +706,39 @@ let GraphLayout = function (container){
                 }
             })
             .on("mouseover", function (d) {
-                if(d.label[iter] === -1) return;
+                if(d.label[iter] === -1 || d.label[0] !== -1) return;
                 console.log("Node:", d);
                 let eid = d.id;
                 let predict_label = d.label[d.label.length-1];
-                let chose = {};
-                let queue = [eid];
-                let target = undefined;
-                chose[eid] = eid;
-                while (queue.length > 0){
-                    let top = queue.shift();
-                    let find = false;
-                    for(let next of edges[top].e){
-                        if(graph_data.nodes[next].label[iter] !== predict_label) continue;
-                        if(chose[next] === undefined){
-                            chose[next] = top;
-                            queue.push(next);
-                        }
-                        if(graph_data.nodes[next].label[0] === predict_label){
-                            find = true;
-                            target = next;
-                            break;
+                let path_stack = [eid];
+                let path_keys = [];
+                function findpaths() {
+                    if(path_stack.length===0) return;
+                    let now_node = path_stack[path_stack.length-1];
+                    if(graph_data.nodes[now_node].truth === predict_label){
+                        for(let i=1; i<path_stack.length; i++){
+                            let path_key = path_stack[i-1]+","+path_stack[i];
+                            if(path_keys.indexOf(path_key) === -1){
+                                path_keys.push(path_key)
+                            }
                         }
                     }
-                    if(find) break;
+
+                    for(let next_node of edges[now_node].e){
+                        if(graph_data.nodes[next_node].label[iter] !== predict_label) continue;
+                        if(path_stack.indexOf(next_node) !== -1) continue;
+                        path_stack.push(next_node);
+                        findpaths();
+                    }
+                    path_stack.pop();
                 }
-                if(target === undefined){
-                    console.log("Can't find path of node, id:", eid);
-                    return;
-                }
+                findpaths();
                 let path = [];
-                while (true){
-                    let s = target;
-                    let e = chose[s];
-                    path.unshift([e, s]);
-                    target = e;
-                    if(target === eid) break;
+                for(let path_key of path_keys){
+                    let keys = path_key.split(",");
+                    path.push([parseInt(keys[0]), parseInt(keys[1])]);
                 }
-                // console.log("Find a path:", path, chose);
+
                 svg.select("#single-propagate").remove();
                 for(let line of path){
                     svg.select("#graph-view-link-g")
@@ -760,7 +750,7 @@ let GraphLayout = function (container){
                                 }
                             });
                 }
-
+                console.log("Found paths:", path);
                 let single_node_propagate = svg.append("g")
                     .attr("id", "single-propagate")
                     .selectAll("polyline")
