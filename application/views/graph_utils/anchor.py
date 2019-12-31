@@ -252,7 +252,7 @@ anchorGraph = AnchorGraph()
 def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, dataname, buf_path):
     train_x = np.array(train_x, dtype=np.float64)
     node_num = train_x.shape[0]
-    target_num = 100
+    target_num = 500
     retsne = not os.path.exists(buf_path)
     train_x_tsne = None
     if not retsne:
@@ -293,10 +293,16 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, d
                 level_sum_sample_p = np.sum(level_sample_p)
                 if level_sum_sample_p == 0:
                     level_sample_p = np.ones_like(level_sample_p)
+                    level_sample_p /= np.sum(level_sample_p)
+                    level_selection = np.random.choice(len(level_infos[-1]['index']), sample_number, p=level_sample_p,
+                                                       replace=False)
                 else:
                     level_sample_p /= level_sum_sample_p
+                    level_selection = np.random.choice(len(level_infos[-1]['index']), sample_number - label_num, p=level_sample_p,
+                                                       replace=False)
+                    must_selection = np.argwhere(level_sample_p == 0).flatten()
+                    level_selection = np.concatenate((level_selection, must_selection), axis=0)
 
-                level_selection = np.random.choice(len(level_infos[-1]['index']), sample_number, p=level_sample_p, replace=False)
                 level_index = level_infos[-1]['index'][level_selection]
                 from sklearn.neighbors import BallTree
                 tree = BallTree(train_x[level_index])
@@ -373,6 +379,7 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, d
         "nodes": samples_nodes,
         "edges": edges
     }
+    print("finished")
     return graph
 
 
