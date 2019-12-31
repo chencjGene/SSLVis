@@ -78,8 +78,6 @@ let ImageLayout = function (container){
             .attr("y", (d, i) => img_padding+Math.floor(i/x_grid_num)*(grid_size+grid_offset)-2)
             .attr("width", grid_size+4)
             .attr("height", grid_size+4)
-            .attr("rx", 5)
-            .attr("ry", 5)
             .attr("stroke-width", 4)
             .attr("stroke", "gray")
             .attr("fill-opacity", 0);
