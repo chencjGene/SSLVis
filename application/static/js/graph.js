@@ -27,7 +27,7 @@ let GraphLayout = function (container){
 
     let iter = 0;
 
-    let show_ground_truth = true;
+    let show_ground_truth = false;
 
     that._init = function(){
         $("#zoom-out-btn").click(function (event) {
