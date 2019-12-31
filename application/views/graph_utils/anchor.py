@@ -4,13 +4,13 @@ from sklearn.cluster import KMeans
 import pickle
 from scipy.spatial import distance_matrix
 
-
 from ..utils.config_utils import config
 from ..graph_utils.IncrementalTSNE import IncrementalTSNE
 from ..graph_utils.DensityBasedSampler import DensityBasedSampler
 from ..graph_utils.BlueNoiseSampler import BlueNoiseSampC as BlueNoiseSampler
 from sklearn.manifold import TSNE
 from ..graph_utils.RandomSampler import random_sample
+
 
 class AnchorClusterNode:
     def __init__(self):
@@ -30,6 +30,7 @@ class AnchorClusterNode:
             children_num += child.getChildrenNum()
         return children_num
 
+
 class AnchorCluster:
     def __init__(self, raw_graph, train_x, train_y, dataname, k):
         self.raw_graph = raw_graph
@@ -38,7 +39,8 @@ class AnchorCluster:
         self.dataname = dataname
         self.k = k
         self.root = []
-        self.cluster_buffer_path = os.path.join(config.buffer_root, self.dataname + '_clusters_k=' + str(self.k) + config.pkl_ext)
+        self.cluster_buffer_path = os.path.join(config.buffer_root,
+                                                self.dataname + '_clusters_k=' + str(self.k) + config.pkl_ext)
         if os.path.exists(self.cluster_buffer_path):
             self.load_cluster()
         else:
@@ -46,10 +48,10 @@ class AnchorCluster:
             self.HierarchyCluster(np.arange(0, train_x.shape[0]), first=True)
             self.save_cluster()
 
-    def HierarchyCluster(self, cluster_idxes, children = None, first = False):
+    def HierarchyCluster(self, cluster_idxes, children=None, first=False):
         node_num = cluster_idxes.shape[0]
         dim = self.train_x.shape[1]
-        if node_num < self.k*3:
+        if node_num < self.k * 3:
             self.root = children
             return
 
@@ -59,8 +61,9 @@ class AnchorCluster:
             x[i] = self.train_x[cluster_idxes[i]]
 
         # kmeans
-        n_clutsers = int(node_num/self.k)
-        kmeans = KMeans(n_clusters=n_clutsers, random_state=0, n_jobs=20, max_iter=100, verbose=1, algorithm="elkan").fit(x)
+        n_clutsers = int(node_num / self.k)
+        kmeans = KMeans(n_clusters=n_clutsers, random_state=0, n_jobs=20, max_iter=100, verbose=1,
+                        algorithm="elkan").fit(x)
         labels = kmeans.labels_
         centroids = kmeans.cluster_centers_
         clusters = [AnchorClusterNode() for i in range(n_clutsers)]
@@ -98,9 +101,9 @@ class AnchorCluster:
                     neighbor_id = int(indices[j])
                     neighbor_label = int(labels[neighbor_id])
                     child.connection[indices[j]] = {
-                        "weight":weight[j],
-                        "label":labels[indices[j]],
-                        "anchor_idx":indices[j]
+                        "weight": weight[j],
+                        "label": labels[indices[j]],
+                        "anchor_idx": indices[j]
                     }
                     if label != neighbor_label:
                         if neighbor_label not in clusters[label].connection.keys():
@@ -126,16 +129,17 @@ class AnchorCluster:
             new_connection = {}
             for label, val in cluster.connection.items():
                 new_connection[label] = {
-                    "weight":val,
-                    "label":label,
-                    "anchor_idx":clusters[label].anchor_idx
+                    "weight": val,
+                    "label": label,
+                    "anchor_idx": clusters[label].anchor_idx
                 }
             cluster.connection = new_connection
         idxes = np.array([c.anchor_idx for c in clusters])
         self.HierarchyCluster(idxes, clusters)
 
     def save_cluster(self):
-        cluster_buffer_path = os.path.join(config.buffer_root, self.dataname + '_clusters_k=' + str(self.k) + config.pkl_ext)
+        cluster_buffer_path = os.path.join(config.buffer_root,
+                                           self.dataname + '_clusters_k=' + str(self.k) + config.pkl_ext)
         with open(cluster_buffer_path, 'wb+') as f:
             pickle.dump(self.root, f)
 
@@ -143,12 +147,14 @@ class AnchorCluster:
         with open(self.cluster_buffer_path, 'rb') as f:
             self.root = pickle.load(f)
 
+
 class AnchorGraph():
     def __init__(self):
         self.level = 0
         self.max_level = 1
 
-    def set_value(self, samples_x, samples_x_tsne, samples_y, samples_truth, train_x, train_y, ground_truth, process_data, dataname, clusters, selection):
+    def set_value(self, samples_x, samples_x_tsne, samples_y, samples_truth, train_x, train_y, ground_truth,
+                  process_data, dataname, clusters, selection):
         self.level = 0
         self.samples_x = samples_x
         self.samples_x_tsne = samples_x_tsne
@@ -164,13 +170,13 @@ class AnchorGraph():
 
     def zoom_in(self, focus_ides):
 
-        if self.level>=self.max_level:
+        if self.level >= self.max_level:
             return None, 0
         self.level += 1
         node_num = self.clusters.shape[0]
         focus_idxes = []
         for id in focus_ides:
-            idx = int(np.argwhere(self.selection==id)[0])
+            idx = int(np.argwhere(self.selection == id)[0])
             focus_idxes.append(idx)
         focus_idxes = np.array(focus_idxes)
         mask = []
@@ -184,7 +190,9 @@ class AnchorGraph():
 
         constrain_x = self.samples_x[focus_idxes]
         constrain_y = self.samples_x_tsne[focus_idxes]
-        samples_x_tsne = IncrementalTSNE(n_components=2, n_iter=500, n_jobs=20).fit_transform(samples_x, constraint_X=constrain_x, constraint_Y=constrain_y)
+        samples_x_tsne = IncrementalTSNE(n_components=2, n_iter=500, n_jobs=20).fit_transform(samples_x,
+                                                                                              constraint_X=constrain_x,
+                                                                                              constraint_Y=constrain_y)
         samples_x_tsne = samples_x_tsne.tolist()
         samples_y = samples_y.tolist()
         samples_truth = samples_truth.tolist()
@@ -193,7 +201,8 @@ class AnchorGraph():
         for i in range(selection.shape[0]):
             id = int(selection[i])
             iter_num = self.process_data.shape[0]
-            labels = [int(np.argmax(self.process_data[j][id])) if np.max(self.process_data[j][id])>1e-4 else -1 for j in range(iter_num)]
+            labels = [int(np.argmax(self.process_data[j][id])) if np.max(self.process_data[j][id]) > 1e-4 else -1 for j
+                      in range(iter_num)]
             scores = [float(np.max(self.process_data[j][id])) for j in range(iter_num)]
             samples_nodes[id] = {
                 "id": id,
@@ -236,7 +245,10 @@ class AnchorGraph():
         }
         return graph, 1
 
+
 anchorGraph = AnchorGraph()
+
+
 def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, dataname, buf_path):
     train_x = np.array(train_x, dtype=np.float64)
     node_num = train_x.shape[0]
@@ -246,17 +258,17 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, d
     else:
         # sample_rate = 0.05
         sample_rate = 1.0
-        sample_num = int(train_x.shape[0]*sample_rate)
+        sample_num = int(train_x.shape[0] * sample_rate)
         label_idxes = np.argwhere(train_y != -1).flatten()
         label_num = int(label_idxes.shape[0])
-        sample_p = np.array([1]*train_x.shape[0], dtype=np.float64)
+        sample_p = np.array([1] * train_x.shape[0], dtype=np.float64)
         for i in label_idxes:
             sample_p[i] = 0
         sample_p /= np.linalg.norm(sample_p, 1)
         if label_num >= sample_num:
-            selection = np.array([False]*train_x.shape[0])
+            selection = np.array([False] * train_x.shape[0])
         else:
-            selection, _ = random_sample(train_x, sample_num-label_num, p = sample_p)
+            selection, _ = random_sample(train_x, sample_num - label_num, p=sample_p)
         for i in label_idxes:
             assert selection[i] == False
             selection[i] = True
@@ -271,12 +283,12 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, d
         clusters = dis_mat.argmin(axis=0)
         samples_x_tsne = IncrementalTSNE(n_components=2, n_jobs=20).fit_transform(samples_x)
 
-
         save = (samples_x, samples_x_tsne, samples_y, samples_truth, clusters, selection)
 
         with open(buf_path, "wb+") as f:
             pickle.dump(save, f)
-    anchorGraph.set_value(samples_x, samples_x_tsne, samples_y, samples_truth, train_x, train_y, ground_truth, process_data, dataname, clusters, selection)
+    anchorGraph.set_value(samples_x, samples_x_tsne, samples_y, samples_truth, train_x, train_y, ground_truth,
+                          process_data, dataname, clusters, selection)
 
     samples_x_tsne = samples_x_tsne.tolist()
     samples_y = samples_y.tolist()
@@ -285,15 +297,16 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, d
     for i in range(selection.shape[0]):
         id = int(selection[i])
         iter_num = process_data.shape[0]
-        labels = [int(np.argmax(process_data[j][id])) if np.max(process_data[j][id])>1e-4 else -1 for j in range(iter_num)]
+        labels = [int(np.argmax(process_data[j][id])) if np.max(process_data[j][id]) > 1e-4 else -1 for j in
+                  range(iter_num)]
         scores = [float(np.max(process_data[j][id])) for j in range(iter_num)]
         samples_nodes[id] = {
-            "id":id,
-            "x":samples_x_tsne[i][0],
-            "y":samples_x_tsne[i][1],
-            "label":labels,
-            "score":scores,
-            "truth":samples_truth[i]
+            "id": id,
+            "x": samples_x_tsne[i][0],
+            "y": samples_x_tsne[i][1],
+            "label": labels,
+            "score": scores,
+            "truth": samples_truth[i]
         }
 
     # added by changjian, 201912241926
@@ -302,7 +315,7 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, d
     edges = []
     for i in range(edge_matrix.shape[0]):
         start = edge_matrix.indptr[i]
-        end = edge_matrix.indptr[i+1]
+        end = edge_matrix.indptr[i + 1]
         j_in_this_row = edge_matrix.indices[start:end]
         for idx, j in enumerate(j_in_this_row):
             edges.append({
@@ -316,8 +329,9 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, d
     }
     return graph
 
+
 def getClusters(train_x, train_y, raw_graph, dataname, k):
-    cluster_buffer_path = os.path.join(config.buffer_root, dataname+'_clusters_k='+str(k)+config.pkl_ext)
+    cluster_buffer_path = os.path.join(config.buffer_root, dataname + '_clusters_k=' + str(k) + config.pkl_ext)
     if os.path.exists(cluster_buffer_path):
         with open(cluster_buffer_path, 'rb+') as f:
             clusters = pickle.load(f)

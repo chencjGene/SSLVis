@@ -24,6 +24,7 @@ from .data import Data
 from .LSLabelSpreading import LSLabelSpreading
 from .model_helper import propagation, approximated_influence, exact_influence
 
+
 def build_laplacian_graph(affinity_matrix):
     instance_num = affinity_matrix.shape[0]
     laplacian = csgraph.laplacian(affinity_matrix, normed=True)
@@ -34,6 +35,7 @@ def build_laplacian_graph(affinity_matrix):
     else:
         laplacian.flat[::instance_num + 1] = 0.0  # set diag to 0.0
     return laplacian
+
 
 class SSLModel(object):
     def __init__(self, dataname, labeled_num=None, total_num=None):
@@ -92,24 +94,24 @@ class SSLModel(object):
         nn_fit = NearestNeighbors(self.n_neighbor, n_jobs=-4).fit(train_X)
         logger.info("nn construction finished!")
         neighbor_result = nn_fit.kneighbors_graph(nn_fit._fit_X,
-                                                   self.max_neighbors,
+                                                  self.max_neighbors,
                                                   # 2,
-                                                   mode="distance")
+                                                  mode="distance")
         logger.info("neighbor_result got!")
         neighbors = np.zeros((train_X.shape[0],
                               self.max_neighbors)).astype(int)
         neighbors_weight = np.zeros((train_X.shape[0], self.max_neighbors))
         for i in range(train_X.shape[0]):
             start = neighbor_result.indptr[i]
-            end = neighbor_result.indptr[i+1]
+            end = neighbor_result.indptr[i + 1]
             j_in_this_row = neighbor_result.indices[start:end]
             data_in_this_row = neighbor_result.data[start:end]
             sorted_idx = data_in_this_row.argsort()
-            assert(len(sorted_idx) == self.max_neighbors)
+            assert (len(sorted_idx) == self.max_neighbors)
             j_in_this_row = j_in_this_row[sorted_idx]
             data_in_this_row = data_in_this_row[sorted_idx]
-            neighbors[i,:] = j_in_this_row
-            neighbors_weight[i,:] = data_in_this_row
+            neighbors[i, :] = j_in_this_row
+            neighbors_weight[i, :] = data_in_this_row
 
         logger.info("preprocessed neighbors got!")
 
@@ -129,11 +131,11 @@ class SSLModel(object):
         train_y = np.array(train_y)
 
         # get knn graph in a csr form
-        indptr = [i * self.n_neighbor for i in range(instance_num+1)]
+        indptr = [i * self.n_neighbor for i in range(instance_num + 1)]
         logger.info("get indptr")
-        indices = neighbors[:,:self.n_neighbor].reshape(-1).tolist()
+        indices = neighbors[:, :self.n_neighbor].reshape(-1).tolist()
         logger.info("get indices")
-        data = neighbors_weight[:,:self.n_neighbor].reshape(-1)
+        data = neighbors_weight[:, :self.n_neighbor].reshape(-1)
         logger.info("get data")
         data = (data * 0 + 1.0).tolist()
         logger.info("get data in connectivity")
@@ -171,22 +173,28 @@ class SSLModel(object):
         pickle_save_data(influence_matrix_path, self.influence_matrix)
         return
 
-    def simplify_influence_matrix(self, threshold = 0.7):
+    def simplify_influence_matrix(self, threshold=0.7):
         logger.info("begin simplify influence matrix")
         simplified_affinity_matrix = self.influence_matrix.copy() * 0
         for i in range(simplified_affinity_matrix.shape[0]):
             start = self.influence_matrix.indptr[i]
-            end = self.influence_matrix.indptr[i+1]
+            end = self.influence_matrix.indptr[i + 1]
             data_in_this_row = self.influence_matrix.data[start:end]
             sorted_idx = data_in_this_row.argsort()[::-1]
             max_idx = []
             for k in range(len(sorted_idx)):
                 max_idx.append(sorted_idx[k])
                 if (data_in_this_row[max_idx].sum() /
-                    data_in_this_row.sum() > threshold):
+                        data_in_this_row.sum() > threshold):
                     break
             for k in max_idx:
                 simplified_affinity_matrix.data[start:end][k] = 1
+        # remove in-degree of labeled instances
+        train_y = self.data.get_train_label()
+        labeled_idx = train_y != -1
+        logger.info("labeled num: {}".format(sum(labeled_idx)))
+        simplified_affinity_matrix[labeled_idx] *= 0
+        # test
         simplified_laplacian_matrix = \
             build_laplacian_graph(simplified_affinity_matrix)
         simplified_F, L, _ = self._propagation(simplified_laplacian_matrix,
@@ -204,12 +212,13 @@ class SSLModel(object):
                     .format(accuracy_score(self.pred_dist.argmax(axis=1), ground_truth)))
         logger.info("now acc: {}".format(accuracy_score(simplified_F.argmax(axis=1), ground_truth)))
         simplified_affinity_matrix.eliminate_zeros()
+
         return simplified_affinity_matrix
 
     def _training_old(self, n_neighbor):
         ssl_model_filepath = os.path.join(self.data_root, config.ssl_model_buffer_name)
         if check_exist(ssl_model_filepath) \
-            and (not self.signal_state):
+                and (not self.signal_state):
             logger.info("loading ssl model from buffer")
             self.model = pickle_load_data(ssl_model_filepath)
             return
@@ -240,7 +249,7 @@ class SSLModel(object):
         # this function is disabled
         projection_filepath = os.path.join(self.data_root, config.projection_buffer_name)
         if check_exist(projection_filepath) \
-            and (not self.signal_state):
+                and (not self.signal_state):
             logger.info("loading projection result from buffer")
             self.model = pickle_load_data(projection_filepath)
             return
