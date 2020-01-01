@@ -24,6 +24,8 @@ from .data import Data
 from .LSLabelSpreading import LSLabelSpreading
 from .model_helper import propagation, approximated_influence, exact_influence
 
+DEBUG = True
+
 
 def build_laplacian_graph(affinity_matrix):
     instance_num = affinity_matrix.shape[0]
@@ -49,11 +51,12 @@ class SSLModel(object):
         # signal is used to indicate that all data should be updated
         self.signal_state = False
         self._propagation = propagation
-        self.alpha = 0.2
+        self.alpha = 0.5
 
         self.data = Data(self.dataname, labeled_num, total_num)
         self.selected_dir = self.data.selected_dir
-        self.n_neighbor = int(np.sqrt(self.data.get_train_num()))
+        # self.n_neighbor = int(np.sqrt(self.data.get_train_num()))
+        self.n_neighbor = 7
         logger.info("n_neighbor: {}".format(self.n_neighbor))
 
         self._get_signal_state()
@@ -141,6 +144,10 @@ class SSLModel(object):
         logger.info("get data in connectivity")
         affinity_matrix = sparse.csr_matrix((data, indices, indptr),
                                             shape=(instance_num, instance_num))
+        affinity_matrix = affinity_matrix + affinity_matrix.T
+        affinity_matrix = sparse.csr_matrix((np.ones(len(affinity_matrix.data)).tolist(),
+                                             affinity_matrix.indices, affinity_matrix.indptr),
+                                            shape=(instance_num, instance_num))
         logger.info("affinity_matrix construction finished!!")
         laplacian = build_laplacian_graph(affinity_matrix)
 
@@ -160,8 +167,10 @@ class SSLModel(object):
         acc = accuracy_score(train_gt, pred_y)
         logger.info("model accuracy: {}, iter: {}".format(acc, iter))
 
-        influence_matrix_path = os.path.join(self.selected_dir, "influence_matrix.pkl")
-        if os.path.exists(influence_matrix_path):
+        influence_matrix_path = os.path.join(self.selected_dir,
+                                             "{}_{}_influence_matrix.pkl"
+                                             .format(self.alpha, self.n_neighbor))
+        if os.path.exists(influence_matrix_path) and (not DEBUG):
             logger.info("influence_matrix exist!!!")
             self.influence_matrix = pickle_load_data(influence_matrix_path)
             return
@@ -215,36 +224,6 @@ class SSLModel(object):
 
         return simplified_affinity_matrix
 
-    def _training_old(self, n_neighbor):
-        ssl_model_filepath = os.path.join(self.data_root, config.ssl_model_buffer_name)
-        if check_exist(ssl_model_filepath) \
-                and (not self.signal_state):
-            logger.info("loading ssl model from buffer")
-            self.model = pickle_load_data(ssl_model_filepath)
-            return
-
-        # training ssl model from scratch
-        train_X = self.data.get_train_X()
-        train_y = self.data.get_train_label()
-        train_y = np.array(train_y)
-        train_gt = self.data.get_train_ground_truth()
-        train_gt = np.array(train_gt)
-        logger.info("data shape: {}, labeled_num: {}"
-                    .format(str(train_X.shape), sum(train_y != -1)))
-        self.model = LSLabelSpreading(kernel="knn", n_neighbors=n_neighbor, n_jobs=-4)
-        graph = self.model.get_graph(train_X, train_y)
-        logger.info("got graph")
-        self.model.fit(train_X, train_y)
-        logger.info("model fitting finished")
-        # pred_y = self.model.predict(train_X)
-        pred_y = self.model.label_distributions_.argmax(axis=1)
-        acc = accuracy_score(train_gt, pred_y)
-        logger.info("model accuracy: {}".format(acc))
-
-        # save ssl model buffer
-        pickle_save_data(ssl_model_filepath, self.model)
-        return
-
     def _projection(self):
         # this function is disabled
         projection_filepath = os.path.join(self.data_root, config.projection_buffer_name)
@@ -269,7 +248,7 @@ class SSLModel(object):
         return
 
     def get_graph_and_process_data(self):
-        return self.graph, self.process_data, self.simplify_influence_matrix(threshold=0.9)
+        return self.graph, self.process_data, self.simplify_influence_matrix(threshold=0.7)
 
     def get_loss(self):
         return self.loss
