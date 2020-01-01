@@ -32,14 +32,11 @@ let ImageLayout = function (container){
     let svg = that.container.select("#info");
     let detail_group = svg.select("#detail-group");
     let img_grids = svg.append("g").attr("id", "grid-group");
-    let img_group = svg.append("g").attr("id", "info-image");
     let img_grids_g = null;
 
     that._init = function(){
         svg.attr("width", layout_width)
             .attr("height", layout_height);
-        img_group.attr("transform",
-            "translate(" + ( img_offset_x ) + "," + ( img_offset_y )+ ")");
     };
 
     that.set_data_manager = function(_data_manager){
@@ -69,30 +66,7 @@ let ImageLayout = function (container){
         that._remove();
     };
 
-    that._create = function(){
-        img_grids_g =  img_grids.selectAll(".grid-image")
-            .data(img_grid_urls);
-        let enters = img_grids_g.enter()
-            .append("g")
-            .attr("class", "grid-image")
-            .attr("transform", "translate(0,0)");
-
-        enters.append("rect")
-            .attr("x", (d, i) => img_padding+(i%x_grid_num)*(grid_size+grid_offset)-2)
-            .attr("y", (d, i) => img_padding+Math.floor(i/x_grid_num)*(grid_size+grid_offset)-2)
-            .attr("width", grid_size+4)
-            .attr("height", grid_size+4)
-            .attr("stroke-width", 4)
-            .attr("stroke", "gray")
-            .attr("fill-opacity", 0);
-
-        enters.append("image")
-            .attr("xlink:href", d => d)
-            .attr("x", (d, i) => img_padding+(i%x_grid_num)*(grid_size+grid_offset))
-            .attr("y", (d, i) => img_padding+Math.floor(i/x_grid_num)*(grid_size+grid_offset))
-            .attr("width", grid_size)
-            .attr("height", grid_size)
-            .on("click", function (d, i) {
+    that._show_detail = function (d, i) {
                 img_url = d;
                 layout_width = parseFloat(svg.attr("width"));
                 img_width = layout_width-img_padding * 2;
@@ -145,17 +119,33 @@ let ImageLayout = function (container){
                         .attr("height", img_size);
                     that._update_view();
                 }
-            });
+            };
 
-        // img_group.selectAll("image")
-        //     .data([img_url])
-        //     .enter()
-        //     .append("image")
-        //     .attr("xlink:href", d => d)
-        //     .attr("x", img_padding)
-        //     .attr("y", img_padding+Math.floor((img_grid_urls.length-1)/x_grid_num+1)*(grid_size+grid_offset))
-        //     .attr("width", 0)
-        //     .attr("height", 0);
+    that._create = function(){
+        img_grids_g =  img_grids.selectAll(".grid-image")
+            .data(img_grid_urls);
+        let enters = img_grids_g.enter()
+            .append("g")
+            .attr("class", "grid-image")
+            .attr("transform", "translate(0,0)");
+
+        enters.append("rect")
+            .attr("x", (d, i) => img_padding+(i%x_grid_num)*(grid_size+grid_offset)-2)
+            .attr("y", (d, i) => img_padding+Math.floor(i/x_grid_num)*(grid_size+grid_offset)-2)
+            .attr("width", grid_size+4)
+            .attr("height", grid_size+4)
+            .attr("stroke-width", 4)
+            .attr("stroke", "gray")
+            .attr("fill-opacity", 0);
+
+        enters.append("image")
+            .attr("xlink:href", d => d)
+            .attr("x", (d, i) => img_padding+(i%x_grid_num)*(grid_size+grid_offset))
+            .attr("y", (d, i) => img_padding+Math.floor(i/x_grid_num)*(grid_size+grid_offset))
+            .attr("width", grid_size)
+            .attr("height", grid_size)
+            .on("click", that._show_detail);
+
 
     };
 
@@ -165,6 +155,9 @@ let ImageLayout = function (container){
         let img_size = img_width>img_height?img_height:img_width;
         svg.attr("height", img_padding*2+Math.floor((img_grid_urls.length-1)/x_grid_num+1)*(grid_size+grid_offset)+img_size);
         console.log(img_grids_g);
+        img_grids_g.select("image")
+            .attr("xlink:href", d => d);
+
         img_grids_g
             .transition()
             .duration(AnimationDuration)
@@ -174,9 +167,6 @@ let ImageLayout = function (container){
     };
 
     that._remove = function(){
-        // img_group.selectAll("image")
-        //     .exit()
-        //     .remove();
         img_grids_g
             .exit()
             .remove();
