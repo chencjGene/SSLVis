@@ -16,17 +16,18 @@
     flex: 100 1 auto;
 }
 
-#graph-overview {
-    flex: 0 1 200px;
-}
-
 #graph-toolbar {
-    flex: auto;
+    flex: 0 1 200px;
     display: flex;
     flex-direction: row;
     align-items: flex-start;
     justify-content: flex-start;
     flex-wrap: wrap;
+}
+
+.tool-btn-div {
+    margin: 10px;
+    flex: 0 1 20px;
 }
 
 #graph-legend {

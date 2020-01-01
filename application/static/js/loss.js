@@ -307,7 +307,7 @@ let ControlLayout = function (container){
             .append('g')
             .attr('class', 'axis y-axis')
             .attr('transform', 'translate(80,0)')
-            .call(yAxis)
+            .call(yAxis.ticks(5))
         }
         svg.select("#loss-view-slider")
             .selectAll("#loss-slider-base-circle")
