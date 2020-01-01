@@ -16,9 +16,6 @@ let GraphLayout = function (container){
     color_label[7] = "#ffff00";
     let graph_data = null;
     let data_manager = null;
-    let kklayout = window.KKlayout;
-    let focus_radius = 50;
-    let focus_path = [];
 
     let svg = container.select("#graph-view-svg");
     let edges_group = svg.append("g").attr("id", "graph-view-link-g");
@@ -47,6 +44,9 @@ let GraphLayout = function (container){
             .classed("selected",false);
 
         svg.select("#group-propagation").remove();
+        nodes_in_group.attr("opacity", 1);
+                golds_in_group.attr("opacity", 1);
+                edges_in_group.attr("opacity", 0.4);
     };
 
     that.lasso_draw = function() {
@@ -115,10 +115,19 @@ let GraphLayout = function (container){
                 }
                 findpaths();
                 let path = [];
+                let path_nodes = {};
                 for(let path_key of path_keys){
                     let keys = path_key.split(",");
-                    path.push([parseInt(keys[0]), parseInt(keys[1])]);
+                    let e = parseInt(keys[0]);
+                    let s = parseInt(keys[1]);
+                    path_nodes[e] = true;
+                    path_nodes[s] = true;
+                    path.push([e, s]);
                 }
+
+                // de-highlight
+                nodes_in_group.attr("opacity", d => path_nodes[d.id]===true?1:0.2);
+                golds_in_group.attr("opacity", d => path_nodes[d.id]===true?1:0.2);
                 svg.select("#single-propagate").remove();
                 for(let line of path){
                     svg.select("#graph-view-link-g")
@@ -127,6 +136,9 @@ let GraphLayout = function (container){
                                 let tline = d3.select(this);
                                 if(d.e === line[0] && d.s === line[1]){
                                     line.push(tline);
+                                }
+                                else {
+                                    tline.attr("opacity", 0.2);
                                 }
                             });
                 }
@@ -293,63 +305,6 @@ let GraphLayout = function (container){
         }
     };
 
-    that.draw_tsne = function(center = true) {
-
-        svg = container.select("#graph-view-svg");
-        svg.select("#graph-view-tsne-point").remove();
-        svg.select(".lasso").remove();
-        let nodes = Object.values(graph_data.nodes);
-        let edges = that._edge_reformulation(graph_data.edges);
-        width = $('#graph-view-svg').width();
-        height = $('#graph-view-svg').height();
-        if(center){
-            // that._center_tsne()
-        }
-
-        let golds = nodes.filter(d => d.label[0]>-1);
-        console.log("golds:", golds);
-        let golds_svg = svg.append("g")
-            .attr("id", "golds-g")
-            .selectAll("path")
-            .data(golds)
-            .enter()
-            .append("path")
-            .attr("id", d => "gold-" + d.id)
-            .attr("d", d => star_path(10,4,d.x, d.y))
-            .attr("fill", function(d){
-                if(show_ground_truth){
-                    if(d.truth === -1) return color_unlabel;
-                    else return color_label[d.truth];
-                }
-                else {
-                    if(d.label[iter] === -1) return color_unlabel;
-                    else return color_label[d.label[iter]];
-                }
-            })
-            .on("mouseover", function (d) {
-                console.log("Label node id:", d.id)
-            });
-    };
-
-    // added by Changjian, 201912241956
-    that.draw_edges = function(){
-        let svg = container.select("#graph-view-svg");
-        let links_data = graph_data.edges;
-        let nodes_data = graph_data.nodes;
-        edges_svg
-            .selectAll("line")
-            .data(links_data)
-            .enter()
-            .append("line")
-            .attr("x1", d => nodes_data[d["s"]].x)
-            .attr("y1", d => nodes_data[d["s"]].y)
-            .attr("x2", d => nodes_data[d["e"]].x)
-            .attr("y2", d => nodes_data[d["e"]].y)
-            .attr("stroke-width", 1)
-            .attr("stroke", "gray")
-            .attr("opacity", 0.4);
-    };
-
     that._create = function() {
         svg = container.select("#graph-view-svg");
         let nodes = Object.values(graph_data.nodes);
@@ -408,10 +363,19 @@ let GraphLayout = function (container){
                 }
                 findpaths();
                 let path = [];
+                let path_nodes = {};
                 for(let path_key of path_keys){
                     let keys = path_key.split(",");
-                    path.push([parseInt(keys[0]), parseInt(keys[1])]);
+                    let e = parseInt(keys[0]);
+                    let s = parseInt(keys[1]);
+                    path_nodes[e] = true;
+                    path_nodes[s] = true;
+                    path.push([e, s]);
                 }
+
+                // de-highlight
+                nodes_in_group.attr("opacity", d => path_nodes[d.id]===true?1:0.2);
+                golds_in_group.attr("opacity", d => path_nodes[d.id]===true?1:0.2);
 
                 svg.select("#single-propagate").remove();
                 for(let line of path){
@@ -421,6 +385,9 @@ let GraphLayout = function (container){
                                 let tline = d3.select(this);
                                 if(d.e === line[0] && d.s === line[1]){
                                     line.push(tline);
+                                }
+                                else {
+                                    tline.attr("opacity", 0.2);
                                 }
                             });
                 }
@@ -449,7 +416,9 @@ let GraphLayout = function (container){
             })
             .on("mouseout", function (d) {
                 svg.select("#single-propagate").remove();
-
+                nodes_in_group.attr("opacity", 1);
+                golds_in_group.attr("opacity", 1);
+                edges_in_group.attr("opacity", 0.4);
             });
 
         golds_in_group = golds_group.selectAll("path")
