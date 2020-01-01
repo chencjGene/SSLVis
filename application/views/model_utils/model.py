@@ -24,7 +24,7 @@ from .data import Data
 from .LSLabelSpreading import LSLabelSpreading
 from .model_helper import propagation, approximated_influence, exact_influence
 
-DEBUG = True
+DEBUG = False
 
 
 def build_laplacian_graph(affinity_matrix):
