@@ -46,12 +46,18 @@ let ImageLayout = function (container){
     that.component_update = function(state){
         // console.log("graph component update");
         that._update_data(state);
+        if(img_url !== undefined){
+            detail_pos = -1;
+            that._show_detail(img_url, img_grid_urls.length);
+        }
         that._update_view();
     };
 
     that._update_data = function(state){
         // console.log("image layout data:", state);
-        img_url = state.img_url===undefined? img_url:state.img_url;
+        if(state.img_url !== undefined){
+            img_url = state.img_url;
+        }
         if(state.img_grid_urls !== undefined){
             while (img_grid_urls.length>0) img_grid_urls.pop();
             for(let url of state.img_grid_urls){

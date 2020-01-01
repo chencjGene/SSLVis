@@ -85,7 +85,7 @@ let GraphLayout = function (container){
         data_manager.update_image_view(focus_node_ids);
         console.log("focus nodes:", focus_node);
 
-        let propagate_svg = svg.append("g").attr("id", "group-propagation");
+        let propagate_svg = svg.insert("g", ":first-child").attr("id", "group-propagation");
         let edges = that._edge_reformulation(graph_data.edges);
         for(let d of focus_node){
             if(d.label[iter] === -1 || d.label[0] !== -1) continue;
@@ -392,7 +392,7 @@ let GraphLayout = function (container){
                             });
                 }
                 console.log("Found paths:", path);
-                let single_node_propagate = svg.append("g")
+                let single_node_propagate = svg.insert("g", ":first-child")
                     .attr("id", "single-propagate")
                     .selectAll("polyline")
                     .data(path)
