@@ -3,7 +3,7 @@ import os
 from sklearn.cluster import KMeans
 import pickle
 from scipy.spatial import distance_matrix
-
+import math
 from ..utils.config_utils import config
 from ..graph_utils.IncrementalTSNE import IncrementalTSNE
 from ..graph_utils.DensityBasedSampler import DensityBasedSampler
@@ -252,41 +252,93 @@ anchorGraph = AnchorGraph()
 def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, dataname, buf_path):
     train_x = np.array(train_x, dtype=np.float64)
     node_num = train_x.shape[0]
-    if os.path.exists(buf_path):
-        with open(buf_path, "rb") as f:
-            samples_x, samples_x_tsne, samples_y, samples_truth, clusters, selection = pickle.load(f)
-    else:
-        # sample_rate = 0.05
-        sample_rate = 1.0
-        sample_num = int(train_x.shape[0] * sample_rate)
-        label_idxes = np.argwhere(train_y != -1).flatten()
-        label_num = int(label_idxes.shape[0])
-        sample_p = np.array([1] * train_x.shape[0], dtype=np.float64)
-        for i in label_idxes:
-            sample_p[i] = 0
-        sample_p /= np.linalg.norm(sample_p, 1)
-        if label_num >= sample_num:
-            selection = np.array([False] * train_x.shape[0])
+    target_num = 500
+    retsne = not os.path.exists(buf_path)
+    train_x_tsne = None
+    if not retsne:
+        train_x_tsne, level_infos = pickle.load(open(buf_path, "rb"))
+        top_num = len(level_infos[0]['index'])
+        retsne = top_num != target_num
+
+    if retsne:
+        if train_x_tsne is None:
+            train_x_tsne = IncrementalTSNE(n_components=2, n_jobs=20).fit_transform(train_x)
+
+        if node_num > target_num:
+            label_idxes = np.argwhere(train_y != -1).flatten()
+            label_num = int(label_idxes.shape[0])
+            sample_p = np.ones(node_num, dtype=np.float64)
+            if label_num < node_num:
+                sample_p[label_idxes] = 0
+            sum_sample_p = np.sum(sample_p)
+            sample_p /= sum_sample_p
+
+            min_rate = 0.25
+
+            sampling_scale = node_num / target_num
+            levels_number = int(math.ceil(math.log(sampling_scale, 1 / min_rate))) + 1
+
+            level_infos = [{} for i in range(levels_number)]
+            level_infos[-1]['index'] = np.array(range(node_num))
+            level_infos[-1]['clusters'] = np.array(range(node_num))
+            level_infos[-1]['next'] = None
+
+            number_scale_each_level = sampling_scale ** (1.0 / (levels_number - 1))
+            sample_number = node_num
+            for level_id in range(levels_number - 2, -1, -1):
+                sample_number = round(sample_number / number_scale_each_level)
+                if level_id == 0:
+                    sample_number = target_num
+                level_sample_p = sample_p[level_infos[-1]['index']]
+                level_sum_sample_p = np.sum(level_sample_p)
+                if level_sum_sample_p == 0:
+                    level_sample_p = np.ones_like(level_sample_p)
+                    level_sample_p /= np.sum(level_sample_p)
+                    level_selection = np.random.choice(len(level_infos[-1]['index']), sample_number, p=level_sample_p,
+                                                       replace=False)
+                else:
+                    level_sample_p /= level_sum_sample_p
+                    level_selection = np.random.choice(len(level_infos[-1]['index']), sample_number - label_num, p=level_sample_p,
+                                                       replace=False)
+                    must_selection = np.argwhere(level_sample_p == 0).flatten()
+                    level_selection = np.concatenate((level_selection, must_selection), axis=0)
+
+                level_index = level_infos[-1]['index'][level_selection]
+                from sklearn.neighbors import BallTree
+                tree = BallTree(train_x[level_index])
+                neighbors_nn = tree.query(train_x[level_infos[-1]['index']], 1, return_distance=False)
+                level_next = [[] for next_id in range(len(level_index))]
+                for index_id, index in enumerate(neighbors_nn.reshape(-1)):
+                    level_next[index].append(index_id)
+
+                dis_mat = distance_matrix(train_x[level_index], train_x)
+                level_cluster = dis_mat.argmin(axis=0)
+                level_infos[level_id] = {
+                    'index': level_index,
+                    'clusters': level_cluster,
+                    'next': level_next
+                }
         else:
-            selection, _ = random_sample(train_x, sample_num - label_num, p=sample_p)
-        for i in label_idxes:
-            assert selection[i] == False
-            selection[i] = True
-        # _, selection = sampler.fit_sample(train_x, return_indices=True)
-        selection = np.array(selection)
-        selection = np.argwhere(selection == True).flatten()
-        samples_x = train_x[selection]
-        samples_y = train_y[selection]
-        samples_truth = ground_truth[selection]
+            level_infos = []
+            level_infos.append({})
+            level_infos[0]['index'] = np.array(range(node_num))
+            level_infos[0]['clusters'] = np.array(range(node_num))
+            level_infos[0]['next'] = None
 
-        dis_mat = distance_matrix(samples_x, train_x)
-        clusters = dis_mat.argmin(axis=0)
-        samples_x_tsne = IncrementalTSNE(n_components=2, n_jobs=20).fit_transform(samples_x)
-
-        save = (samples_x, samples_x_tsne, samples_y, samples_truth, clusters, selection)
+        save = (train_x_tsne, level_infos)
 
         with open(buf_path, "wb+") as f:
             pickle.dump(save, f)
+
+    with open(buf_path, "rb") as f:
+        train_x_tsne, level_infos = pickle.load(f)
+        selection = level_infos[0]['index']
+        samples_x = train_x[selection]
+        samples_x_tsne = train_x_tsne[selection]
+        samples_y = train_y[selection]
+        samples_truth = ground_truth[selection]
+        clusters = level_infos[0]['clusters']
+
     anchorGraph.set_value(samples_x, samples_x_tsne, samples_y, samples_truth, train_x, train_y, ground_truth,
                           process_data, dataname, clusters, selection)
 
@@ -327,6 +379,7 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, d
         "nodes": samples_nodes,
         "edges": edges
     }
+    print("finished")
     return graph
 
 

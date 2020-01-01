@@ -13,17 +13,23 @@ let GraphLayout = function (container){
     let layout_height = height - 20;
     let color_unlabel = "#A9A9A9";
     let color_label = d3.schemeCategory10;
-    color_label[7] = "#ffff00";
+    color_label[7] = "#ffdb45";
     let graph_data = null;
     let data_manager = null;
 
-    let svg = container.select("#graph-view-svg");
-    let edges_group = svg.append("g").attr("id", "graph-view-link-g");
-    let nodes_group = svg.append("g").attr("id", "graph-view-tsne-point");
-    let golds_group = svg.append("g").attr("id", "golds-g");
+    let svg = null;
+    let edges_group = null;
+    let nodes_group = null;
+    let golds_group = null;
     let edges_in_group = null;
     let nodes_in_group = null;
     let golds_in_group = null;
+
+    let main_group = null;
+    let zoom_scale = 1;
+    let drag_transform = null;
+    let drag = null;
+    let zoom = null;
 
     let lasso = d3.lasso()
         .closePathSelect(true)
@@ -34,7 +40,59 @@ let GraphLayout = function (container){
     let show_ground_truth = false;
 
     that._init = function(){
+        svg = container.selectAll('#graph-view-svg')
+            .attr("width", width)
+            .attr("height", height);
+        main_group = svg.append('g').attr('id', 'main_group');
 
+        zoom = d3.zoom()
+                    .scaleExtent([0.1, 10])
+                    .on("zoom", zoomed);
+
+        drag_transform = {'x': 0, 'y': 0};
+        drag = d3.drag()
+            .subject(function(d) {
+                return {
+                    x: d.x,
+                    y: d.y
+                };
+            })
+            .on("start", function(d){
+                // it's important that we suppress the mouseover event on the node being dragged. Otherwise it will absorb the mouseover event and the underlying node will not detect it
+                d3.select(this).attr( 'pointer-events', 'none' );
+            })
+            .on("drag", function(d) {
+                drag_transform.x += d3.event.dx;
+                drag_transform.y += d3.event.dy;
+                main_group.attr("cx", function(e) {return e.x + drag_transform.x;})
+                    .attr("cy", function(e) {return e.y + drag_transform.y;});
+            })
+            .on("end", function(d){
+                // now restore the mouseover event or we won't be able to drag a 2nd time
+                d3.select(this).attr( 'pointer-events', '' );
+            });
+
+        function zoomed() {
+            zoom_scale = 1.0 / d3.event.transform.k;
+            main_group.attr("transform", d3.event.transform); // updated for d3 v4
+        }
+
+        d3.select("body").on('keydown',function(){
+            if(d3.event.altKey){
+                svg.on("mousedown", null);
+                svg.on(".drag", null);
+                svg.on(".dragend", null);
+                svg.call(zoom);
+            }
+        }).on('keyup',function(){
+            if (d3.event.keyCode == 18) {
+                svg.on('.zoom', null);
+                svg.call(lasso);
+            }
+        });
+        edges_group = main_group.append("g").attr("id", "graph-view-link-g");
+        nodes_group = main_group.append("g").attr("id", "graph-view-tsne-point");
+        golds_group = main_group.append("g").attr("id", "golds-g");
     };
 
     that.lasso_start = function() {
@@ -85,7 +143,7 @@ let GraphLayout = function (container){
         data_manager.update_image_view(focus_node_ids);
         console.log("focus nodes:", focus_node);
 
-        let propagate_svg = svg.insert("g", ":first-child").attr("id", "group-propagation");
+        let propagate_svg = main_group.insert("g", ":first-child").attr("id", "group-propagation");
         let edges = that._edge_reformulation(graph_data.edges);
         for(let d of focus_node){
             if(d.label[iter] === -1 || d.label[0] !== -1) continue;
@@ -352,12 +410,13 @@ let GraphLayout = function (container){
                             }
                         }
                     }
-
-                    for(let next_node of edges[now_node].e){
-                        if(graph_data.nodes[next_node].label[iter] !== predict_label) continue;
-                        if(path_stack.indexOf(next_node) !== -1) continue;
-                        path_stack.push(next_node);
-                        findpaths();
+                    if (edges[now_node] !== undefined) {
+                        for(let next_node of edges[now_node].e){
+                            if(graph_data.nodes[next_node].label[iter] !== predict_label) continue;
+                            if(path_stack.indexOf(next_node) !== -1) continue;
+                            path_stack.push(next_node);
+                            findpaths();
+                        }
                     }
                     path_stack.pop();
                 }
@@ -392,7 +451,7 @@ let GraphLayout = function (container){
                             });
                 }
                 console.log("Found paths:", path);
-                let single_node_propagate = svg.insert("g", ":first-child")
+                let single_node_propagate = main_group.insert("g", ":first-child")
                     .attr("id", "single-propagate")
                     .selectAll("polyline")
                     .data(path)
@@ -537,6 +596,10 @@ let GraphLayout = function (container){
                     else return color_label[d.label[iter]];
                 }
             });
-    }
+    };
+
+    that.change_edge_show_mode = function(mode) {
+
+    };
 };
 
