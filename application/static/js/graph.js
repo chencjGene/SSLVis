@@ -164,12 +164,13 @@ let GraphLayout = function (container){
                             }
                         }
                     }
-
-                    for(let next_node of edges[now_node].e){
-                        if(graph_data.nodes[next_node].label[iter] !== predict_label) continue;
-                        if(path_stack.indexOf(next_node) !== -1) continue;
-                        path_stack.push(next_node);
-                        findpaths();
+                    if (edges[now_node] !== undefined){
+                        for(let next_node of edges[now_node].e){
+                            if(graph_data.nodes[next_node].label[iter] !== predict_label) continue;
+                            if(path_stack.indexOf(next_node) !== -1) continue;
+                            path_stack.push(next_node);
+                            findpaths();
+                        }
                     }
                     path_stack.pop();
                 }
