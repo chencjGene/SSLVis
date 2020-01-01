@@ -22,6 +22,9 @@ let GraphLayout = function (container){
     let svg = null;
     let main_group = null;
     let zoom_scale = 1;
+    let drag_transform = null;
+    let drag = null;
+    let zoom = null;
 
     let lasso = d3.lasso()
         .closePathSelect(true)
@@ -106,12 +109,12 @@ let GraphLayout = function (container){
             .attr("height", height);
         main_group = svg.append('g').attr('id', 'main_group');
 
-        self.zoom = d3.zoom()
+        zoom = d3.zoom()
                     .scaleExtent([0.1, 10])
                     .on("zoom", zoomed);
 
-        self.drag_transform = {'x': 0, 'y': 0};
-        self.drag = d3.drag()
+        drag_transform = {'x': 0, 'y': 0};
+        drag = d3.drag()
             .subject(function(d) {
                 return {
                     x: d.x,
@@ -123,10 +126,10 @@ let GraphLayout = function (container){
                 d3.select(this).attr( 'pointer-events', 'none' );
             })
             .on("drag", function(d) {
-                self.drag_transform.x += d3.event.dx;
-                self.drag_transform.y += d3.event.dy;
-                main_group.attr("cx", function(e) {return e.x + self.drag_transform.x;})
-                    .attr("cy", function(e) {return e.y + self.drag_transform.y;});
+                drag_transform.x += d3.event.dx;
+                drag_transform.y += d3.event.dy;
+                main_group.attr("cx", function(e) {return e.x + drag_transform.x;})
+                    .attr("cy", function(e) {return e.y + drag_transform.y;});
             })
             .on("end", function(d){
                 // now restore the mouseover event or we won't be able to drag a 2nd time
@@ -134,7 +137,7 @@ let GraphLayout = function (container){
             });
 
         function zoomed() {
-            self.zoom_scale = 1.0 / d3.event.transform.k;
+            zoom_scale = 1.0 / d3.event.transform.k;
             main_group.attr("transform", d3.event.transform); // updated for d3 v4
         }
 
@@ -143,12 +146,12 @@ let GraphLayout = function (container){
                 svg.on("mousedown", null);
                 svg.on(".drag", null);
                 svg.on(".dragend", null);
-                svg.call(self.zoom);
+                svg.call(zoom);
             }
         }).on('keyup',function(){
-            if (d3.event.altKey) {
+            if (d3.event.keyCode == 18) {
                 svg.on('.zoom', null);
-                // self._enableLasso();
+                svg.call(lasso);
             }
         });
     };
