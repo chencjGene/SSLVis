@@ -13,7 +13,7 @@ let GraphLayout = function (container){
     let layout_height = height - 20;
     let color_unlabel = "#A9A9A9";
     let color_label = d3.schemeCategory10;
-    color_label[7] = "#ffff00";
+    color_label[7] = "#ffdb45";
     let graph_data = null;
     let data_manager = null;
     let kklayout = window.KKlayout;
@@ -660,11 +660,14 @@ let GraphLayout = function (container){
             // that._center_tsne()
         }
 
+        let nodes_group = svg.append("g")
+            .attr("id", "graph-view-tsne-point");
+        let golds_group = svg.append("g")
+            .attr("id", "golds-g");
+
         let golds = nodes.filter(d => d.label[0]>-1);
         console.log("golds:", golds);
-        let golds_svg = svg.append("g")
-            .attr("id", "golds-g")
-            .selectAll("path")
+        let golds_svg = golds_group.selectAll("path")
             .data(golds)
             .enter()
             .append("path")
@@ -684,9 +687,7 @@ let GraphLayout = function (container){
                 console.log("Label node id:", d.id)
             });
 
-        let nodes_svg = svg.append("g")
-            .attr("id", "graph-view-tsne-point")
-            .selectAll("circle")
+        let nodes_svg = nodes_group.selectAll("circle")
             .data(nodes)
             .enter()
             .append("circle")
@@ -805,7 +806,7 @@ let GraphLayout = function (container){
             .attr("y2", d => nodes_data[d["e"]].y)
             .attr("stroke-width", 1)
             .attr("stroke", "gray")
-            .attr("opacity", 0.4);
+            .attr("opacity", 0.0);
     };
 
     that._update_view = function(){
@@ -839,6 +840,10 @@ let GraphLayout = function (container){
                     else return color_label[d.label[iter]];
                 }
             });
-    }
+    };
+
+    that.change_edge_show_mode = function(mode) {
+
+    };
 };
 
