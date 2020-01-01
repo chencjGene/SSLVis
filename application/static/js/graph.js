@@ -20,6 +20,8 @@ let GraphLayout = function (container){
     let focus_radius = 50;
     let focus_path = [];
     let svg = null;
+    let main_group = null;
+    let zoom_scale = 1;
 
     let lasso = d3.lasso()
         .closePathSelect(true)
@@ -98,6 +100,57 @@ let GraphLayout = function (container){
                      });
                  })
             });
+
+        svg = container.selectAll('#graph-view-svg')
+            .attr("width", width)
+            .attr("height", height);
+        main_group = svg.append('g').attr('id', 'main_group');
+
+        self.zoom = d3.zoom()
+                    .scaleExtent([0.1, 10])
+                    .on("zoom", zoomed);
+
+        self.drag_transform = {'x': 0, 'y': 0};
+        self.drag = d3.drag()
+            .subject(function(d) {
+                return {
+                    x: d.x,
+                    y: d.y
+                };
+            })
+            .on("start", function(d){
+                // it's important that we suppress the mouseover event on the node being dragged. Otherwise it will absorb the mouseover event and the underlying node will not detect it
+                d3.select(this).attr( 'pointer-events', 'none' );
+            })
+            .on("drag", function(d) {
+                self.drag_transform.x += d3.event.dx;
+                self.drag_transform.y += d3.event.dy;
+                main_group.attr("cx", function(e) {return e.x + self.drag_transform.x;})
+                    .attr("cy", function(e) {return e.y + self.drag_transform.y;});
+            })
+            .on("end", function(d){
+                // now restore the mouseover event or we won't be able to drag a 2nd time
+                d3.select(this).attr( 'pointer-events', '' );
+            });
+
+        function zoomed() {
+            self.zoom_scale = 1.0 / d3.event.transform.k;
+            main_group.attr("transform", d3.event.transform); // updated for d3 v4
+        }
+
+        d3.select("body").on('keydown',function(){
+            if(d3.event.altKey){
+                svg.on("mousedown", null);
+                svg.on(".drag", null);
+                svg.on(".dragend", null);
+                svg.call(self.zoom);
+            }
+        }).on('keyup',function(){
+            if (d3.event.altKey) {
+                svg.on('.zoom', null);
+                // self._enableLasso();
+            }
+        });
     };
 
     that.lasso_start = function() {
@@ -338,11 +391,10 @@ let GraphLayout = function (container){
     };
 
     that._draw_layout = function(graph, transform = true){
-        svg = container.select("#graph-view-svg");
-        svg.select("#graph-view-link-g").remove();
-        svg.select("#graph-view-node-g").remove();
-        svg.select('#graph-view-density-map').remove();
-        svg.select(".lasso").remove();
+        main_group.select("#graph-view-link-g").remove();
+        main_group.select("#graph-view-node-g").remove();
+        main_group.select('#graph-view-density-map').remove();
+        main_group.select(".lasso").remove();
         // that._draw_legend();
         // svg = container.append("svg")
         //                     .attr("id", "graph-view-svg");
@@ -392,7 +444,7 @@ let GraphLayout = function (container){
             for(let contour_path of contour_paths){
                 contour_path.value /= max_contour_value;
             }
-            let contour_svg = svg.append("g")
+            let contour_svg = main_group.append("g")
                 .attr("id", "graph-view-density-map")
                 .selectAll("path")
                 .data(contour_paths)
@@ -404,7 +456,7 @@ let GraphLayout = function (container){
                 .attr("d", d3.geoPath());
 
             // that.centralize(nodes_data, width, height);
-            let links = svg.append("g")
+            let links = main_group.append("g")
                 .attr("id", "graph-view-link-g")
                 .selectAll("line")
                 .data(links_data).enter().append("line")
@@ -415,7 +467,7 @@ let GraphLayout = function (container){
                 .attr("stroke-width", 1)
                 .attr("stroke", "gray")
                 .attr("opacity", 0.4);
-            let nodes = svg.append("g")
+            let nodes = main_group.append("g")
                 .attr("id", "graph-view-node-g")
                 .selectAll("circle")
                 .data(Object.values(nodes_data)).enter().append("circle")
@@ -498,11 +550,6 @@ let GraphLayout = function (container){
     };
     
     that.d3_layout = function(graph) {
-        container.select("#graph-view-svg").remove();
-        let svg = container.append("svg")
-            .attr("id", "graph-view-svg")
-            .attr("width", width)
-            .attr("height", height);
         console.log("width: ", width, "height: ", height);
         let area = width * height;
 
@@ -529,7 +576,7 @@ let GraphLayout = function (container){
             .force("charge", d3.forceManyBody())
             .force("center", d3.forceCenter(width / 2, height / 2));
 
-        var link = svg.append("g")
+        var link = main_group.append("g")
             .attr("class", "links")
             .selectAll("line")
             .data(links_data)
@@ -539,7 +586,7 @@ let GraphLayout = function (container){
                 return 1
             });
 
-        var node = svg.append("g")
+        var node = main_group.append("g")
             .attr("class", "nodes")
             .selectAll("g")
             .data(nodes_data)
@@ -647,11 +694,9 @@ let GraphLayout = function (container){
     };
 
     that.draw_tsne = function(center = true) {
-
-        svg = container.select("#graph-view-svg");
-        svg.select("#graph-view-tsne-point").remove();
-        svg.select("#golds-g").remove();
-        svg.select(".lasso").remove();
+        main_group.select("#graph-view-tsne-point").remove();
+        main_group.select("#golds-g").remove();
+        main_group.select(".lasso").remove();
         let nodes = Object.values(graph_data.nodes);
         let edges = that._edge_reformulation(graph_data.edges);
         width = $('#graph-view-svg').width();
@@ -662,7 +707,7 @@ let GraphLayout = function (container){
 
         let golds = nodes.filter(d => d.label[0]>-1);
         console.log("golds:", golds);
-        let golds_svg = svg.append("g")
+        let golds_svg = main_group.append("g")
             .attr("id", "golds-g")
             .selectAll("path")
             .data(golds)
@@ -684,7 +729,7 @@ let GraphLayout = function (container){
                 console.log("Label node id:", d.id)
             });
 
-        let nodes_svg = svg.append("g")
+        let nodes_svg = main_group.append("g")
             .attr("id", "graph-view-tsne-point")
             .selectAll("circle")
             .data(nodes)
@@ -791,10 +836,9 @@ let GraphLayout = function (container){
 
     // added by Changjian, 201912241956
     that.draw_edges = function(){
-        let svg = container.select("#graph-view-svg");
         let links_data = graph_data.edges;
         let nodes_data = graph_data.nodes;
-        let edges_svg = svg.append("g")
+        let edges_svg = main_group.append("g")
             .attr("id", "graph-view-link-g")
             .selectAll("line")
             .data(links_data)
