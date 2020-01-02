@@ -104,7 +104,11 @@ let GraphLayout = function (container){
         svg.select("#group-propagation").remove();
         nodes_in_group.attr("opacity", 1);
                 golds_in_group.attr("opacity", 1);
-                edges_in_group.attr("opacity", 0.4);
+                // edges_in_group.attr("opacity", 0.4);
+
+        svg.select("#single-propagate").remove();
+                nodes_in_group.attr("opacity", 1);
+                golds_in_group.attr("opacity", 1);
     };
 
     that.lasso_draw = function() {
@@ -197,7 +201,8 @@ let GraphLayout = function (container){
                                     line.push(tline);
                                 }
                                 else {
-                                    tline.attr("opacity", 0.2);
+                                    // tline.attr("opacity", 0.2);
+
                                 }
                             });
                 }
@@ -394,6 +399,14 @@ let GraphLayout = function (container){
                 }
             })
             .on("mouseover", function (d) {
+                let node = d3.select(this);
+                node.attr("r", 5);
+            })
+            .on("mouseout", function (d) {
+                let node = d3.select(this);
+                node.attr("r", 3.5);
+            })
+            .on("click", function (d) {
                 if(d.label[iter] === -1 || d.label[0] !== -1) return;
                 console.log("Node:", d);
                 let eid = d.id;
@@ -447,7 +460,7 @@ let GraphLayout = function (container){
                                     line.push(tline);
                                 }
                                 else {
-                                    tline.attr("opacity", 0.2);
+                                    // tline.attr("opacity", 0.2);
                                 }
                             });
                 }
@@ -473,12 +486,6 @@ let GraphLayout = function (container){
                 // added by changjian, 20191226
                 // showing image content
                 data_manager.update_image_view(eid);
-            })
-            .on("mouseout", function (d) {
-                svg.select("#single-propagate").remove();
-                nodes_in_group.attr("opacity", 1);
-                golds_in_group.attr("opacity", 1);
-                edges_in_group.attr("opacity", 0.4);
             });
 
         golds_in_group = golds_group.selectAll("path")
@@ -512,7 +519,7 @@ let GraphLayout = function (container){
                 .attr("y2", d => nodes_data[d["e"]].y)
                 .attr("stroke-width", 1)
                 .attr("stroke", "gray")
-                .attr("opacity", 0.4);
+                .attr("opacity", 0.0);
 
         // remove lasso
         svg.select(".lasso").remove();
