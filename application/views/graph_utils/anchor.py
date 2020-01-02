@@ -252,17 +252,19 @@ anchorGraph = AnchorGraph()
 def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, dataname, buf_path):
     train_x = np.array(train_x, dtype=np.float64)
     node_num = train_x.shape[0]
-    target_num = 500
+    target_num = node_num
     retsne = not os.path.exists(buf_path)
     train_x_tsne = None
     if not retsne:
         train_x_tsne, level_infos = pickle.load(open(buf_path, "rb"))
         top_num = len(level_infos[0]['index'])
+        print(top_num, '<===>', target_num)
         retsne = top_num != target_num
 
     if retsne:
         if train_x_tsne is None:
-            train_x_tsne = IncrementalTSNE(n_components=2, n_jobs=20).fit_transform(train_x)
+            # train_x_tsne = IncrementalTSNE(n_components=2, n_jobs=20).fit_transform(train_x)
+            train_x_tsne = TSNE(n_components=2, verbose=True, n_jobs=20, method='exact').fit_transform(train_x)
 
         if node_num > target_num:
             label_idxes = np.argwhere(train_y != -1).flatten()
@@ -334,10 +336,11 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, d
         train_x_tsne, level_infos = pickle.load(f)
         selection = level_infos[0]['index']
         samples_x = train_x[selection]
-        samples_x_tsne = train_x_tsne[selection]
+        init_samples_x_tsne = train_x_tsne[selection]
         samples_y = train_y[selection]
         samples_truth = ground_truth[selection]
         clusters = level_infos[0]['clusters']
+        samples_x_tsne = IncrementalTSNE(n_components=2, n_jobs=20, init=init_samples_x_tsne, n_iter=250, exploration_n_iter=0).fit_transform(samples_x)
 
     anchorGraph.set_value(samples_x, samples_x_tsne, samples_y, samples_truth, train_x, train_y, ground_truth,
                           process_data, dataname, clusters, selection)
