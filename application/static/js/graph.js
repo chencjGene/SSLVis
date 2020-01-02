@@ -81,10 +81,19 @@ let GraphLayout = function (container){
             main_group.attr("transform", d3.event.transform); // updated for d3 v4
         }
 
-        svg.on("mousedown", null);
-                svg.on(".drag", null);
-                svg.on(".dragend", null);
-                svg.call(zoom);
+        svg.on("mousedown", function () {
+                svg.select("#group-propagation").remove();
+                nodes_in_group.attr("opacity", 1);
+                        golds_in_group.attr("opacity", 1);
+                        // edges_in_group.attr("opacity", 0.4);
+
+                svg.select("#single-propagate").remove();
+                    nodes_in_group.attr("opacity", 1);
+                    golds_in_group.attr("opacity", 1);
+                });
+        svg.on(".drag", null);
+        svg.on(".dragend", null);
+        svg.call(zoom);
 
         $("#lasso-btn").click(function () {
             that._change_lasso_mode();
@@ -236,7 +245,16 @@ let GraphLayout = function (container){
             if_lasso = false;
             $("#lasso-btn").css("background-color", btn_unselect_color);
             lasso_btn_path.attr("stroke", "black").attr("fill", "black");
-            svg.on("mousedown", null);
+            svg.on("mousedown", function () {
+                svg.select("#group-propagation").remove();
+                nodes_in_group.attr("opacity", 1);
+                        golds_in_group.attr("opacity", 1);
+                        // edges_in_group.attr("opacity", 0.4);
+
+                svg.select("#single-propagate").remove();
+                    nodes_in_group.attr("opacity", 1);
+                    golds_in_group.attr("opacity", 1);
+                });
                 svg.on(".drag", null);
                 svg.on(".dragend", null);
                 svg.call(zoom);
