@@ -30,6 +30,7 @@ let GraphLayout = function (container){
 
     let main_group = null;
     let zoom_scale = 1;
+    let current_level = 0;
     let drag_transform = null;
     let drag = null;
     let zoom = null;
@@ -50,7 +51,7 @@ let GraphLayout = function (container){
         main_group = svg.append('g').attr('id', 'main_group');
 
         zoom = d3.zoom()
-                    .scaleExtent([0.1, 10])
+                    .scaleExtent([0.6, 128])
                     .on("zoom", zoomed);
 
         drag_transform = {'x': 0, 'y': 0};
@@ -79,6 +80,16 @@ let GraphLayout = function (container){
         function zoomed() {
             zoom_scale = 1.0 / d3.event.transform.k;
             main_group.attr("transform", d3.event.transform); // updated for d3 v4
+            let target_level = current_level;
+            let current_level_scale = Math.pow(4, target_level);
+            while (zoom_scale > 4 * current_level_scale) {
+                current_level_scale *= 4;
+                target_level += 1;
+            }
+            while (zoom_scale < current_level_scale / 2) {
+                current_level_scale /= 4;
+                target_level -= 1;
+            }
         }
 
         svg.on("mousedown", function () {
@@ -258,13 +269,14 @@ let GraphLayout = function (container){
                 svg.on(".drag", null);
                 svg.on(".dragend", null);
                 svg.call(zoom);
+                svg.selectAll('.lasso').remove();
         }
         else {
             if_lasso = true;
             $("#lasso-btn").css("background-color", btn_select_color);
             lasso_btn_path.attr("stroke", "white").attr("fill", "white");
             svg.on('.zoom', null);
-                svg.call(lasso);
+            svg.call(lasso);
         }
     };
 
