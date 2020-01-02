@@ -21,6 +21,8 @@ let ImageLayout = function (container){
     let img_width = layout_width-img_padding * 2;
     let img_height = layout_height-img_padding*2;
     let AnimationDuration = 500;
+    let longAnimationDuration = 500;
+    let shortAnimationDuration = 10;
     let x_grid_num = parseInt((layout_width-5)/(grid_offset+grid_size));
     console.log("GraphLayout", "layout width", layout_width, "layout height", layout_height);
 
@@ -48,6 +50,7 @@ let ImageLayout = function (container){
         that._update_data(state);
         if(img_url !== undefined){
             detail_pos = -1;
+            AnimationDuration = shortAnimationDuration;
             that._show_detail(img_url, img_grid_urls.length);
         }
         that._update_view();
@@ -75,7 +78,7 @@ let ImageLayout = function (container){
     that._show_detail = function (d, i) {
                 img_url = d;
                 layout_width = parseFloat(svg.attr("width"));
-                img_width = layout_width-img_padding * 2;
+                let img_width = x_grid_num*(grid_size+grid_offset)-grid_offset-img_padding*2;
                 let img_size = img_width>img_height?img_height:img_width;
                 let x_padding = (layout_width-img_size)/2;
                 console.log(layout_width, img_size, x_padding);
@@ -121,6 +124,22 @@ let ImageLayout = function (container){
                         .duration(AnimationDuration)
                         .attr("x", x_padding)
                         .attr("y", img_padding+(Math.floor(i/x_grid_num)+1)*(grid_size+grid_offset))
+                        .attr("width", 0)
+                        .attr("height", 0)
+                        .on("end", function () {
+                            let image = d3.select(this);
+                            image.remove();
+                        });
+                    detail_group.append("image")
+                        .attr("xlink:href", img_url)
+                        .attr("x", img_padding)
+                        .attr("y", img_padding+(Math.floor(i/x_grid_num)+1)*(grid_size+grid_offset))
+                        .attr("width", 0)
+                        .attr("height", 0)
+                        .transition()
+                        .duration(AnimationDuration)
+                        .attr("x", x_padding)
+                        .attr("y", img_padding+(Math.floor(i/x_grid_num)+1)*(grid_size+grid_offset))
                         .attr("width", img_size)
                         .attr("height", img_size);
                     that._update_view();
@@ -128,6 +147,7 @@ let ImageLayout = function (container){
             };
 
     that._create = function(){
+        AnimationDuration = longAnimationDuration;
         img_grids_g =  img_grids.selectAll(".grid-image")
             .data(img_grid_urls);
         let enters = img_grids_g.enter()
