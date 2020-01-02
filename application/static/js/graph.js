@@ -14,6 +14,8 @@ let GraphLayout = function (container){
     let color_unlabel = "#A9A9A9";
     let color_label = d3.schemeCategory10;
     color_label[7] = "#ffdb45";
+    let btn_select_color = "#4a148c";
+    let btn_unselect_color = "#ffffff";
     let graph_data = null;
     let data_manager = null;
 
@@ -24,12 +26,14 @@ let GraphLayout = function (container){
     let edges_in_group = null;
     let nodes_in_group = null;
     let golds_in_group = null;
+    let lasso_btn_path = null;
 
     let main_group = null;
     let zoom_scale = 1;
     let drag_transform = null;
     let drag = null;
     let zoom = null;
+    let if_lasso = false;
 
     let lasso = d3.lasso()
         .closePathSelect(true)
@@ -77,22 +81,20 @@ let GraphLayout = function (container){
             main_group.attr("transform", d3.event.transform); // updated for d3 v4
         }
 
-        d3.select("body").on('keydown',function(){
-            if(d3.event.altKey){
-                svg.on("mousedown", null);
+        svg.on("mousedown", null);
                 svg.on(".drag", null);
                 svg.on(".dragend", null);
                 svg.call(zoom);
-            }
-        }).on('keyup',function(){
-            if (d3.event.keyCode == 18) {
-                svg.on('.zoom', null);
-                svg.call(lasso);
-            }
+
+        $("#lasso-btn").click(function () {
+            that._change_lasso_mode();
         });
+
         edges_group = main_group.append("g").attr("id", "graph-view-link-g");
         nodes_group = main_group.append("g").attr("id", "graph-view-tsne-point");
         golds_group = main_group.append("g").attr("id", "golds-g");
+        lasso_btn_path = d3.select("#lasso-btn").select("path");
+
     };
 
     that.lasso_start = function() {
@@ -227,6 +229,25 @@ let GraphLayout = function (container){
                     });
         }
 
+    };
+
+    that._change_lasso_mode = function() {
+        if(if_lasso){
+            if_lasso = false;
+            $("#lasso-btn").css("background-color", btn_unselect_color);
+            lasso_btn_path.attr("stroke", "black").attr("fill", "black");
+            svg.on("mousedown", null);
+                svg.on(".drag", null);
+                svg.on(".dragend", null);
+                svg.call(zoom);
+        }
+        else {
+            if_lasso = true;
+            $("#lasso-btn").css("background-color", btn_select_color);
+            lasso_btn_path.attr("stroke", "white").attr("fill", "white");
+            svg.on('.zoom', null);
+                svg.call(lasso);
+        }
     };
 
     that.set_data_manager = function(_data_manager){
