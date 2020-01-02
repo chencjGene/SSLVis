@@ -506,6 +506,10 @@ let GraphLayout = function (container){
                 })
                 .on("mouseover", function (d) {
                     console.log("Label node id:", d.id)
+                })
+                .on("click", function (d) {
+                    let eid = d.id;
+                    data_manager.update_image_view(eid);
                 });
 
 
