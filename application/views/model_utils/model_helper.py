@@ -72,6 +72,7 @@ def propagation(graph_matrix, affinity_matrix, train_y,
 
     n_iter_ = 0
     all_loss = []
+    all_entropy = []
     # label_distributions_a = safe_sparse_dot(
     #     graph_matrix, label_distributions_)
     # t = ((label_distributions_ / D[:, np.newaxis]) ** 2).sum(axis=1)
@@ -123,6 +124,8 @@ def propagation(graph_matrix, affinity_matrix, train_y,
         loss = loss2 + alpha / (1 - alpha) * paired_distances(label_distributions_[labeled],
                                                              y_static_labeled[labeled]).sum()
         all_loss.append(loss)
+        ent = entropy(l_previous.T)
+        all_entropy.append(ent.sum())
 
     else:
         warnings.warn(
@@ -138,11 +141,13 @@ def propagation(graph_matrix, affinity_matrix, train_y,
 
     all_loss.append(all_loss[-1])
     all_loss = np.array(all_loss)
+    all_entropy.append(all_entropy[-1])
+    all_entropy = np.array(all_entropy)
 
     if process_data is not None:
         process_data = np.array(process_data)
 
-    return label_distributions_, all_loss, process_data
+    return label_distributions_, all_loss, all_entropy, process_data
 
 
 def exact_influence(F, affinity_matrix, laplacian_matrix, alpha, train_y):
@@ -159,7 +164,7 @@ def exact_influence(F, affinity_matrix, laplacian_matrix, alpha, train_y):
             left_one_aff = affinity_matrix.copy()
             left_one_aff.data[start:end][idx] = 0
             left_one_lap = build_laplacian_graph(left_one_aff)
-            left_one_F, left_one_L, _ = propagation(left_one_lap,
+            left_one_F, left_one_L, _, _ = propagation(left_one_lap,
                                                     left_one_aff,
                                                     train_y,
                                                     alpha=alpha,
