@@ -34,6 +34,10 @@ def app_get_graph():
 def app_get_loss():
     return get_loss()
 
+@graph.route('/graph/GetEnt', methods = ['POST', 'GET'])
+def app_get_ent():
+    return get_ent()
+
 @graph.route('/graph/GetLabels', methods=['POST'])
 def app_get_label_num():
     return get_labels()

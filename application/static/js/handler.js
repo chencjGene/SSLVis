@@ -42,3 +42,14 @@ DataLoaderClass.prototype.get_loss_handler = function (callback) {
 
     return _loss_handler;
 };
+
+DataLoaderClass.prototype.get_ent_handler = function (callback) {
+    let that = this;
+
+    function _ent_handler(data) {
+        that.state.ent_data = data;
+        if (callback) callback();
+    }
+
+    return _ent_handler;
+};

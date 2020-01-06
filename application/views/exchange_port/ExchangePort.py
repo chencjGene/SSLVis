@@ -106,6 +106,11 @@ class ExchangePortClass(object):
         loss = self.model.get_loss()
         return jsonify(loss.tolist())
 
+    def get_ent(self):
+        ent = self.model.get_ent()
+        print("Get ent:", ent)
+        return jsonify(ent.tolist())
+
     def get_labels(self):
         labels = self.model.data.class_names
         return jsonify(labels)
