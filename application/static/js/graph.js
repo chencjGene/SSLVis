@@ -16,6 +16,7 @@ let GraphLayout = function (container){
     color_label[7] = "#ffdb45";
     let btn_select_color = "#560731";
     let btn_unselect_color = "#ffffff";
+
     let graph_data = null;
     let data_manager = null;
 
@@ -198,7 +199,7 @@ let GraphLayout = function (container){
         for(let d of focus_node){
             if(d.label[iter] === -1 || d.label[0] !== -1) continue;
                 let eid = d.id;
-                let predict_label = d.label[d.label.length-1];
+                let predict_label = d.label[iter];
                 let path_stack = [eid];
                 let path_keys = [];
                 function findpaths() {
@@ -481,7 +482,7 @@ let GraphLayout = function (container){
                 if(d.label[iter] === -1 || d.label[0] !== -1) return;
                 console.log("Node:", d);
                 let eid = d.id;
-                let predict_label = d.label[d.label.length-1];
+                let predict_label = d.label[iter];
                 let path_stack = [eid];
                 let path_keys = [];
                 function findpaths() {

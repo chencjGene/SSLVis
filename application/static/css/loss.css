@@ -20,3 +20,29 @@
 .axis-x-text{
     pointer-events: none;
 }
+
+#ent-view-line path {
+    stroke-dasharray: 4;
+}
+
+.entropy-axis path {
+    /*stroke-dasharray: 4;*/
+}
+
+.loss-axis path, .loss-axis line {
+    /*stroke: #26a9e1;*/
+    /*stroke-width: 1.5px;*/
+}
+
+.entropy-axis path, .entropy-axis line {
+    /*stroke: #816cad;*/
+    /*stroke-width: 1.5px;*/
+}
+
+.loss-axis text {
+    /*fill: #26a9e1;*/
+}
+
+.entropy-axis text {
+    /*fill: #816cad;*/
+}
