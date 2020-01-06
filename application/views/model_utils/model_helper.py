@@ -67,12 +67,19 @@ def propagation(graph_matrix, affinity_matrix, train_y,
     if sparse.isspmatrix(graph_matrix):
         graph_matrix = graph_matrix.tocsr()
 
-    if process_record:
-        process_data = [label_distributions_]
-
-    n_iter_ = 0
     all_loss = []
     all_entropy = []
+
+    if process_record:
+        label = label_distributions_.copy()
+        normalizer = np.sum(label, axis=1)[:, np.newaxis]
+        normalizer = normalizer + 1e-20
+        label /= normalizer
+        process_data = [label]
+        ent = entropy(label.T + 1e-20)
+        all_entropy.append(ent.sum())
+
+    n_iter_ = 0
     # label_distributions_a = safe_sparse_dot(
     #     graph_matrix, label_distributions_)
     # t = ((label_distributions_ / D[:, np.newaxis]) ** 2).sum(axis=1)
@@ -101,6 +108,8 @@ def propagation(graph_matrix, affinity_matrix, train_y,
             normalizer = normalizer + 1e-20
             label /= normalizer
             process_data.append(label)
+            ent = entropy(label.T + 1e-20)
+            all_entropy.append(ent.sum())
 
         # record loss
         # t = ((l_previous / D[:, np.newaxis]) ** 2).sum(axis=1)
@@ -124,8 +133,6 @@ def propagation(graph_matrix, affinity_matrix, train_y,
         loss = loss2 + alpha / (1 - alpha) * paired_distances(label_distributions_[labeled],
                                                              y_static_labeled[labeled]).sum()
         all_loss.append(loss)
-        ent = entropy(l_previous.T)
-        all_entropy.append(ent.sum())
 
     else:
         warnings.warn(
@@ -141,8 +148,9 @@ def propagation(graph_matrix, affinity_matrix, train_y,
 
     all_loss.append(all_loss[-1])
     all_loss = np.array(all_loss)
-    all_entropy.append(all_entropy[-1])
     all_entropy = np.array(all_entropy)
+    assert np.isnan(all_entropy).sum() == 0
+    assert np.isinf(all_entropy).sum() == 0
 
     if process_data is not None:
         process_data = np.array(process_data)
