@@ -22,3 +22,4 @@ scikit-learn/
 playground.py
 buffer/
 images/
+.vscode/

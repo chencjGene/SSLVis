@@ -153,12 +153,13 @@ class SSLModel(object):
 
         train_gt = self.data.get_train_ground_truth()
         train_gt = np.array(train_gt)
-        pred_dist, loss, process_data = \
+        pred_dist, loss, ent, process_data = \
             self._propagation(laplacian, affinity_matrix, train_y,
                               alpha=self.alpha, process_record=True,
                               normalized=False)
         self.loss = loss
         self.process_data = process_data
+        self.ent = ent
         self.pred_dist = pred_dist
         self.graph = affinity_matrix
         iter = len(loss)
@@ -206,7 +207,7 @@ class SSLModel(object):
         # test
         simplified_laplacian_matrix = \
             build_laplacian_graph(simplified_affinity_matrix)
-        simplified_F, L, _ = self._propagation(simplified_laplacian_matrix,
+        simplified_F, L, _, _ = self._propagation(simplified_laplacian_matrix,
                                                simplified_affinity_matrix,
                                                np.array(self.data.get_train_label()),
                                                alpha=self.alpha,
@@ -248,10 +249,13 @@ class SSLModel(object):
         return
 
     def get_graph_and_process_data(self):
-        return self.graph, self.process_data, self.simplify_influence_matrix(threshold=0.7)
+        return self.graph, self.process_data, self.simplify_influence_matrix(threshold=0.9)
 
     def get_loss(self):
         return self.loss
+
+    def get_ent(self):
+        return self.ent
 
     def get_data(self):
         train_X = self.data.get_train_X()
