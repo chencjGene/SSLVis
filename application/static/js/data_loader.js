@@ -12,12 +12,14 @@ DataLoaderClass = function (dataset) {
     that.manifest_url = "/graph/GetManifest";
     that.graph_url = "/graph/GetGraph";
     that.loss_url = "/graph/GetLoss";
+    that.ent_url = "/graph/GetEnt";
     that.image_url = "/info/image";
 
     // Request nodes
     that.manifest_node = null;
     that.graph_node = null;
     that.loss_node = null;
+    that.ent_node = null;
 
     // views
     that.graph_view = null;
@@ -28,7 +30,8 @@ DataLoaderClass = function (dataset) {
         manifest_data: null,
         graph_data: null,
         loss_data: null,
-        img_url: null
+        img_url: null,
+        ent_data: null
     };
 
     // Define topological structure of data retrieval
@@ -44,6 +47,10 @@ DataLoaderClass = function (dataset) {
         that.loss_node = new request_node(that.loss_url + params,
             that.get_loss_handler(that.update_loss_view), "json", "GET");
         that.loss_node.depend_on(that.manifest_node);
+
+        that.ent_node = new request_node(that.ent_url + params,
+            that.get_ent_handler(that.update_ent_view), "json", "GET");
+        that.ent_node.depend_on(that.manifest_node);
     };
 
     that.init_notify = function () {
@@ -92,6 +99,13 @@ DataLoaderClass = function (dataset) {
         console.log("update loss view");
         that.loss_view.component_update({
             "loss_data": that.state.loss_data
+        })
+    };
+
+    that.update_ent_view = function(){
+        console.log("update ent view");
+        that.loss_view.component_update({
+            "ent_data": that.state.ent_data
         })
     };
 

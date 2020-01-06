@@ -1,0 +1,59 @@
+{#<div class="my-panel" @*style="display: none" *@>#}
+{#    <div>#}
+{#        <span class="my-panel-heading"> Control </span>#}
+{#    </div>#}
+{#    <hr class="my-panel-seg"/>#}
+{#</div>#}
+<div id="my-graph-left">
+        <div id="setting">
+            <div id="toolbar-title">SETTING</div>
+            <div class="dataset-container">
+                <label id="img_category_label"class="field"for="img_category"data-value="">
+                    <span class="pulldown-icon">
+                        <svg viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet" focusable="false" class="style-scope iron-icon" style="pointer-events: none; display: block; width: 100%; height: 100%;"><g class="style-scope iron-icon"><path d="M7 10l5 5 5-5z" class="pulldown-icon-path"></path></g></svg>
+                    </span>
+                <span class="control-subtitle-font">Dataset</span>
+                    <div id="img_category"class="psuedo_select"name="img_category">
+
+                        <span class="selected"></span>
+                        <ul id="img_category_options"class="options">
+                            <li class="option"data-value="stl-20-500">stl-20-500</li>
+                            <li class="option"data-value="stl-20-2000">stl-20-2000</li>
+                        </ul>
+
+                    </div>
+            </label>
+                <div class="container-legend">
+                    <span style='margin-bottom: 2px; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 12px; font-weight: 700; color: #969696;'>10 Labeled data</span>
+                    <span style='margin-top: 5px; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 12px; font-weight: 700; color: #969696;'>490 Labeled data</span>
+                </div>
+            </div>
+            <div class="slider-container">
+                <span class="control-subtitle-font">K in k-NN</span>
+                <div class="range-slider">
+                  <input class="range-slider__range" type="range" value="5" min="0" max="50">
+                  <span class="range-slider__value">0</span>
+                </div>
+            </div>
+            <div class="slider-container">
+                <span class="control-subtitle-font">Edge filter</span>
+                <div class="range-slider">
+                  <input class="range-slider__range" type="range" value="90" min="0" max="100">
+                  <span class="range-slider__value">0</span>
+                </div>
+            </div>
+        </div>
+        <div id="encoding">
+            <div id="toolbar-title">ENCODING</div>
+            <div class="encoding-container" style="margin-bottom: 0">
+                <span class="control-subtitle-font">Labels</span>
+                <svg id="label-glyph-svg" height="50">
+
+                </svg>
+            </div>
+            <div class="encoding-container">
+                <span class="control-subtitle-font">Categories</span>
+                <svg id="category-encoding"></svg>
+            </div>
+        </div>
+</div>
