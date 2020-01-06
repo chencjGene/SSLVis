@@ -25,28 +25,28 @@
     <body>
         <div class="self-row" id="main-row">
             <div class="self-column" id="control-column">
-            <div class="self-column">
-                {%  include 'control.html' %}
+                <div class="self-column">
+                    {%  include 'control.html' %}
+                </div>
             </div>
-        </div>
-        <div class="self-column" id="control-graph-column">
-            <div class="self-row" id="loss-row">
-                {% include 'loss.html'%}
+            <div class="self-column" id="control-graph-column">
+                <div class="self-row" id="loss-row">
+                    {% include 'loss.html'%}
 
-            </div>
-            <div class="self-row" id="graph-row">
-                {% include 'graph.html'%}
+                </div>
+                <div class="self-row" id="graph-row">
+                    {% include 'graph.html'%}
 
+                </div>
             </div>
-        </div>
-        <div class="self-column" id="history-info-column">
-            <div class="self-row" id="history-row">
-                {% include 'history.html'%}
+            <div class="self-column" id="history-info-column">
+                <div class="self-row" id="history-row">
+                    {% include 'history.html'%}
+                </div>
+                <div class="self-row" id="image-row">
+                    {% include 'image.html'%}
+                </div>
             </div>
-            <div class="self-row" id="image-row" style="overflow-y:auto;">
-                {% include 'image.html'%}
-            </div>
-        </div>
         </div>
     </body>
 

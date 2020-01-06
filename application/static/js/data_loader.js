@@ -73,19 +73,20 @@ DataLoaderClass = function (dataset) {
     };
 
     // update img_url in states and update ImageView
-    that.update_image_view = function(id){
-        if(id instanceof Array){
-            that.state.img_grid_urls = id.map(d => that.image_url + "?filename=" + d + ".jpg");
-            that.image_view.component_update({
-                "img_grid_urls": that.state.img_grid_urls
-            });
-        }
-        else {
-            that.state.img_url = that.image_url + "?filename=" + id + ".jpg";
-            that.image_view.component_update({
-                "img_url": that.state.img_url
-            });
-        }
+    that.update_image_view = function(nodes){
+        that.state.img_grid_urls = [];
+        nodes.each(function (d) {
+            let node = d3.select(this);
+            that.state.img_grid_urls.push({
+                url:that.image_url + "?filename=" + d.id + ".jpg",
+                id:d.id,
+                node:node
+            })
+        });
+        that.image_view.component_update({
+            "img_grid_urls": that.state.img_grid_urls
+        })
+
     };
 
     that.update_graph_view = function(){

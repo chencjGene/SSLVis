@@ -1,3 +1,9 @@
 #image-row {
     background-color: #fafafa;
 }
+
+#info-div {
+    overflow-y: auto;
+    background-color: #fafafa;
+    /*height: 800px;*/
+}
