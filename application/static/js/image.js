@@ -24,7 +24,7 @@ let ImageLayout = function (container){
     let longAnimationDuration = 500;
     let shortAnimationDuration = 10;
     let x_grid_num = parseInt((layout_width-5)/(grid_offset+grid_size));
-    console.log("GraphLayout", "layout width", layout_width, "layout height", layout_height);
+    console.log("Image view", "layout width", layout_width, "layout height", layout_height);
 
     let img_url = null;
     let img_grid_urls = [];

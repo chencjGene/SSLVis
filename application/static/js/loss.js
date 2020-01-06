@@ -22,7 +22,10 @@ let ControlLayout = function (container){
     let playing = false;
     let play_interval = null;
     let draging = false;
-    console.log("GraphLayout", "layout width", layout_width, "layout height", layout_height);
+    console.log("Loss view", "layout width", layout_width, "layout height", layout_height);
+    if(layout_width<0){
+        console.log("error");
+    }
 
     let data_manager = null;
 
