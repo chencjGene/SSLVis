@@ -31,6 +31,7 @@ let GraphLayout = function (container){
 
     let main_group = null;
     let zoom_scale = 1;
+    let old_transform = null;
     let current_level = 0;
     let drag_transform = null;
     let drag = null;
@@ -49,10 +50,14 @@ let GraphLayout = function (container){
     let center_scale_x_reverse = null;
     let center_scale_y_reverse = null;
 
+    let click_menu_settings = null;
+    let click_menu = null;
+
     that._init = function(){
         svg = container.selectAll('#graph-view-svg')
             .attr("width", width)
             .attr("height", height);
+        svg.attr("oncontextmenu", "DataLoader.graph_view.context_menu(evt)");
         main_group = svg.append('g').attr('id', 'main_group');
 
         zoom = d3.zoom()
@@ -104,7 +109,9 @@ let GraphLayout = function (container){
             }
             current_level = target_level;
             // console.log(d3.event.transform);
-
+            if (old_transform === null) {
+                old_transform = d3.event.transform;
+            }
         }
 
         function zoom_end() {
@@ -126,27 +133,31 @@ let GraphLayout = function (container){
                 target_level -= 1;
             }
             current_level = target_level;
-            svg = container.select("#graph-view-svg");
-            width = $('#graph-view-svg').width();
-            height = $('#graph-view-svg').height();
-            // main_group.select('#debug-shouxing')
-            //     .attr('x', -d3.event.transform.x / d3.event.transform.k)
-            //     .attr('y', -d3.event.transform.y / d3.event.transform.k)
-            //     .attr('width', width / d3.event.transform.k)
-            //     .attr('height', height / d3.event.transform.k);
-            let start_x = center_scale_x_reverse(-d3.event.transform.x / d3.event.transform.k);
-            let start_y = center_scale_y_reverse(-d3.event.transform.y / d3.event.transform.k);
-            let end_x = center_scale_x_reverse((width - d3.event.transform.x) / d3.event.transform.k);
-            let end_y = center_scale_y_reverse((height - d3.event.transform.y) / d3.event.transform.k);
 
-            let area = {
-                'x': start_x,
-                'y': start_y,
-                'width': end_x - start_x,
-                'height': end_y - start_y
-            };
-            console.log(d3.event.transform, area, current_level);
-            DataLoader.update_graph_notify(area, current_level);
+            if (old_transform === null || d3.event.transform.k !== old_transform.k || Math.abs(d3.event.transform.x - old_transform.x) > 1 || Math.abs(d3.event.transform.y - old_transform.y) > 1) {
+                svg = container.select("#graph-view-svg");
+                width = $('#graph-view-svg').width();
+                height = $('#graph-view-svg').height();
+                // main_group.select('#debug-shouxing')
+                //     .attr('x', -d3.event.transform.x / d3.event.transform.k)
+                //     .attr('y', -d3.event.transform.y / d3.event.transform.k)
+                //     .attr('width', width / d3.event.transform.k)
+                //     .attr('height', height / d3.event.transform.k);
+                let start_x = center_scale_x_reverse(-d3.event.transform.x / d3.event.transform.k);
+                let start_y = center_scale_y_reverse(-d3.event.transform.y / d3.event.transform.k);
+                let end_x = center_scale_x_reverse((width - d3.event.transform.x) / d3.event.transform.k);
+                let end_y = center_scale_y_reverse((height - d3.event.transform.y) / d3.event.transform.k);
+
+                let area = {
+                    'x': start_x,
+                    'y': start_y,
+                    'width': end_x - start_x,
+                    'height': end_y - start_y
+                };
+                console.log(d3.event.transform, area, current_level);
+                DataLoader.update_graph_notify(area, current_level);
+            }
+            old_transform = d3.event.transform;
         }
 
         svg.on("mousedown", function () {
@@ -172,6 +183,12 @@ let GraphLayout = function (container){
         golds_group = main_group.append("g").attr("id", "golds-g");
         lasso_btn_path = d3.select("#lasso-btn").select("path");
 
+        click_menu_settings = {
+            'mouseClick': 'right',
+            'triggerOn':'click'
+        };
+
+        that._update_click_menu();
         that._draw_labels_glyph();
     };
 
@@ -749,9 +766,45 @@ let GraphLayout = function (container){
 
     };
 
+    that._update_click_menu = function(){
+        $.post('/graph/GetLabels', {}, function (d) {
+                let label_names = d;
+
+                let menu = [];
+                label_names.forEach(function(d, i){
+                    var sm = {
+                            title:d,
+                            name:d,
+                            color: color_label[i],
+                            fun:function(){
+
+                            }
+                        };
+                        menu.push(sm);
+                    });
+                menu.push({
+                    title: 'Delete',
+                    name: 'Delete',
+                    color: '',
+                    fun: function () {
+
+                    }
+                });
+
+                click_menu = menu;
+                if (menu.length > 0) {
+                    $('#graph-view-svg').contextMenu(click_menu, click_menu_settings);
+                }
+        });
+    };
+
     that.init = function(){
         that._init();
     }.call();
+
+    that.context_menu = function(e) {
+        e.preventDefault();
+    };
 
     that.change_show_mode = function(mode) {
         if(mode === "truth")
