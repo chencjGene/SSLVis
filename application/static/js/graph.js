@@ -190,7 +190,7 @@ let GraphLayout = function (container){
             // console.log("No node need focus.");
             return
         }
-        data_manager.update_image_view(focus_node_ids);
+        data_manager.update_image_view(lasso.selectedItems());
         console.log("focus nodes:", focus_node);
 
         let propagate_svg = main_group.insert("g", ":first-child").attr("id", "group-propagation");
@@ -479,6 +479,7 @@ let GraphLayout = function (container){
                 node.attr("r", 3.5);
             })
             .on("click", function (d) {
+                let node = d3.select(this);
                 if(d.label[iter] === -1 || d.label[0] !== -1) return;
                 console.log("Node:", d);
                 let eid = d.id;
@@ -557,7 +558,7 @@ let GraphLayout = function (container){
 
                 // added by changjian, 20191226
                 // showing image content
-                data_manager.update_image_view(eid);
+                data_manager.update_image_view(node);
             });
 
         golds_in_group = golds_group.selectAll("path")
@@ -581,7 +582,8 @@ let GraphLayout = function (container){
                 })
                 .on("click", function (d) {
                     let eid = d.id;
-                    data_manager.update_image_view(eid);
+                    let nodes = d3.select(this);
+                    data_manager.update_image_view(nodes);
                 });
 
 

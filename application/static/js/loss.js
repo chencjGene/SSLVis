@@ -13,6 +13,7 @@ let ControlLayout = function (container){
     let layout_height = height - 20;
     let line_width = width - 100;
     let line_height = height - 30;
+    let slider_delta = -1;
     let loss = [];
     let ent = [];
     let min_loss = 0;
@@ -50,7 +51,8 @@ let ControlLayout = function (container){
 
     let data_manager = null;
 
-    that.controlItem = null;
+    that.controlInstanceView = null;
+    that.controlInfoView = null;
 
     that._init = function(){
         $("#loss-begin-btn").click(function (d) {
@@ -106,7 +108,7 @@ let ControlLayout = function (container){
         layout_height = height - 20;
         line_width = layout_width - 80;
         line_height = layout_height - 30;
-        let slider_delta = line_width/(loss.length-0.5);
+        slider_delta = line_width/(loss.length-0.5);
         let slider_width = 6;
         xPositionScale = d3
               .scaleLinear()
@@ -313,8 +315,18 @@ let ControlLayout = function (container){
             return;
         }
         iter = newiter;
+        let value = d3.event.x;
+        if(value<80) value=80;
+        if(value>80+line_width) value = 80+line_width;
+
+        let circle = d3.select("#loss-view-slider-circle");
+        value = xPositionScale(iter);
+        svg.select("#loss-slider-left").attr("x2", value);
+        circle.attr("cx", value)
+            .attr("cy", 32+line_height);
         that._update_view();
-        that.controlItem.setIter(newiter);
+        that.controlInstanceView.setIter(newiter);
+        that.controlInfoView.setIter(newiter);
     };
 
     that._update_view = function() {
