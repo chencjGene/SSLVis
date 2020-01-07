@@ -26,10 +26,24 @@ DataLoaderClass.prototype.get_graph_handler = function (callback) {
         console.log("graph_handler");
         console.log(data);
         that.state.graph_data = data;
-        if (callback) callback();
+        if (callback) callback(true);
     }
 
     return _graph_handler;
+};
+
+DataLoaderClass.prototype.update_graph_handler = function (callback) {
+    let that = this;
+
+    function _update_graph_handler(data) {
+        console.log(that.update_graph_url);
+        console.log("update_graph_handler");
+        console.log(data);
+        that.state.graph_data = data;
+        if (callback) callback(false);
+    }
+
+    return _update_graph_handler;
 };
 
 DataLoaderClass.prototype.get_loss_handler = function (callback) {

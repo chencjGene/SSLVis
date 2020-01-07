@@ -252,7 +252,7 @@ anchorGraph = AnchorGraph()
 def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, dataname, buf_path):
     train_x = np.array(train_x, dtype=np.float64)
     node_num = train_x.shape[0]
-    target_num = node_num
+    target_num = 500
     retsne = not os.path.exists(buf_path)
     train_x_tsne = None
     if not retsne:
@@ -340,7 +340,7 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, d
         samples_y = train_y[selection]
         samples_truth = ground_truth[selection]
         clusters = level_infos[0]['clusters']
-        samples_x_tsne = IncrementalTSNE(n_components=2, n_jobs=20, init=init_samples_x_tsne, n_iter=250, exploration_n_iter=0).fit_transform(samples_x)
+        samples_x_tsne = init_samples_x_tsne#IncrementalTSNE(n_components=2, n_jobs=20, init=init_samples_x_tsne, n_iter=250, exploration_n_iter=0).fit_transform(samples_x)
 
     anchorGraph.set_value(samples_x, samples_x_tsne, samples_y, samples_truth, train_x, train_y, ground_truth,
                           process_data, dataname, clusters, selection)
@@ -383,6 +383,66 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, d
         "edges": edges
     }
     print("finished")
+    return graph
+
+
+def updateAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, dataname, area, level, buf_path):
+    with open(buf_path, "rb") as f:
+        train_x_tsne, level_infos = pickle.load(f)
+        _selection = level_infos[level]['index']
+        _pos = train_x_tsne[_selection]
+        selection = []
+        for i, ind in enumerate(_selection):
+            if area['x'] <= _pos[i][0] <= area['x'] + area['width'] and area['y'] <= _pos[i][1] <= area['y'] + area['height']:
+                selection.append(ind)
+        samples_x = train_x[selection]
+        init_samples_x_tsne = train_x_tsne[selection]
+        samples_y = train_y[selection]
+        samples_truth = ground_truth[selection]
+        clusters = level_infos[level]['clusters']
+        samples_x_tsne = init_samples_x_tsne#IncrementalTSNE(n_components=2, n_jobs=20, init=init_samples_x_tsne, n_iter=250,
+                                         #exploration_n_iter=0).fit_transform(samples_x)
+
+    anchorGraph.set_value(samples_x, samples_x_tsne, samples_y, samples_truth, train_x, train_y, ground_truth,
+                          process_data, dataname, clusters, selection)
+
+    samples_x_tsne = samples_x_tsne.tolist()
+    samples_y = samples_y.tolist()
+    samples_truth = samples_truth.tolist()
+    samples_nodes = {}
+    for i in range(len(selection)):
+        id = int(selection[i])
+        iter_num = process_data.shape[0]
+        labels = [int(np.argmax(process_data[j][id])) if np.max(process_data[j][id]) > 1e-4 else -1 for j in
+                  range(iter_num)]
+        scores = [float(np.max(process_data[j][id])) for j in range(iter_num)]
+        samples_nodes[id] = {
+            "id": id,
+            "x": samples_x_tsne[i][0],
+            "y": samples_x_tsne[i][1],
+            "label": labels,
+            "score": scores,
+            "truth": samples_truth[i]
+        }
+
+    # added by changjian, 201912241926
+    # added edges. A quick and dirty manner
+    edge_matrix = influence_matrix[selection][:, selection]
+    edges = []
+    for i in range(edge_matrix.shape[0]):
+        start = edge_matrix.indptr[i]
+        end = edge_matrix.indptr[i + 1]
+        j_in_this_row = edge_matrix.indices[start:end]
+        for idx, j in enumerate(j_in_this_row):
+            edges.append({
+                "s": int(selection[j]),
+                "e": int(selection[i])
+            })
+
+    graph = {
+        "nodes": samples_nodes,
+        "edges": edges
+    }
     return graph
 
 

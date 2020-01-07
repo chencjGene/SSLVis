@@ -8,7 +8,9 @@ import scipy.cluster.vq as vq
 
 from ..model_utils import SSLModel
 from ..utils.config_utils import config
-from ..graph_utils.anchor import getAnchors
+from ..graph_utils.anchor import getAnchors, updateAnchors
+import pickle
+from ..graph_utils.IncrementalTSNE import IncrementalTSNE
 
 
 class ExchangePortClass(object):
@@ -116,3 +118,15 @@ class ExchangePortClass(object):
         img_dir = os.path.join(config.image_root, self.dataname)
         img_path = os.path.join(img_dir, str(real_id) + ".jpg")
         return img_path
+
+    def update_graph(self, area, level):
+        raw_graph, process_data, influence_matrix \
+            = self.model.get_graph_and_process_data()
+        train_x, train_y = self.model.get_data()
+        buf_path = os.path.join(self.model.data.selected_dir, "anchors" + config.pkl_ext)
+        ground_truth = self.model.data.get_train_ground_truth()
+
+        graph = updateAnchors(train_x, train_y, ground_truth,
+                           process_data, influence_matrix, self.dataname, area, level,
+                           buf_path)
+        return jsonify(graph)

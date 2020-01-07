@@ -13,10 +13,12 @@ DataLoaderClass = function (dataset) {
     that.graph_url = "/graph/GetGraph";
     that.loss_url = "/graph/GetLoss";
     that.image_url = "/info/image";
+    that.update_graph_url = "/graph/update";
 
     // Request nodes
     that.manifest_node = null;
     that.graph_node = null;
+    that.update_graph_node = null;
     that.loss_node = null;
 
     // views
@@ -41,6 +43,9 @@ DataLoaderClass = function (dataset) {
             that.get_graph_handler(that.update_graph_view), "json", "GET");
         that.graph_node.depend_on(that.manifest_node);
 
+        that.update_graph_node = new request_node(that.update_graph_url + params,
+            that.update_graph_handler(that.update_graph_view), "json", "POST");
+
         that.loss_node = new request_node(that.loss_url + params,
             that.get_loss_handler(that.update_loss_view), "json", "GET");
         that.loss_node.depend_on(that.manifest_node);
@@ -48,6 +53,15 @@ DataLoaderClass = function (dataset) {
 
     that.init_notify = function () {
         that.manifest_node.notify();
+    };
+
+    that.update_graph_notify = function (area, target_level) {
+
+        that.update_graph_node.set_data({
+            'area': area,
+            'level': target_level
+        });
+        that.update_graph_node.notify();
     };
 
     that.set_graph_view = function (v) {
@@ -81,11 +95,11 @@ DataLoaderClass = function (dataset) {
         }
     };
 
-    that.update_graph_view = function(){
+    that.update_graph_view = function(rescale){
         console.log("update graph view");
         that.graph_view.component_update({
             "graph_data": that.state.graph_data
-        })
+        }, rescale)
     };
 
     that.update_loss_view = function(){

@@ -58,7 +58,8 @@ def app_save_layout():
 
 @graph.route('/graph/ZoomIn', methods=["POST"])
 def app_zoom_in():
-    anchor_idxes = json.loads(request.form['nodes'])
+    anchor_idxes = json.loads(request.form['area'])
+    level = int(request.form['level'])
     data, status = anchorGraph.zoom_in(anchor_idxes)
     return jsonify({
         "data": data,
@@ -72,3 +73,11 @@ def app_zoom_out():
         "data": data,
         "status": status
     })
+
+@graph.route('/graph/update', methods=["GET", "POST"])
+def app_update():
+    dataset = request.args['dataset']
+    data = json.loads(request.data)
+    area = data['area']
+    level = data['level']
+    return update_graph(area, level)
