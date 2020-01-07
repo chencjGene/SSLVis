@@ -35,7 +35,10 @@ class ExchangePortClass(object):
             self.model = SSLModel(self.dataname, labeled_num, total_num)
 
     def get_manifest(self):
-        manifest = [1]
+        manifest = {
+            "k": self.model.n_neighbor,
+            "filter_threshold": self.model.filter_threshold
+        }
         return jsonify(manifest)
 
     def dijktra(self, graph, node_id):

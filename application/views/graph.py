@@ -11,6 +11,7 @@ from .exchange_port import *
 
 graph = Blueprint("graph", __name__)
 
+
 @graph.route("/graph/GetManifest", methods=["GET", "POST"])
 def app_get_manifest():
     # extract info from request
@@ -26,21 +27,36 @@ def app_get_manifest():
     set_model(dataname, labeled_num, total_num)
     return get_manifest()
 
+
+@graph.route("/graph/SetK", methods=["GET", "POST"])
+def app_set_k():
+    return 1
+
+
+@graph.route("/graph/SetInfluenceFilter", methods=["GET", "POST"])
+def app_set_influence_filter():
+    return 1
+
+
 @graph.route("/graph/GetGraph", methods=["GET", "POST"])
 def app_get_graph():
     return get_graph()
+
 
 @graph.route('/graph/GetLoss', methods=['POST', 'GET'])
 def app_get_loss():
     return get_loss()
 
-@graph.route('/graph/GetEnt', methods = ['POST', 'GET'])
+
+@graph.route('/graph/GetEnt', methods=['POST', 'GET'])
 def app_get_ent():
     return get_ent()
+
 
 @graph.route('/graph/GetLabels', methods=['POST'])
 def app_get_label_num():
     return get_labels()
+
 
 @graph.route('/graph/StressMajorization', methods=["POST"])
 def app_stress_majorization():
@@ -53,12 +69,14 @@ def app_stress_majorization():
     res = stress_majorization_solve(L, W, D, C, X)
     return jsonify(res)
 
+
 @graph.route('/graph/SaveLayout', methods=["POST"])
 def app_save_layout():
     graph = json.loads(request.form['graph'])
     with open(os.path.join(config.buffer_root, "graph.json"), "w+") as f:
         json.dump(graph, f, indent=4)
-    return jsonify({"status":1})
+    return jsonify({"status": 1})
+
 
 @graph.route('/graph/ZoomIn', methods=["POST"])
 def app_zoom_in():
@@ -66,8 +84,9 @@ def app_zoom_in():
     data, status = anchorGraph.zoom_in(anchor_idxes)
     return jsonify({
         "data": data,
-        "status":status
+        "status": status
     })
+
 
 @graph.route('/graph/ZoomOut', methods=['POST'])
 def app_zoom_out():

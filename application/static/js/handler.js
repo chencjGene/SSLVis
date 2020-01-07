@@ -11,7 +11,9 @@ DataLoaderClass.prototype.get_manifest_handler = function (callback) {
         console.log(that.manifest_url);
         console.log("manifest_handler");
         console.log(data);
-        that.state.manifest_data = data;
+        // that.state.manifest_data = data;
+        that.state.k = data.k;
+        that.state.filter_threshold = data.filter_threshold;
         if (callback) callback();
     }
 

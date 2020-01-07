@@ -14,6 +14,8 @@ DataLoaderClass = function (dataset) {
     that.loss_url = "/graph/GetLoss";
     that.ent_url = "/graph/GetEnt";
     that.image_url = "/info/image";
+    that.set_knn_url = "/graph/setK";
+    that.set_influence_filter_url = "/graph/SetInfluenceFilter";
 
     // Request nodes
     that.manifest_node = null;
@@ -27,7 +29,9 @@ DataLoaderClass = function (dataset) {
 
     // Data storage
     that.state = {
-        manifest_data: null,
+        // manifest_data: null,
+        k: null,
+        filter_threshold: null,
         graph_data: null,
         loss_data: null,
         img_url: null,
