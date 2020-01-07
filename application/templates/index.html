@@ -3,41 +3,49 @@
 
     <head>
         <title>SSL</title>
-        <link rel="stylesheet/less" type="text/css" href="../static/css/lib/glyphicons.less">
         <link rel="icon" type="image/x-ico" href="../static/favicon.ico">
         <link type="text/css" rel="stylesheet" href="../static/css/lib/d3.css">
         <link type="text/css" rel="stylesheet" href="../static/css/lib/loading-icon.css">
-        <link type="text/css" rel="stylesheet" href="../static/css/lib/materialize.min.css">
         <link type="text/css" rel="stylesheet" href="../static/css/lib/bootstrap-4.0.0.min.css">
         <link type="text/css" rel="stylesheet" href="../static/css/lib/bootstrap.css">
         <link type="text/css" rel="stylesheet" href="../static/css/lib/font-awesome.css">
+        <link type="text/css" rel="stylesheet" href="../static/css/fonts/fonts.css">
         <link href="../static/css/lib/nouislider.css" rel="stylesheet">
         <link type="text/css" rel="stylesheet" href="../static/css/layout.css">
         <link type="text/css" rel="stylesheet" href="../static/css/graph.css">
         <link type="text/css" rel="stylesheet" href="../static/css/image.css">
         <link type="text/css" rel="stylesheet" href="../static/css/history.css">
         <link type="text/css" rel="stylesheet" href="../static/css/loss.css">
+        <link type="text/css" rel="stylesheet" href="../static/css/control.css">
+        <link type="text/css" rel="stylesheet" href="../static/css/navigation.css">
         <meta charset="UTF-8">
     </head>
 
 <!-- <body style="overflow:hidden;"> -->
     <body>
-        <div class="self-column" id="control-graph-column">
-            <div class="self-row" id="loss-row">
-                {% include 'loss.html'%}
+        <div class="self-row" id="main-row">
+            <div class="self-column" id="control-column">
+                <div class="self-column">
+                    {%  include 'control.html' %}
+                </div>
+            </div>
+            <div class="self-column" id="control-graph-column">
+                <div class="self-row" id="loss-row">
+                    {% include 'loss.html'%}
 
-            </div>
-            <div class="self-row" id="graph-row">
-                {% include 'graph.html'%}
+                </div>
+                <div class="self-row" id="graph-row">
+                    {% include 'graph.html'%}
 
+                </div>
             </div>
-        </div>
-        <div class="self-column" id="history-info-column">
-            <div class="self-row" id="history-row">
-                {% include 'history.html'%}
-            </div>
-            <div class="self-row" id="image-row" style="overflow-y:auto;">
-                {% include 'image.html'%}
+            <div class="self-column" id="history-info-column">
+                <div class="self-row" id="history-row">
+                    {% include 'history.html'%}
+                </div>
+                <div class="self-row" id="image-row">
+                    {% include 'image.html'%}
+                </div>
             </div>
         </div>
     </body>
@@ -47,7 +55,6 @@
     <script src="../static/js/lib/common.js"></script>
     <script src="../static/js/lib/request_dag.js"></script>
     <script src="../static/js/lib/jquery-3.2.1.js"></script>
-    <script src="../static/js/lib/materialize.min.js"></script>
     <script src="../static/js/lib/nouislider.js"></script>
     <script src="../static/js/lib/planck.js"></script>
     <script src="../static/js/lib/d3-bubbletreemap.js"></script>
@@ -58,7 +65,6 @@
     <script src="../static/js/lib/d3-contour.v1.min.js"></script>
     <script src="../static/js/lib/d3-scale-chromatic.v1.min.js"></script>
 
-    <script src="../static/js/main.js"></script>
     <script src="../static/js/data_loader.js"></script>
     <script src="../static/js/kklayout.js"></script>
     <script src="../static/js/graph.js"></script>
@@ -68,5 +74,6 @@
     <script src="../static/js/helper.js"></script>
     <script src="../static/js/handler.js"></script>
     <script src="../static/js/global.js"></script>
-
+    <script src="../static/js/control.js"></script>
+    <script src="../static/js/main.js"></script>
 </html>

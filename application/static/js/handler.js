@@ -11,7 +11,9 @@ DataLoaderClass.prototype.get_manifest_handler = function (callback) {
         console.log(that.manifest_url);
         console.log("manifest_handler");
         console.log(data);
-        that.state.manifest_data = data;
+        // that.state.manifest_data = data;
+        that.state.k = data.k;
+        that.state.filter_threshold = data.filter_threshold;
         if (callback) callback();
     }
 
@@ -55,4 +57,15 @@ DataLoaderClass.prototype.get_loss_handler = function (callback) {
     }
 
     return _loss_handler;
+};
+
+DataLoaderClass.prototype.get_ent_handler = function (callback) {
+    let that = this;
+
+    function _ent_handler(data) {
+        that.state.ent_data = data;
+        if (callback) callback();
+    }
+
+    return _ent_handler;
 };

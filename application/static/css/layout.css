@@ -15,6 +15,9 @@ body {
     line-height: 1.42857143;
     color: #333333;
     background-color: #fff;
+    display: flex;
+    flex-direction: row;
+    user-select: none;
 }
 
 * {
@@ -27,16 +30,23 @@ body {
     display: inline-block;
     vertical-align: top;
     height: 99%;
-    margin: 0.5% 0 0 0.5%;
+    /*margin: 0.5% 0 0 0.5%;*/
+}
+
+#control-column {
+    flex: 0 1 300px;
 }
 
 #control-graph-column{
-    width: 79%;
+    flex-grow: 100;
 }
 
 
 #history-info-column{
-    width: 19%;
+    flex: 0 1 330px;
+    border-left: 1px solid #c1c1c1;
+    display: flex;
+    flex-direction: column;
 }
 
 .self-row{
@@ -119,4 +129,13 @@ span.badge {
     height: unset;
     line-height: 1;
     padding: .25em .6em;
+}
+
+#navigation-row {
+    flex: 0 0 50px;
+}
+
+#main-row {
+    display: flex;
+    flex: 10 1 500px;
 }

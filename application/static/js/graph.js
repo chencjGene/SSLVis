@@ -14,8 +14,9 @@ let GraphLayout = function (container){
     let color_unlabel = "#A9A9A9";
     let color_label = d3.schemeCategory10;
     color_label[7] = "#ffdb45";
-    let btn_select_color = "#4a148c";
+    let btn_select_color = "#560731";
     let btn_unselect_color = "#ffffff";
+
     let graph_data = null;
     let data_manager = null;
 
@@ -171,6 +172,40 @@ let GraphLayout = function (container){
         golds_group = main_group.append("g").attr("id", "golds-g");
         lasso_btn_path = d3.select("#lasso-btn").select("path");
 
+        that._draw_labels_glyph();
+    };
+
+    that._draw_labels_glyph = function(){
+        let glyph_svg = d3.select("#label-glyph-svg");
+        glyph_svg.append("path")
+            .attr("d", star_path(10, 4, 10+20, 10+20))
+            .attr("fill-opacity", 0)
+            .attr("stroke-width", 1)
+            .attr("stroke", "black");
+
+        glyph_svg.append("circle")
+            .attr("cx", 10+140)
+            .attr("cy", 10+20)
+            .attr("r", 5)
+            .attr("fill-opacity", 0)
+            .attr("stroke-width", 1)
+            .attr("stroke", "black");
+
+        glyph_svg.append("text")
+            .attr("x", 10+35)
+            .attr("y", 10+23)
+            .attr("text-anchor", "start")
+            .attr("font-size", 13)
+            .attr("fill", "#969696")
+            .text("labelled data");
+
+        glyph_svg.append("text")
+            .attr("x", 10+150)
+            .attr("y", 10+23)
+            .attr("text-anchor", "start")
+            .attr("font-size", 13)
+            .attr("fill", "#969696")
+            .text("unlabelled data");
     };
 
     that.lasso_start = function() {
@@ -224,11 +259,12 @@ let GraphLayout = function (container){
             // console.log("No node need focus.");
             return
         }
-        data_manager.update_image_view(focus_node_ids);
+        data_manager.update_image_view(lasso.selectedItems());
         console.log("focus nodes:", focus_node);
 
         let propagate_svg = main_group.insert("g", ":first-child").attr("id", "group-propagation");
         let edges = that._edge_reformulation(graph_data.edges);
+        let path_nodes = {};
         for(let d of focus_node){
             if(d.label[iter] === -1 || d.label[0] !== -1) continue;
                 let eid = d.id;
@@ -258,7 +294,7 @@ let GraphLayout = function (container){
                 }
                 findpaths();
                 let path = [];
-                let path_nodes = {};
+
                 for(let path_key of path_keys){
                     let keys = path_key.split(",");
                     let e = parseInt(keys[0]);
@@ -268,9 +304,6 @@ let GraphLayout = function (container){
                     path.push([e, s]);
                 }
 
-                // de-highlight
-                nodes_in_group.attr("opacity", d => path_nodes[d.id]===true?1:0.2);
-                golds_in_group.attr("opacity", d => path_nodes[d.id]===true?1:0.2);
                 svg.select("#single-propagate").remove();
                 for(let line of path){
                     svg.select("#graph-view-link-g")
@@ -307,6 +340,9 @@ let GraphLayout = function (container){
                     });
         }
 
+        // de-highlight
+        nodes_in_group.attr("opacity", d => path_nodes[d.id]===true?1:0.2);
+        golds_in_group.attr("opacity", d => path_nodes[d.id]===true?1:0.2);
     };
 
     that._change_lasso_mode = function() {
@@ -357,47 +393,44 @@ let GraphLayout = function (container){
     that._draw_legend = function() {
         $.post('/graph/GetLabels', {}, function (d) {
                 let labels = d;
+                labels.unshift("unlabel");
                 let label_num = labels.length;
-                d3.select("#graph-legend-g").remove();
-                let legend_area = d3.select("#graph-legend").append("g")
+                let legend_svg = d3.select("#category-encoding");
+                legend_svg.select("#graph-legend-g").remove();
+                let legend_area = legend_svg.append("g")
                     .attr("id", "graph-legend-g");
-                let legend_start_x = 10;
-                let legend_start_y = 10;
-                let x_delta = 140;
+                let legend_width = $("#category-encoding").parent().width();
+                let padding = 10;
+                let delta = 15;
+                let text_delta = 5;
                 let legend_delta = 55;
-                let rect_width = 45;
-                let rect_height = 30;
-                let text_start_x = legend_start_x+rect_width+5;
-                let text_start_y = legend_start_y+20;
-                let half = Math.floor(label_num/2);
-                for(let i=-1; i<label_num; i++){
+                let rect_width = 20;
+                let rect_height = 20;
+                let text_width = 40;
+                let x_item_num = Math.floor((legend_width-padding*2)/(rect_width+text_width+delta+text_delta));
+                let y_item_num = Math.ceil(label_num/x_item_num);
+                let legend_height = y_item_num*(rect_height+delta)-rect_height+padding*2;
+                legend_svg.attr("height", legend_height);
+                for(let i=0; i<label_num; i++){
                     legend_area.append("rect")
-                        .attr("x", function () {
-                            if(i<0) return legend_start_x;
-                            else return Math.floor(i/half)*x_delta+legend_start_x;
-                        })
-                        .attr("y", legend_start_y+(i%half+1)*legend_delta)
+                        .attr("x", padding + (i%x_item_num)*(rect_width+text_width+delta+text_delta))
+                        .attr("y", padding + Math.floor(i/x_item_num)*(rect_height+delta))
                         .attr("width", rect_width)
                         .attr("height", rect_height)
                         .attr("fill", function () {
-                            if(i===-1) return color_unlabel;
-                            else return color_label[i];
+                            if(i===0) return color_unlabel;
+                            else return color_label[i-1];
                         });
                     legend_area.append("text")
-                        .attr("x", function () {
-                            if(i<0) return text_start_x;
-                            else return Math.floor(i/half)*x_delta+text_start_x;
-                        })
-                        .attr("y", text_start_y+(i%half+1)*legend_delta)
+                        .attr("x", padding + (i%x_item_num)*(rect_width+text_width+delta+text_delta)+rect_width+text_delta)
+                        .attr("y", padding + Math.floor(i/x_item_num)*(rect_height+delta)+14)
                         .attr("text-anchor", "start")
-                        .attr("font-size", "17")
+                        .attr("font-size", "13")
+                        .attr("fill", "#969696")
                         .text(function () {
-                            if(i===-1) return "unlabel";
-                            else return labels[i]
+                            return labels[i]
                         })
                 }
-
-
         })
     };
 
@@ -466,7 +499,7 @@ let GraphLayout = function (container){
             let color = color_label[i];
             svg.select("#markers").append("marker")
                 .attr("id", "arrow-"+i)
-                .attr("refX", 6)
+                .attr("refX", 2)
                 .attr("refY", 2)
                 .attr("markerWidth", 10)
                 .attr("markerHeight", 10)
@@ -518,6 +551,7 @@ let GraphLayout = function (container){
                 node.attr("r", 3.5 * zoom_scale);
             })
             .on("click", function (d) {
+                let node = d3.select(this);
                 if(d.label[iter] === -1 || d.label[0] !== -1) return;
                 console.log("Node:", d);
                 let eid = d.id;
@@ -596,7 +630,7 @@ let GraphLayout = function (container){
 
                 // added by changjian, 20191226
                 // showing image content
-                data_manager.update_image_view(eid);
+                data_manager.update_image_view(node);
             });
 
         golds_in_group = golds_group.selectAll("path")
@@ -620,7 +654,8 @@ let GraphLayout = function (container){
                 })
                 .on("click", function (d) {
                     let eid = d.id;
-                    data_manager.update_image_view(eid);
+                    let nodes = d3.select(this);
+                    data_manager.update_image_view(nodes);
                 });
 
 

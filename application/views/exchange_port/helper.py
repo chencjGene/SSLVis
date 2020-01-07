@@ -17,6 +17,9 @@ def get_manifest():
 def get_loss():
     return exchange_port.get_loss()
 
+def get_ent():
+    return exchange_port.get_ent()
+
 def get_labels():
     return exchange_port.get_labels()
 

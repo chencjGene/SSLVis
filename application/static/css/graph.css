@@ -8,8 +8,33 @@
     display: flex;
     flex-direction: column;
     flex: 0 1 300px;
-    border-width: 2px;
+    height: 99%;
+    /*border-width: 2px;*/
     border-color: #5e5e5e;
+    border-right: 1px solid #c1c1c1;
+    border-left: 1px solid #c1c1c1;
+    background-color: #fafafa;
+}
+
+#my-graph-right {
+    display: flex;
+    flex-direction: column;
+    justify-content: start;
+    align-items: center;
+    width: 100%;
+}
+
+#graph-edit-bar {
+    width: 100%;
+    flex: 0 1 30px;
+    display: flex;
+    flex-direction: row;
+    justify-content: start;
+    align-items: center;
+    /*border-bottom: 1px solid #c1c1c1;*/
+}
+
+#graph-view-svg {
 }
 
 #graph-view-svg {
@@ -26,7 +51,7 @@
 }
 
 .tool-btn-div {
-    margin: 10px;
+    /*margin: 10px;*/
     width: 30px;
     height: 30px;
     border-radius: 50%;
@@ -34,8 +59,6 @@
     justify-content: center;
     align-items: center;
 }
-
-
 
 #graph-legend {
     flex: 0 1 320px;
@@ -68,3 +91,5 @@
     fill:#3399FF;
     fill-opacity:.5;
 }
+
+

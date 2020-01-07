@@ -57,6 +57,7 @@ class SSLModel(object):
         self.selected_dir = self.data.selected_dir
         # self.n_neighbor = int(np.sqrt(self.data.get_train_num()))
         self.n_neighbor = 7
+        self.filter_threshold = 0.9
         logger.info("n_neighbor: {}".format(self.n_neighbor))
 
         self._get_signal_state()
@@ -249,7 +250,7 @@ class SSLModel(object):
         return
 
     def get_graph_and_process_data(self):
-        return self.graph, self.process_data, self.simplify_influence_matrix(threshold=0.9)
+        return self.graph, self.process_data, self.simplify_influence_matrix(threshold=self.filter_threshold)
 
     def get_loss(self):
         return self.loss
