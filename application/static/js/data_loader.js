@@ -52,7 +52,6 @@ DataLoaderClass = function (dataset) {
 
         that.update_graph_node = new request_node(that.update_graph_url + params,
             that.update_graph_handler(that.update_graph_view), "json", "POST");
-        that.update_graph_node.depend_on(that.manifest_node);
 
         that.loss_node = new request_node(that.loss_url + params,
             that.get_loss_handler(that.update_loss_view), "json", "GET");
