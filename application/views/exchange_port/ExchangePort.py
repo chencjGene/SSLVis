@@ -5,6 +5,7 @@ from ctypes import *
 from flask import jsonify
 import _thread as thread
 import scipy.cluster.vq as vq
+import copy
 
 from ..model_utils import SSLModel
 from ..utils.config_utils import config
@@ -75,34 +76,15 @@ class ExchangePortClass(object):
         raw_graph, process_data, influence_matrix \
             = self.model.get_graph_and_process_data()
         train_x, train_y = self.model.get_data()
-        # indptr = raw_graph.indptr
-        # indices = raw_graph.indices
-        # is_connected = []
-        # for i in range(train_x.shape[0]):
-        #     if train_y[i] != -1:
-        #         is_connected.append(2)
-        #         continue
-        #     begin = indptr[i]
-        #     end = indptr[i+1]
-        #     find = False
-        #     for idx in indices[begin:end]:
-        #         if train_y[idx] != -1:
-        #             find = True
-        #             break
-        #     if find:
-        #         is_connected.append(1)
-        #     else:
-        #         is_connected.append(0)
-        # is_connected = np.array(is_connected)
-        # print("not connected:", is_connected[is_connected==0].shape[0])
-        # print("connected:", is_connected[is_connected == 1].shape[0])
-        # print("labeled:", is_connected[is_connected == 2].shape[0])
-        # print(is_connected)
         buf_path = self.model.data.selected_dir
         ground_truth = self.model.data.get_train_ground_truth()
+
+        # propagation_path = self.get_path_to_label(process_data, influence_matrix)
+
         graph = getAnchors(train_x, train_y, ground_truth,
-                           process_data, influence_matrix, self.dataname,
+                           process_data, influence_matrix, None, self.dataname,
                            os.path.join(buf_path, "anchors"+config.pkl_ext))
+
         return jsonify(graph)
 
     def get_loss(self):
@@ -124,3 +106,49 @@ class ExchangePortClass(object):
         img_dir = os.path.join(config.image_root, self.dataname)
         img_path = os.path.join(img_dir, str(real_id) + ".jpg")
         return img_path
+
+    def _find_path(self, path_stack, stack_len, edge_indices, edge_indptr, predict_labels, paths, iter, target_label):
+        if stack_len == 0:
+            return
+        top_node = path_stack[stack_len-1]
+        if predict_labels[0][top_node] == target_label:
+            # arrive target_label
+            paths.append(copy.copy(path_stack))
+        edge_start_idx = edge_indptr[top_node]
+        edge_end_idx = edge_indptr[top_node+1]
+        for edge_idx in range(edge_start_idx, edge_end_idx):
+            edge_id = int(edge_indices[edge_idx])
+            if predict_labels[iter][edge_id] != target_label:
+                continue
+            if edge_id in path_stack:
+                continue
+            path_stack.append(edge_id)
+            self._find_path(path_stack, stack_len+1, edge_indices, edge_indptr, predict_labels, paths, iter, target_label)
+        path_stack.pop()
+
+    def get_path_to_label(self, process_data, influence_matrix):
+        iternum = process_data.shape[0]
+        nodenum = process_data.shape[1]
+        propagation_path = [[[] for j in range(iternum)] for i in range(nodenum)]
+        edge_indices = influence_matrix.indices
+        edge_indptr = influence_matrix.indptr
+        # predict label
+        predict_labels = np.zeros((iternum, nodenum))
+        for iter in range(iternum):
+            for i in range(nodenum):
+                predict_label = np.argmax(process_data[iter][i])
+                predict_labels[iter][i] = -1 if np.isclose(process_data[iter][i][predict_label], 0) else predict_label
+
+        for iter in range(iternum):
+            for i in range(nodenum):
+                if (predict_labels[iter][i] == -1) or (propagation_path[i][iter] != []):
+                    continue
+                elif predict_labels[0][i] > -1:
+                    propagation_path[i][iter].append([i])
+                    continue
+                paths = []
+                self._find_path([int(i)], 1, edge_indices, edge_indptr, predict_labels, paths, iter, predict_labels[iter][i])
+                propagation_path[i][iter].append(paths)
+                #TODO: optimize
+
+        return propagation_path

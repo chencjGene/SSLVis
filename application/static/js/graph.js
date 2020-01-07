@@ -130,7 +130,7 @@ let GraphLayout = function (container){
             .attr("text-anchor", "start")
             .attr("font-size", 13)
             .attr("fill", "#969696")
-            .text("labelled data");
+            .text("labeled data");
 
         glyph_svg.append("text")
             .attr("x", 10+150)
@@ -138,7 +138,7 @@ let GraphLayout = function (container){
             .attr("text-anchor", "start")
             .attr("font-size", 13)
             .attr("fill", "#969696")
-            .text("unlabelled data");
+            .text("unlabeled data");
     };
 
     that.lasso_start = function() {
