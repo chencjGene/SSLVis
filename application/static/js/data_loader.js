@@ -14,7 +14,7 @@ DataLoaderClass = function (dataset) {
     that.loss_url = "/graph/GetLoss";
     that.ent_url = "/graph/GetEnt";
     that.image_url = "/info/image";
-    that.set_knn_url = "/graph/setK";
+    // that.set_knn_url = "/graph/setK";
     that.set_influence_filter_url = "/graph/SetInfluenceFilter";
 
     // Request nodes
@@ -22,6 +22,7 @@ DataLoaderClass = function (dataset) {
     that.graph_node = null;
     that.loss_node = null;
     that.ent_node = null;
+    that.influence_filter_node = null;
 
     // views
     that.graph_view = null;
@@ -50,15 +51,34 @@ DataLoaderClass = function (dataset) {
 
         that.loss_node = new request_node(that.loss_url + params,
             that.get_loss_handler(that.update_loss_view), "json", "GET");
-        that.loss_node.depend_on(that.manifest_node);
+        that.loss_node.depend_on(that.graph_node);
 
         that.ent_node = new request_node(that.ent_url + params,
             that.get_ent_handler(that.update_ent_view), "json", "GET");
-        that.ent_node.depend_on(that.manifest_node);
+        that.ent_node.depend_on(that.graph_node);
     };
 
     that.init_notify = function () {
         that.manifest_node.notify();
+    };
+
+    that.update_k = function(k){
+        that.state.k = k;
+        let graph_params = "?dataset=" + that.dataset + "&k=" +
+            that.state.k + "&filter_threshold=" + that.state.filter_threshold;
+        that.graph_node.set_url(that.graph_url + graph_params);
+        that.loss_node.set_pending();
+        that.ent_node.set_pending();
+        that.graph_node.notify();
+    };
+
+    that.update_filter_threshold = function(threshold){
+        that.state.filter_threshold = threshold;
+        let params = "?dataset=" + that.dataset +
+            "&filter_threshold=" + that.state.filter_threshold;
+        that.influence_filter_node = new request_node(that.set_influence_filter_url + params,
+            that.set_influence_filter(), "json", "GET");
+        that.influence_filter_node.notify();
     };
 
     that.set_graph_view = function (v) {
@@ -90,7 +110,6 @@ DataLoaderClass = function (dataset) {
         that.image_view.component_update({
             "img_grid_urls": that.state.img_grid_urls
         })
-
     };
 
     that.update_graph_view = function(){

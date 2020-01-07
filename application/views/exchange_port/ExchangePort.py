@@ -34,6 +34,9 @@ class ExchangePortClass(object):
         else:
             self.model = SSLModel(self.dataname, labeled_num, total_num)
 
+    def init_model(self, k, filter_threshold):
+        self.model.init(k=k, filter_threshold=filter_threshold)
+
     def get_manifest(self):
         manifest = {
             "k": self.model.n_neighbor,
@@ -71,9 +74,9 @@ class ExchangePortClass(object):
         print(res)
         return dist
 
-    def get_graph(self):
+    def get_graph(self, filter_threshold=None):
         raw_graph, process_data, influence_matrix \
-            = self.model.get_graph_and_process_data()
+            = self.model.get_graph_and_process_data(filter_threshold=filter_threshold)
         train_x, train_y = self.model.get_data()
         # indptr = raw_graph.indptr
         # indices = raw_graph.indices

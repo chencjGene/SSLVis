@@ -60,11 +60,17 @@ class SSLModel(object):
         self.filter_threshold = 0.9
         logger.info("n_neighbor: {}".format(self.n_neighbor))
 
-        self._get_signal_state()
-        self._init()
+        # self._get_signal_state()
+        # self._init()
 
-    def _init(self):
-        # self._training_old(self.n_neighbor)
+    def init(self, k, filter_threshold):
+        if k is not None:
+            self.n_neighbor = k
+        if filter_threshold is not None:
+            self.filter_threshold = filter_threshold
+        logger.info("n_neighbor and filter_threshold has been updated: {} {}".format(
+            self.n_neighbor, self.filter_threshold
+        ))
         self._preprocess_neighbors()
         self._training()
         # self._projection()
@@ -249,7 +255,9 @@ class SSLModel(object):
         pickle_save_data(projection_filepath, self.embed_X)
         return
 
-    def get_graph_and_process_data(self):
+    def get_graph_and_process_data(self, filter_threshold=None):
+        if filter_threshold is not None:
+            self.filter_threshold = filter_threshold
         return self.graph, self.process_data, self.simplify_influence_matrix(threshold=self.filter_threshold)
 
     def get_loss(self):
