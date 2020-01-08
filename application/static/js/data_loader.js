@@ -89,6 +89,7 @@ DataLoaderClass = function (dataset) {
     };
 
     that.update_k = function(k){
+        // TODO: clean views
         that.state.k = k;
         let graph_params = "?dataset=" + that.dataset + "&k=" +
             that.state.k + "&filter_threshold=" + that.state.filter_threshold;
