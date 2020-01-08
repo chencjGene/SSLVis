@@ -567,46 +567,8 @@ let GraphLayout = function (container){
                 node.attr("r", 3.5 * zoom_scale);
             })
             .on("click", function (d) {
-                let node = d3.select(this);
                 lasso_result = [d.id];
-                if(d.label[iter] === -1 || d.label[0] !== -1) return;
-                console.log("Node:", d);
-                let eid = d.id;
-                let predict_label = d.label[iter];
-                let path_stack = [eid];
-                let path_keys = [];
-                function findpaths() {
-                    if(path_stack.length===0) return;
-                    let now_node = path_stack[path_stack.length-1];
-                    if(graph_data.nodes[now_node].truth === predict_label){
-                        for(let i=1; i<path_stack.length; i++){
-                            let path_key = path_stack[i-1]+","+path_stack[i];
-                            if(path_keys.indexOf(path_key) === -1){
-                                path_keys.push(path_key)
-                            }
-                        }
-                    }
-                    if (edges[now_node] !== undefined) {
-                        for(let next_node of edges[now_node].e){
-                            if(graph_data.nodes[next_node].label[iter] !== predict_label) continue;
-                            if(path_stack.indexOf(next_node) !== -1) continue;
-                            path_stack.push(next_node);
-                            findpaths();
-                        }
-                    }
-                    path_stack.pop();
-                }
-                findpaths();
-                let path = [];
-                let path_nodes = {};
-                for(let path_key of path_keys){
-                    let keys = path_key.split(",");
-                    let e = parseInt(keys[0]);
-                    let s = parseInt(keys[1]);
-                    path_nodes[e] = true;
-                    path_nodes[s] = true;
-                    path.push([e, s]);
-                }
+                let node = d3.select(this);
                 // added by changjian, 20191226
                 // showing image content
                 data_manager.update_image_view(node);
