@@ -30,7 +30,7 @@ $(document).ready(function () {
     // DatasetName = "cifar10";
     // DatasetName = "OCT";
     // DatasetName = "stl";
-    DatasetName = "stl-20-10000";
+    DatasetName = "stl-20-2000";
     // DatasetName = "Country_from_siemens";
 
     set_up(DatasetName);
