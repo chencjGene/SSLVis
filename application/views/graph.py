@@ -34,11 +34,19 @@ def app_set_k():
 
 @graph.route("/graph/SetInfluenceFilter", methods=["GET", "POST"])
 def app_set_influence_filter():
-    return 1
+    # extract info from request
+    filter_threshold = request.args.get("filter-threshold", None)
+    return get_graph(filter_threshold)
 
 
 @graph.route("/graph/GetGraph", methods=["GET", "POST"])
 def app_get_graph():
+    # extract info from request
+    k = request.args.get("k", None)
+    if k is not None:
+        k = int(k)
+    filter_threshold = request.args.get("filter-threshold", None)
+    init_model(k, filter_threshold)
     return get_graph()
 
 

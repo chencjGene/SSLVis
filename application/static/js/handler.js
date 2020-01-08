@@ -83,3 +83,14 @@ DataLoaderClass.prototype.get_ent_handler = function (callback) {
 
     return _ent_handler;
 };
+
+DataLoaderClass.prototype.set_influence_filter = function(callback){
+    let that = this;
+
+    function _influence_filter_handler(data){
+        // that.state
+        // TODO:
+    }
+
+    return _influence_filter_handler;
+};
