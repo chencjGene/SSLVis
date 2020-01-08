@@ -4,6 +4,8 @@ from sklearn.cluster import KMeans
 import pickle
 from scipy.spatial import distance_matrix
 import math
+import time
+
 from ..utils.config_utils import config
 from ..graph_utils.IncrementalTSNE import IncrementalTSNE
 from ..graph_utils.DensityBasedSampler import DensityBasedSampler
@@ -145,6 +147,11 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, p
     return graph
 
 def updateAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, dataname, area, level, buf_path, propagation_path):
+    all_time = {
+        "read_file":0,
+        "format_data":0
+    }
+    start = time.time()
     with open(buf_path, "rb") as f:
         train_x_tsne, level_infos = pickle.load(f)
         if level >= len(level_infos):
@@ -162,7 +169,9 @@ def updateAnchors(train_x, train_y, ground_truth, process_data, influence_matrix
         clusters = level_infos[level]['clusters']
         samples_x_tsne = init_samples_x_tsne#IncrementalTSNE(n_components=2, n_jobs=20, init=init_samples_x_tsne, n_iter=250,
                                          #exploration_n_iter=0).fit_transform(samples_x)
-
+    now = time.time()
+    all_time["read_file"] += now-start
+    start = now
     samples_x_tsne = samples_x_tsne.tolist()
     samples_y = samples_y.tolist()
     samples_truth = samples_truth.tolist()
@@ -182,7 +191,10 @@ def updateAnchors(train_x, train_y, ground_truth, process_data, influence_matrix
             "truth": samples_truth[i],
             "path": propagation_path[id]
         }
-
+    now = time.time()
+    all_time["format_data"] += now - start
+    start = now
+    print(all_time)
     # added by changjian, 201912241926
     # added edges. A quick and dirty manner
     # edge_matrix = influence_matrix[selection][:, selection]

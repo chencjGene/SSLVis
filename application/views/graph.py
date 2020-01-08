@@ -4,6 +4,7 @@ from flask import render_template, jsonify
 from flask import Blueprint, request
 from .utils.config_utils import config
 import json
+import time
 
 from .exchange_port import *
 
@@ -63,11 +64,15 @@ def app_save_layout():
 
 @graph.route('/graph/update', methods=["GET", "POST"])
 def app_update():
+    start = time.time()
     dataset = request.args['dataset']
     data = json.loads(request.data)
     area = data['area']
     level = data['level']
-    return update_graph(area, level)
+    graph = update_graph(area, level)
+    end = time.time()
+    print("all process time:", end-start)
+    return graph
 
 @graph.route('/graph/fisheye', methods=["GET", "POST"])
 def app_fisheye():

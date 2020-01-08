@@ -6,6 +6,7 @@ from flask import jsonify
 import _thread as thread
 import scipy.cluster.vq as vq
 import copy
+import time
 
 from ..model_utils import SSLModel
 from ..utils.config_utils import config
@@ -108,16 +109,28 @@ class ExchangePortClass(object):
         return img_path
 
     def update_graph(self, area, level):
+        all_time = {"get_meta_data":0, "update_anchor":0, "jsonify":0}
+        start = time.time()
         raw_graph, process_data, influence_matrix, propagation_path \
             = self.model.get_graph_and_process_data()
         train_x, train_y = self.model.get_data()
         buf_path = os.path.join(self.model.data.selected_dir, "anchors" + config.pkl_ext)
         ground_truth = self.model.data.get_train_ground_truth()
-
+        now = time.time()
+        all_time["get_meta_data"] += now-start
+        start = now
         graph = updateAnchors(train_x, train_y, ground_truth,
                            process_data, influence_matrix, self.dataname, area, level,
                            buf_path, propagation_path)
-        return jsonify(graph)
+        now = time.time()
+        all_time["update_anchor"] += now - start
+        start = now
+        json_res = jsonify(graph)
+        now = time.time()
+        all_time["jsonify"] += now - start
+        start = now
+        print(all_time)
+        return json_res
 
     def fisheye(self, nodes):
         raw_graph, process_data, influence_matrix, propagation_path \

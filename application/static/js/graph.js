@@ -280,63 +280,25 @@ let GraphLayout = function (container){
         console.log("focus nodes:", focus_node);
 
         let propagate_svg = main_group.insert("g", ":first-child").attr("id", "group-propagation");
-        let edges = that._edge_reformulation(graph_data.edges);
+        let path_keys = [];
+        let path = [];
         let path_nodes = {};
-        for(let d of focus_node){
-            if(d.label[iter] === -1 || d.label[0] !== -1) continue;
-                let eid = d.id;
-                let predict_label = d.label[iter];
-                let path_stack = [eid];
-                let path_keys = [];
-                function findpaths() {
-                    if(path_stack.length===0) return;
-                    let now_node = path_stack[path_stack.length-1];
-                    if(graph_data.nodes[now_node].truth === predict_label){
-                        for(let i=1; i<path_stack.length; i++){
-                            let path_key = path_stack[i-1]+","+path_stack[i];
-                            if(path_keys.indexOf(path_key) === -1){
-                                path_keys.push(path_key)
-                            }
-                        }
+        let new_nodes = [];
+        function showpath(){
+                nodes_in_group = nodes_group.selectAll("circle");
+                golds_in_group = golds_group.selectAll("path");
+
+                    // de-highlight
+                nodes_in_group.attr("opacity", d => path_nodes[d.id]===true?1:0.2);
+                golds_in_group.attr("opacity", d => path_nodes[d.id]===true?1:0.2);
+
+                nodes_in_group.each(function (d) {
+                    let node = d3.select(this);
+                    if(path_nodes[d.id]===true){
+                        path_nodes[d.id] = node;
                     }
-                    if (edges[now_node] !== undefined){
-                        for(let next_node of edges[now_node].e){
-                            if(graph_data.nodes[next_node].label[iter] !== predict_label) continue;
-                            if(path_stack.indexOf(next_node) !== -1) continue;
-                            path_stack.push(next_node);
-                            findpaths();
-                        }
-                    }
-                    path_stack.pop();
-                }
-                findpaths();
-                let path = [];
-
-                for(let path_key of path_keys){
-                    let keys = path_key.split(",");
-                    let e = parseInt(keys[0]);
-                    let s = parseInt(keys[1]);
-                    path_nodes[e] = true;
-                    path_nodes[s] = true;
-                    path.push([e, s]);
-                }
-
-                svg.select("#single-propagate").remove();
-                for(let line of path){
-                    svg.select("#graph-view-link-g")
-                            .selectAll("line")
-                            .each(function (d) {
-                                let tline = d3.select(this);
-                                if(d.e === line[0] && d.s === line[1]){
-                                    line.push(tline);
-                                }
-                                else {
-                                    // tline.attr("opacity", 0.2);
-
-                                }
-                            });
-                }
-                // console.log("find path", path);
+                });
+                console.log("Found paths:", path);
                 propagate_svg
                     .append("g")
                     .attr("class", "single-propagate")
@@ -345,21 +307,45 @@ let GraphLayout = function (container){
                     .enter()
                     .append("polyline")
                     .attr("stroke-width", 2.0 * zoom_scale)
-                    .attr("stroke", color_label[predict_label])
+                    .attr("stroke", d => color_label[d[2]])
                     .attr("opacity", 1)
-                    .attr("marker-mid", "url(#arrow-"+predict_label+")")
+                    .attr("marker-mid", d => "url(#arrow-"+d[2]+")")
                     .attr("fill", "none")
                     .attr("points", function (d) {
-                        let begin = [parseFloat(d[2].attr("x1")), parseFloat(d[2].attr("y1"))];
-                        let end = [parseFloat(d[2].attr("x2")), parseFloat(d[2].attr("y2"))];
+                        let begin = [parseFloat(path_nodes[d[1]].attr("cx")), parseFloat(path_nodes[d[1]].attr("cy"))];
+                        let end = [parseFloat(path_nodes[d[0]].attr("cx")), parseFloat(path_nodes[d[0]].attr("cy"))];
                         let mid = [(begin[0]+end[0])/2, (begin[1]+end[1])/2];
                         return begin[0]+","+begin[1]+" "+mid[0]+","+mid[1]+" "+end[0]+","+end[1];
                     });
         }
-
-        // de-highlight
-        nodes_in_group.attr("opacity", d => path_nodes[d.id]===true?1:0.2);
-        golds_in_group.attr("opacity", d => path_nodes[d.id]===true?1:0.2);
+        for(let d of focus_node){
+                if(d.label[iter] === -1 || d.label[0] !== -1) return;
+                console.log("Node:", d);
+                let eid = d.id;
+                let predict_label = d.label[iter];
+                for(let onepath of d.path[iter]){
+                    if(onepath.length === 1) continue;
+                    for(let i=0; i<onepath.length-1; i++){
+                        let s = onepath[i];
+                        let e = onepath[i+1];
+                        let key = s+","+e;
+                        if(path_keys.indexOf(key) === -1){
+                            path_keys.push(key);
+                            let keys = key.split(",");
+                            let e = parseInt(keys[0]);
+                            let s = parseInt(keys[1]);
+                            path_nodes[e] = true;
+                            path_nodes[s] = true;
+                            path.push([e, s, predict_label]);
+                        }
+                    }
+                }
+        }
+        for(let node_id in path_nodes){
+            if(graph_data.nodes[node_id] === undefined) new_nodes.push(parseInt(node_id))
+        }
+        let all_nodes = Object.keys(graph_data.nodes).concat(new_nodes).map(d => parseInt(d));
+        data_manager.update_fisheye_graph_node(all_nodes, showpath);
     };
 
     that._change_lasso_mode = function() {
@@ -387,6 +373,7 @@ let GraphLayout = function (container){
             $("#lasso-btn").css("background-color", btn_select_color);
             lasso_btn_path.attr("stroke", "white").attr("fill", "white");
             svg.on('.zoom', null);
+            svg.select(".lasso").remove();
             svg.call(lasso);
         }
     };
@@ -568,43 +555,44 @@ let GraphLayout = function (container){
                 node.attr("r", 3.5 * zoom_scale);
             })
             .on("click", function (d) {
+                let node = d3.select(this);
                 // added by changjian, 20191226
                 // showing image content
                 data_manager.update_image_view(node);
 
                 function showpath(){
                     nodes_in_group = nodes_group.selectAll("circle");
+                    golds_in_group = golds_group.selectAll("path");
                     // de-highlight
-                nodes_in_group.attr("opacity", d => path_nodes[d.id]===true?1:0.2);
-                golds_in_group.attr("opacity", d => path_nodes[d.id]===true?1:0.2);
+                    nodes_in_group.attr("opacity", d => path_nodes[d.id]===true?1:0.2);
+                    golds_in_group.attr("opacity", d => path_nodes[d.id]===true?1:0.2);
 
-                svg.select("#single-propagate").remove();
-                nodes_in_group.each(function (d) {
-                    let node = d3.select(this);
-                    if(path_nodes[d.id]===true){
-                        path_nodes[d.id] = node;
-                    }
-                });
-                console.log("Found paths:", path);
-                let single_node_propagate = main_group.insert("g", ":first-child")
-                    .attr("id", "single-propagate")
-                    .selectAll("polyline")
-                    .data(path)
-                    .enter()
-                    .append("polyline")
-                    .attr("stroke-width", 2 * zoom_scale)
-                    .attr("stroke", color_label[predict_label])
-                    .attr("opacity", 1)
-                    .attr("marker-mid", "url(#arrow-"+predict_label+")")
-                    .attr("fill", "none")
-                    .attr("points", function (d) {
-                        let begin = [parseFloat(path_nodes[d[1]].attr("cx")), parseFloat(path_nodes[d[1]].attr("cy"))];
-                        let end = [parseFloat(path_nodes[d[0]].attr("cx")), parseFloat(path_nodes[d[0]].attr("cy"))];
-                        let mid = [(begin[0]+end[0])/2, (begin[1]+end[1])/2];
-                        return begin[0]+","+begin[1]+" "+mid[0]+","+mid[1]+" "+end[0]+","+end[1];
+                    svg.select("#single-propagate").remove();
+                    nodes_in_group.each(function (d) {
+                        let node = d3.select(this);
+                        if(path_nodes[d.id]===true){
+                            path_nodes[d.id] = node;
+                        }
+                    });
+                    console.log("Found paths:", path);
+                    let single_node_propagate = main_group.insert("g", ":first-child")
+                        .attr("id", "single-propagate")
+                        .selectAll("polyline")
+                        .data(path)
+                        .enter()
+                        .append("polyline")
+                        .attr("stroke-width", 2 * zoom_scale)
+                        .attr("stroke", color_label[predict_label])
+                        .attr("opacity", 1)
+                        .attr("marker-mid", "url(#arrow-"+predict_label+")")
+                        .attr("fill", "none")
+                        .attr("points", function (d) {
+                            let begin = [parseFloat(path_nodes[d[1]].attr("cx")), parseFloat(path_nodes[d[1]].attr("cy"))];
+                            let end = [parseFloat(path_nodes[d[0]].attr("cx")), parseFloat(path_nodes[d[0]].attr("cy"))];
+                            let mid = [(begin[0]+end[0])/2, (begin[1]+end[1])/2];
+                            return begin[0]+","+begin[1]+" "+mid[0]+","+mid[1]+" "+end[0]+","+end[1];
                     });
                 }
-                let node = d3.select(this);
                 if(d.label[iter] === -1 || d.label[0] !== -1) return;
                 console.log("Node:", d);
                 let eid = d.id;
@@ -677,15 +665,6 @@ let GraphLayout = function (container){
         //         .attr("stroke-width", zoom_scale)
         //         .attr("stroke", "gray")
         //         .attr("opacity", 0.0);
-
-        // remove lasso
-        svg.select(".lasso").remove();
-        lasso.items(nodes_in_group)
-            .targetArea(svg)
-            .on("start", that.lasso_start)
-            .on("draw", that.lasso_draw)
-            .on("end", that.lasso_end);
-        svg.call(lasso);
     };
 
     that._update = function() {
@@ -753,6 +732,16 @@ let GraphLayout = function (container){
         that._create();
         that._update();
         that._remove();
+
+        // remove lasso
+        nodes_in_group = nodes_group.selectAll("circle");
+        svg.select(".lasso").remove();
+        lasso.items(nodes_in_group)
+            .targetArea(svg)
+            .on("start", that.lasso_start)
+            .on("draw", that.lasso_draw)
+            .on("end", that.lasso_end);
+        svg.call(lasso);
 
     };
 
