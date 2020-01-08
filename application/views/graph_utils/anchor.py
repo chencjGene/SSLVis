@@ -147,6 +147,8 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, p
 def updateAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, dataname, area, level, buf_path, propagation_path):
     with open(buf_path, "rb") as f:
         train_x_tsne, level_infos = pickle.load(f)
+        if level >= len(level_infos):
+            level = len(level_infos) - 1
         _selection = level_infos[level]['index']
         _pos = train_x_tsne[_selection]
         selection = []
