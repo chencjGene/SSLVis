@@ -551,6 +551,42 @@ let GraphLayout = function (container){
                 node.attr("r", 3.5 * zoom_scale);
             })
             .on("click", function (d) {
+                // added by changjian, 20191226
+                // showing image content
+                data_manager.update_image_view(node);
+
+                function showpath(){
+                    nodes_in_group = nodes_group.selectAll("circle");
+                    // de-highlight
+                nodes_in_group.attr("opacity", d => path_nodes[d.id]===true?1:0.2);
+                golds_in_group.attr("opacity", d => path_nodes[d.id]===true?1:0.2);
+
+                svg.select("#single-propagate").remove();
+                nodes_in_group.each(function (d) {
+                    let node = d3.select(this);
+                    if(path_nodes[d.id]===true){
+                        path_nodes[d.id] = node;
+                    }
+                });
+                console.log("Found paths:", path);
+                let single_node_propagate = main_group.insert("g", ":first-child")
+                    .attr("id", "single-propagate")
+                    .selectAll("polyline")
+                    .data(path)
+                    .enter()
+                    .append("polyline")
+                    .attr("stroke-width", 2 * zoom_scale)
+                    .attr("stroke", color_label[predict_label])
+                    .attr("opacity", 1)
+                    .attr("marker-mid", "url(#arrow-"+predict_label+")")
+                    .attr("fill", "none")
+                    .attr("points", function (d) {
+                        let begin = [parseFloat(path_nodes[d[1]].attr("cx")), parseFloat(path_nodes[d[1]].attr("cy"))];
+                        let end = [parseFloat(path_nodes[d[0]].attr("cx")), parseFloat(path_nodes[d[0]].attr("cy"))];
+                        let mid = [(begin[0]+end[0])/2, (begin[1]+end[1])/2];
+                        return begin[0]+","+begin[1]+" "+mid[0]+","+mid[1]+" "+end[0]+","+end[1];
+                    });
+                }
                 let node = d3.select(this);
                 if(d.label[iter] === -1 || d.label[0] !== -1) return;
                 console.log("Node:", d);
@@ -580,47 +616,11 @@ let GraphLayout = function (container){
                     path.push([e, s]);
                 }
                 for(let node_id in path_nodes){
-                    if(graph_data.nodes[node_id] === undefined) new_nodes.push(node_id)
+                    if(graph_data.nodes[node_id] === undefined) new_nodes.push(parseInt(node_id))
                 }
-                // added by changjian, 20191226
-                // showing image content
-                data_manager.update_image_view(node);
-                // de-highlight
-                nodes_in_group.attr("opacity", d => path_nodes[d.id]===true?1:0.2);
-                golds_in_group.attr("opacity", d => path_nodes[d.id]===true?1:0.2);
 
-                svg.select("#single-propagate").remove();
-                for(let line of path){
-                    svg.select("#graph-view-link-g")
-                            .selectAll("line")
-                            .each(function (d) {
-                                let tline = d3.select(this);
-                                if(d.e === line[0] && d.s === line[1]){
-                                    line.push(tline);
-                                }
-                                else {
-                                    // tline.attr("opacity", 0.2);
-                                }
-                            });
-                }
-                console.log("Found paths:", path);
-                let single_node_propagate = main_group.insert("g", ":first-child")
-                    .attr("id", "single-propagate")
-                    .selectAll("polyline")
-                    .data(path)
-                    .enter()
-                    .append("polyline")
-                    .attr("stroke-width", 2 * zoom_scale)
-                    .attr("stroke", color_label[predict_label])
-                    .attr("opacity", 1)
-                    .attr("marker-mid", "url(#arrow-"+predict_label+")")
-                    .attr("fill", "none")
-                    .attr("points", function (d) {
-                        let begin = [parseFloat(d[2].attr("x1")), parseFloat(d[2].attr("y1"))];
-                        let end = [parseFloat(d[2].attr("x2")), parseFloat(d[2].attr("y2"))];
-                        let mid = [(begin[0]+end[0])/2, (begin[1]+end[1])/2];
-                        return begin[0]+","+begin[1]+" "+mid[0]+","+mid[1]+" "+end[0]+","+end[1];
-                    });
+                new_nodes = Object.keys(graph_data.nodes).concat(new_nodes).map(d => parseInt(d));
+                data_manager.update_fisheye_graph_node(new_nodes, showpath);
             });
 
         golds_in_group = golds_group.selectAll("path")

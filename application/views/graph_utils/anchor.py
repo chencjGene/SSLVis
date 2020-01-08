@@ -201,43 +201,38 @@ def updateAnchors(train_x, train_y, ground_truth, process_data, influence_matrix
     }
     return graph
 
-def getClusters(train_x, train_y, raw_graph, dataname, k):
-    cluster_buffer_path = os.path.join(config.buffer_root, dataname + '_clusters_k=' + str(k) + config.pkl_ext)
-    if os.path.exists(cluster_buffer_path):
-        with open(cluster_buffer_path, 'rb+') as f:
-            clusters = pickle.load(f)
-    # else:
-    #     weight = raw_graph.data
-    #     indices = raw_graph.indices
-    #     indptr = raw_graph.indptr
-    #     n = raw_graph.shape[0]
-    #
-    #     # k-means
-    #     # TODO: change a kmeans method
-    #     centroid, labels = vq.kmeans2(train_x, k=k)
-    #     clusters = [{"kmeans_centroid": centroid[i], "nodes": [], "nodes_label": {}, "min_dis": 1e365, "anchor": -1,
-    #                  "connection": {}} for i in range(k)]  # kmeans time: 100000data, 49s
-    #     for i in range(n):
-    #         label = int(labels[i])
-    #         clusters[label]["nodes"].append(i)
-    #         dis = np.linalg.norm(train_x[i] - clusters[label]["kmeans_centroid"], 2)
-    #         if dis < clusters[label]["min_dis"]:
-    #             clusters[label]["min_dis"] = dis
-    #             clusters[label]["anchor"] = i
-    #         matrix_begin = indptr[i]
-    #         matrix_end = indptr[i + 1]
-    #         label_summary = clusters[label]["nodes_label"]
-    #         class_label = int(train_y[i])
-    #         if class_label not in label_summary.keys():
-    #             label_summary[class_label] = 0
-    #         label_summary[class_label] += 1
-    #         for j in range(matrix_begin, matrix_end):
-    #             neighbor_id = int(indices[j])
-    #             neighbor_label = int(labels[neighbor_id])
-    #             if label != neighbor_label:
-    #                 if neighbor_label not in clusters[label]["connection"].keys():
-    #                     clusters[label]["connection"][neighbor_label] = 0
-    #                 clusters[label]["connection"][neighbor_label] += 1
-    #     with open(cluster_buffer_path, 'wb+') as f:
-    #         pickle.dump(clusters, f)
-    # return clusters
+def fisheyeAnchors(nodes, train_x, train_y, raw_graph, process_data, influence_matrix, propagation_path, ground_truth, buf_path):
+    with open(buf_path, "rb") as f:
+        train_x_tsne, level_infos = pickle.load(f)
+        selection = nodes
+        samples_x = train_x[selection]
+        init_samples_x_tsne = train_x_tsne[selection]
+        samples_y = train_y[selection]
+        samples_truth = ground_truth[selection]
+        samples_x_tsne = init_samples_x_tsne  # IncrementalTSNE(n_components=2, n_jobs=20, init=init_samples_x_tsne, n_iter=250,
+        # exploration_n_iter=0).fit_transform(samples_x)
+
+    samples_x_tsne = samples_x_tsne.tolist()
+    samples_y = samples_y.tolist()
+    samples_truth = samples_truth.tolist()
+    samples_nodes = {}
+    for i in range(len(selection)):
+        id = int(selection[i])
+        iter_num = process_data.shape[0]
+        labels = [int(np.argmax(process_data[j][id])) if np.max(process_data[j][id]) > 1e-4 else -1 for j in
+                  range(iter_num)]
+        scores = [float(np.max(process_data[j][id])) for j in range(iter_num)]
+        samples_nodes[id] = {
+            "id": id,
+            "x": samples_x_tsne[i][0],
+            "y": samples_x_tsne[i][1],
+            "label": labels,
+            "score": scores,
+            "truth": samples_truth[i],
+            "path": propagation_path[id]
+        }
+
+    graph = {
+        "nodes": samples_nodes,
+    }
+    return graph

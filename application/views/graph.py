@@ -68,3 +68,9 @@ def app_update():
     area = data['area']
     level = data['level']
     return update_graph(area, level)
+
+@graph.route('/graph/fisheye', methods=["GET", "POST"])
+def app_fisheye():
+    data = json.loads(request.data)
+    nodes = data['nodes']
+    return fisheye(nodes)

@@ -9,7 +9,7 @@ import copy
 
 from ..model_utils import SSLModel
 from ..utils.config_utils import config
-from ..graph_utils.anchor import getAnchors, updateAnchors
+from ..graph_utils.anchor import getAnchors, updateAnchors, fisheyeAnchors
 import pickle
 from ..graph_utils.IncrementalTSNE import IncrementalTSNE
 
@@ -119,3 +119,11 @@ class ExchangePortClass(object):
                            buf_path, propagation_path)
         return jsonify(graph)
 
+    def fisheye(self, nodes):
+        raw_graph, process_data, influence_matrix, propagation_path \
+            = self.model.get_graph_and_process_data()
+        train_x, train_y = self.model.get_data()
+        buf_path = os.path.join(self.model.data.selected_dir, "anchors" + config.pkl_ext)
+        ground_truth = self.model.data.get_train_ground_truth()
+        graph = fisheyeAnchors(nodes, train_x, train_y, raw_graph, process_data, influence_matrix, propagation_path, ground_truth, buf_path)
+        return jsonify(graph)
