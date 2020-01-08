@@ -10,6 +10,8 @@ from .views.info import info
 def create_app():
     app = Flask(__name__)
     app.config['SESSION_TYPE'] = 'filesystem'
+    app.config['JSON_SORT_KEYS'] = False
+    app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
     Session(app)
 
     app.config.from_object("config.DevelopmentConfig")

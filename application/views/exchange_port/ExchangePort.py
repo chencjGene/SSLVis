@@ -5,10 +5,12 @@ from ctypes import *
 from flask import jsonify
 import _thread as thread
 import scipy.cluster.vq as vq
+import copy
+import time
 
 from ..model_utils import SSLModel
 from ..utils.config_utils import config
-from ..graph_utils.anchor import getAnchors, updateAnchors
+from ..graph_utils.anchor import getAnchors, updateAnchors, fisheyeAnchors
 import pickle
 from ..graph_utils.IncrementalTSNE import IncrementalTSNE
 
@@ -74,37 +76,16 @@ class ExchangePortClass(object):
         return dist
 
     def get_graph(self):
-        raw_graph, process_data, influence_matrix \
+        raw_graph, process_data, influence_matrix, propagation_path \
             = self.model.get_graph_and_process_data()
         train_x, train_y = self.model.get_data()
-        # indptr = raw_graph.indptr
-        # indices = raw_graph.indices
-        # is_connected = []
-        # for i in range(train_x.shape[0]):
-        #     if train_y[i] != -1:
-        #         is_connected.append(2)
-        #         continue
-        #     begin = indptr[i]
-        #     end = indptr[i+1]
-        #     find = False
-        #     for idx in indices[begin:end]:
-        #         if train_y[idx] != -1:
-        #             find = True
-        #             break
-        #     if find:
-        #         is_connected.append(1)
-        #     else:
-        #         is_connected.append(0)
-        # is_connected = np.array(is_connected)
-        # print("not connected:", is_connected[is_connected==0].shape[0])
-        # print("connected:", is_connected[is_connected == 1].shape[0])
-        # print("labeled:", is_connected[is_connected == 2].shape[0])
-        # print(is_connected)
         buf_path = self.model.data.selected_dir
         ground_truth = self.model.data.get_train_ground_truth()
+
         graph = getAnchors(train_x, train_y, ground_truth,
-                           process_data, influence_matrix, self.dataname,
+                           process_data, influence_matrix, propagation_path, self.dataname,
                            os.path.join(buf_path, "anchors"+config.pkl_ext))
+
         return jsonify(graph)
 
     def get_loss(self):
@@ -128,13 +109,34 @@ class ExchangePortClass(object):
         return img_path
 
     def update_graph(self, area, level):
-        raw_graph, process_data, influence_matrix \
+        all_time = {"get_meta_data":0, "update_anchor":0, "jsonify":0}
+        start = time.time()
+        raw_graph, process_data, influence_matrix, propagation_path \
             = self.model.get_graph_and_process_data()
         train_x, train_y = self.model.get_data()
         buf_path = os.path.join(self.model.data.selected_dir, "anchors" + config.pkl_ext)
         ground_truth = self.model.data.get_train_ground_truth()
-
+        now = time.time()
+        all_time["get_meta_data"] += now-start
+        start = now
         graph = updateAnchors(train_x, train_y, ground_truth,
                            process_data, influence_matrix, self.dataname, area, level,
-                           buf_path)
+                           buf_path, propagation_path)
+        now = time.time()
+        all_time["update_anchor"] += now - start
+        start = now
+        json_res = jsonify(graph)
+        now = time.time()
+        all_time["jsonify"] += now - start
+        start = now
+        print(all_time)
+        return json_res
+
+    def fisheye(self, nodes):
+        raw_graph, process_data, influence_matrix, propagation_path \
+            = self.model.get_graph_and_process_data()
+        train_x, train_y = self.model.get_data()
+        buf_path = os.path.join(self.model.data.selected_dir, "anchors" + config.pkl_ext)
+        ground_truth = self.model.data.get_train_ground_truth()
+        graph = fisheyeAnchors(nodes, train_x, train_y, raw_graph, process_data, influence_matrix, propagation_path, ground_truth, buf_path)
         return jsonify(graph)

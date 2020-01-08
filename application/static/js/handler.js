@@ -48,6 +48,20 @@ DataLoaderClass.prototype.update_graph_handler = function (callback) {
     return _update_graph_handler;
 };
 
+DataLoaderClass.prototype.update_fisheye_graph_handler = function (callback) {
+    let that = this;
+
+    function _update_fisheye_graph_handler(data) {
+        console.log(that.fisheye_graph_url);
+        console.log("fisheye_graph_handler");
+        console.log(data);
+        that.state.graph_data = data;
+        if (callback) callback(false);
+    }
+
+    return _update_fisheye_graph_handler;
+};
+
 DataLoaderClass.prototype.get_loss_handler = function (callback) {
     let that = this;
 
