@@ -16,10 +16,13 @@ DataLoaderClass = function (dataset) {
     that.image_url = "/info/image";
     that.set_knn_url = "/graph/setK";
     that.set_influence_filter_url = "/graph/SetInfluenceFilter";
+    that.update_graph_url = "/graph/update";
+    that.fisheye_graph_url = "/graph/fisheye";
 
     // Request nodes
     that.manifest_node = null;
     that.graph_node = null;
+    that.update_graph_node = null;
     that.loss_node = null;
     that.ent_node = null;
 
@@ -48,6 +51,12 @@ DataLoaderClass = function (dataset) {
             that.get_graph_handler(that.update_graph_view), "json", "GET");
         that.graph_node.depend_on(that.manifest_node);
 
+        that.update_graph_node = new request_node(that.update_graph_url + params,
+            that.update_graph_handler(that.update_graph_view), "json", "POST");
+
+        that.fisheye_graph_node = new request_node(that.fisheye_graph_url + params,
+            that.update_fisheye_graph_handler(that.update_fisheye_view), "json", "POST");
+
         that.loss_node = new request_node(that.loss_url + params,
             that.get_loss_handler(that.update_loss_view), "json", "GET");
         that.loss_node.depend_on(that.manifest_node);
@@ -59,6 +68,23 @@ DataLoaderClass = function (dataset) {
 
     that.init_notify = function () {
         that.manifest_node.notify();
+    };
+
+    that.update_graph_notify = function (area, target_level) {
+
+        that.update_graph_node.set_data({
+            'area': area,
+            'level': target_level
+        });
+        that.update_graph_node.notify();
+    };
+
+    that.update_fisheye_graph_node = function(nodes, fisheye_callback) {
+        that.fisheye_graph_node.set_data({
+            'nodes':nodes
+        });
+        that.state.fisheye_callback = fisheye_callback;
+        that.fisheye_graph_node.notify();
     };
 
     that.set_graph_view = function (v) {
@@ -93,11 +119,19 @@ DataLoaderClass = function (dataset) {
 
     };
 
-    that.update_graph_view = function(){
+    that.update_graph_view = function(rescale){
         console.log("update graph view");
         that.graph_view.component_update({
             "graph_data": that.state.graph_data
-        })
+        }, rescale)
+    };
+
+    that.update_fisheye_view = function(rescale){
+        console.log("update graph view");
+        that.graph_view.component_update({
+            "graph_data": that.state.graph_data
+        }, rescale);
+        that.state.fisheye_callback();
     };
 
     that.update_loss_view = function(){
