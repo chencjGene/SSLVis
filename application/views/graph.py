@@ -61,3 +61,10 @@ def app_save_layout():
         json.dump(graph, f, indent=4)
     return jsonify({"status": 1})
 
+@graph.route('/graph/update', methods=["GET", "POST"])
+def app_update():
+    dataset = request.args['dataset']
+    data = json.loads(request.data)
+    area = data['area']
+    level = data['level']
+    return update_graph(area, level)

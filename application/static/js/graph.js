@@ -31,6 +31,7 @@ let GraphLayout = function (container){
 
     let main_group = null;
     let zoom_scale = 1;
+    let current_level = 0;
     let drag_transform = null;
     let drag = null;
     let zoom = null;
@@ -43,6 +44,10 @@ let GraphLayout = function (container){
     let iter = 0;
 
     let show_ground_truth = false;
+    let center_scale_x = null;
+    let center_scale_y = null;
+    let center_scale_x_reverse = null;
+    let center_scale_y_reverse = null;
 
     that._init = function(){
         svg = container.selectAll('#graph-view-svg')
@@ -51,8 +56,10 @@ let GraphLayout = function (container){
         main_group = svg.append('g').attr('id', 'main_group');
 
         zoom = d3.zoom()
-                    .scaleExtent([0.1, 10])
-                    .on("zoom", zoomed);
+                    .scaleExtent([0.6, 128])
+            // .translateExtent([[-100, -100], [100, 100]])
+                    .on("zoom", zoomed)
+                    .on("end", zoom_end);
 
         drag_transform = {'x': 0, 'y': 0};
         drag = d3.drag()
@@ -80,6 +87,66 @@ let GraphLayout = function (container){
         function zoomed() {
             zoom_scale = 1.0 / d3.event.transform.k;
             main_group.attr("transform", d3.event.transform); // updated for d3 v4
+            nodes_group.selectAll("circle").attr("r", 3.5 * zoom_scale);
+            golds_group.selectAll("path").attr("d", d => star_path(10 * zoom_scale,4 * zoom_scale, center_scale_x(d.x), center_scale_y(d.y)));
+            edges_group.selectAll("line").style('stroke-width', zoom_scale);
+            main_group.select("#group-propagation").selectAll("polyline").style('stroke-width', 2.0 * zoom_scale);
+            main_group.select("#single-propagate").selectAll("polyline").style('stroke-width', 2.0 * zoom_scale);
+            let target_level = current_level;
+            let current_level_scale = Math.pow(2, target_level);
+            while (d3.event.transform.k > 2 * current_level_scale) {
+                current_level_scale *= 2;
+                target_level += 1;
+            }
+            while (d3.event.transform.k < current_level_scale / 1.5 && target_level > 0) {
+                current_level_scale /= 2;
+                target_level -= 1;
+            }
+            current_level = target_level;
+            // console.log(d3.event.transform);
+
+        }
+
+        function zoom_end() {
+            zoom_scale = 1.0 / d3.event.transform.k;
+            main_group.attr("transform", d3.event.transform); // updated for d3 v4
+            nodes_group.selectAll("circle").attr("r", 3.5 * zoom_scale);
+            golds_group.selectAll("path").attr("d", d => star_path(10 * zoom_scale,4 * zoom_scale, center_scale_x(d.x), center_scale_y(d.y)));
+            edges_group.selectAll("line").style('stroke-width', zoom_scale);
+            main_group.select("#group-propagation").selectAll("polyline").style('stroke-width', 2.0 * zoom_scale);
+            main_group.select("#single-propagate").selectAll("polyline").style('stroke-width', 2.0 * zoom_scale);
+            let target_level = current_level;
+            let current_level_scale = Math.pow(2, target_level);
+            while (d3.event.transform.k > 2 * current_level_scale) {
+                current_level_scale *= 2;
+                target_level += 1;
+            }
+            while (d3.event.transform.k < current_level_scale / 1.5 && target_level > 0) {
+                current_level_scale /= 2;
+                target_level -= 1;
+            }
+            current_level = target_level;
+            svg = container.select("#graph-view-svg");
+            width = $('#graph-view-svg').width();
+            height = $('#graph-view-svg').height();
+            // main_group.select('#debug-shouxing')
+            //     .attr('x', -d3.event.transform.x / d3.event.transform.k)
+            //     .attr('y', -d3.event.transform.y / d3.event.transform.k)
+            //     .attr('width', width / d3.event.transform.k)
+            //     .attr('height', height / d3.event.transform.k);
+            let start_x = center_scale_x_reverse(-d3.event.transform.x / d3.event.transform.k);
+            let start_y = center_scale_y_reverse(-d3.event.transform.y / d3.event.transform.k);
+            let end_x = center_scale_x_reverse((width - d3.event.transform.x) / d3.event.transform.k);
+            let end_y = center_scale_y_reverse((height - d3.event.transform.y) / d3.event.transform.k);
+
+            let area = {
+                'x': start_x,
+                'y': start_y,
+                'width': end_x - start_x,
+                'height': end_y - start_y
+            };
+            console.log(d3.event.transform, area, current_level);
+            DataLoader.update_graph_notify(area, current_level);
         }
 
         svg.on("mousedown", function () {
@@ -143,7 +210,7 @@ let GraphLayout = function (container){
 
     that.lasso_start = function() {
         lasso.items()
-            .attr("r",3.5) // reset size
+            .attr("r",3.5 * zoom_scale) // reset size
             .classed("not_possible",true)
             .classed("selected",false);
 
@@ -161,12 +228,14 @@ let GraphLayout = function (container){
         // Style the possible dots
         lasso.possibleItems()
             .classed("not_possible",false)
-            .classed("possible",true);
+            .classed("possible",true)
+            .attr("r", 5 * zoom_scale);
         //
         // // Style the not possible dot
         lasso.notPossibleItems()
             .classed("not_possible",true)
-            .classed("possible",false);
+            .classed("possible",false)
+            .attr("r", 3.5 * zoom_scale);
 
     };
 
@@ -178,11 +247,11 @@ let GraphLayout = function (container){
         // Style the selected dots
         lasso.selectedItems()
             .classed("selected",true)
-            // .attr("r",7);
+            .attr("r", 5 * zoom_scale);
 
         // Reset the style of the not selected dots
         lasso.notSelectedItems()
-            .attr("r",3.5);
+            .attr("r",3.5 * zoom_scale);
 
         let focus_node = lasso.selectedItems().data();
         let focus_node_ids = focus_node.map(d => d.id);
@@ -258,7 +327,7 @@ let GraphLayout = function (container){
                     .data(path)
                     .enter()
                     .append("polyline")
-                    .attr("stroke-width", 2)
+                    .attr("stroke-width", 2.0 * zoom_scale)
                     .attr("stroke", color_label[predict_label])
                     .attr("opacity", 1)
                     .attr("marker-mid", "url(#arrow-"+predict_label+")")
@@ -294,13 +363,14 @@ let GraphLayout = function (container){
                 svg.on(".drag", null);
                 svg.on(".dragend", null);
                 svg.call(zoom);
+                svg.selectAll('.lasso').remove();
         }
         else {
             if_lasso = true;
             $("#lasso-btn").css("background-color", btn_select_color);
             lasso_btn_path.attr("stroke", "white").attr("fill", "white");
             svg.on('.zoom', null);
-                svg.call(lasso);
+            svg.call(lasso);
         }
     };
 
@@ -308,10 +378,10 @@ let GraphLayout = function (container){
         data_manager = _data_manager;
     };
 
-    that.component_update = function(state){
+    that.component_update = function(state, rescale){
         console.log("graph component update");
         that._update_data(state);
-        that._update_view();
+        that._update_view(rescale);
     };
 
     that._update_data = function(state){
@@ -366,37 +436,39 @@ let GraphLayout = function (container){
 
     that.setIter = function(newiter) {
         iter = newiter;
-        that._update_view();
+        that._update_view(false);
     };
 
-    that._center_tsne = function centering(){
-            let avx = 0;
-            let avy = 0;
-            let scale = 10000;
+    that._center_tsne = function centering(rescale){
             let nodes = Object.values(graph_data.nodes);
-            let nodenum = nodes.length;
-            width = $('#graph-view-svg').width();
-            height = $('#graph-view-svg').height();
-            for(let node of nodes){
-                avx += node.x;
-                avy += node.y;
+            if (rescale) {
+                let xRange = d3.extent(nodes, function(d){return d.x});
+                var yRange = d3.extent(nodes, function(d){return d.y});
+                if (xRange[0] == xRange[1]) {
+                    xRange[0] -= 10;
+                    xRange[1] += 10;
+                }
+                if (yRange[0] == yRange[1]) {
+                    yRange[0] -= 10;
+                    yRange[1] += 10;
+                }
+                let width = $('#graph-view-svg').width();
+                let height = $('#graph-view-svg').height();
+
+                let scale = Math.min(width / (xRange[1] - xRange[0]),
+                                        height / (yRange[1] - yRange[0]));
+                scale *= 0.85;
+                let x_width = (xRange[1] - xRange[0]) * scale;
+                let y_height = (yRange[1] - yRange[0]) * scale;
+                center_scale_x = d3.scaleLinear().domain(xRange).range([(width - x_width)  / 2, (width + x_width)  / 2]);
+                center_scale_y = d3.scaleLinear().domain(yRange).range([(height - y_height)  / 2, (height + y_height)  / 2]);
+                center_scale_x_reverse = d3.scaleLinear().domain([(width - x_width)  / 2, (width + x_width)  / 2]).range(xRange);
+                center_scale_y_reverse = d3.scaleLinear().domain([(height - y_height)  / 2, (height + y_height)  / 2]).range(yRange);
             }
-            avx /= nodenum;
-            avy /= nodenum;
-            let delx = width/2-avx;
-            let dely = height/2 - avy;
-            for (let node of nodes){
-                node.x += delx;
-                node.y += dely;
-                let xscale = (width/2)/Math.abs(node.x-width/2);
-                let yscale = (height/2)/Math.abs(node.y-height/2);
-                scale = Math.min(scale, xscale, yscale);
-            }
-            scale *= 0.85;
-            for(let node of nodes){
-                node.x = width/2 + (node.x-width/2)*scale;
-                node.y = height/2 + (node.y-height/2)*scale;
-            }
+            // for(let node of nodes){
+            //     node.x = center_scale_x(node.x);
+            //     node.y = center_scale_y(node.y);
+            // }
         };
 
     that._edge_reformulation = function(edges) {
@@ -444,21 +516,21 @@ let GraphLayout = function (container){
     that._create = function() {
         svg = container.select("#graph-view-svg");
         let nodes = Object.values(graph_data.nodes);
-        let edges = that._edge_reformulation(graph_data.edges);
+        // let edges = that._edge_reformulation(graph_data.edges);
         let golds = nodes.filter(d => d.label[0]>-1);
-        let links_data = graph_data.edges;
+        // let links_data = graph_data.edges;
         let nodes_data = graph_data.nodes;
         width = $('#graph-view-svg').width();
         height = $('#graph-view-svg').height();
 
         nodes_in_group = nodes_group.selectAll("circle")
-            .data(nodes);
+            .data(nodes, d => d.id);
         nodes_in_group.enter()
             .append("circle")
             .attr("id", d => "id-" + d.id)
-            .attr("cx", d => d.x)
-            .attr("cy", d => d.y)
-            .attr("r", 4)
+            .attr("cx", d => center_scale_x(d.x))
+            .attr("cy", d => center_scale_y(d.y))
+            .attr("r", 3.5 * zoom_scale)
             .attr("opacity", 1)
             .attr("fill", function (d) {
                 if(show_ground_truth){
@@ -472,11 +544,11 @@ let GraphLayout = function (container){
             })
             .on("mouseover", function (d) {
                 let node = d3.select(this);
-                node.attr("r", 5);
+                node.attr("r", 5 * zoom_scale);
             })
             .on("mouseout", function (d) {
                 let node = d3.select(this);
-                node.attr("r", 3.5);
+                node.attr("r", 3.5 * zoom_scale);
             })
             .on("click", function (d) {
                 let node = d3.select(this);
@@ -484,32 +556,21 @@ let GraphLayout = function (container){
                 console.log("Node:", d);
                 let eid = d.id;
                 let predict_label = d.label[iter];
-                let path_stack = [eid];
                 let path_keys = [];
-                function findpaths() {
-                    if(path_stack.length===0) return;
-                    let now_node = path_stack[path_stack.length-1];
-                    if(graph_data.nodes[now_node].truth === predict_label){
-                        for(let i=1; i<path_stack.length; i++){
-                            let path_key = path_stack[i-1]+","+path_stack[i];
-                            if(path_keys.indexOf(path_key) === -1){
-                                path_keys.push(path_key)
-                            }
-                        }
-                    }
-                    if (edges[now_node] !== undefined) {
-                        for(let next_node of edges[now_node].e){
-                            if(graph_data.nodes[next_node].label[iter] !== predict_label) continue;
-                            if(path_stack.indexOf(next_node) !== -1) continue;
-                            path_stack.push(next_node);
-                            findpaths();
-                        }
-                    }
-                    path_stack.pop();
-                }
-                findpaths();
                 let path = [];
                 let path_nodes = {};
+                let new_nodes = [];
+                for(let onepath of d.path[iter]){
+                    if(onepath.length === 1) continue;
+                    for(let i=0; i<onepath.length-1; i++){
+                        let s = onepath[i];
+                        let e = onepath[i+1];
+                        let key = s+","+e;
+                        if(path_keys.indexOf(key) === -1){
+                            path_keys.push(key)
+                        }
+                    }
+                }
                 for(let path_key of path_keys){
                     let keys = path_key.split(",");
                     let e = parseInt(keys[0]);
@@ -518,7 +579,12 @@ let GraphLayout = function (container){
                     path_nodes[s] = true;
                     path.push([e, s]);
                 }
-
+                for(let node_id in path_nodes){
+                    if(graph_data.nodes[node_id] === undefined) new_nodes.push(node_id)
+                }
+                // added by changjian, 20191226
+                // showing image content
+                data_manager.update_image_view(node);
                 // de-highlight
                 nodes_in_group.attr("opacity", d => path_nodes[d.id]===true?1:0.2);
                 golds_in_group.attr("opacity", d => path_nodes[d.id]===true?1:0.2);
@@ -544,7 +610,7 @@ let GraphLayout = function (container){
                     .data(path)
                     .enter()
                     .append("polyline")
-                    .attr("stroke-width", 2)
+                    .attr("stroke-width", 2 * zoom_scale)
                     .attr("stroke", color_label[predict_label])
                     .attr("opacity", 1)
                     .attr("marker-mid", "url(#arrow-"+predict_label+")")
@@ -555,10 +621,6 @@ let GraphLayout = function (container){
                         let mid = [(begin[0]+end[0])/2, (begin[1]+end[1])/2];
                         return begin[0]+","+begin[1]+" "+mid[0]+","+mid[1]+" "+end[0]+","+end[1];
                     });
-
-                // added by changjian, 20191226
-                // showing image content
-                data_manager.update_image_view(node);
             });
 
         golds_in_group = golds_group.selectAll("path")
@@ -566,7 +628,7 @@ let GraphLayout = function (container){
         golds_in_group.enter()
                 .append("path")
                 .attr("id", d => "gold-" + d.id)
-                .attr("d", d => star_path(10,4,d.x, d.y))
+                .attr("d", d => star_path(10 * zoom_scale,4 * zoom_scale, center_scale_x(d.x), center_scale_y(d.y)))
                 .attr("fill", function(d){
                     if(show_ground_truth){
                         if(d.truth === -1) return color_unlabel;
@@ -587,17 +649,17 @@ let GraphLayout = function (container){
                 });
 
 
-        edges_in_group = edges_group.selectAll("line")
-                .data(links_data);
-        edges_in_group.enter()
-                .append("line")
-                .attr("x1", d => nodes_data[d["s"]].x)
-                .attr("y1", d => nodes_data[d["s"]].y)
-                .attr("x2", d => nodes_data[d["e"]].x)
-                .attr("y2", d => nodes_data[d["e"]].y)
-                .attr("stroke-width", 1)
-                .attr("stroke", "gray")
-                .attr("opacity", 0.0);
+        // edges_in_group = edges_group.selectAll("line")
+        //         .data(links_data);
+        // edges_in_group.enter()
+        //         .append("line")
+        //         .attr("x1", d => center_scale_x(nodes_data[d["s"]].x))
+        //         .attr("y1", d => center_scale_y(nodes_data[d["s"]].y))
+        //         .attr("x2", d => center_scale_x(nodes_data[d["e"]].x))
+        //         .attr("y2", d => center_scale_y(nodes_data[d["e"]].y))
+        //         .attr("stroke-width", zoom_scale)
+        //         .attr("stroke", "gray")
+        //         .attr("opacity", 0.0);
 
         // remove lasso
         svg.select(".lasso").remove();
@@ -610,8 +672,8 @@ let GraphLayout = function (container){
     };
 
     that._update = function() {
-        nodes_in_group.attr("cx", d => d.x)
-            .attr("cy", d => d.y)
+        nodes_in_group.attr("cx", d => center_scale_x(d.x))
+            .attr("cy", d => center_scale_y(d.y))
             .attr("fill", function (d) {
                 if(show_ground_truth){
                     if(d.truth === -1) return color_unlabel;
@@ -623,7 +685,7 @@ let GraphLayout = function (container){
                 }
             });
 
-        golds_in_group.attr("d", d => star_path(10,4,d.x, d.y))
+        golds_in_group.attr("d", d => star_path(10 * zoom_scale,4 * zoom_scale, center_scale_x(d.x), center_scale_y(d.y)))
                 .attr("fill", function(d){
                     if(show_ground_truth){
                         if(d.truth === -1) return color_unlabel;
@@ -635,24 +697,40 @@ let GraphLayout = function (container){
                     }
                 });
 
-        let nodes_data = graph_data.nodes;
-        edges_in_group.attr("x1", d => nodes_data[d["s"]].x)
-                .attr("y1", d => nodes_data[d["s"]].y)
-                .attr("x2", d => nodes_data[d["e"]].x)
-                .attr("y2", d => nodes_data[d["e"]].y)
+        // let nodes_data = graph_data.nodes;
+        // edges_in_group.attr("x1", d => center_scale_x(nodes_data[d["s"]].x))
+        //         .attr("y1", d => center_scale_y(nodes_data[d["s"]].y))
+        //         .attr("x2", d => center_scale_x(nodes_data[d["e"]].x))
+        //         .attr("y2", d => center_scale_y(nodes_data[d["e"]].y))
     };
 
     that._remove = function() {
         nodes_in_group.exit().remove();
-        edges_in_group.exit().remove();
+        // edges_in_group.exit().remove();
         golds_in_group.exit().remove();
     };
 
-    that._update_view = function(){
+    that._update_view = function(rescale){
         // add svg defs
         that._add_marker();
         //change coordinates
-        that._center_tsne();
+        that._center_tsne(rescale);
+
+
+        // for debug shouxing ===========================================
+        // svg = container.select("#graph-view-svg");
+        // width = $('#graph-view-svg').width();
+        // height = $('#graph-view-svg').height();
+        // main_group.selectAll('rect').remove();
+        // main_group.append('rect')
+        //     .attr('id', 'debug-shouxing')
+        //     .attr('x', 0)
+        //     .attr('y', 0)
+        //     .attr('width', width)
+        //     .attr('height', height)
+        //     .style('fill', 'gray')
+        //     .style('opacity', 0.3);
+        // =============================================================
 
         //update view
         that._create();

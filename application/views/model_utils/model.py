@@ -6,6 +6,7 @@ from scipy.stats import entropy
 from time import time
 from tqdm import tqdm
 import warnings
+import copy
 
 from sklearn.neighbors import kneighbors_graph
 from sklearn.metrics import accuracy_score
@@ -60,6 +61,8 @@ class SSLModel(object):
         self.filter_threshold = 0.9
         logger.info("n_neighbor: {}".format(self.n_neighbor))
 
+        self.simplified_affinity_matrix = None
+        self.propagation_path = None
         self._get_signal_state()
         self._init()
 
@@ -223,8 +226,54 @@ class SSLModel(object):
                     .format(accuracy_score(self.pred_dist.argmax(axis=1), ground_truth)))
         logger.info("now acc: {}".format(accuracy_score(simplified_F.argmax(axis=1), ground_truth)))
         simplified_affinity_matrix.eliminate_zeros()
+        propagation_path = self.get_path_to_label(self.process_data, simplified_affinity_matrix)
+        return simplified_affinity_matrix, propagation_path
 
-        return simplified_affinity_matrix
+    def _find_path(self, path_stack, stack_len, edge_indices, edge_indptr, predict_labels, paths, iter, target_label):
+        if stack_len == 0:
+            return
+        top_node = path_stack[stack_len-1]
+        if predict_labels[0][top_node] == target_label:
+            # arrive target_label
+            paths.append(copy.copy(path_stack))
+        edge_start_idx = edge_indptr[top_node]
+        edge_end_idx = edge_indptr[top_node+1]
+        for edge_idx in range(edge_start_idx, edge_end_idx):
+            edge_id = int(edge_indices[edge_idx])
+            if predict_labels[iter][edge_id] != target_label:
+                continue
+            if edge_id in path_stack:
+                continue
+            path_stack.append(edge_id)
+            self._find_path(path_stack, stack_len+1, edge_indices, edge_indptr, predict_labels, paths, iter, target_label)
+        path_stack.pop()
+
+    def get_path_to_label(self, process_data, influence_matrix):
+        iternum = process_data.shape[0]
+        nodenum = process_data.shape[1]
+        propagation_path = [[[] for j in range(iternum)] for i in range(nodenum)]
+        edge_indices = influence_matrix.indices
+        edge_indptr = influence_matrix.indptr
+        # predict label
+        predict_labels = np.zeros((iternum, nodenum))
+        for iter in range(iternum):
+            for i in range(nodenum):
+                predict_label = np.argmax(process_data[iter][i])
+                predict_labels[iter][i] = -1 if np.isclose(process_data[iter][i][predict_label], 0) else predict_label
+
+        for iter in range(iternum):
+            for i in range(nodenum):
+                if (predict_labels[iter][i] == -1) or (propagation_path[i][iter] != []):
+                    continue
+                elif predict_labels[0][i] > -1:
+                    propagation_path[i][iter].append([i])
+                    continue
+                paths = []
+                self._find_path([int(i)], 1, edge_indices, edge_indptr, predict_labels, paths, iter, predict_labels[iter][i])
+                propagation_path[i][iter] += paths
+                #TODO: optimize
+
+        return propagation_path
 
     def _projection(self):
         # this function is disabled
@@ -250,7 +299,9 @@ class SSLModel(object):
         return
 
     def get_graph_and_process_data(self):
-        return self.graph, self.process_data, self.simplify_influence_matrix(threshold=self.filter_threshold)
+        if (self.propagation_path == None) or (self.simplified_affinity_matrix == None):
+            self.simplified_affinity_matrix, self.propagation_path = self.simplify_influence_matrix(threshold=self.filter_threshold)
+        return self.graph, self.process_data, self.simplified_affinity_matrix, self.propagation_path
 
     def get_loss(self):
         return self.loss

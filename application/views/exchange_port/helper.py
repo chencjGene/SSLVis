@@ -25,3 +25,6 @@ def get_labels():
 
 def get_image_path(id):
     return exchange_port.get_image_path(id)
+
+def update_graph(area, level):
+    return exchange_port.update_graph(area, level)
