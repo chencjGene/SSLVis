@@ -112,26 +112,26 @@ def propagation(graph_matrix, affinity_matrix, train_y,
             all_entropy.append(ent.sum())
 
         # record loss
-        # t = ((l_previous / D[:, np.newaxis]) ** 2).sum(axis=1)
-        # loss = safe_sparse_dot(affinity_matrix.sum(axis=1).T, t) * 0.5 + \
-        #        safe_sparse_dot(affinity_matrix.sum(axis=0), t) * 0.5 - \
-        #        np.dot(l_previous.reshape(-1),
-        #               label_distributions_a.reshape(-1))
-        # # loss[0, 0]: read the only-one value in a numpy.matrix variable
-        # loss = loss[0, 0] + alpha / (1 - alpha) * paired_distances(label_distributions_[labeled],
-        #                                                            y_static_labeled[labeled]).sum()
-        norm_dist = l_previous / D[:, np.newaxis]
-        mat = np.dot(norm_dist, norm_dist.T)
         t = ((l_previous / D[:, np.newaxis]) ** 2).sum(axis=1)
-        a = (affinity_matrix * t[:, np.newaxis]) * 0.5
-        b = (affinity_matrix * t) * 0.5
-        c = mat * affinity_matrix
-        loss = a.sum() + b.sum() - c.sum()
-        loss2 = euclidean_distances(norm_dist, norm_dist, squared=True)
-        # loss2 = (0.5 * affinity_matrix.toarray() * loss2).sum()
-        loss2 = (0.5 * affinity_matrix * loss2).sum()
-        loss = loss2 + alpha / (1 - alpha) * paired_distances(label_distributions_[labeled],
-                                                             y_static_labeled[labeled]).sum()
+        loss = safe_sparse_dot(affinity_matrix.sum(axis=1).T, t) * 0.5 + \
+               safe_sparse_dot(affinity_matrix.sum(axis=0), t) * 0.5 - \
+               np.dot(l_previous.reshape(-1),
+                      label_distributions_a.reshape(-1))
+        # loss[0, 0]: read the only-one value in a numpy.matrix variable
+        loss = loss[0, 0] + alpha / (1 - alpha) * paired_distances(label_distributions_[labeled],
+                                                                   y_static_labeled[labeled]).sum()
+        # norm_dist = l_previous / D[:, np.newaxis]
+        # mat = np.dot(norm_dist, norm_dist.T)
+        # t = ((l_previous / D[:, np.newaxis]) ** 2).sum(axis=1)
+        # a = (affinity_matrix * t[:, np.newaxis]) * 0.5
+        # b = (affinity_matrix * t) * 0.5
+        # c = mat * affinity_matrix
+        # loss = a.sum() + b.sum() - c.sum()
+        # loss2 = euclidean_distances(norm_dist, norm_dist, squared=True)
+        # # loss2 = (0.5 * affinity_matrix.toarray() * loss2).sum()
+        # loss2 = (0.5 * affinity_matrix * loss2).sum()
+        # loss = loss2 + alpha / (1 - alpha) * paired_distances(label_distributions_[labeled],
+        #                                                      y_static_labeled[labeled]).sum()
         all_loss.append(loss)
 
     else:

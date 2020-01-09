@@ -23,6 +23,10 @@ var request_node = function (url, callback, type, method, headers, children, par
         return myStatus === "pending";
     };
 
+    this.set_pending = function(){
+        myStatus = "pending";
+    };
+
     this.set_off = function() {
         myStatus = "sleeping";
     };
