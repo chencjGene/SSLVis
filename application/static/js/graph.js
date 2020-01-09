@@ -30,6 +30,7 @@ let GraphLayout = function (container){
     let lasso_btn_path = null;
 
     let main_group = null;
+    let wait_list_group = null;
     let zoom_scale = 1;
     let old_transform = null;
     let current_level = 0;
@@ -54,7 +55,7 @@ let GraphLayout = function (container){
     let click_menu = null;
     let lasso_result = [];
     let delete_list = [];
-    let update_label_list = [];
+    let update_label_list = {};
     let label_names = [];
 
     that._init = function(){
@@ -63,6 +64,46 @@ let GraphLayout = function (container){
             .attr("height", height);
         svg.attr("oncontextmenu", "DataLoader.graph_view.context_menu(evt)");
         main_group = svg.append('g').attr('id', 'main_group');
+        wait_list_group = svg.append('g').attr('id', 'wait_list_group').style("display", "none")
+            .attr("transform", `translate(${45},2)`);
+        d3.select("#apply-delete-btn").on("click", function () {
+            if (if_lasso) {
+                $("#lasso-btn").click();
+            }
+
+            if (wait_list_group.style("display") === "none") {
+                wait_list_group.style("display", "block");
+                d3.select("#apply-delete-btn").style("background", "rgb(86, 7, 49)");
+                d3.selectAll(".apply-delete-btn-path").style("fill", "white");
+            }
+            else {
+                wait_list_group.style("display", "none");
+                d3.select("#apply-delete-btn").style("background", "gray");
+                d3.selectAll(".apply-delete-btn-path").style("fill", "white");
+            }
+        }).on("mouseover", function () {
+            if (wait_list_group.style("display") === "none") {
+                d3.select("#apply-delete-btn").style("background", "gray");
+                d3.selectAll(".apply-delete-btn-path").style("fill", "white");
+            }
+        }).on("mousemove", function () {
+            if (wait_list_group.style("display") === "none") {
+                d3.select("#apply-delete-btn").style("background", "gray");
+                d3.selectAll(".apply-delete-btn-path").style("fill", "white");
+            }
+        }).on("mouseout", function () {
+            if (wait_list_group.style("display") === "none") {
+                d3.select("#apply-delete-btn").style("background", "white");
+                d3.selectAll(".apply-delete-btn-path").style("fill", "black");
+            }
+        });
+
+        that._update_wait_list_group();
+
+
+        // d3.select("#my-graph-right").on("mouseover", function () {
+        //     wait_list_group.style("display", "none");
+        // });
 
         zoom = d3.zoom()
                     .scaleExtent([0.6, 128])
@@ -185,7 +226,29 @@ let GraphLayout = function (container){
         svg.call(zoom);
 
         $("#lasso-btn").click(function () {
+            if (wait_list_group.style("display") === "block") {
+                $("#apply-delete-btn").click();
+            }
             that._change_lasso_mode();
+        }).on("mouseover", function () {
+            if (d3.select("#lasso-btn").style("background-color") === "rgba(0, 0, 0, 0)"
+                || d3.select("#lasso-btn").style("background-color") === "white"
+                || d3.select("#lasso-btn").style("background-color") === "rgb(255, 255, 255)") {
+                d3.select("#lasso-btn").style("background", "gray");
+                lasso_btn_path.attr("stroke", "white").attr("fill", "white");
+            }
+        }).on("mousemove", function () {
+            if (d3.select("#lasso-btn").style("background-color") === "rgba(0, 0, 0, 0)"
+                || d3.select("#lasso-btn").style("background-color") === "white"
+                || d3.select("#lasso-btn").style("background-color") === "rgb(255, 255, 255)") {
+                d3.select("#lasso-btn").style("background", "gray");
+                lasso_btn_path.attr("stroke", "white").attr("fill", "white");
+            }
+        }).on("mouseout", function () {
+            if (d3.select("#lasso-btn").style("background-color") === "gray") {
+                d3.select("#lasso-btn").style("background", "white");
+                lasso_btn_path.attr("stroke", "black").attr("fill", "black");
+            }
         });
 
         edges_group = main_group.append("g").attr("id", "graph-view-link-g");
@@ -363,8 +426,8 @@ let GraphLayout = function (container){
     that._change_lasso_mode = function() {
         if(if_lasso){
             if_lasso = false;
-            $("#lasso-btn").css("background-color", btn_unselect_color);
-            lasso_btn_path.attr("stroke", "black").attr("fill", "black");
+            $("#lasso-btn").css("background-color", "gray");
+            lasso_btn_path.attr("stroke", "white").attr("fill", "white");
             svg.on("mousedown", function () {
                 svg.select("#group-propagation").remove();
                 nodes_in_group.attr("opacity", 1);
@@ -402,6 +465,7 @@ let GraphLayout = function (container){
 
     that._update_data = function(state){
         graph_data = state.graph_data;
+        that._update_delete_list();
         console.log("graph_data", graph_data);
         that._draw_legend();
     };
@@ -680,6 +744,164 @@ let GraphLayout = function (container){
         //         .attr("opacity", 0.0);
     };
 
+    that._update_wait_list_group = function() {
+        let text_height = 30;
+        let images = [];
+        wait_list_group.selectAll('#background-rect').remove();
+        wait_list_group.append('rect')
+            .attr('id', 'background-rect')
+            .attr('x', 0)
+            .attr('y', 0)
+            .style('rx', 10)
+            .style('ry', 10)
+            .attr('width', 256)
+            .attr('height', text_height * 2 + Math.floor((delete_list.length - 1) / 4) * 60 + 80)
+            .style('fill', 'white')
+            .style('stroke', 'gray')
+            .style('opacity', 0.8);
+        wait_list_group.selectAll('#title-text').remove();
+        wait_list_group.append('text')
+            .attr('id', 'title-text')
+            .attr('x', 128)
+            .attr('y', text_height / 2 + 8)
+            .text('Deleted images:')
+            .attr("text-anchor", "middle")
+            .attr('dominant-baseline', "middle")
+            .attr("font-size", text_height - 8);
+        wait_list_group.selectAll('#wait-btn').remove();
+        wait_list_group.append('rect')
+            .attr('id', 'wait-btn')
+            .attr('x', 128 - 40)
+            .attr('y', text_height + Math.floor((delete_list.length - 1) / 4) * 60 + 70)
+            .style('rx', 10)
+            .style('ry', 10)
+            .attr('width', 80)
+            .attr('height', text_height)
+            .style('fill', 'white')
+            .style('stroke', 'gray')
+            .on("click", function () {
+                that._apply_delete_and_update_label();
+            }).on("mouseover", function () {
+                d3.select("#wait-btn").style("fill", "gray").style("stroke", "black");
+                d3.select("#wait-text").style("fill", "white");
+            }).on("mousemove", function () {
+                d3.select("#wait-btn").style("fill", "gray").style("stroke", "black");
+                d3.select("#wait-text").style("fill", "white");
+            }).on("mouseout", function () {
+                d3.select("#wait-btn").style("fill", "white").style("stroke", "gray");
+                d3.select("#wait-text").style("fill", "black");
+            });
+        wait_list_group.selectAll('#wait-text').remove();
+        wait_list_group.append('text')
+            .attr('id', 'wait-text')
+            .attr('x', 128)
+            .attr('y', text_height / 2 + text_height + Math.floor((delete_list.length - 1) / 4) * 60 + 70)
+            .text('Update')
+            .attr("text-anchor", "middle")
+            .attr('dominant-baseline', "middle")
+            .attr("font-size", text_height - 8)
+            .on("click", function () {
+                that._apply_delete_and_update_label();
+            }).on("mouseover", function () {
+                d3.select("#wait-btn").style("fill", "gray").style("stroke", "black");
+                d3.select("#wait-text").style("fill", "white");
+            }).on("mousemove", function () {
+                d3.select("#wait-btn").style("fill", "gray").style("stroke", "black");
+                d3.select("#wait-text").style("fill", "white");
+            }).on("mouseout", function () {
+                d3.select("#wait-btn").style("fill", "white").style("stroke", "gray");
+                d3.select("#wait-text").style("fill", "black");
+            });
+
+        wait_list_group.selectAll('.close-path').remove();
+        wait_list_group.selectAll('#close-path-g').remove();
+
+        let temp_g = wait_list_group.append('g')
+            .attr('id', 'close-path-g')
+            .attr('transform', 'translate(225, 5) scale(0.025)')
+            .on("click", function () {
+                wait_list_group.style("display", "none");
+                d3.select("#apply-delete-btn").style("background", "white");
+                d3.selectAll(".apply-delete-btn-path").style("fill", "black");
+                d3.select("#close-circle").style("fill", "white").style("stroke", "gray");
+                d3.select("#close-icon").style("fill", "black");
+            }).on("mouseover", function () {
+                d3.select("#close-circle").style("fill", "gray").style("stroke", "black");
+                d3.select("#close-icon").style("fill", "white");
+            }).on("mousemove", function () {
+                d3.select("#close-circle").style("fill", "gray").style("stroke", "black");
+                d3.select("#close-icon").style("fill", "white");
+            }).on("mouseout", function () {
+                d3.select("#close-circle").style("fill", "white").style("stroke", "gray");
+                d3.select("#close-icon").style("fill", "black");
+            });
+        temp_g.append('circle')
+            .attr('id', 'close-circle')
+            .attr('class', 'close-path')
+            .attr('cx', "500")
+            .attr('cy', "500")
+            .attr('r', "450")
+            .style('fill', 'white')
+            .style('stroke', 'gray')
+            .style('stroke-width', '60px');
+        temp_g.append('path')
+            .attr('id', 'close-icon')
+            .attr('class', 'close-path')
+            .attr('d', "M665.376 313.376L512 466.752l-153.376-153.376-45.248 45.248L466.752 512l-153.376 153.376 45.248 45.248L512 557.248l153.376 153.376 45.248-45.248L557.248 512l153.376-153.376z")
+            .style('fill', 'black');
+
+        wait_list_group.selectAll('.grid-image').remove();
+
+        for (let d of delete_list) {
+            let node = d3.select('#id-' + d);
+            images.push({
+                url: DataLoader.image_url + "?filename=" + d + ".jpg",
+                id: d,
+                node: node
+            })
+        }
+
+        let img_grids_g =  wait_list_group.selectAll(".grid-image")
+            .data(images);
+
+        let enters = img_grids_g.enter()
+            .append("g")
+            .attr("class", "grid-image")
+            .attr("transform", "translate(0,0)");
+
+        enters.append("rect")
+            .attr("x", (d, i) => 10 + (i % 4) * 60 - 2)
+            .attr("y", (d, i) => text_height + 10 + Math.floor(i / 4) * 60 - 2)
+            .attr("width", 54)
+            .attr("height", 54)
+            .attr("stroke-width", 4)
+            .attr("stroke", function (d) {
+                let node = d.node.datum();
+                if(node.label[iter] === -1) return color_unlabel;
+                    else return color_label[node.label[iter]];
+            })
+            .attr("fill-opacity", 0);
+
+        enters.append("image")
+            .attr("xlink:href", d => d.url)
+            .attr("x", (d, i) => 10 + (i % 4) * 60)
+            .attr("y", (d, i) => text_height + 10 + Math.floor(i / 4) * 60)
+            .attr("width", 50)
+            .attr("height", 50)
+            .on("click", function (d, i) {
+                let node = d.node;
+                node.attr("r", 5);
+                that._show_detail(d, i);
+            });
+    };
+
+    that._apply_delete_and_update_label = function() {
+        DataLoader.update_delete_and_change_label_notify(delete_list, update_label_list);
+        delete_list = [];
+        update_label_list = {};
+        that._update_wait_list_group();
+    };
+
     that._update = function() {
         nodes_in_group.attr("cx", d => center_scale_x(d.x))
             .attr("cy", d => center_scale_y(d.y))
@@ -769,7 +991,15 @@ let GraphLayout = function (container){
                                 name:d,
                                 color: color_label[i],
                                 fun:function(){
-
+                                    for (let id in lasso_result) {
+                                        update_label_list[lasso_result[id]] = i;
+                                    }
+                                    for (let id of lasso_result) {
+                                        nodes_group.selectAll(`#id-${id}`).style("fill", color_label[i]);
+                                    }
+                                    that._apply_delete_and_update_label();
+                                    that._update_wait_list_group();
+                                    console.log(update_label_list);
                                 }
                             };
                             menu.push(sm);
@@ -779,7 +1009,13 @@ let GraphLayout = function (container){
                         name: 'Delete',
                         color: '',
                         fun: function () {
-
+                            delete_list = delete_list.concat(lasso_result);
+                            for (let id of lasso_result) {
+                                delete graph_data.nodes[id];
+                                nodes_group.selectAll(`#id-${id}`).style("display", "none");
+                            }
+                            that._update_wait_list_group();
+                            console.log(delete_list);
                         }
                     });
 
@@ -798,7 +1034,12 @@ let GraphLayout = function (container){
                         name:d,
                         color: color_label[i],
                         fun:function(){
-
+                            for (let id in lasso_result) {
+                                update_label_list[lasso_result[id]] = i;
+                            }
+                            that._apply_delete_and_update_label();
+                            that._update_wait_list_group();
+                            console.log(update_label_list);
                         }
                     };
                     menu.push(sm);
@@ -808,7 +1049,15 @@ let GraphLayout = function (container){
                 name: 'Delete',
                 color: '',
                 fun: function () {
-
+                    for (let id in lasso_result) {
+                        update_label_list[lasso_result[id]] = i;
+                    }
+                    for (let id of lasso_result) {
+                        nodes_group.selectAll(`#id-${id}`).style("fill", color_label[i]);
+                    }
+                    that._apply_delete_and_update_label();
+                    that._update_wait_list_group();
+                    console.log(update_label_list);
                 }
             });
 
@@ -848,6 +1097,13 @@ let GraphLayout = function (container){
 
     that.change_edge_show_mode = function(mode) {
 
+    };
+
+    that._update_delete_list = function() {
+        for (let id of delete_list) {
+            delete graph_data.nodes[id];
+            nodes_group.selectAll(`#id-${id}`).style("display", "none");
+        }
     };
 };
 

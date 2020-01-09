@@ -74,6 +74,18 @@ def app_update():
     print("all process time:", end-start)
     return graph
 
+@graph.route('/graph/update_delete_and_change_label', methods=["GET", "POST"])
+def app_update_delete_and_change_label():
+    start = time.time()
+    dataset = request.args['dataset']
+    data = json.loads(request.data)
+    delete_list = data['delete_list']
+    change_list = data['change_list']
+    graph = update_delete_and_change_label(delete_list, change_list)
+    end = time.time()
+    print("all process time:", end-start)
+    return graph
+
 @graph.route('/graph/fisheye', methods=["GET", "POST"])
 def app_fisheye():
     data = json.loads(request.data)

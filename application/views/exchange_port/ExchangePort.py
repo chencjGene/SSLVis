@@ -132,6 +132,11 @@ class ExchangePortClass(object):
         print(all_time)
         return json_res
 
+    def update_delete_and_change_label(self, delete_list, change_list):
+        print(delete_list, change_list)
+        pass
+        # TODO rerun the model and return the graph
+
     def fisheye(self, nodes):
         raw_graph, process_data, influence_matrix, propagation_path \
             = self.model.get_graph_and_process_data()

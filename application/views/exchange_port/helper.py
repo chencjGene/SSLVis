@@ -29,5 +29,8 @@ def get_image_path(id):
 def update_graph(area, level):
     return exchange_port.update_graph(area, level)
 
+def update_delete_and_change_label(delete_list, change_list):
+    return exchange_port.update_delete_and_change_label(delete_list, change_list)
+
 def fisheye(nodes):
     return exchange_port.fisheye(nodes)

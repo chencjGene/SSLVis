@@ -18,11 +18,13 @@ DataLoaderClass = function (dataset) {
     that.set_influence_filter_url = "/graph/SetInfluenceFilter";
     that.update_graph_url = "/graph/update";
     that.fisheye_graph_url = "/graph/fisheye";
+    that.update_delete_and_change_label_url = "/graph/update_delete_and_change_label";
 
     // Request nodes
     that.manifest_node = null;
     that.graph_node = null;
     that.update_graph_node = null;
+    that.update_delete_and_change_label_node = null;
     that.loss_node = null;
     that.ent_node = null;
 
@@ -54,6 +56,9 @@ DataLoaderClass = function (dataset) {
         that.update_graph_node = new request_node(that.update_graph_url + params,
             that.update_graph_handler(that.update_graph_view), "json", "POST");
 
+        that.update_delete_and_change_label_node = new request_node(that.update_delete_and_change_label_url + params,
+            that.update_graph_handler(that.update_graph_view), "json", "POST");
+
         that.fisheye_graph_node = new request_node(that.fisheye_graph_url + params,
             that.update_fisheye_graph_handler(that.update_fisheye_view), "json", "POST");
 
@@ -77,6 +82,14 @@ DataLoaderClass = function (dataset) {
             'level': target_level
         });
         that.update_graph_node.notify();
+    };
+
+    that.update_delete_and_change_label_notify = function (delete_list, change_list) {
+        that.update_delete_and_change_label_node.set_data({
+            'delete_list': delete_list,
+            'change_list': change_list
+        });
+        that.update_delete_and_change_label_node.notify();
     };
 
     that.update_fisheye_graph_node = function(nodes, fisheye_callback) {
