@@ -29,5 +29,8 @@ def get_image_path(id):
 def update_graph(area, level):
     return exchange_port.update_graph(area, level)
 
-def fisheye(nodes):
-    return exchange_port.fisheye(nodes)
+def get_area(must_show_nodes, width, height):
+    return exchange_port.get_area(must_show_nodes, width, height)
+
+def fisheye(must_show_nodes, area, level):
+    return exchange_port.fisheye(must_show_nodes, area, level)

@@ -79,9 +79,11 @@ DataLoaderClass = function (dataset) {
         that.update_graph_node.notify();
     };
 
-    that.update_fisheye_graph_node = function(nodes, fisheye_callback) {
+    that.update_fisheye_graph_node = function(nodes, area, level, fisheye_callback) {
         that.fisheye_graph_node.set_data({
-            'nodes':nodes
+            'must_show_nodes':nodes,
+            'area':area,
+            'level':level
         });
         that.state.fisheye_callback = fisheye_callback;
         that.fisheye_graph_node.notify();
@@ -126,12 +128,12 @@ DataLoaderClass = function (dataset) {
         }, rescale)
     };
 
-    that.update_fisheye_view = function(rescale){
+    that.update_fisheye_view = function(rescale, area, k){
         console.log("update graph view");
         that.graph_view.component_update({
             "graph_data": that.state.graph_data
         }, rescale);
-        that.state.fisheye_callback();
+        that.state.fisheye_callback(area, k);
     };
 
     that.update_loss_view = function(){

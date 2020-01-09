@@ -74,8 +74,17 @@ def app_update():
     print("all process time:", end-start)
     return graph
 
+@graph.route('/graph/getArea', methods=["POST"])
+def app_get_area():
+    must_show_nodes = json.loads(request.form["must_show_nodes"])
+    width = float(request.form['width'])
+    height = float(request.form['height'])
+    return get_area(must_show_nodes, width, height)
+
 @graph.route('/graph/fisheye', methods=["GET", "POST"])
 def app_fisheye():
     data = json.loads(request.data)
-    nodes = data['nodes']
-    return fisheye(nodes)
+    must_show_nodes = data['must_show_nodes']
+    area = data['area']
+    level = data['level']
+    return fisheye(must_show_nodes, area, level)

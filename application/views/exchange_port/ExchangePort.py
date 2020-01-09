@@ -10,7 +10,7 @@ import time
 
 from ..model_utils import SSLModel
 from ..utils.config_utils import config
-from ..graph_utils.anchor import getAnchors, updateAnchors, fisheyeAnchors
+from ..graph_utils.anchor import getAnchors, updateAnchors, fisheyeAnchors, get_area
 import pickle
 from ..graph_utils.IncrementalTSNE import IncrementalTSNE
 
@@ -94,7 +94,6 @@ class ExchangePortClass(object):
 
     def get_ent(self):
         ent = self.model.get_ent()
-        print("Get ent:", ent)
         return jsonify(ent.tolist())
 
     def get_labels(self):
@@ -132,11 +131,23 @@ class ExchangePortClass(object):
         print(all_time)
         return json_res
 
-    def fisheye(self, nodes):
+    def get_area(self, must_show_nodes, width, height):
+        # get meta data
         raw_graph, process_data, influence_matrix, propagation_path \
             = self.model.get_graph_and_process_data()
         train_x, train_y = self.model.get_data()
         buf_path = os.path.join(self.model.data.selected_dir, "anchors" + config.pkl_ext)
         ground_truth = self.model.data.get_train_ground_truth()
-        graph = fisheyeAnchors(nodes, train_x, train_y, raw_graph, process_data, influence_matrix, propagation_path, ground_truth, buf_path)
+
+        return jsonify(get_area(must_show_nodes, width, height, train_x, train_y, raw_graph, process_data, influence_matrix, propagation_path, ground_truth, buf_path))
+
+    def fisheye(self, must_show_nodes, area, level):
+        # get meta data
+        raw_graph, process_data, influence_matrix, propagation_path \
+            = self.model.get_graph_and_process_data()
+        train_x, train_y = self.model.get_data()
+        buf_path = os.path.join(self.model.data.selected_dir, "anchors" + config.pkl_ext)
+        ground_truth = self.model.data.get_train_ground_truth()
+
+        graph = fisheyeAnchors(must_show_nodes, area, level, train_x, train_y, raw_graph, process_data, influence_matrix, propagation_path, ground_truth, buf_path)
         return jsonify(graph)
