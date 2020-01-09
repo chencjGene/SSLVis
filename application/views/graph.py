@@ -34,11 +34,20 @@ def app_set_k():
 
 @graph.route("/graph/SetInfluenceFilter", methods=["GET", "POST"])
 def app_set_influence_filter():
-    return 1
+    # extract info from request
+    filter_threshold = request.args.get("filter-threshold", None)
+    # TODO: get fisheye-tSNE
+    return get_graph(filter_threshold)
 
 
 @graph.route("/graph/GetGraph", methods=["GET", "POST"])
 def app_get_graph():
+    # extract info from request
+    k = request.args.get("k", None)
+    if k is not None:
+        k = int(k)
+    filter_threshold = request.args.get("filter-threshold", None)
+    init_model(k, filter_threshold)
     return get_graph()
 
 
@@ -51,9 +60,11 @@ def app_get_loss():
 def app_get_ent():
     return get_ent()
 
+
 @graph.route('/graph/GetLabels', methods=['POST'])
 def app_get_label_num():
     return get_labels()
+
 
 @graph.route('/graph/SaveLayout', methods=["POST"])
 def app_save_layout():
@@ -61,6 +72,7 @@ def app_save_layout():
     with open(os.path.join(config.buffer_root, "graph.json"), "w+") as f:
         json.dump(graph, f, indent=4)
     return jsonify({"status": 1})
+
 
 @graph.route('/graph/update', methods=["GET", "POST"])
 def app_update():
@@ -71,7 +83,7 @@ def app_update():
     level = data['level']
     graph = update_graph(area, level)
     end = time.time()
-    print("all process time:", end-start)
+    print("all process time:", end - start)
     return graph
 
 @graph.route('/graph/getArea', methods=["POST"])

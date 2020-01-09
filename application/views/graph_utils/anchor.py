@@ -29,7 +29,7 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, p
     if retsne:
         if train_x_tsne is None:
             # train_x_tsne = IncrementalTSNE(n_components=2, n_jobs=20).fit_transform(train_x)
-            train_x_tsne = TSNE(n_components=2, verbose=True, n_jobs=20, method='exact').fit_transform(train_x)
+            train_x_tsne = TSNE(n_components=2, verbose=True, method='exact').fit_transform(train_x)
 
         if node_num > target_num:
             label_idxes = np.argwhere(train_y != -1).flatten()

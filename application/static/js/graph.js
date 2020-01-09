@@ -54,6 +54,10 @@ let GraphLayout = function (container){
 
     let click_menu_settings = null;
     let click_menu = null;
+    let lasso_result = [];
+    let delete_list = [];
+    let update_label_list = [];
+    let label_names = [];
 
     let is_focus_mode = false;
     let focus_node = {};
@@ -68,6 +72,9 @@ let GraphLayout = function (container){
         zoom = d3.zoom()
                     .scaleExtent([0.6, 128])
             // .translateExtent([[-100, -100], [100, 100]])
+                    .on('start', function () {
+                        $('#graph-view-svg').contextMenu('close');
+                    })
                     .on("zoom", zoomed)
                     .on("end", zoom_end);
 
@@ -117,6 +124,7 @@ let GraphLayout = function (container){
             if (old_transform === null) {
                 old_transform = d3.event.transform;
             }
+            $('#graph-view-svg').contextMenu('close');
         }
 
         function zoom_end() {
@@ -167,15 +175,17 @@ let GraphLayout = function (container){
 
         svg.on("mousedown", function () {
             is_focus_mode = false;
-                svg.select("#group-propagation").remove();
-                nodes_in_group.attr("opacity", 1);
-                        golds_in_group.attr("opacity", 1);
-                        // edges_in_group.attr("opacity", 0.4);
+            $('#graph-view-svg').contextMenu('close');
+            svg.select("#group-propagation").remove();
+            nodes_in_group.attr("opacity", 1);
+            golds_in_group.attr("opacity", 1);
+            // edges_in_group.attr("opacity", 0.4);
 
-                svg.select("#single-propagate").remove();
-                    nodes_in_group.attr("opacity", 1);
-                    golds_in_group.attr("opacity", 1);
-                });
+            svg.select("#single-propagate").remove();
+            nodes_in_group.attr("opacity", 1);
+            golds_in_group.attr("opacity", 1);
+        });
+
         svg.on(".drag", null);
         svg.on(".dragend", null);
         svg.call(zoom);
@@ -269,6 +279,7 @@ let GraphLayout = function (container){
 
         let focus_node = lasso.selectedItems().data();
         let focus_node_ids = focus_node.map(d => d.id);
+        lasso_result = focus_node_ids;
         if(focus_node.length===0){
             // console.log("No node need focus.");
             return
@@ -555,6 +566,7 @@ let GraphLayout = function (container){
             .on("click", function (d) {
                 is_focus_mode = true;
                 focus_node = {};
+                lasso_result = [d.id];
                 let node = d3.select(this);
                 let new_area = null;
                 // added by changjian, 20191226
@@ -808,35 +820,64 @@ let GraphLayout = function (container){
     };
 
     that._update_click_menu = function(){
-        $.post('/graph/GetLabels', {}, function (d) {
-                let label_names = d;
+        if (label_names.length === 0) {
+            $.post('/graph/GetLabels', {}, function (d) {
+                    label_names = d;
+                    let menu = [];
+                    label_names.forEach(function(d, i){
+                        var sm = {
+                                title:d,
+                                name:d,
+                                color: color_label[i],
+                                fun:function(){
 
-                let menu = [];
-                label_names.forEach(function(d, i){
-                    var sm = {
-                            title:d,
-                            name:d,
-                            color: color_label[i],
-                            fun:function(){
+                                }
+                            };
+                            menu.push(sm);
+                        });
+                    menu.push({
+                        title: 'Delete',
+                        name: 'Delete',
+                        color: '',
+                        fun: function () {
 
-                            }
-                        };
-                        menu.push(sm);
+                        }
                     });
-                menu.push({
-                    title: 'Delete',
-                    name: 'Delete',
-                    color: '',
-                    fun: function () {
 
+                    click_menu = menu;
+                    if (menu.length > 0) {
+                        $('#graph-view-svg').contextMenu(click_menu, click_menu_settings);
                     }
-                });
 
-                click_menu = menu;
-                if (menu.length > 0) {
-                    $('#graph-view-svg').contextMenu(click_menu, click_menu_settings);
+            });
+        }
+        else {
+            let menu = [];
+            label_names.forEach(function(d, i){
+                var sm = {
+                        title:d,
+                        name:d,
+                        color: color_label[i],
+                        fun:function(){
+
+                        }
+                    };
+                    menu.push(sm);
+                });
+            menu.push({
+                title: 'Delete',
+                name: 'Delete',
+                color: '',
+                fun: function () {
+
                 }
-        });
+            });
+
+            click_menu = menu;
+            if (menu.length > 0) {
+                $('#graph-view-svg').contextMenu(click_menu, click_menu_settings);
+            }
+        }
     };
 
     that.init = function(){
