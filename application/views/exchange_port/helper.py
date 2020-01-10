@@ -43,8 +43,8 @@ def update_graph(area, level):
 def get_area(must_show_nodes, width, height):
     return exchange_port.get_area(must_show_nodes, width, height)
 
-def update_delete_and_change_label(delete_list, change_list):
-    return exchange_port.update_delete_and_change_label(delete_list, change_list)
+def update_delete_and_change_label(delete_node_list, change_list, delete_edge):
+    return exchange_port.update_delete_and_change_label(delete_node_list, change_list, delete_edge)
 
 def fisheye(must_show_nodes, area, level):
     return exchange_port.fisheye(must_show_nodes, area, level)

@@ -255,6 +255,11 @@ def get_area(must_show_nodes, width, height, train_x, train_y, raw_graph, proces
             new_area["height"] = max_y - min_y
         print(new_area)
 
+    new_area["x"] = float(new_area["x"])
+    new_area["y"] = float(new_area["y"])
+    new_area["width"] = float(new_area["width"])
+    new_area["height"] = float(new_area["height"])
+
     return {
         "area":new_area
     }

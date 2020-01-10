@@ -85,15 +85,16 @@ DataLoaderClass = function (dataset) {
         that.update_graph_node.notify();
     };
 
-    that.update_delete_and_change_label_notify = function (delete_list, change_list) {
+    that.update_delete_and_change_label_notify = function (delete_node_list, change_list, delete_edge) {
         that.update_delete_and_change_label_node.set_data({
-            'delete_list': delete_list,
-            'change_list': change_list
+            'delete_node_list': delete_node_list,
+            'change_list': change_list,
+            'delete_edge': delete_edge
         });
         that.update_delete_and_change_label_node.notify();
     };
 
-    that.update_fisheye_graph_node = function(nodes, fisheye_callback) {
+    that.update_fisheye_graph_node = function(nodes, area, level, fisheye_callback) {
         that.fisheye_graph_node.set_data({
             'must_show_nodes':nodes,
             'area':area,

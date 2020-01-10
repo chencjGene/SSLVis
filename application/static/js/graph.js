@@ -56,12 +56,14 @@ let GraphLayout = function (container){
     let click_menu_settings = null;
     let click_menu = null;
     let lasso_result = [];
-    let delete_list = [];
+    let delete_node_list = [];
     let update_label_list = {};
     let label_names = [];
 
     let is_focus_mode = false;
     let focus_node = {};
+    let focus_edge_id = null;
+    let focus_edge_node = null;
 
     that._init = function(){
         svg = container.selectAll('#graph-view-svg')
@@ -217,12 +219,12 @@ let GraphLayout = function (container){
         svg.on("mousedown", function () {
             is_focus_mode = false;
             $('#graph-view-svg').contextMenu('close');
-            svg.select("#group-propagation").remove();
+            // svg.select("#group-propagation").remove();
             nodes_in_group.attr("opacity", 1);
             golds_in_group.attr("opacity", 1);
             // edges_in_group.attr("opacity", 0.4);
 
-            svg.select("#single-propagate").remove();
+            // svg.select("#single-propagate").remove();
             nodes_in_group.attr("opacity", 1);
             golds_in_group.attr("opacity", 1);
         });
@@ -343,6 +345,9 @@ let GraphLayout = function (container){
         let focus_node = lasso.selectedItems().data();
         let focus_node_ids = focus_node.map(d => d.id);
         lasso_result = focus_node_ids;
+        focus_edge_id = null;
+        focus_edge_node = null;
+        that._update_click_menu();
         if(focus_node.length===0){
             // console.log("No node need focus.");
             return
@@ -388,6 +393,17 @@ let GraphLayout = function (container){
                         let end = [parseFloat(path_nodes[d[0]].attr("cx")), parseFloat(path_nodes[d[0]].attr("cy"))];
                         let mid = [(begin[0]+end[0])/2, (begin[1]+end[1])/2];
                         return begin[0]+","+begin[1]+" "+mid[0]+","+mid[1]+" "+end[0]+","+end[1];
+                    })
+                    .on("mouseover", function (d) {
+                        console.log(d);
+                        focus_edge_id = d;
+                        focus_edge_node = this;
+                        d3.select(this).style("stroke-width", 4.0 * zoom_scale);
+                        that._update_click_menu();
+                    })
+                    .on("mouseout", function (d) {
+                        console.log(d);
+                        d3.select(this).style("stroke-width", 2.0 * zoom_scale);
                     });
         }
         for(let d of focus_node){
@@ -462,7 +478,7 @@ let GraphLayout = function (container){
 
     that._update_data = function(state){
         graph_data = state.graph_data;
-        that._update_delete_list();
+        that._update_delete_node_list();
         console.log("graph_data", graph_data);
         that._draw_legend();
     };
@@ -631,6 +647,9 @@ let GraphLayout = function (container){
                 is_focus_mode = true;
                 focus_node = {};
                 lasso_result = [d.id];
+                focus_edge_id = null;
+                focus_edge_node = null;
+                that._update_click_menu();
                 let node = d3.select(this);
                 let new_area = null;
                 // added by changjian, 20191226
@@ -684,7 +703,18 @@ let GraphLayout = function (container){
                             let end = [parseFloat(path_nodes[d[0]].attr("cx")), parseFloat(path_nodes[d[0]].attr("cy"))];
                             let mid = [(begin[0]+end[0])/2, (begin[1]+end[1])/2];
                             return begin[0]+","+begin[1]+" "+mid[0]+","+mid[1]+" "+end[0]+","+end[1];
-                    });
+                        })
+                        .on("mouseover", function (d) {
+                            console.log(d);
+                            focus_edge_id = d;
+                            focus_edge_node = this;
+                            d3.select(this).style("stroke-width", 4.0 * zoom_scale);
+                            that._update_click_menu();
+                        })
+                        .on("mouseout", function (d) {
+                            console.log(d);
+                            d3.select(this).style("stroke-width", 2.0 * zoom_scale);
+                        });
                 }
                 if(d.label[iter] === -1 || d.label[0] !== -1) return;
 
@@ -802,7 +832,7 @@ let GraphLayout = function (container){
             .style('rx', 10)
             .style('ry', 10)
             .attr('width', 256)
-            .attr('height', text_height * 2 + Math.floor((delete_list.length - 1) / 4) * 60 + 80)
+            .attr('height', text_height * 2 + Math.floor((delete_node_list.length - 1) / 4) * 60 + 80)
             .style('fill', 'white')
             .style('stroke', 'gray')
             .style('opacity', 0.8);
@@ -819,7 +849,7 @@ let GraphLayout = function (container){
         wait_list_group.append('rect')
             .attr('id', 'wait-btn')
             .attr('x', 128 - 40)
-            .attr('y', text_height + Math.floor((delete_list.length - 1) / 4) * 60 + 70)
+            .attr('y', text_height + Math.floor((delete_node_list.length - 1) / 4) * 60 + 70)
             .style('rx', 10)
             .style('ry', 10)
             .attr('width', 80)
@@ -842,7 +872,7 @@ let GraphLayout = function (container){
         wait_list_group.append('text')
             .attr('id', 'wait-text')
             .attr('x', 128)
-            .attr('y', text_height / 2 + text_height + Math.floor((delete_list.length - 1) / 4) * 60 + 70)
+            .attr('y', text_height / 2 + text_height + Math.floor((delete_node_list.length - 1) / 4) * 60 + 70)
             .text('Update')
             .attr("text-anchor", "middle")
             .attr('dominant-baseline', "middle")
@@ -899,7 +929,7 @@ let GraphLayout = function (container){
 
         wait_list_group.selectAll('.grid-image').remove();
 
-        for (let d of delete_list) {
+        for (let d of delete_node_list) {
             let node = d3.select('#id-' + d);
             images.push({
                 url: DataLoader.image_url + "?filename=" + d + ".jpg",
@@ -943,9 +973,11 @@ let GraphLayout = function (container){
     };
 
     that._apply_delete_and_update_label = function() {
-        DataLoader.update_delete_and_change_label_notify(delete_list, update_label_list);
-        delete_list = [];
+        DataLoader.update_delete_and_change_label_notify(delete_node_list, update_label_list, focus_edge_id);
+        delete_node_list = [];
         update_label_list = {};
+        focus_edge_id = null;
+        focus_edge_node = null;
         that._update_wait_list_group();
     };
 
@@ -1042,83 +1074,104 @@ let GraphLayout = function (container){
     };
 
     that._update_click_menu = function(){
-        if (label_names.length === 0) {
-            $.post('/graph/GetLabels', {}, function (d) {
-                    label_names = d;
-                    let menu = [];
-                    label_names.forEach(function(d, i){
-                        var sm = {
-                                title:d,
-                                name:d,
-                                color: color_label[i],
-                                fun:function(){
-                                    for (let id in lasso_result) {
-                                        update_label_list[lasso_result[id]] = i;
+        d3.selectAll(".iw-curMenu").remove();
+        if (focus_edge_id === null) {
+            if (label_names.length === 0) {
+                $.post('/graph/GetLabels', {}, function (d) {
+                        label_names = d;
+                        let menu = [];
+                        label_names.forEach(function(d, i){
+                            var sm = {
+                                    title:d,
+                                    name:d,
+                                    color: color_label[i],
+                                    fun:function(){
+                                        for (let id in lasso_result) {
+                                            update_label_list[lasso_result[id]] = i;
+                                        }
+                                        for (let id of lasso_result) {
+                                            nodes_group.selectAll(`#id-${id}`).style("fill", color_label[i]);
+                                        }
+                                        that._apply_delete_and_update_label();
+                                        that._update_wait_list_group();
+                                        console.log(update_label_list);
                                     }
-                                    for (let id of lasso_result) {
-                                        nodes_group.selectAll(`#id-${id}`).style("fill", color_label[i]);
-                                    }
-                                    that._apply_delete_and_update_label();
-                                    that._update_wait_list_group();
-                                    console.log(update_label_list);
+                                };
+                                menu.push(sm);
+                            });
+                        menu.push({
+                            title: 'Delete',
+                            name: 'Delete',
+                            color: '',
+                            fun: function () {
+                                delete_node_list = delete_node_list.concat(lasso_result);
+                                for (let id of lasso_result) {
+                                    delete graph_data.nodes[id];
+                                    nodes_group.selectAll(`#id-${id}`).style("display", "none");
                                 }
-                            };
-                            menu.push(sm);
-                        });
-                    menu.push({
-                        title: 'Delete',
-                        name: 'Delete',
-                        color: '',
-                        fun: function () {
-                            delete_list = delete_list.concat(lasso_result);
-                            for (let id of lasso_result) {
-                                delete graph_data.nodes[id];
-                                nodes_group.selectAll(`#id-${id}`).style("display", "none");
+                                that._update_wait_list_group();
+                                console.log(delete_node_list);
                             }
-                            that._update_wait_list_group();
-                            console.log(delete_list);
+                        });
+
+                        click_menu = menu;
+                        if (menu.length > 0) {
+                            $('#graph-view-svg').contextMenu(click_menu, click_menu_settings);
                         }
+
+                });
+            }
+            else {
+                let menu = [];
+                label_names.forEach(function(d, i){
+                    var sm = {
+                            title:d,
+                            name:d,
+                            color: color_label[i],
+                            fun:function(){
+                                for (let id in lasso_result) {
+                                    update_label_list[lasso_result[id]] = i;
+                                }
+                                that._apply_delete_and_update_label();
+                                that._update_wait_list_group();
+                                console.log(update_label_list);
+                            }
+                        };
+                        menu.push(sm);
                     });
-
-                    click_menu = menu;
-                    if (menu.length > 0) {
-                        $('#graph-view-svg').contextMenu(click_menu, click_menu_settings);
+                menu.push({
+                    title: 'Delete',
+                    name: 'Delete',
+                    color: '',
+                    fun: function () {
+                        for (let id in lasso_result) {
+                            update_label_list[lasso_result[id]] = i;
+                        }
+                        for (let id of lasso_result) {
+                            nodes_group.selectAll(`#id-${id}`).style("fill", color_label[i]);
+                        }
+                        that._apply_delete_and_update_label();
+                        that._update_wait_list_group();
+                        console.log(update_label_list);
                     }
+                });
 
-            });
+                click_menu = menu;
+                if (menu.length > 0) {
+                    $('#graph-view-svg').contextMenu(click_menu, click_menu_settings);
+                }
+            }
         }
         else {
             let menu = [];
-            label_names.forEach(function(d, i){
-                var sm = {
-                        title:d,
-                        name:d,
-                        color: color_label[i],
-                        fun:function(){
-                            for (let id in lasso_result) {
-                                update_label_list[lasso_result[id]] = i;
-                            }
-                            that._apply_delete_and_update_label();
-                            that._update_wait_list_group();
-                            console.log(update_label_list);
-                        }
-                    };
-                    menu.push(sm);
-                });
             menu.push({
                 title: 'Delete',
                 name: 'Delete',
                 color: '',
                 fun: function () {
-                    for (let id in lasso_result) {
-                        update_label_list[lasso_result[id]] = i;
-                    }
-                    for (let id of lasso_result) {
-                        nodes_group.selectAll(`#id-${id}`).style("fill", color_label[i]);
-                    }
+                    d3.select(focus_edge_node).style("display", "none");
                     that._apply_delete_and_update_label();
                     that._update_wait_list_group();
-                    console.log(update_label_list);
                 }
             });
 
@@ -1160,8 +1213,8 @@ let GraphLayout = function (container){
 
     };
 
-    that._update_delete_list = function() {
-        for (let id of delete_list) {
+    that._update_delete_node_list = function() {
+        for (let id of delete_node_list) {
             delete graph_data.nodes[id];
             nodes_group.selectAll(`#id-${id}`).style("display", "none");
         }
