@@ -294,7 +294,7 @@ let GraphLayout = function (container){
             .attr("y", 10+23)
             .attr("text-anchor", "start")
             .attr("font-size", 13)
-            .attr("fill", "#969696")
+            .attr("fill", FontColor)
             .text("labeled data");
 
         glyph_svg.append("text")
@@ -302,7 +302,7 @@ let GraphLayout = function (container){
             .attr("y", 10+23)
             .attr("text-anchor", "start")
             .attr("font-size", 13)
-            .attr("fill", "#969696")
+            .attr("fill", FontColor)
             .text("unlabeled data");
     };
 
@@ -519,7 +519,7 @@ let GraphLayout = function (container){
                         .attr("y", padding + Math.floor(i/x_item_num)*(rect_height+delta)+14)
                         .attr("text-anchor", "start")
                         .attr("font-size", "13")
-                        .attr("fill", "#969696")
+                        .attr("fill", FontColor)
                         .text(function () {
                             return labels[i]
                         })
