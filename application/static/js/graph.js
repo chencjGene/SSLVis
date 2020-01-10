@@ -357,19 +357,19 @@ let GraphLayout = function (container){
         lasso.notSelectedItems()
             .attr("r",3.5 * zoom_scale);
 
-        let focus_node = lasso.selectedItems().data();
-        let focus_node_ids = focus_node.map(d => d.id);
+        let focus_node_data = lasso.selectedItems().data();
+        let focus_node_ids = focus_node_data.map(d => d.id);
         lasso_result = focus_node_ids;
         focus_edge_id = null;
         focus_edge_node = null;
         that._update_click_menu();
-        if(focus_node.length===0){
+        if(focus_node_data.length===0){
             // console.log("No node need focus.");
             return
         }
         is_focus_mode = true;
         data_manager.update_image_view(lasso.selectedItems());
-        console.log("focus nodes:", focus_node);
+        console.log("focus nodes:", focus_node_data);
 
         let propagate_svg = main_group.insert("g", ":first-child").attr("id", "group-propagation");
         let path_keys = [];
@@ -447,7 +447,7 @@ let GraphLayout = function (container){
                         d3.select(this).style("stroke-width", 2.0 * zoom_scale);
                     });
         }
-        for(let d of focus_node){
+        for(let d of focus_node_data){
                 if(d.label[iter] === -1 || d.label[0] !== -1) return;
                 console.log("Node:", d);
                 let eid = d.id;
@@ -473,6 +473,7 @@ let GraphLayout = function (container){
         for(let node_id in path_nodes){
             new_nodes.push(parseInt(node_id))
         }
+        focus_node = JSON.parse(JSON.stringify(path_nodes));
         $.post("/graph/getArea", {
                     "must_show_nodes":JSON.stringify(new_nodes),
                     "width":width,
@@ -496,6 +497,7 @@ let GraphLayout = function (container){
                         target_level -= 1;
                     }
                     current_level = target_level;
+                    zoom_scale = 1.0 / maingroup_k;
                     console.log("current level", current_level, "current area", new_area);
                     data_manager.update_fisheye_graph_node(new_nodes, new_area, current_level, showpath);
                 });
@@ -834,13 +836,16 @@ let GraphLayout = function (container){
                         target_level -= 1;
                     }
                     current_level = target_level;
+                    zoom_scale = 1.0 / maingroup_k;
                     console.log("current level", current_level, "current area", new_area);
                     data_manager.update_fisheye_graph_node(new_nodes, new_area, current_level, showpath);
                 });
             })
             .transition()
             .duration(AnimationDuration)
-            .attr("opacity", d => (is_focus_mode&&(!focus_node[d.id]))?0.2:1);
+            .attr("opacity", function (d) {
+                return (is_focus_mode&&(!focus_node[d.id]))?0.2:1;
+            });
 
         golds_in_group = golds_group.selectAll("path")
                 .data(golds, d=>d.id);
