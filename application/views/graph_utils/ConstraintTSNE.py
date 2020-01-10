@@ -32,7 +32,7 @@ class FuncThread(threading.Thread):
         return self._target(*self._args)
 
 
-class IncrementalTSNE:
+class ConstraintTSNE:
     """
     Incremental t-distributed Stochastic Neighbor Embedding.
 
@@ -205,7 +205,7 @@ class IncrementalTSNE:
         
         try:
             sofile = (#glob(os.path.join(path, 'libtsne*.so')) +
-                      glob(os.path.join(path, 'incremental_tsne.dll')))[0]
+                      glob(os.path.join(path, 'constraint_tsne.dll')))[0]
             print(sofile)
             # temp_file_path_for_debug = "C:/Users/Lcorvle/Documents/Visual Studio 2015/Projects/incremental_tsne_dll_generate/x64/Release/incremental_tsne_dll_generate.dll"
             # self.C = self.ffi.dlopen(temp_file_path_for_debug)
@@ -895,3 +895,9 @@ class IncrementalTSNE:
         }
         
         return level_info
+
+if __name__ == "__main__":
+    import numpy as np
+    X = np.array([[0, 0, 0], [0, 1, 1], [1, 0, 1], [1, 1, 1]])
+    X_embedded = ConstraintTSNE(n_components=2).fit_transform(X)
+    X_embedded.shape
