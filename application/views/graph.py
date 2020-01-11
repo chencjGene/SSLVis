@@ -65,6 +65,9 @@ def app_get_ent():
 def app_get_label_num():
     return get_labels()
 
+@graph.route("/graph/GetFlows", methods=["POST", "GET"])
+def app_get_flows():
+    return get_flows()
 
 @graph.route('/graph/SaveLayout', methods=["POST"])
 def app_save_layout():

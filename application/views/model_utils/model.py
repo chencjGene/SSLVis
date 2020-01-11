@@ -18,12 +18,13 @@ from sklearn.metrics.pairwise import euclidean_distances, paired_distances
 from ..utils.config_utils import config
 from ..utils.log_utils import logger
 from ..utils.helper_utils import check_exist, \
-    pickle_load_data, pickle_save_data
+    pickle_load_data, pickle_save_data, flow_statistic
 from ..utils.embedder_utils import Embedder
 
 from .data import Data
 from .LSLabelSpreading import LSLabelSpreading
 from .model_helper import propagation, approximated_influence, exact_influence
+
 
 DEBUG = False
 
@@ -167,12 +168,23 @@ class SSLModel(object):
             self._propagation(laplacian, affinity_matrix, train_y,
                               alpha=self.alpha, process_record=True,
                               normalized=False)
+        # labels = [int(np.argmax(process_data[j][id])) if np.max(process_data[j][id]) > 1e-4 else -1 for j in
+        #           range(iter_num)]
+        iter = len(loss)
+        # get labels and flows
+        self.labels = process_data.argmax(axis=2)
+        max_process_data = process_data.max(axis=2)
+        self.labels[max_process_data <1e-4] = -1
+        class_list = np.unique(train_y)
+        class_list.sort()
+        self.flows = np.zeros((iter-1, len(class_list), len(class_list)))
+        for i in range(iter-1):
+            self.flows[i] = flow_statistic(self.labels[i], self.labels[i+1], class_list)
         self.loss = loss
         self.process_data = process_data
         self.ent = ent
         self.pred_dist = pred_dist
         self.graph = affinity_matrix
-        iter = len(loss)
         print(process_data.shape)
         pred_y = pred_dist.argmax(axis=1)
         acc = accuracy_score(train_gt, pred_y)
@@ -318,6 +330,12 @@ class SSLModel(object):
 
     def get_ent(self):
         return self.ent
+
+    def get_flows(self):
+        label_sums = np.zeros((self.labels.shape[0], self.flows.shape[1]))
+        for i in range(self.labels.shape[0]):
+            label_sums[i,:] = np.bincount(self.labels[i] + 1)
+        return label_sums, self.flows.copy()
 
     def get_data(self):
         train_X = self.data.get_train_X()
