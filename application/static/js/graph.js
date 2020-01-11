@@ -54,7 +54,8 @@ let GraphLayout = function (container){
     let center_scale_y_reverse = null;
 
     let click_menu_settings = null;
-    let click_menu = null;
+    let click_node_menu = null;
+    let click_edge_menu = null;
     let lasso_result = [];
     let delete_node_list = [];
     let update_label_list = {};
@@ -63,6 +64,8 @@ let GraphLayout = function (container){
     let is_focus_mode = false;
     let focus_node = {};
     let focus_edge_id = null;
+    let focus_node_id = null;
+    let focus_node_change_switch = true;
     let focus_edge_node = null;
 
     that._init = function(){
@@ -117,6 +120,7 @@ let GraphLayout = function (container){
             // .translateExtent([[-100, -100], [100, 100]])
                     .on('start', function () {
                         $('#graph-view-svg').contextMenu('close');
+                        focus_node_change_switch = true;
                     })
                     .on("zoom", zoomed)
                     .on("end", zoom_end);
@@ -269,7 +273,7 @@ let GraphLayout = function (container){
             'triggerOn':'click'
         };
 
-        that._update_click_menu();
+        // that._update_click_menu();
         that._draw_labels_glyph();
     };
 
@@ -347,7 +351,7 @@ let GraphLayout = function (container){
         lasso_result = focus_node_ids;
         focus_edge_id = null;
         focus_edge_node = null;
-        that._update_click_menu();
+        // that._update_click_menu();
         if(focus_node.length===0){
             // console.log("No node need focus.");
             return
@@ -399,7 +403,7 @@ let GraphLayout = function (container){
                         focus_edge_id = d;
                         focus_edge_node = this;
                         d3.select(this).style("stroke-width", 4.0 * zoom_scale);
-                        that._update_click_menu();
+                        // that._update_click_menu();
                     })
                     .on("mouseout", function (d) {
                         console.log(d);
@@ -479,6 +483,7 @@ let GraphLayout = function (container){
     that._update_data = function(state){
         graph_data = state.graph_data;
         that._update_delete_node_list();
+        that._update_click_menu();
         console.log("graph_data", graph_data);
         that._draw_legend();
     };
@@ -602,7 +607,7 @@ let GraphLayout = function (container){
                 .attr("d", "M0,4 L4,2 L0,0")
                 .attr("stroke", color)
                 .attr("fill", "transparent")
-                .attr("stroke-width", 1)
+                .attr("stroke-width", 1);
         }
     };
 
@@ -621,6 +626,7 @@ let GraphLayout = function (container){
         nodes_in_group.enter()
             .append("circle")
             .attr("id", d => "id-" + d.id)
+            .attr("class", "node-dot")
             .attr("cx", d => center_scale_x(d.x))
             .attr("cy", d => center_scale_y(d.y))
             .attr("r", 3.5 * zoom_scale)
@@ -638,10 +644,15 @@ let GraphLayout = function (container){
             .on("mouseover", function (d) {
                 let node = d3.select(this);
                 node.attr("r", 5 * zoom_scale);
+                // that._update_click_menu();
+                if (focus_node_change_switch) {
+                    focus_node_id = d.id;
+                }
             })
             .on("mouseout", function (d) {
                 let node = d3.select(this);
                 node.attr("r", 3.5 * zoom_scale);
+                focus_node_change_switch
             })
             .on("click", function (d) {
                 is_focus_mode = true;
@@ -649,7 +660,7 @@ let GraphLayout = function (container){
                 lasso_result = [d.id];
                 focus_edge_id = null;
                 focus_edge_node = null;
-                that._update_click_menu();
+                // that._update_click_menu();
                 let node = d3.select(this);
                 let new_area = null;
                 // added by changjian, 20191226
@@ -666,6 +677,9 @@ let GraphLayout = function (container){
                     let maingroup_k = Math.min(width/(main_group_max_x-main_group_min_x), height/(main_group_max_y-main_group_min_y))*0.8;
                     let show_width = (main_group_max_x-main_group_min_x)*maingroup_k;
                     let show_height = (main_group_max_y-main_group_min_y)*maingroup_k;
+                    if (old_transform === null) {
+                        d3.zoom().scaleBy(d3.select("#main_group"), 1.0);
+                    }
                     old_transform.k = maingroup_k;
                     old_transform.x = x_offset*maingroup_k+show_width*0.1;
                     old_transform.y = y_offset*maingroup_k+show_height*0.1;
@@ -693,6 +707,7 @@ let GraphLayout = function (container){
                         .data(path)
                         .enter()
                         .append("polyline")
+                        .attr("class", "edge-line")
                         .attr("stroke-width", 2 * zoom_scale)
                         .attr("stroke", color_label[predict_label])
                         .attr("opacity", 1)
@@ -709,12 +724,14 @@ let GraphLayout = function (container){
                             focus_edge_id = d;
                             focus_edge_node = this;
                             d3.select(this).style("stroke-width", 4.0 * zoom_scale);
-                            that._update_click_menu();
+                            // that._update_click_menu();
                         })
                         .on("mouseout", function (d) {
                             console.log(d);
                             d3.select(this).style("stroke-width", 2.0 * zoom_scale);
                         });
+                    $('.node-dot').contextMenu(click_node_menu, click_menu_settings);
+                    $('.edge-line').contextMenu(click_edge_menu, click_menu_settings);
                 }
                 if(d.label[iter] === -1 || d.label[0] !== -1) return;
 
@@ -1071,39 +1088,50 @@ let GraphLayout = function (container){
             .on("end", that.lasso_end);
         svg.call(lasso);
 
+        $('.node-dot').contextMenu(click_node_menu, click_menu_settings);
+        $('.edge-line').contextMenu(click_edge_menu, click_menu_settings);
     };
 
     that._update_click_menu = function(){
         d3.selectAll(".iw-curMenu").remove();
-        if (focus_edge_id === null) {
-            if (label_names.length === 0) {
-                $.post('/graph/GetLabels', {}, function (d) {
-                        label_names = d;
-                        let menu = [];
-                        label_names.forEach(function(d, i){
-                            var sm = {
-                                    title:d,
-                                    name:d,
-                                    color: color_label[i],
-                                    fun:function(){
+        if (label_names.length === 0) {
+            $.post('/graph/GetLabels', {}, function (d) {
+                    label_names = d;
+                    let menu = [];
+                    label_names.forEach(function(d, i){
+                        var sm = {
+                                title:d,
+                                name:d,
+                                color: color_label[i],
+                                fun:function(){
+                                    if (lasso_result.indexOf(focus_node_id) !== -1) {
                                         for (let id in lasso_result) {
                                             update_label_list[lasso_result[id]] = i;
                                         }
                                         for (let id of lasso_result) {
                                             nodes_group.selectAll(`#id-${id}`).style("fill", color_label[i]);
                                         }
-                                        that._apply_delete_and_update_label();
-                                        that._update_wait_list_group();
-                                        console.log(update_label_list);
                                     }
-                                };
-                                menu.push(sm);
-                            });
-                        menu.push({
-                            title: 'Delete',
-                            name: 'Delete',
-                            color: '',
-                            fun: function () {
+                                    else {
+                                        lasso_result = [];
+                                        update_label_list[focus_node_id] = i;
+                                        nodes_group.selectAll(`#id-${focus_node_id}`).style("fill", color_label[i]);
+                                    }
+
+                                    that._apply_delete_and_update_label();
+                                    that._update_wait_list_group();
+                                    console.log(update_label_list);
+                                    focus_node_change_switch = true;
+                                }
+                            };
+                            menu.push(sm);
+                        });
+                    menu.push({
+                        title: 'Delete',
+                        name: 'Delete',
+                        color: '',
+                        fun: function () {
+                            if (lasso_result.indexOf(focus_node_id) !== -1) {
                                 delete_node_list = delete_node_list.concat(lasso_result);
                                 for (let id of lasso_result) {
                                     delete graph_data.nodes[id];
@@ -1112,73 +1140,96 @@ let GraphLayout = function (container){
                                 that._update_wait_list_group();
                                 console.log(delete_node_list);
                             }
-                        });
-
-                        click_menu = menu;
-                        if (menu.length > 0) {
-                            $('#graph-view-svg').contextMenu(click_menu, click_menu_settings);
-                        }
-
-                });
-            }
-            else {
-                let menu = [];
-                label_names.forEach(function(d, i){
-                    var sm = {
-                            title:d,
-                            name:d,
-                            color: color_label[i],
-                            fun:function(){
-                                for (let id in lasso_result) {
-                                    update_label_list[lasso_result[id]] = i;
-                                }
-                                that._apply_delete_and_update_label();
+                            else {
+                                delete_node_list.push(focus_node_id);
+                                delete graph_data.nodes[focus_node_id];
+                                nodes_group.selectAll(`#id-${focus_node_id}`).style("display", "none");
                                 that._update_wait_list_group();
-                                console.log(update_label_list);
                             }
-                        };
-                        menu.push(sm);
+                            focus_node_change_switch = true;
+                        }
                     });
-                menu.push({
-                    title: 'Delete',
-                    name: 'Delete',
-                    color: '',
-                    fun: function () {
-                        for (let id in lasso_result) {
-                            update_label_list[lasso_result[id]] = i;
-                        }
-                        for (let id of lasso_result) {
-                            nodes_group.selectAll(`#id-${id}`).style("fill", color_label[i]);
-                        }
-                        that._apply_delete_and_update_label();
-                        that._update_wait_list_group();
-                        console.log(update_label_list);
-                    }
-                });
 
-                click_menu = menu;
-                if (menu.length > 0) {
-                    $('#graph-view-svg').contextMenu(click_menu, click_menu_settings);
-                }
-            }
+                    click_node_menu = menu;
+                    if (menu.length > 0) {
+                        $('.node-dot').contextMenu(click_node_menu, click_menu_settings);
+                    }
+
+            });
         }
         else {
             let menu = [];
+            label_names.forEach(function(d, i){
+                var sm = {
+                        title:d,
+                        name:d,
+                        color: color_label[i],
+                        fun:function(){
+                            if (lasso_result.indexOf(focus_node_id) !== -1) {
+                                for (let id in lasso_result) {
+                                    update_label_list[lasso_result[id]] = i;
+                                }
+                                for (let id of lasso_result) {
+                                    nodes_group.selectAll(`#id-${id}`).style("fill", color_label[i]);
+                                }
+                            }
+                            else {
+                                lasso_result = [];
+                                update_label_list[focus_node_id] = i;
+                                nodes_group.selectAll(`#id-${focus_node_id}`).style("fill", color_label[i]);
+                            }
+                            that._apply_delete_and_update_label();
+                            that._update_wait_list_group();
+                            console.log(update_label_list);
+                            focus_node_change_switch = true;
+                        }
+                    };
+                    menu.push(sm);
+                });
             menu.push({
                 title: 'Delete',
                 name: 'Delete',
                 color: '',
                 fun: function () {
-                    d3.select(focus_edge_node).style("display", "none");
-                    that._apply_delete_and_update_label();
-                    that._update_wait_list_group();
+                    if (lasso_result.indexOf(focus_node_id) !== -1) {
+                        delete_node_list = delete_node_list.concat(lasso_result);
+                        for (let id of lasso_result) {
+                            delete graph_data.nodes[id];
+                            nodes_group.selectAll(`#id-${id}`).style("display", "none");
+                        }
+                        that._update_wait_list_group();
+                        console.log(delete_node_list);
+                    }
+                    else {
+                        delete_node_list.push(focus_node_id);
+                        delete graph_data.nodes[focus_node_id];
+                        nodes_group.selectAll(`#id-${focus_node_id}`).style("display", "none");
+                        that._update_wait_list_group();
+                    }
+                    focus_node_change_switch = true;
                 }
             });
 
-            click_menu = menu;
+            click_node_menu = menu;
             if (menu.length > 0) {
-                $('#graph-view-svg').contextMenu(click_menu, click_menu_settings);
+                $('.node-dot').contextMenu(click_node_menu, click_menu_settings);
             }
+        }
+        let menu = [];
+        menu.push({
+            title: 'Delete',
+            name: 'Delete',
+            color: '',
+            fun: function () {
+                d3.select(focus_edge_node).style("display", "none");
+                that._apply_delete_and_update_label();
+                that._update_wait_list_group();
+            }
+        });
+
+        click_edge_menu = menu;
+        if (menu.length > 0) {
+            $('.edge-line').contextMenu(click_edge_menu, click_menu_settings);
         }
     };
 
@@ -1187,6 +1238,7 @@ let GraphLayout = function (container){
     }.call();
 
     that.context_menu = function(e) {
+        focus_node_change_switch = false;
         e.preventDefault();
     };
 
