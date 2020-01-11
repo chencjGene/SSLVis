@@ -90,6 +90,7 @@ DataLoaderClass.prototype.get_flows_handler = function (callback) {
     function _flows_handler(data){
         that.state.label_sums = data.label_sums;
         that.state.flows = data.flows;
+        if (callback) callback();
     }
     return _flows_handler;
 };

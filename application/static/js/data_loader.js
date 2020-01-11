@@ -69,7 +69,7 @@ DataLoaderClass = function (dataset) {
 
         that.flows_node = new request_node(that.flows_urls + params,
             // TODO: update_loss_view -> update_dist_view
-            that.get_flows_handler(that.update_loss_view), "json", "GET")
+            that.get_flows_handler(that.update_loss_view), "json", "GET");
         that.flows_node.depend_on(that.graph_node);
 
         // that.loss_node = new request_node(that.loss_url + params,
