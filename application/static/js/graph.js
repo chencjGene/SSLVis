@@ -78,6 +78,8 @@ let GraphLayout = function (container){
             .attr("transform", `translate(${45},2)`);
         d3.select("#apply-delete-btn").on("click", function () {
             if (if_lasso) {
+                d3.select("#lasso-btn").style("background", "white");
+                lasso_btn_path.attr("stroke", "black").attr("fill", "black");
                 $("#lasso-btn").click();
             }
 
@@ -238,6 +240,8 @@ let GraphLayout = function (container){
         $("#lasso-btn").click(function () {
             if (wait_list_group.style("display") === "block") {
                 $("#apply-delete-btn").click();
+                d3.select("#apply-delete-btn").style("background", "white");
+                d3.selectAll(".apply-delete-btn-path").style("fill", "black");
             }
             that._change_lasso_mode();
         }).on("mouseover", function () {
@@ -428,6 +432,7 @@ let GraphLayout = function (container){
                     .data(path)
                     .enter()
                     .append("polyline")
+                    .attr("class", "edge-line")
                     .attr("stroke-width", 2.0 * zoom_scale)
                     .attr("stroke", d => color_label[d[2]])
                     .attr("opacity", 1)
@@ -450,6 +455,7 @@ let GraphLayout = function (container){
                         console.log(d);
                         d3.select(this).style("stroke-width", 2.0 * zoom_scale);
                     });
+                $('.edge-line').contextMenu(click_edge_menu, click_menu_settings);
         }
         for(let d of focus_node_data){
                 if(d.label[iter] === -1 || d.label[0] !== -1) return;
@@ -792,7 +798,6 @@ let GraphLayout = function (container){
                             console.log(d);
                             d3.select(this).style("stroke-width", 2.0 * zoom_scale);
                         });
-                    $('.node-dot').contextMenu(click_node_menu, click_menu_settings);
                     $('.edge-line').contextMenu(click_edge_menu, click_menu_settings);
                 }
                 if(d.label[iter] === -1 || d.label[0] !== -1) return;
@@ -889,6 +894,8 @@ let GraphLayout = function (container){
                 .duration(AnimationDuration)
                 .attr("opacity", d => (is_focus_mode&&(!focus_node[d.id]))?0.2:1);
 
+        $('.node-dot').contextMenu(click_node_menu, click_menu_settings);
+        $('.edge-line').contextMenu(click_edge_menu, click_menu_settings);
 
         // edges_in_group = edges_group.selectAll("line")
         //         .data(links_data);
@@ -1152,9 +1159,6 @@ let GraphLayout = function (container){
             .on("draw", that.lasso_draw)
             .on("end", that.lasso_end);
         svg.call(lasso);
-
-        $('.node-dot').contextMenu(click_node_menu, click_menu_settings);
-        $('.edge-line').contextMenu(click_edge_menu, click_menu_settings);
     };
 
     that._update_click_menu = function(){
