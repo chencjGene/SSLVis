@@ -127,14 +127,14 @@ let GraphLayout = function (container) {
                 golds_in_group.attr("opacity", 1);
                 // edges_in_group.attr("opacity", 0.4);
 
-                        svg.select("#single-propagate").remove();
-                        nodes_in_group.attr("opacity", 1);
-                        golds_in_group.attr("opacity", 1);
-                        focus_node_change_switch = true;
-                        focus_edge_change_switch = true;
-                    })
-                    .on("zoom", zoomed)
-                    .on("end", zoom_end);
+                svg.select("#single-propagate").remove();
+                nodes_in_group.attr("opacity", 1);
+                golds_in_group.attr("opacity", 1);
+                focus_node_change_switch = true;
+                focus_edge_change_switch = true;
+            })
+            .on("zoom", zoomed)
+            .on("end", zoom_end);
 
         drag_transform = {'x': 0, 'y': 0};
         drag = d3.drag()
@@ -471,7 +471,7 @@ let GraphLayout = function (container) {
                     }
                     console.log(d);
                 });
-            $('#single-propagate').contextMenu(click_edge_menu, click_menu_settings);
+            $('.single-propagate').contextMenu(click_edge_menu, click_menu_settings);
         }
 
         for (let d of focus_node_data) {
@@ -1055,12 +1055,7 @@ let GraphLayout = function (container) {
         wait_list_group.selectAll('.grid-image').remove();
 
         for (let d of delete_node_list) {
-            let node = d3.select('#id-' + d);
-            images.push({
-                url: DataLoader.image_url + "?filename=" + d + ".jpg",
-                id: d,
-                node: node
-            })
+            images.push(d);
         }
 
         let img_grids_g = wait_list_group.selectAll(".grid-image")
@@ -1078,9 +1073,8 @@ let GraphLayout = function (container) {
             .attr("height", 54)
             .attr("stroke-width", 4)
             .attr("stroke", function (d) {
-                let node = d.node.datum();
-                if (node.label[iter] === -1) return color_unlabel;
-                else return color_label[node.label[iter]];
+                if (d.label[iter] === -1) return color_unlabel;
+                else return color_label[d.label[iter]];
             })
             .attr("fill-opacity", 0);
 
@@ -1091,9 +1085,7 @@ let GraphLayout = function (container) {
             .attr("width", 50)
             .attr("height", 50)
             .on("click", function (d, i) {
-                let node = d.node;
-                node.attr("r", 5);
-                that._show_detail(d, i);
+                d3.select('#id-' + d.id).attr("r", 5);
             });
     };
 
@@ -1239,7 +1231,13 @@ let GraphLayout = function (container) {
                     className: "iw-mnotSelected delete-menu-item",
                     fun: function () {
                         if (lasso_result.indexOf(focus_node_id) !== -1) {
-                            delete_node_list = delete_node_list.concat(lasso_result);
+                            for (let _ind of lasso_result) {
+                                delete_node_list.push({
+                                    url: DataLoader.image_url + "?filename=" + _ind + ".jpg",
+                                    id: _ind,
+                                    label: d3.select('#id-' + _ind).datum().label
+                                });
+                            }
                             for (let id of lasso_result) {
                                 delete graph_data.nodes[id];
                                 nodes_group.selectAll(`#id-${id}`).style("display", "none");
@@ -1248,10 +1246,14 @@ let GraphLayout = function (container) {
                             console.log(delete_node_list);
                         }
                         else {
-                            delete_node_list.push(focus_node_id);
+                            delete_node_list.push({
+                                    url: DataLoader.image_url + "?filename=" + focus_node_id + ".jpg",
+                                    id: focus_node_id,
+                                    label: d3.select('#id-' + focus_node_id).datum().label
+                                });
+                            that._update_wait_list_group();
                             delete graph_data.nodes[focus_node_id];
                             nodes_group.selectAll(`#id-${focus_node_id}`).style("display", "none");
-                            that._update_wait_list_group();
                         }
                         focus_node_change_switch = true;
                         focus_edge_change_switch = true;
@@ -1319,9 +1321,9 @@ let GraphLayout = function (container) {
     };
 
     that._update_delete_node_list = function () {
-        for (let id of delete_node_list) {
-            delete graph_data.nodes[id];
-            nodes_group.selectAll(`#id-${id}`).style("display", "none");
+        for (let item of delete_node_list) {
+            delete graph_data.nodes[item["id"]];
+            nodes_group.selectAll(`#id-${item["id"]}`).style("display", "none");
         }
     };
 };
