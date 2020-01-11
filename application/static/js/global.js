@@ -85,6 +85,7 @@ let CategorySequentialColor = [
 let ThemeColor = "#9bcbff";
 let Gray = "#a8a8a8";
 let testColor = "#7f7f7f";
+let FontColor = "#333333";
 
 /*
     variables that debug needed

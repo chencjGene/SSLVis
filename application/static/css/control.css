@@ -12,7 +12,7 @@ label.field {
   z-index: 1;
 }
 label.field span {
-  color: #969696;
+  color: #333333;
   display: block;
   font-size: 16px;
   height: 20px;
@@ -246,11 +246,16 @@ label.field.focused .psuedo_select ul {
 }
 .control-subtitle-font {
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
-  color: #969696;
+  color: #333333;
   display: inline-block;
 }
+
+#encoding{
+  margin-top: 80px;
+}
+
 .encoding-container,
 .slider-container {
   margin: 10px;
