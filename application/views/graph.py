@@ -109,7 +109,8 @@ def app_update_delete_and_change_label():
 @graph.route('/graph/fisheye', methods=["GET", "POST"])
 def app_fisheye():
     data = json.loads(request.data)
-    must_show_nodes = data['must_show_nodes']
+    new_nodes = data['new_nodes']
+    old_nodes = data['old_nodes']
     area = data['area']
     level = data['level']
-    return fisheye(must_show_nodes, area, level)
+    return fisheye(new_nodes, old_nodes, area, level)

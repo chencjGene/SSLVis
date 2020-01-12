@@ -94,9 +94,10 @@ DataLoaderClass = function (dataset) {
         that.update_delete_and_change_label_node.notify();
     };
 
-    that.update_fisheye_graph_node = function(nodes, area, level, fisheye_callback) {
+    that.update_fisheye_graph_node = function(old_nodes, new_nodes, area, level, fisheye_callback) {
         that.fisheye_graph_node.set_data({
-            'must_show_nodes':nodes,
+            'new_nodes':new_nodes,
+            'old_nodes':old_nodes,
             'area':area,
             'level':level
         });
@@ -167,7 +168,7 @@ DataLoaderClass = function (dataset) {
         that.graph_view.component_update({
             "graph_data": that.state.graph_data
         }, rescale);
-        that.state.fisheye_callback(area, k);
+        that.state.fisheye_callback(that.state.area);
     };
 
     that.update_loss_view = function(){

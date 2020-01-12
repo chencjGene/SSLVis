@@ -895,3 +895,8 @@ class IncrementalTSNE:
         }
         
         return level_info
+if __name__ == "__main__":
+    import numpy as np
+    X = np.array([[0, 0, 0], [0, 1, 1], [1, 0, 1], [1, 1, 1]])
+    X_embedded = IncrementalTSNE(n_components=2).fit_transform(X)
+    print(X_embedded)
