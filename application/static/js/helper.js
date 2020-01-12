@@ -117,3 +117,21 @@ let star_path = function (out_radius, inner_radius, center_x, center_y) {
     }
     return svgdata;
 };
+
+let twoD_sum = function(mat){
+    let sum = 0;
+    for (let i = 0; i < mat.length; i++){
+        for (let j = 0; j < mat[i].length; j++){
+            sum = sum + mat[i][j];
+        }
+    }
+    return sum;
+};
+
+let oneD_sum = function(vec){
+    let sum = 0;
+    for (let i = 0; i < vec.length; i++){
+        sum += vec[i];
+    }
+    return sum;
+};

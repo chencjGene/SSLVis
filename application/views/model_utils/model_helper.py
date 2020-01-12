@@ -30,7 +30,7 @@ def build_laplacian_graph(affinity_matrix):
 
 
 def propagation(graph_matrix, affinity_matrix, train_y, alpha=0.2, max_iter=30,
-                tol=1e-3, process_record=False, normalized=True):
+                tol=0.02, process_record=False, normalized=True):
     y = np.array(train_y)
     # label construction
     # construct a categorical distribution for classification only
