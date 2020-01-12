@@ -187,8 +187,7 @@ class ConstraintTSNE:
                                 double* constraint_Y, int constraint_N, double alpha, double perplexity,
                                 double angle, int n_jobs, int n_iter, int random_state, int verbose,
                                 double accuracy, double early_exaggeration, double learning_rate,
-                                int skip_num_points, int exploration_n_iter, int *label, int* trust_id, double* trust_weight, 
-                                int trust_N, int* init_id, int init_N);
+                                int skip_num_points, int exploration_n_iter, int *focus_path, int path_len, double m);
               void binary_search_perplexity(double* distances_nn, int* neighbors_nn, int N, int D,
                                 double perplexity, int verbose, double* conditional_P);
               void k_neighbors(double* X1, int N1, double* X2, int N2, int D, int n_neighbors, int* neighbors_nn, double* distances_nn,
@@ -229,7 +228,7 @@ class ConstraintTSNE:
         return self
     
     def fit_transform(self, X, _y=None, skip_num_points=0, constraint_X=None, constraint_Y=None, alpha=0,
-                      label=None, corrected_id=None, corrected_weight=None, init_id=None):
+                      label=None, corrected_id=None, corrected_weight=None, init_id=None, focus_path = None, m = 0.1):
         """
         Fit X into an embedded space and return that transformed output.
 
@@ -256,13 +255,16 @@ class ConstraintTSNE:
             corrected_weight = corrected_weight.astype(np.float64, copy=True)
         if init_id is not None:
             init_id = init_id.astype(np.int32, copy=True)
+        if focus_path is not None:
+            focus_path = np.array(focus_path).astype(np.int32, copy=True)
+        m = np.array(m).astype(np.float32, copy=True)
 
         embedding = self._fit(X, skip_num_points=skip_num_points, constraint_X=constraint_X, constraint_Y=constraint_Y,
-                              alpha=alpha, label=label, corrected_id=corrected_id, corrected_weight=corrected_weight, init_id=init_id)
+                              alpha=alpha, label=label, corrected_id=corrected_id, corrected_weight=corrected_weight, init_id=init_id, focus_path = focus_path, m=m)
         self.embedding_ = embedding
         return self.embedding_
     
-    def _fit(self, X, skip_num_points=0, constraint_X=None, constraint_Y=None, alpha=0, label=None, corrected_id=None, corrected_weight=None, init_id=None):
+    def _fit(self, X, skip_num_points=0, constraint_X=None, constraint_Y=None, alpha=0, label=None, corrected_id=None, corrected_weight=None, init_id=None, focus_path = None, m = 0.1):
         """
         Fit the model using X as training data.
 
@@ -431,6 +433,14 @@ class ConstraintTSNE:
                 init_N = 0
                 cffi_init_id = self.ffi.NULL
                 cffi_corrected_weight = self.ffi.NULL
+            if isinstance(focus_path, np.ndarray):
+                path_len = focus_path.shape[0]
+                focus_path = focus_path.reshape(-1)
+                cffi_focus_path = self.ffi.cast('int*', focus_path.ctypes.data)
+            else:
+                path_len = 0
+                cffi_focus_path = self.ffi.NULL
+
             
             cffi_random_state = 1
             if self.random_state != None:
@@ -440,8 +450,7 @@ class ConstraintTSNE:
                            self.perplexity, self.angle, self.n_jobs, self.n_iter,
                            cffi_random_state, cffi_verbose, self.accuracy,
                            self.early_exaggeration, self.learning_rate, skip_num_points,
-                           self._EXPLORATION_N_ITER, cffi_label, cffi_corrected_id, cffi_corrected_weight, corrected_N,
-                           cffi_init_id, init_N)
+                           self._EXPLORATION_N_ITER, cffi_focus_path, path_len, m)
             t.daemon = True
             t.start()
             
@@ -899,5 +908,5 @@ class ConstraintTSNE:
 if __name__ == "__main__":
     import numpy as np
     X = np.array([[0, 0, 0], [0, 1, 1], [1, 0, 1], [1, 1, 1]])
-    X_embedded = ConstraintTSNE(n_components=2).fit_transform(X)
-    X_embedded.shape
+    X_embedded = ConstraintTSNE(n_components=2).fit_transform(X, focus_path=[[0,1]], m=0.1)
+    print(X_embedded)

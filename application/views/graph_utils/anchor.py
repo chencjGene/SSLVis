@@ -9,6 +9,7 @@ import math
 
 from ..utils.config_utils import config
 from ..graph_utils.IncrementalTSNE import IncrementalTSNE
+from ..graph_utils.ConstraintTSNE import ConstraintTSNE
 from ..graph_utils.DensityBasedSampler import DensityBasedSampler
 from ..graph_utils.BlueNoiseSampler import BlueNoiseSampC as BlueNoiseSampler
 from sklearn.manifold import TSNE
@@ -264,15 +265,13 @@ def get_area(must_show_nodes, width, height, train_x, train_y, raw_graph, proces
         "area":new_area
     }
 
-def fisheyeAnchors(must_show_nodes, area, level, train_x, train_y, raw_graph, process_data, influence_matrix, propagation_path, ground_truth, buf_path):
+def fisheyeAnchors(new_nodes, old_nodes, area, level, train_x, train_y, raw_graph, process_data, influence_matrix, propagation_path, ground_truth, buf_path):
     with open(buf_path, "rb") as f:
+        focus_path = []
+        for u in new_nodes:
+            for v in new_nodes:
+                focus_path.append([u, v])
         train_x_tsne, level_infos = pickle.load(f)
-        selection = must_show_nodes
-        samples_x = train_x[selection]
-        init_samples_x_tsne = train_x_tsne[selection]
-        samples_y = train_y[selection]
-        samples_truth = ground_truth[selection]
-        samples_x_tsne = init_samples_x_tsne
 
         # get new graph
         if level >= len(level_infos):
@@ -285,17 +284,34 @@ def fisheyeAnchors(must_show_nodes, area, level, train_x, train_y, raw_graph, pr
                 'height']:
                 selection.append(ind)
         # add must_have_nodes
-        selection = list(dict.fromkeys(selection+must_show_nodes))
+        selection = list(dict.fromkeys(selection+new_nodes))
+        for node_id in old_nodes.keys():
+            if int(node_id) not in selection:
+                selection.append(int(node_id))
 
         samples_x = train_x[selection]
         init_samples_x_tsne = train_x_tsne[selection]
         samples_y = train_y[selection]
         samples_truth = ground_truth[selection]
         clusters = level_infos[level]['clusters']
-        samples_x_tsne = init_samples_x_tsne  # IncrementalTSNE(n_components=2, n_jobs=20, init=init_samples_x_tsne, n_iter=250,
-        # exploration_n_iter=0).fit_transform(samples_x)
 
-
+        for i, id in enumerate(selection):
+            if str(id) in old_nodes.keys():
+                old_node = old_nodes[str(id)]
+                init_samples_x_tsne[i] = np.array([old_node['x'], old_node['y']])
+        # samples_x_tsne = ConstraintTSNE(n_components=2, n_jobs=20, init=init_samples_x_tsne, n_iter=250, exploration_n_iter=0).fit_transform(samples_x, focus_path=focus_path, m=0.1)
+        samples_x_tsne = IncrementalTSNE(n_components=2, n_jobs=20, init=init_samples_x_tsne, n_iter=10, exploration_n_iter=0).fit_transform(samples_x)
+        # samples_x_tsne = init_samples_x_tsne
+    min_x = np.min(samples_x_tsne[:,0])
+    min_y = np.min(samples_x_tsne[:,1])
+    max_x = np.max(samples_x_tsne[:, 0])
+    max_y = np.max(samples_x_tsne[:, 1])
+    new_area = {
+        "x":float(min_x),
+        "y":float(min_y),
+        "width":float(max_x-min_x),
+        "height":float(max_y-min_y)
+    }
     samples_x_tsne = samples_x_tsne.tolist()
     samples_y = samples_y.tolist()
     samples_truth = samples_truth.tolist()
@@ -319,4 +335,4 @@ def fisheyeAnchors(must_show_nodes, area, level, train_x, train_y, raw_graph, pr
     graph = {
         "nodes": samples_nodes,
     }
-    return graph
+    return [graph, new_area]

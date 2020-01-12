@@ -55,7 +55,8 @@ DataLoaderClass.prototype.update_fisheye_graph_handler = function (callback) {
         console.log(that.fisheye_graph_url);
         console.log("fisheye_graph_handler");
         console.log(data);
-        that.state.graph_data = data;
+        that.state.graph_data = data[0];
+        that.state.area = data[1];
         if (callback) callback(false);
     }
 
