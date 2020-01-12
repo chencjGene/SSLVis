@@ -384,7 +384,7 @@ let GraphLayout = function (container) {
         console.log("focus_edge_id = null");
         focus_edge_node = null;
         // that._update_click_menu();
-        if (focus_node.length === 0) {
+        if (focus_node_data.length === 0) {
             // console.log("No node need focus.");
             return
         }
@@ -490,7 +490,7 @@ let GraphLayout = function (container) {
         }
 
         for (let d of focus_node_data) {
-            if (d.label[iter] === -1 || d.label[0] !== -1) return;
+            if (d.label[iter] === -1 || d.label[0] !== -1) continue;
             console.log("Node:", d);
             let eid = d.id;
             let predict_label = d.label[iter];
