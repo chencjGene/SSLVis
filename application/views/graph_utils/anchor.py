@@ -105,7 +105,7 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, p
         samples_y = train_y[selection]
         samples_truth = ground_truth[selection]
         clusters = level_infos[0]['clusters']
-        samples_x_tsne = init_samples_x_tsne#IncrementalTSNE(n_components=2, n_jobs=20, init=init_samples_x_tsne, n_iter=250, exploration_n_iter=0).fit_transform(samples_x)
+        samples_x_tsne = IncrementalTSNE(n_components=2, n_jobs=20, init=init_samples_x_tsne, n_iter=250, early_exaggeration=1.0).fit_transform(samples_x)
 
     samples_x_tsne = samples_x_tsne.tolist()
     samples_y = samples_y.tolist()
