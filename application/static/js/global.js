@@ -28,18 +28,25 @@ let ImageView = null;
 /*
 *  Color
 * */
-let CategoryColor = [
-    "#4fa7ff",
-    "#ffa953",
-    "#55ff99",
-    "#ba9b96",
-    "#c982ce",
-    "#bcbd22",
-    "#e377c2",
-    "#990099",
-    "#17becf",
-    "#8c564b"
-];
+// let CategoryColor = [
+//     "#4fa7ff",
+//     "#ffa953",
+//     "#55ff99",
+//     "#ba9b96",
+//     "#c982ce",
+//     "#bcbd22",
+//     "#e377c2",
+//     "#990099",
+//     "#17becf",
+//     "#8c564b"
+// ];
+let CategoryColor = ["#1f77b4",
+    "#ff7f0e", "#2ca02c",
+    "#d62728", "#9467bd",
+    "#8c564b", "#e377c2",
+    "#ffdb45", "#bcbd22", "#17becf"];
+
+let UnlabeledColor = "#A9A9A9";
 
 // 蓝色
 // ["#deebf7",

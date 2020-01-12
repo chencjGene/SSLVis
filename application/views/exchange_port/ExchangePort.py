@@ -99,6 +99,14 @@ class ExchangePortClass(object):
         ent = self.model.get_ent()
         return jsonify(ent.tolist())
 
+    def get_flows(self):
+        label_sums, flows = self.model.get_flows()
+        mat = {
+            "label_sums": label_sums.tolist(),
+            "flows": flows.tolist()
+        }
+        return jsonify(mat)
+
     def get_labels(self):
         labels = self.model.data.class_names
         return jsonify(labels)

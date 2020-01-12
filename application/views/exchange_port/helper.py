@@ -29,6 +29,9 @@ def get_loss():
 def get_ent():
     return exchange_port.get_ent()
 
+def get_flows():
+    return exchange_port.get_flows()
+
 
 def get_labels():
     return exchange_port.get_labels()
