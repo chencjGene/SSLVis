@@ -113,4 +113,5 @@ def app_fisheye():
     old_nodes = data['old_nodes']
     area = data['area']
     level = data['level']
-    return fisheye(new_nodes, old_nodes, area, level)
+    wh = data['wh']
+    return fisheye(new_nodes, old_nodes, area, level, wh)
