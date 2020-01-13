@@ -13,6 +13,7 @@ DataLoaderClass = function (dataset) {
     that.graph_url = "/graph/GetGraph";
     that.loss_url = "/graph/GetLoss";
     that.ent_url = "/graph/GetEnt";
+    that.flows_urls = "/graph/GetFlows";
     that.image_url = "/info/image";
     // that.set_knn_url = "/graph/setK";
     that.set_influence_filter_url = "/graph/SetInfluenceFilter";
@@ -27,6 +28,7 @@ DataLoaderClass = function (dataset) {
     that.update_delete_and_change_label_node = null;
     that.loss_node = null;
     that.ent_node = null;
+    that.flows_node = null;
     that.influence_filter_node = null;
 
     // views
@@ -41,7 +43,9 @@ DataLoaderClass = function (dataset) {
         graph_data: null,
         loss_data: null,
         img_url: null,
-        ent_data: null
+        ent_data: null,
+        label_sums: null,
+        flows: null
     };
 
     // Define topological structure of data retrieval
@@ -63,13 +67,18 @@ DataLoaderClass = function (dataset) {
         that.fisheye_graph_node = new request_node(that.fisheye_graph_url + params,
             that.update_fisheye_graph_handler(that.update_fisheye_view), "json", "POST");
 
-        that.loss_node = new request_node(that.loss_url + params,
-            that.get_loss_handler(that.update_loss_view), "json", "GET");
-        that.loss_node.depend_on(that.graph_node);
+        that.flows_node = new request_node(that.flows_urls + params,
+            // TODO: update_loss_view -> update_dist_view
+            that.get_flows_handler(that.update_loss_view), "json", "GET");
+        that.flows_node.depend_on(that.graph_node);
 
-        that.ent_node = new request_node(that.ent_url + params,
-            that.get_ent_handler(that.update_ent_view), "json", "GET");
-        that.ent_node.depend_on(that.graph_node);
+        // that.loss_node = new request_node(that.loss_url + params,
+        //     that.get_loss_handler(that.update_loss_view), "json", "GET");
+        // that.loss_node.depend_on(that.graph_node);
+        //
+        // that.ent_node = new request_node(that.ent_url + params,
+        //     that.get_ent_handler(that.update_ent_view), "json", "GET");
+        // that.ent_node.depend_on(that.graph_node);
     };
 
     that.init_notify = function () {
@@ -130,6 +139,7 @@ DataLoaderClass = function (dataset) {
         v.set_data_manager(that);
     };
 
+    // TODO: set_loss_view -> set_dist_view
     that.set_loss_view = function(v){
         that.loss_view = v;
         v.set_data_manager(that);
@@ -160,7 +170,7 @@ DataLoaderClass = function (dataset) {
         console.log("update graph view");
         that.graph_view.component_update({
             "graph_data": that.state.graph_data
-        }, rescale)
+        }, rescale);
     };
 
     that.update_fisheye_view = function(rescale, area, k){
@@ -171,19 +181,21 @@ DataLoaderClass = function (dataset) {
         that.state.fisheye_callback(that.state.area);
     };
 
+    // TODO: update_loss_view -> update_dist_view
     that.update_loss_view = function(){
         console.log("update loss view");
         that.loss_view.component_update({
-            "loss_data": that.state.loss_data
-        })
+            "label_sums": that.state.label_sums,
+            "flows": that.state.flows
+        });
     };
 
-    that.update_ent_view = function(){
-        console.log("update ent view");
-        that.loss_view.component_update({
-            "ent_data": that.state.ent_data
-        })
-    };
+    // that.update_ent_view = function(){
+    //     console.log("update ent view");
+    //     that.loss_view.component_update({
+    //         "ent_data": that.state.ent_data
+    //     })
+    // };
 
     that.init = function () {
         that._init();

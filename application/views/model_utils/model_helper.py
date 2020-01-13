@@ -15,7 +15,7 @@ from sklearn.exceptions import ConvergenceWarning
 from sklearn.metrics.pairwise import euclidean_distances, paired_distances
 
 from ..utils.log_utils import logger
-
+from ..utils.helper_utils import flow_statistic
 
 def build_laplacian_graph(affinity_matrix):
     instance_num = affinity_matrix.shape[0]
@@ -29,9 +29,8 @@ def build_laplacian_graph(affinity_matrix):
     return laplacian
 
 
-def propagation(graph_matrix, affinity_matrix, train_y,
-                process_record=False, alpha=0.2, max_iter=30,
-                tol=1e-3, normalized=True):
+def propagation(graph_matrix, affinity_matrix, train_y, alpha=0.2, max_iter=30,
+                tol=0.02, process_record=False, normalized=True):
     y = np.array(train_y)
     # label construction
     # construct a categorical distribution for classification only

@@ -85,6 +85,17 @@ DataLoaderClass.prototype.get_ent_handler = function (callback) {
     return _ent_handler;
 };
 
+DataLoaderClass.prototype.get_flows_handler = function (callback) {
+    let that = this;
+
+    function _flows_handler(data){
+        that.state.label_sums = data.label_sums;
+        that.state.flows = data.flows;
+        if (callback) callback();
+    }
+    return _flows_handler;
+};
+
 DataLoaderClass.prototype.set_influence_filter = function(callback){
     let that = this;
 
