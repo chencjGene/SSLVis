@@ -46,3 +46,7 @@
 .entropy-axis text {
     /*fill: #816cad;*/
 }
+
+.loss-text {
+    pointer-events: none;
+}
