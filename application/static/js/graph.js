@@ -11,9 +11,8 @@ let GraphLayout = function (container) {
     let height = bbox.height;
     let layout_width = width - 20;
     let layout_height = height - 20;
-    let color_unlabel = "#A9A9A9";
-    let color_label = d3.schemeCategory10;
-    color_label[7] = "#ffdb45";
+    let color_unlabel = UnlabeledColor;
+    let color_label = CategoryColor;
     let btn_select_color = "#560731";
     let btn_unselect_color = "#ffffff";
 
