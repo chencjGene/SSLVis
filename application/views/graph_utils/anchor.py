@@ -17,13 +17,15 @@ from sklearn.manifold import TSNE
 from ..graph_utils.RandomSampler import random_sample
 
 def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, propagation_path, dataname, buf_path):
+    anchor_path = os.path.join(buf_path, "anchors" + config.pkl_ext)
+    current_pos_path = os.path.join(buf_path, "current_anchors" + config.pkl_ext)
     train_x = np.array(train_x, dtype=np.float64)
     node_num = train_x.shape[0]
     target_num = 500
-    retsne = not os.path.exists(buf_path)
+    retsne = not os.path.exists(anchor_path)
     train_x_tsne = None
     if not retsne:
-        train_x_tsne, level_infos = pickle.load(open(buf_path, "rb"))
+        train_x_tsne, level_infos = pickle.load(open(anchor_path, "rb"))
         top_num = len(level_infos[0]['index'])
         print(top_num, '<===>', target_num)
         retsne = top_num != target_num
@@ -96,10 +98,10 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, p
 
         save = (train_x_tsne, level_infos)
 
-        with open(buf_path, "wb+") as f:
+        with open(anchor_path, "wb+") as f:
             pickle.dump(save, f)
 
-    with open(buf_path, "rb") as f:
+    with open(anchor_path, "rb") as f:
         train_x_tsne, level_infos = pickle.load(f)
         selection = level_infos[0]['index']
         samples_x = train_x[selection]
@@ -107,8 +109,17 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, p
         samples_y = train_y[selection]
         samples_truth = ground_truth[selection]
         clusters = level_infos[0]['clusters']
-        # samples_x_tsne = IncrementalTSNE(n_components=2, n_jobs=20, init=init_samples_x_tsne, n_iter=250, exploration_n_iter=0).fit_transform(samples_x)
-        samples_x_tsne = init_samples_x_tsne
+        constraint_selection = np.random.choice(len(selection), min(len(selection), max(10, int(0.2 * len(selection)))))
+        # samples_x_tsne = TSNE(n_components=2, n_jobs=20, init=init_samples_x_tsne, n_iter=250, early_exaggeration=1.0)\
+        #     .fit_transform(samples_x)
+        samples_x_tsne = IncrementalTSNE(n_components=2, n_jobs=20, init=init_samples_x_tsne, n_iter=100, early_exaggeration=1.0, exploration_n_iter=0)\
+            .fit_transform(samples_x, constraint_X=samples_x[constraint_selection], constraint_Y=init_samples_x_tsne[constraint_selection], alpha=0.1)
+        save = (selection, samples_x_tsne)
+
+        with open(current_pos_path, "wb+") as f:
+            pickle.dump(save, f)
+
+
     samples_x_tsne = samples_x_tsne.tolist()
     samples_y = samples_y.tolist()
     samples_truth = samples_truth.tolist()
@@ -150,28 +161,64 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, p
     return graph
 
 def updateAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, dataname, area, level, buf_path, propagation_path):
+    anchor_path = os.path.join(buf_path, "anchors" + config.pkl_ext)
+    current_pos_path = os.path.join(buf_path, "current_anchors" + config.pkl_ext)
     all_time = {
         "read_file":0,
         "format_data":0
     }
     start = time.time()
-    with open(buf_path, "rb") as f:
+    with open(anchor_path, "rb") as f:
         train_x_tsne, level_infos = pickle.load(f)
         if level >= len(level_infos):
             level = len(level_infos) - 1
         _selection = level_infos[level]['index']
+        fb = open(current_pos_path, "rb")
+        old_ids, old_pos = pickle.load(fb)
+        old_dic = {}
+        for i, id in enumerate(old_ids):
+            old_dic[id] = old_pos[i]
         _pos = train_x_tsne[_selection]
         selection = []
+        old_selection = []
+        old_position = []
+        new_selection = []
         for i, ind in enumerate(_selection):
-            if area['x'] <= _pos[i][0] <= area['x'] + area['width'] and area['y'] <= _pos[i][1] <= area['y'] + area['height']:
+            if ind in old_dic:
+                point = old_dic[ind]
+            else:
+                point = _pos[i]
+            if area['x'] <= point[0] <= area['x'] + area['width'] and area['y'] <= point[1] <= area['y'] + area['height']:
                 selection.append(ind)
+                if ind in old_dic:
+                    old_selection.append(len(selection) - 1)
+                    old_position.append(point)
+                else:
+                    new_selection.append(len(selection) - 1)
+
+        selection = np.array(selection)
+        old_position = np.array(old_position)
+        selection = selection[old_selection + new_selection]
         samples_x = train_x[selection]
         init_samples_x_tsne = train_x_tsne[selection]
+        init_samples_x_tsne[:len(old_selection)] = old_position
         samples_y = train_y[selection]
         samples_truth = ground_truth[selection]
         clusters = level_infos[level]['clusters']
-        samples_x_tsne = init_samples_x_tsne#IncrementalTSNE(n_components=2, n_jobs=20, init=init_samples_x_tsne, n_iter=250,
-                                         #exploration_n_iter=0).fit_transform(samples_x)
+        if len(new_selection) == 0:
+            samples_x_tsne = init_samples_x_tsne
+        else:
+            samples_x_tsne = IncrementalTSNE(n_components=2, n_jobs=20, init=init_samples_x_tsne, n_iter=250,
+                                         exploration_n_iter=0).fit_transform(samples_x, constraint_X = samples_x[:len(old_selection)], constraint_Y = init_samples_x_tsne[
+                                                                                 :len(old_selection)], alpha = 0.3)
+            # samples_x_tsne = IncrementalTSNE(n_components=2, n_jobs=20, init=init_samples_x_tsne, n_iter=250,
+            #                              exploration_n_iter=0).fit_transform(samples_x, skip_num_points=len(old_selection))
+
+        save = (selection, samples_x_tsne)
+
+        with open(current_pos_path, "wb+") as f:
+            pickle.dump(save, f)
+
     now = time.time()
     all_time["read_file"] += now-start
     start = now
