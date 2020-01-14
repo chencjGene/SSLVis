@@ -418,7 +418,7 @@ let GraphLayout = function (container) {
                             path_nodes[d.id] = node;
                         }
                     });
-                    let maingroup_k = Math.min(width/(main_group_max_x-main_group_min_x), height/(main_group_max_y-main_group_min_y))*0.8;
+                    let maingroup_k = Math.min(width/(main_group_max_x-main_group_min_x), height/(main_group_max_y-main_group_min_y));
                     let all_in_old_area = true;
                     for(let new_node of new_nodes){
                         let x = path_nodes[new_node].datum().x;
@@ -442,8 +442,8 @@ let GraphLayout = function (container) {
                         };
                     }
                     old_transform.k = maingroup_k;
-                    old_transform.x = x_offset*maingroup_k+show_width*0.1;
-                    old_transform.y = y_offset*maingroup_k+show_height*0.1;
+                    old_transform.x = width/2-(main_group_min_x+main_group_max_x)/2*maingroup_k;
+                    old_transform.y = height/2-(main_group_min_y+main_group_max_y)/2*maingroup_k;
                     main_group
                         .transition()
                         .duration(AnimationDuration)
@@ -828,8 +828,8 @@ let GraphLayout = function (container) {
                         };
                     }
                     old_transform.k = maingroup_k;
-                    old_transform.x = x_offset*maingroup_k;
-                    old_transform.y = y_offset*maingroup_k;
+                    old_transform.x = width/2-(main_group_min_x+main_group_max_x)/2*maingroup_k;
+                    old_transform.y = height/2-(main_group_min_y+main_group_max_y)/2*maingroup_k;
                     console.log("Found paths:", path);
                     let single_node_propagate = main_group.insert("g", ":first-child")
                         .attr("id", "single-propagate")
