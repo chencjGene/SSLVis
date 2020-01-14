@@ -3,6 +3,7 @@ import os
 from sklearn.cluster import KMeans
 import pickle
 from scipy.spatial import distance_matrix
+from matplotlib import pyplot as plt
 import math
 import time
 import math
@@ -313,7 +314,7 @@ def get_area(must_show_nodes, width, height, train_x, train_y, raw_graph, proces
         "area":new_area
     }
 
-def fisheyeAnchors(new_nodes, old_nodes, area, level, train_x, train_y, raw_graph, process_data, influence_matrix, propagation_path, ground_truth, buf_path):
+def fisheyeAnchors(new_nodes, old_nodes, area, level, wh, train_x, train_y, raw_graph, process_data, influence_matrix, propagation_path, ground_truth, buf_path):
     with open(buf_path, "rb") as f:
         focus_path = []
         for u in new_nodes:
@@ -327,15 +328,16 @@ def fisheyeAnchors(new_nodes, old_nodes, area, level, train_x, train_y, raw_grap
         _selection = level_infos[level]['index']
         _pos = train_x_tsne[_selection]
         selection = []
-        for i, ind in enumerate(_selection):
-            if area['x'] <= _pos[i][0] <= area['x'] + area['width'] and area['y'] <= _pos[i][1] <= area['y'] + area[
-                'height']:
-                selection.append(ind)
-        # add must_have_nodes
-        selection = list(dict.fromkeys(selection+new_nodes))
         for node_id in old_nodes.keys():
             if int(node_id) not in selection:
                 selection.append(int(node_id))
+        for i, ind in enumerate(_selection):
+            if area['x'] <= _pos[i][0] <= area['x'] + area['width'] and area['y'] <= _pos[i][1] <= area['y'] + area[
+                'height'] and (ind not in selection):
+                selection.append(ind)
+        # add must_have_nodes
+        selection = list(dict.fromkeys(selection+new_nodes))
+
 
         samples_x = train_x[selection]
         init_samples_x_tsne = train_x_tsne[selection]
@@ -347,11 +349,37 @@ def fisheyeAnchors(new_nodes, old_nodes, area, level, train_x, train_y, raw_grap
             if str(id) in old_nodes.keys():
                 old_node = old_nodes[str(id)]
                 init_samples_x_tsne[i] = np.array([old_node['x'], old_node['y']])
+        min_x = np.min(init_samples_x_tsne[:, 0])
+        min_y = np.min(init_samples_x_tsne[:, 1])
+        max_x = np.max(init_samples_x_tsne[:, 0])
+        max_y = np.max(init_samples_x_tsne[:, 1])
+        # add constraint
+        sample_rate = 1
+        constraint_num = max(0, int(len(old_nodes.keys())*sample_rate))
+        print("constraint num:", constraint_num)
+        all_idx = np.arange(0, len(old_nodes.keys()))
+        constraint_idx = np.random.default_rng().choice(all_idx, size=constraint_num, replace = False)
+        constraint_x = samples_x[constraint_idx]
+        constraint_y = init_samples_x_tsne[constraint_idx]
+
+        # label_colors = ["#A9A9A9", "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2", "#ffdb45", "#bcbd22", "#17becf"]
+        # colors = []
+        # for node_id in selection:
+        #     colors.append(label_colors[ground_truth[node_id]+1])
+        # plt.figure()
+        # plt.title("init-"+str(sample_rate))
+        # plt.scatter(init_samples_x_tsne[:,0], init_samples_x_tsne[:, 1], s=10, c=colors)
         # samples_x_tsne = ConstraintTSNE(n_components=2, n_jobs=20, init=init_samples_x_tsne, n_iter=250, exploration_n_iter=0).fit_transform(samples_x, focus_path=focus_path, m=0.1)
-        samples_x_tsne = IncrementalTSNE(n_components=2, n_jobs=20, init=init_samples_x_tsne, n_iter=10, exploration_n_iter=0).fit_transform(samples_x)
+        samples_x_tsne = IncrementalTSNE(n_components=2, n_jobs=20, init=init_samples_x_tsne, n_iter=100, exploration_n_iter=0, early_exaggeration=1)\
+            .fit_transform(samples_x, constraint_X=constraint_x, constraint_Y=constraint_y, alpha=0.2)
         # samples_x_tsne = init_samples_x_tsne
-    min_x = np.min(samples_x_tsne[:,0])
-    min_y = np.min(samples_x_tsne[:,1])
+        # plt.figure()
+        # plt.title("output-"+str(sample_rate))
+        # plt.scatter(samples_x_tsne[:, 0], samples_x_tsne[:, 1], s=10, c=colors)
+        # plt.show()
+    # get new area
+    min_x = np.min(samples_x_tsne[:, 0])
+    min_y = np.min(samples_x_tsne[:, 1])
     max_x = np.max(samples_x_tsne[:, 0])
     max_y = np.max(samples_x_tsne[:, 1])
     new_area = {
@@ -360,6 +388,24 @@ def fisheyeAnchors(new_nodes, old_nodes, area, level, train_x, train_y, raw_grap
         "width":float(max_x-min_x),
         "height":float(max_y-min_y)
     }
+    new_wh = new_area["width"] / new_area["height"]
+    old_wh = wh
+    if old_wh > new_wh:
+        min_x -= (new_area["height"] * old_wh - new_area["width"]) / 2
+        max_x += (new_area["height"] * old_wh - new_area["width"]) / 2
+        new_area["x"] = min_x
+        new_area["width"] = max_x - min_x
+    elif old_wh < new_wh:
+        min_y -= (new_area["width"] / old_wh - new_area["height"]) / 2
+        max_y += (new_area["width"] / old_wh - new_area["height"]) / 2
+        new_area["y"] = min_y
+        new_area["height"] = max_y - min_y
+    new_area["x"] = float(new_area["x"])
+    new_area["y"] = float(new_area["y"])
+    new_area["width"] = float(new_area["width"])
+    new_area["height"] = float(new_area["height"])
+    print(new_area)
+
     samples_x_tsne = samples_x_tsne.tolist()
     samples_y = samples_y.tolist()
     samples_truth = samples_truth.tolist()
