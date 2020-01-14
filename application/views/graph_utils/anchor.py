@@ -113,6 +113,7 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, p
         #     .fit_transform(samples_x)
         samples_x_tsne = IncrementalTSNE(n_components=2, n_jobs=20, init=init_samples_x_tsne, n_iter=100, early_exaggeration=1.0, exploration_n_iter=0)\
             .fit_transform(samples_x, constraint_X=samples_x[constraint_selection], constraint_Y=init_samples_x_tsne[constraint_selection], alpha=0.1)
+        # samples_x_tsne = init_samples_x_tsne
         save = (selection, samples_x_tsne)
 
         with open(current_pos_path, "wb+") as f:
@@ -207,11 +208,11 @@ def updateAnchors(train_x, train_y, ground_truth, process_data, influence_matrix
         if len(new_selection) == 0:
             samples_x_tsne = init_samples_x_tsne
         else:
-            samples_x_tsne = IncrementalTSNE(n_components=2, n_jobs=20, init=init_samples_x_tsne, n_iter=250,
-                                         exploration_n_iter=0).fit_transform(samples_x, constraint_X = samples_x[:len(old_selection)], constraint_Y = init_samples_x_tsne[
-                                                                                 :len(old_selection)], alpha = 0.3)
             # samples_x_tsne = IncrementalTSNE(n_components=2, n_jobs=20, init=init_samples_x_tsne, n_iter=250,
-            #                              exploration_n_iter=0).fit_transform(samples_x, skip_num_points=len(old_selection))
+            #                              exploration_n_iter=0).fit_transform(samples_x, constraint_X = samples_x[:len(old_selection)], constraint_Y = init_samples_x_tsne[
+            #                                                                      :len(old_selection)], alpha = 0.3)
+            samples_x_tsne = IncrementalTSNE(n_components=2, n_jobs=20, init=init_samples_x_tsne, n_iter=250,
+                                         exploration_n_iter=0).fit_transform(samples_x, skip_num_points=len(old_selection))
 
         save = (selection, samples_x_tsne)
 
