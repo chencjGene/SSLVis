@@ -164,15 +164,16 @@ class SSLModel(object):
 
         train_gt = self.data.get_train_ground_truth()
         train_gt = np.array(train_gt)
-        pred_dist, loss, ent, process_data = \
+        pred_dist, loss, ent, process_data, unnorm_dist = \
             self._propagation(laplacian, affinity_matrix, train_y,
                               alpha=self.alpha, process_record=True,
-                              normalized=False)
+                              normalized=True)
         # labels = [int(np.argmax(process_data[j][id])) if np.max(process_data[j][id]) > 1e-4 else -1 for j in
         #           range(iter_num)]
         iter = len(loss)
         # get labels and flows
         self.labels = process_data.argmax(axis=2)
+        self.unnorm_dist = unnorm_dist
         max_process_data = process_data.max(axis=2)
         self.labels[max_process_data <1e-4] = -1
         class_list = np.unique(train_y)
@@ -200,7 +201,7 @@ class SSLModel(object):
         logger.info("influence matrix  "
                     "do not exist, preprocessing!")
         self.influence_matrix = \
-            approximated_influence(pred_dist, affinity_matrix,
+            approximated_influence(self.unnorm_dist, affinity_matrix,
                                    laplacian, self.alpha, train_y)
         pickle_save_data(influence_matrix_path, self.influence_matrix)
         return
@@ -229,7 +230,7 @@ class SSLModel(object):
         # test
         simplified_laplacian_matrix = \
             build_laplacian_graph(simplified_affinity_matrix)
-        simplified_F, L, _, _ = self._propagation(simplified_laplacian_matrix,
+        simplified_F, L, _, _, _ = self._propagation(simplified_laplacian_matrix,
                                                simplified_affinity_matrix,
                                                np.array(self.data.get_train_label()),
                                                alpha=self.alpha,
