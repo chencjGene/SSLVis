@@ -592,10 +592,10 @@ let GraphLayout = function (container) {
         }
         await that._update_view(rescale);
         if(state.fisheye === "single"){
-            that._single_show_path();
+            await that._single_show_path();
         }
         else if(state.fisheye === "group"){
-            that._group_show_path();
+            await that._group_show_path();
         }
     };
 
@@ -767,11 +767,18 @@ let GraphLayout = function (container) {
     };
 
     that._single_show_path = function(){
-                    nodes_in_group = nodes_group.selectAll("circle");
+        return new Promise(function (resolve, reject) {
+            nodes_in_group = nodes_group.selectAll("circle");
                     golds_in_group = golds_group.selectAll("path");
                     // de-highlight
-                    nodes_in_group.attr("opacity", d => path_nodes[d.id]===true?1:0.2);
-                    golds_in_group.attr("opacity", d => path_nodes[d.id]===true?1:0.2);
+                    nodes_in_group
+                        .transition()
+                        .duration(AnimationDuration)
+                        .attr("opacity", d => path_nodes[d.id]===true?1:0.2);
+                    golds_in_group
+                        .transition()
+                        .duration(AnimationDuration)
+                        .attr("opacity", d => path_nodes[d.id]===true?1:0.2);
 
                     svg.select("#single-propagate").remove();
                     nodes_in_group.each(function (d) {
@@ -798,101 +805,115 @@ let GraphLayout = function (container) {
 
 
                     let single_node_propagate = main_group.insert("g", ":first-child")
-                        .attr("id", "single-propagate")
-                        .selectAll("polyline")
-                        .data(path)
-                        .enter()
-                        .append("polyline")
-                        .on("mouseover", function (d) {
-                            console.log(d);
-                            if (focus_edge_change_switch) {
-                                focus_edge_id = d;
-                                console.log("focus_edge_id = " + focus_edge_id);
-                                focus_edge_node = this;
-                                d3.select(this).style("stroke-width", 4.0 * zoom_scale);
-                            }
-                            $.post("/graph/feature_distance", {
-                                path:JSON.stringify(d)
-                            }, function (data) {
-                                console.log("Distance between",d[0],d[1],"is:",data.distance);
+                            .attr("id", "single-propagate")
+                            .selectAll("polyline")
+                            .data(path)
+                            .enter()
+                            .append("polyline")
+                            .on("mouseover", function (d) {
+                                console.log(d);
+                                if (focus_edge_change_switch) {
+                                    focus_edge_id = d;
+                                    console.log("focus_edge_id = " + focus_edge_id);
+                                    focus_edge_node = this;
+                                    d3.select(this).style("stroke-width", 4.0 * zoom_scale);
+                                }
+                                $.post("/graph/feature_distance", {
+                                    path:JSON.stringify(d)
+                                }, function (data) {
+                                    console.log("Distance between",d[0],d[1],"is:",data.distance);
+                                })
+                                // that._update_click_menu();
                             })
-                            // that._update_click_menu();
-                        })
-                        .on("mouseout", function (d) {
-                            if (focus_edge_change_switch) {
-                                focus_edge_id = null;
-                                console.log("focus_edge_id = null");
-                                focus_edge_node = null;
-                                d3.select(this).style("stroke-width", 2.0 * zoom_scale);
-                            }
-                        })
-                        .attr("class", "edge-line")
-                        .attr("stroke-width", 2 * zoom_scale)
-                        .attr("stroke", d => color_label[d[2]])
-                        .attr("opacity", 0)
-                        .attr("marker-mid", d => "url(#arrow-" + d[2] + ")")
-                        .attr("fill", "none")
-                        .attr("points", function (d) {
-                            let begin = [center_scale_x(path_nodes[d[1]].datum().x), center_scale_y(path_nodes[d[1]].datum().y)];
-                            let end = [center_scale_x(path_nodes[d[0]].datum().x), center_scale_y(path_nodes[d[0]].datum().y)];
-                            let mid = [(begin[0]+end[0])/2, (begin[1]+end[1])/2];
-                            return begin[0]+","+begin[1]+" "+mid[0]+","+mid[1]+" "+end[0]+","+end[1];
-                        });
-                        single_node_propagate.transition()
-                        .duration(AnimationDuration)
-                        .attr("opacity", 1);
-                    // $('.edge-line').contextMenu(click_edge_menu, click_menu_settings);
-                    $('#single-propagate').contextMenu(click_edge_menu, click_menu_settings);
-                };
+                            .on("mouseout", function (d) {
+                                if (focus_edge_change_switch) {
+                                    focus_edge_id = null;
+                                    console.log("focus_edge_id = null");
+                                    focus_edge_node = null;
+                                    d3.select(this).style("stroke-width", 2.0 * zoom_scale);
+                                }
+                            })
+                            .attr("class", "edge-line")
+                            .attr("stroke-width", 2 * zoom_scale)
+                            .attr("stroke", d => color_label[d[2]])
+                            .attr("opacity", 0)
+                            .attr("marker-mid", d => "url(#arrow-" + d[2] + ")")
+                            .attr("fill", "none")
+                            .attr("points", function (d) {
+                                let begin = [center_scale_x(path_nodes[d[1]].datum().x), center_scale_y(path_nodes[d[1]].datum().y)];
+                                let end = [center_scale_x(path_nodes[d[0]].datum().x), center_scale_y(path_nodes[d[0]].datum().y)];
+                                let mid = [(begin[0]+end[0])/2, (begin[1]+end[1])/2];
+                                return begin[0]+","+begin[1]+" "+mid[0]+","+mid[1]+" "+end[0]+","+end[1];
+                            });
+                            single_node_propagate.transition()
+                            .duration(AnimationDuration)
+                            .attr("opacity", 1)
+                                .on("end", resolve);
+                        // $('.edge-line').contextMenu(click_edge_menu, click_menu_settings);
+                        $('#single-propagate').contextMenu(click_edge_menu, click_menu_settings);
+        });
+    };
 
     that._group_show_path = function(){
-        nodes_in_group = nodes_group.selectAll("circle");
-        golds_in_group = golds_group.selectAll("path");
+        return new Promise(function (resolve, reject) {
+            nodes_in_group = nodes_group.selectAll("circle");
+            golds_in_group = golds_group.selectAll("path");
 
-        // de-highlight
-        nodes_in_group.attr("opacity", d => path_nodes[d.id]===true?1:0.2);
-        golds_in_group.attr("opacity", d => path_nodes[d.id]===true?1:0.2);
+            // de-highlight
+            nodes_in_group
+                .transition()
+                .duration(AnimationDuration)
+                .attr("opacity", d => path_nodes[d.id]===true?1:0.2);
+            golds_in_group
+                .transition()
+                .duration(AnimationDuration)
+                .attr("opacity", d => path_nodes[d.id]===true?1:0.2);
 
-        nodes_in_group.each(function (d) {
-                        let node = d3.select(this);
-                        if(path_nodes[d.id]===true){
-                            path_nodes[d.id] = node;
+            nodes_in_group.each(function (d) {
+                            let node = d3.select(this);
+                            if(path_nodes[d.id]===true){
+                                path_nodes[d.id] = node;
+                            }
+                        });
+            let propagate_svg = main_group.insert("g", ":first-child").attr("id", "group-propagation");
+            propagate_svg.append("g")
+                .attr("class", "single-propagate")
+                .selectAll("polyline")
+                .data(path)
+                .enter()
+                .append("polyline")
+                .attr("stroke-width", 2.0 * zoom_scale)
+                .attr("stroke", d => color_label[d[2]])
+                .attr("opacity", 0)
+                .attr("marker-mid", d => "url(#arrow-"+d[2]+")")
+                .attr("fill", "none")
+                .attr("points", function (d) {
+                            let begin = [center_scale_x(path_nodes[d[1]].datum().x), center_scale_y(path_nodes[d[1]].datum().y)];
+                                let end = [center_scale_x(path_nodes[d[0]].datum().x), center_scale_y(path_nodes[d[0]].datum().y)];
+                                let mid = [(begin[0]+end[0])/2, (begin[1]+end[1])/2];
+                                return begin[0]+","+begin[1]+" "+mid[0]+","+mid[1]+" "+end[0]+","+end[1];
+                        })
+                .on("mouseover", function (d) {
+                            console.log(d);
+                            focus_edge_id = d;
+                            console.log("focus_edge_id = " + focus_edge_id);
+                            focus_edge_node = this;
+                            d3.select(this).style("stroke-width", 4.0 * zoom_scale);
+                        })
+                .on("mouseout", function (d) {
+                        if (focus_edge_change_switch) {
+                            focus_edge_id = null;
+                            console.log("focus_edge_id = null");
+                            focus_edge_node = null;
+                            d3.select(this).style("stroke-width", 2.0 * zoom_scale);
                         }
-                    });
-        let propagate_svg = main_group.insert("g", ":first-child").attr("id", "group-propagation");
-        propagate_svg.append("g")
-            .attr("class", "single-propagate")
-            .selectAll("polyline")
-            .data(path)
-            .enter()
-            .append("polyline")
-            .attr("stroke-width", 2.0 * zoom_scale)
-            .attr("stroke", d => color_label[d[2]])
-            .attr("opacity", 1)
-            .attr("marker-mid", d => "url(#arrow-"+d[2]+")")
-            .attr("fill", "none")
-            .attr("points", function (d) {
-                        let begin = [center_scale_x(path_nodes[d[1]].datum().x), center_scale_y(path_nodes[d[1]].datum().y)];
-                            let end = [center_scale_x(path_nodes[d[0]].datum().x), center_scale_y(path_nodes[d[0]].datum().y)];
-                            let mid = [(begin[0]+end[0])/2, (begin[1]+end[1])/2];
-                            return begin[0]+","+begin[1]+" "+mid[0]+","+mid[1]+" "+end[0]+","+end[1];
                     })
-            .on("mouseover", function (d) {
-                        console.log(d);
-                        focus_edge_id = d;
-                        console.log("focus_edge_id = " + focus_edge_id);
-                        focus_edge_node = this;
-                        d3.select(this).style("stroke-width", 4.0 * zoom_scale);
-                    })
-            .on("mouseout", function (d) {
-                    if (focus_edge_change_switch) {
-                        focus_edge_id = null;
-                        console.log("focus_edge_id = null");
-                        focus_edge_node = null;
-                        d3.select(this).style("stroke-width", 2.0 * zoom_scale);
-                    }
-                });
-        $('.single-propagate').contextMenu(click_edge_menu, click_menu_settings);
+                .transition()
+                .duration(AnimationDuration)
+                .attr("opacity", 1)
+                .on("end", resolve);
+            $('.single-propagate').contextMenu(click_edge_menu, click_menu_settings);
+        });
     };
 
     that._create = async function () {

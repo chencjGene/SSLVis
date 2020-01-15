@@ -286,11 +286,11 @@ def updateAnchors(train_x, train_y, ground_truth, process_data, influence_matrix
         if len(new_selection) == 0:
             samples_x_tsne = init_samples_x_tsne
         else:
-            samples_x_tsne = IncrementalTSNE(n_components=2, n_jobs=20, init=init_samples_x_tsne, n_iter=250,
-                                         exploration_n_iter=0).fit_transform(samples_x, constraint_X = samples_x[:len(old_selection)], constraint_Y = init_samples_x_tsne[
-                                                                                 :len(old_selection)], alpha = 0.3)
             # samples_x_tsne = IncrementalTSNE(n_components=2, n_jobs=20, init=init_samples_x_tsne, n_iter=250,
-            #                              exploration_n_iter=0).fit_transform(samples_x, skip_num_points=len(old_selection))
+            #                              exploration_n_iter=0).fit_transform(samples_x, constraint_X = samples_x[:len(old_selection)], constraint_Y = init_samples_x_tsne[
+            #                                                                      :len(old_selection)], alpha = 0.3)
+            samples_x_tsne = IncrementalTSNE(n_components=2, n_jobs=20, init=init_samples_x_tsne, n_iter=250,
+                                         exploration_n_iter=0).fit_transform(samples_x, skip_num_points=len(old_selection))
 
         save = (selection, samples_x_tsne)
 
@@ -466,7 +466,8 @@ def fisheyeAnchors(must_show_nodes, new_nodes, old_nodes, area, level, wh, train
             print(path_idx[0], selection[path_idx[0]], train_x[selection[path_idx[0]]])
             print(path_idx[1], selection[path_idx[1]], train_x[selection[path_idx[1]]])
             print("distance", np.linalg.norm(train_x[selection[path_idx[0]]]-train_x[selection[path_idx[1]]], 2))
-        samples_x_tsne = ConstraintTSNE(n_components=2, n_jobs=20, init=init_samples_x_tsne, n_iter=100, exploration_n_iter=0).fit_transform(samples_x, focus_path=focus_path_idx, m=5, constraint_X=constraint_x, constraint_Y=constraint_y, alpha=0.2)
+        samples_x_tsne = ConstraintTSNE(n_components=2, n_jobs=20, init=init_samples_x_tsne, n_iter=100, exploration_n_iter=0)\
+            .fit_transform(samples_x, focus_path=focus_path_idx, m=5, constraint_X=constraint_x, constraint_Y=constraint_y, alpha=0.2, skip_num_points=len(old_nodes.keys()))
         # samples_x_tsne = IncrementalTSNE(n_components=2, n_jobs=20, init=init_samples_x_tsne, n_iter=100, exploration_n_iter=0, early_exaggeration=1)\
         #     .fit_transform(samples_x, constraint_X=constraint_x, constraint_Y=constraint_y, alpha=0.2)
         # samples_x_tsne = init_samples_x_tsne
