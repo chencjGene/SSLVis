@@ -103,15 +103,16 @@ DataLoaderClass = function (dataset) {
         that.update_delete_and_change_label_node.notify();
     };
 
-    that.update_fisheye_graph_node = function(old_nodes, new_nodes, area, level, wh, fisheye_callback) {
+    that.update_fisheye_graph_node = function(must_show_nodes, old_nodes, new_nodes, area, level, wh, fisheye_mode) {
         that.fisheye_graph_node.set_data({
+            'must_show_nodes':must_show_nodes,
             'new_nodes':new_nodes,
             'old_nodes':old_nodes,
             'area':area,
             'level':level,
             'wh':wh
         });
-        that.state.fisheye_callback = fisheye_callback;
+        that.state.fisheyemode = fisheye_mode;
         that.fisheye_graph_node.notify();
     };
 
@@ -174,12 +175,13 @@ DataLoaderClass = function (dataset) {
         }, rescale);
     };
 
-    that.update_fisheye_view = function(rescale, area, k){
+    that.update_fisheye_view = function(rescale){
         console.log("update graph view");
         that.graph_view.component_update({
-            "graph_data": that.state.graph_data
+            "graph_data": that.state.graph_data,
+            "area": that.state.area,
+            "fisheye":that.state.fisheyemode
         }, rescale);
-        that.state.fisheye_callback(that.state.area);
     };
 
     // TODO: update_loss_view -> update_dist_view
