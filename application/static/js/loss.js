@@ -2,7 +2,7 @@
 * added by Changjian Chen, 20191015
 * */
 
-let ControlLayout = function (container) {
+let DistLayout = function (container) {
     let that = this;
     that.container = container;
 
@@ -39,6 +39,9 @@ let ControlLayout = function (container) {
     let total_iters = null;
     let current_iter = 0;
 
+    // flags
+    let click_link = null;
+    let pinned = null;
     let draging = null;
     that.controlInstanceView = null;
     that.controlInfoView = null;
@@ -122,7 +125,7 @@ let ControlLayout = function (container) {
             for (let j = 0; j < class_num; j++) {
                 if (label_sums[i][j] > 0) {
                     _nodes.push({
-                        "name": i + "_" + j,
+                        "name": i + "-" + j,
                         "color": colors[j],
                         "class": j
                     })
@@ -137,9 +140,9 @@ let ControlLayout = function (container) {
                 for (let k = 0; k < class_num; k++) {
                     if (flow[j][k] > 0) {
                         _links.push({
-                            "source": i + "_" + j,
-                            "target": (i + 1) + "_" + k,
-                            "names": [i + "_" + j, (i + 1) + "_" + k],
+                            "source": i + "-" + j,
+                            "target": (i + 1) + "-" + k,
+                            "names": [i + "-" + j, (i + 1) + "-" + k],
                             "value": flow[j][k],
                             "source_class": j,
                             "target_class": k
@@ -205,11 +208,12 @@ let ControlLayout = function (container) {
             .data(links)
             .enter()
             .append("g")
-            .attr("class", "dist-link");
+            .attr("class", "dist-link")
+            .attr("id", d => "link-" + d.source.name + "-" + d.target.name);
         const gradient = links_g.append("linearGradient")
             .attr("gradientUnits", "userSpaceOnUse")
             .attr("id", function (d) {
-                d.uid = d.source.name + "_" + d.target.name;
+                d.uid = "gc" + d.source.name + "-" + d.target.name;
                 return d.uid;
             })
             .attr("x1", d => d.source.x1)
@@ -225,9 +229,44 @@ let ControlLayout = function (container) {
             .attr("stroke", d => "url(#" + d.uid + ")")
             .attr("stroke-width", d => Math.max(...[1.5, d.width]))
             .attr("stroke-opacity", 0.4)
-            .style("fill-opacity", 0);
+            .style("fill-opacity", 0)
+            .on("mouseover", d => (that._focus_link(d,false)))
+            .on("mouseout", that._unfocus_link)
+            .on("click", d => (that._focus_link(d,true)));
 
         // create slider
+        that._create_slider();
+    };
+
+    that._focus_link = function(_d, _pinned){
+        if (_pinned){
+            pinned=false;
+            that._unfocus_link(_d);
+            pinned = true;
+        }
+        // console.log("test focus_link", _d);
+        d3.selectAll(".dist-link")
+            .selectAll("path")
+            .attr("stroke-opacity", 0.1);
+        d3.selectAll("#" + "link-" + _d.source.name + "-" + _d.target.name)
+            .selectAll("path")
+            .attr("stroke-width", Math.max(...[1.5, _d.width]) + 1.5)
+            .attr("stroke-opacity", 0.4);
+    };
+
+    that._unfocus_link = function(_d){
+        // console.log("test unfocus_link", _d);
+        if (pinned){
+            console.log(pinned, "pinned in unfocus-link");
+            return;
+        }
+        d3.selectAll(".dist-link")
+            .selectAll("path")
+            .attr("stroke-width", d => Math.max(...[1.5, d.width]))
+            .attr("stroke-opacity", 0.4);
+    };
+
+    that._create_slider = function(){
         let xPositionScale = d3
             .scaleLinear()
             .domain([- slider_hump_length/slider_delta, total_iters - 1 + slider_hump_length/slider_delta])
@@ -329,16 +368,26 @@ let ControlLayout = function (container) {
     };
 
     that._update = function () {
+        // update slider
+        that._update_slider();
+    };
+
+    that._update_slider = function(){
         slider_group.selectAll("#loss-slider-base-circle")
             .attr("fill", function (d, i) {
                 if(i<=current_iter){
-                    return "#808080"
+                    return "#808080";
                 }
-                else return "#e4e7ed"
+                else return "#e4e7ed";
             });
     };
 
     that._remove = function () {
+
+        // remove slider
+        that._remove_slider();
+    };
+    that._remove_slider = function() {
 
     };
 
