@@ -14,6 +14,7 @@ DataLoaderClass.prototype.get_manifest_handler = function (callback) {
         // that.state.manifest_data = data;
         that.state.k = data.k;
         that.state.filter_threshold = data.filter_threshold;
+        that.state.label_names = data.label_names;
         if (callback) callback();
     }
 
@@ -27,7 +28,8 @@ DataLoaderClass.prototype.get_graph_handler = function (callback) {
         console.log(that.manifest_url);
         console.log("graph_handler");
         console.log(data);
-        that.state.graph_data = data;
+        that.state.graph_data = data[0];
+        that.state.top_k_uncertain = data[1];
         if (callback) callback(true);
     }
 

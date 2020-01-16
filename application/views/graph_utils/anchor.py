@@ -17,7 +17,19 @@ from ..graph_utils.BlueNoiseSampler import BlueNoiseSampC as BlueNoiseSampler
 from sklearn.manifold import TSNE
 from ..graph_utils.RandomSampler import random_sample
 
+top_k_uncertain = []
+
+def get_topk_uncertain(process_data, k = 10):
+    iter_num = process_data.shape[0]
+    node_num = process_data.shape[1]
+    uncertain = np.ones((node_num))
+    for i in range(node_num):
+        sort_res = process_data[iter_num-1][i][np.argsort(process_data[iter_num-1][i])[-2:]]
+        uncertain[i] = sort_res[1]-sort_res[0]
+    return np.argsort(uncertain)[:k].tolist()
+
 def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, propagation_path, dataname, buf_path):
+    global top_k_uncertain
     anchor_path = os.path.join(buf_path, "anchors" + config.pkl_ext)
     current_pos_path = os.path.join(buf_path, "current_anchors" + config.pkl_ext)
     train_x = np.array(train_x, dtype=np.float64)
@@ -27,6 +39,7 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, p
     target_num = 500
     retsne = not os.path.exists(anchor_path)
     train_x_tsne = None
+    top_k_uncertain = get_topk_uncertain(process_data, k = 20)
     if not retsne:
         train_x_tsne, level_infos = pickle.load(open(anchor_path, "rb"))
         top_num = len(level_infos[0]['index'])
@@ -37,68 +50,68 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, p
     if retsne:
         if train_x_tsne is None:
             # random labeled data position
-            train_x_tsne = np.zeros((node_num, 2))
-            labeled_data = []
             train_y_final = [0] * node_num
-            random.seed(seed=10)
+            # train_x_tsne = np.zeros((node_num, 2))
+            # labeled_data = []
+            # random.seed(seed=10)
             for i in range(node_num):
-                label = -1 if np.isclose(np.max(process_data[0][i]), 0) else int(np.argmax(process_data[0][i]))
-                train_y_final[i] = -1 if np.isclose(np.max(process_data[iter_num - 1][i]), 0) else int(np.argmax(process_data[iter_num - 1][i]))
-                if label > -1:
-                    have = -1
-                    for node_id in labeled_data:
-                        old_label = -1 if np.isclose(np.max(process_data[0][node_id]), 0) else int(np.argmax(process_data[0][node_id]))
-                        if old_label==label:
-                            have = node_id
-                    if have > -1:
-                        train_x_tsne[i] = train_x_tsne[have]+0.1*(random.rand((2))-0.5)
-                    else:
-                        train_x_tsne[i] = random.random((2))
-                    labeled_data.append(i)
+                train_y_final[i] = -1 if np.isclose(np.max(process_data[iter_num - 1][i]), 0) else int(
+                    np.argmax(process_data[iter_num - 1][i]))
+            #     label = -1 if np.isclose(np.max(process_data[0][i]), 0) else int(np.argmax(process_data[0][i]))
+            #     if label > -1:
+            #         have = -1
+            #         for node_id in labeled_data:
+            #             old_label = -1 if np.isclose(np.max(process_data[0][node_id]), 0) else int(np.argmax(process_data[0][node_id]))
+            #             if old_label==label:
+            #                 have = node_id
+            #         if have > -1:
+            #             train_x_tsne[i] = train_x_tsne[have]+0.1*(random.rand((2))-0.5)
+            #         else:
+            #             train_x_tsne[i] = random.random((2))
+            #         labeled_data.append(i)
             train_y_final = np.array(train_y_final)
-            # random unlabeled data position
-            err_cnt = 0
-            for i in range(node_num):
-                predict_label = -1 if np.isclose(np.max(process_data[iter_num-1][i]), 0) else int(np.argmax(process_data[iter_num-1][i]))
-                init_label = -1 if np.isclose(np.max(process_data[0][i]), 0) else int(np.argmax(process_data[0][i]))
-                if predict_label > -1 and init_label == -1:
-                    target_ids = []
-                    for path in propagation_path[i][iter_num-1]:
-                        target_id = path[-1]
-                        if target_id not in target_ids:
-                            assert target_id in labeled_data
-                            target_ids.append(target_id)
-                    for id in target_ids:
-                        train_x_tsne[i] += train_x_tsne[id]
-                    train_x_tsne[i] /= len(target_ids)
-                    train_x_tsne[i] += 1e-4*(random.random((2))-0.5)
-                    if len(target_ids) == 0:
-                        err_cnt += 1
-                        for labeled_data_id in labeled_data:
-                            label = -1 if np.isclose(np.max(process_data[0][labeled_data_id]), 0) else int(
-                                np.argmax(process_data[0][labeled_data_id]))
-                            if label == predict_label:
-                                train_x_tsne[i] = train_x_tsne[labeled_data_id] + 1e-4*(random.random((2))-0.5)
-            # train_x_tsne = IncrementalTSNE(n_components=2, n_jobs=20).fit_transform(train_x)
-            print("err cnt:", err_cnt)
-            label_colors = ["#A9A9A9", "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2",
-                            "#ffdb45", "#bcbd22", "#17becf"]
-            colors = []
-            for node_id in range(node_num):
-
-                colors.append(label_colors[(-1 if np.isclose(np.max(process_data[iter_num-1][node_id]), 0) else int(np.argmax(process_data[iter_num-1][node_id]))) + 1])
-            plt.figure()
-            plt.scatter(train_x_tsne[:, 0], train_x_tsne[:, 1], s=2, c=colors)
-            for labeled_id in labeled_data:
-                plt.text(train_x_tsne[labeled_id][0], train_x_tsne[labeled_id][1], str(int(ground_truth[labeled_id])))
+            # # random unlabeled data position
+            # err_cnt = 0
+            # for i in range(node_num):
+            #     predict_label = -1 if np.isclose(np.max(process_data[iter_num-1][i]), 0) else int(np.argmax(process_data[iter_num-1][i]))
+            #     init_label = -1 if np.isclose(np.max(process_data[0][i]), 0) else int(np.argmax(process_data[0][i]))
+            #     if predict_label > -1 and init_label == -1:
+            #         target_ids = []
+            #         for path in propagation_path[i][iter_num-1]:
+            #             target_id = path[-1]
+            #             if target_id not in target_ids:
+            #                 assert target_id in labeled_data
+            #                 target_ids.append(target_id)
+            #         for id in target_ids:
+            #             train_x_tsne[i] += train_x_tsne[id]
+            #         train_x_tsne[i] /= len(target_ids)
+            #         train_x_tsne[i] += 1e-4*(random.random((2))-0.5)
+            #         if len(target_ids) == 0:
+            #             err_cnt += 1
+            #             for labeled_data_id in labeled_data:
+            #                 label = -1 if np.isclose(np.max(process_data[0][labeled_data_id]), 0) else int(
+            #                     np.argmax(process_data[0][labeled_data_id]))
+            #                 if label == predict_label:
+            #                     train_x_tsne[i] = train_x_tsne[labeled_data_id] + 1e-4*(random.random((2))-0.5)
+            # # train_x_tsne = IncrementalTSNE(n_components=2, n_jobs=20).fit_transform(train_x)
+            # print("err cnt:", err_cnt)
+            # label_colors = ["#A9A9A9", "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2",
+            #                 "#ffdb45", "#bcbd22", "#17becf"]
+            # colors = []
+            # for node_id in range(node_num):
+            #
+            #     colors.append(label_colors[(-1 if np.isclose(np.max(process_data[iter_num-1][node_id]), 0) else int(np.argmax(process_data[iter_num-1][node_id]))) + 1])
+            # plt.figure()
+            # plt.scatter(train_x_tsne[:, 0], train_x_tsne[:, 1], s=2, c=colors)
+            # for labeled_id in labeled_data:
+            #     plt.text(train_x_tsne[labeled_id][0], train_x_tsne[labeled_id][1], str(int(ground_truth[labeled_id])))
             # plt.show()
-            # train_x_tsne = TSNE(n_components=2, verbose=True, method='exact', init=train_x_tsne, early_exaggeration=1).fit_transform(train_x)
+            # train_x_tsne = TSNE(n_components=2, verbose=True, method='exact', early_exaggeration=1).fit_transform(train_x)
             train_x_tsne = IncrementalTSNE(n_components=2, verbose=True, init=train_x_tsne,
-                                early_exaggeration=1).fit_transform(train_x, labels=train_y_final, label_alpha=0.3)
-
-
-            plt.figure()
-            plt.scatter(train_x_tsne[:, 0], train_x_tsne[:, 1], s=2, c=colors)
+                                           early_exaggeration=1).fit_transform(train_x, labels=train_y_final,
+                                                                               label_alpha=0.3)
+            # plt.figure()
+            # plt.scatter(train_x_tsne[:, 0], train_x_tsne[:, 1], s=2, c=colors)
             # plt.show()
             #normalize
             x_min = np.min(train_x_tsne[:, 0])
@@ -188,6 +201,8 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, p
     with open(anchor_path, "rb") as f:
         train_x_tsne, level_infos = pickle.load(f)
         selection = level_infos[0]['index']
+        selection = list(dict.fromkeys(selection.tolist()+top_k_uncertain))
+        selection = np.array(selection)
         samples_x = train_x[selection]
         init_samples_x_tsne = train_x_tsne[selection]
         samples_y = np.array(train_y[selection], dtype=int)
@@ -214,7 +229,7 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, p
         iter_num = process_data.shape[0]
         labels = [int(np.argmax(process_data[j][id])) if np.max(process_data[j][id]) > 1e-4 else -1 for j in
                   range(iter_num)]
-        scores = [float(np.max(process_data[j][id])) for j in range(iter_num)]
+        scores = [process_data[j][id].tolist() for j in range(iter_num)]
         samples_nodes[id] = {
             "id": id,
             "x": samples_x_tsne[i][0],
@@ -243,9 +258,10 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, p
         "nodes": samples_nodes,
         # "edges": edges
     }
-    return graph
+    return [graph, top_k_uncertain]
 
 def updateAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, dataname, area, level, buf_path, propagation_path):
+    global top_k_uncertain
     anchor_path = os.path.join(buf_path, "anchors" + config.pkl_ext)
     current_pos_path = os.path.join(buf_path, "current_anchors" + config.pkl_ext)
     all_time = {
@@ -280,7 +296,15 @@ def updateAnchors(train_x, train_y, ground_truth, process_data, influence_matrix
                     old_position.append(point)
                 else:
                     new_selection.append(len(selection) - 1)
-
+        for uncertain_id in top_k_uncertain:
+            point = train_x_tsne[uncertain_id]
+            if area['x'] <= point[0] <= area['x'] + area['width'] and area['y'] <= point[1] <= area['y'] + area['height']:
+                selection.append(uncertain_id)
+                if ind in old_dic:
+                    old_selection.append(len(selection) - 1)
+                    old_position.append(point)
+                else:
+                    new_selection.append(len(selection) - 1)
         selection = np.array(selection)
         old_position = np.array(old_position)
         selection = selection[old_selection + new_selection]
@@ -316,7 +340,7 @@ def updateAnchors(train_x, train_y, ground_truth, process_data, influence_matrix
         iter_num = process_data.shape[0]
         labels = [int(np.argmax(process_data[j][id])) if np.max(process_data[j][id]) > 1e-4 else -1 for j in
                   range(iter_num)]
-        scores = [float(np.max(process_data[j][id])) for j in range(iter_num)]
+        scores = [process_data[j][id].tolist() for j in range(iter_num)]
         samples_nodes[id] = {
             "id": id,
             "x": samples_x_tsne[i][0],
@@ -399,6 +423,7 @@ def get_area(must_show_nodes, width, height, train_x, train_y, raw_graph, proces
     }
 
 def fisheyeAnchors(must_show_nodes, new_nodes, old_nodes, area, level, wh, train_x, train_y, raw_graph, process_data, influence_matrix, propagation_path, ground_truth, buf_path):
+    global top_k_uncertain
     with open(buf_path, "rb") as f:
         focus_path = []
         for u in must_show_nodes:
@@ -421,6 +446,9 @@ def fisheyeAnchors(must_show_nodes, new_nodes, old_nodes, area, level, wh, train
             if area['x'] <= _pos[i][0] <= area['x'] + area['width'] and area['y'] <= _pos[i][1] <= area['y'] + area[
                 'height'] and (ind not in selection):
                 selection.append(ind)
+        for uncertain_id in top_k_uncertain:
+            if uncertain_id not in selection:
+                selection.append(uncertain_id)
         # add must_have_nodes
         selection = list(dict.fromkeys(selection+new_nodes))
 
@@ -473,7 +501,8 @@ def fisheyeAnchors(must_show_nodes, new_nodes, old_nodes, area, level, wh, train
             print(path_idx[0], selection[path_idx[0]], train_x[selection[path_idx[0]]])
             print(path_idx[1], selection[path_idx[1]], train_x[selection[path_idx[1]]])
             print("distance", np.linalg.norm(train_x[selection[path_idx[0]]]-train_x[selection[path_idx[1]]], 2))
-        samples_x_tsne = ConstraintTSNE(n_components=2, n_jobs=20, init=init_samples_x_tsne, n_iter=100, exploration_n_iter=0).fit_transform(samples_x, focus_path=focus_path_idx, m=5, constraint_X=constraint_x, constraint_Y=constraint_y, alpha=0.2)
+        samples_x_tsne = ConstraintTSNE(n_components=2, n_jobs=20, init=init_samples_x_tsne, n_iter=100, exploration_n_iter=0)\
+            .fit_transform(samples_x, focus_path=focus_path_idx, m=5, constraint_X=constraint_x, constraint_Y=constraint_y, alpha=0.2, skip_num_points=len(old_nodes.keys()))
         # samples_x_tsne = IncrementalTSNE(n_components=2, n_jobs=20, init=init_samples_x_tsne, n_iter=100, exploration_n_iter=0, early_exaggeration=1)\
         #     .fit_transform(samples_x, constraint_X=constraint_x, constraint_Y=constraint_y, alpha=0.2)
         # samples_x_tsne = init_samples_x_tsne
@@ -519,7 +548,7 @@ def fisheyeAnchors(must_show_nodes, new_nodes, old_nodes, area, level, wh, train
         iter_num = process_data.shape[0]
         labels = [int(np.argmax(process_data[j][id])) if np.max(process_data[j][id]) > 1e-4 else -1 for j in
                   range(iter_num)]
-        scores = [float(np.max(process_data[j][id])) for j in range(iter_num)]
+        scores = [process_data[j][id].tolist() for j in range(iter_num)]
         samples_nodes[id] = {
             "id": id,
             "x": samples_x_tsne[i][0],

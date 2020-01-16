@@ -15,6 +15,7 @@ let GraphLayout = function (container) {
     let color_label = CategoryColor;
     let btn_select_color = "#560731";
     let btn_unselect_color = "#ffffff";
+    let edge_color = UnlabeledColor;
 
     let graph_data = null;
     let data_manager = null;
@@ -33,7 +34,15 @@ let GraphLayout = function (container) {
     let main_group = null;
     let wait_list_group = null;
     let zoom_scale = 1;
-    let old_transform = null;
+    let old_transform = {
+        x:0,
+        y:0,
+        k:1,
+        toString: function () {
+                        let self = this;
+                        return 'translate(' + self.x + "," + self.y + ") scale(" + self.k + ")";
+                    }
+    };
     let current_level = 0;
     let drag_transform = null;
     let drag = null;
@@ -72,10 +81,14 @@ let GraphLayout = function (container) {
     let focus_node_change_switch = true;
     let focus_edge_node = null;
     let focus_edge_change_switch = true;
+    let send_zoom_timeout = 1000;
+    let send_zoom_cnt = 0;
+    let send_zoom_request = {};
 
     let path_nodes = {};
     let new_nodes = [];
     let path = [];
+    let uncertain_nodes = [];
 
     that._init = function () {
         svg = container.selectAll('#graph-view-svg')
@@ -131,6 +144,8 @@ let GraphLayout = function (container) {
             .on('start', function () {
                 d3.selectAll(".iw-contextMenu").style("display", "none");
                 svg.select("#group-propagation").remove();
+                svg.select("#score-pie-chart-g").remove();
+                svg.select("#uncertain-pie-chart-g").selectAll("path").attr("opacity", 1);
                 nodes_in_group.attr("opacity", 1);
                 golds_in_group.attr("opacity", 1);
                 // edges_in_group.attr("opacity", 0.4);
@@ -228,7 +243,18 @@ let GraphLayout = function (container) {
                     'height': end_y - start_y
                 };
                 console.log(d3.event.transform, area, current_level);
-                DataLoader.update_graph_notify(area, current_level);
+                let send_zoom_idx = send_zoom_cnt++;
+                send_zoom_request[send_zoom_idx] = true;
+                for(let i=0;i<send_zoom_idx;i++){
+                    send_zoom_request[i] = false;
+                }
+                setTimeout(function () {
+                    if(send_zoom_request[send_zoom_idx]){
+                        console.log(send_zoom_idx);
+                        DataLoader.update_graph_notify(area, target_level);
+
+                    }
+                }, send_zoom_timeout);
                 now_area = area;
             }
             old_transform = d3.event.transform;
@@ -334,10 +360,15 @@ let GraphLayout = function (container) {
         edges_group.selectAll("line").style('stroke-width', zoom_scale);
         main_group.select("#group-propagation").selectAll("polyline").style('stroke-width', 2.0 * zoom_scale);
         main_group.select("#single-propagate").selectAll("polyline").style('stroke-width', 2.0 * zoom_scale);
+        let arc = d3.arc().outerRadius(8 * zoom_scale).innerRadius(5 * zoom_scale);
+        main_group.select("#score-pie-chart-g").selectAll("path").attr("d", arc);
+        main_group.select("#uncertain-pie-chart-g").selectAll("path").attr("d", arc);
     };
 
     that.lasso_start = function () {
+        svg.select("#score-pie-chart-g").remove();
         svg.select("#group-propagation").remove();
+        svg.select("#uncertain-pie-chart-g").selectAll("path").attr("opacity", 1);
         nodes_in_group.attr("opacity", 1);
         golds_in_group.attr("opacity", 1);
         // edges_in_group.attr("opacity", 0.4);
@@ -402,102 +433,12 @@ let GraphLayout = function (container) {
         new_nodes = [];
         let new_area = null;
 
-        function showpath(new_area){
-                    let main_group_min_x = center_scale_x(new_area.x);
-                    let main_group_min_y = center_scale_y(new_area.y);
-                    let main_group_max_x = center_scale_x(new_area.x+new_area.width);
-                    let main_group_max_y = center_scale_y(new_area.y+new_area.height);
-                    let x_offset = -main_group_min_x;
-                    let y_offset = -main_group_min_y;
-                    nodes_in_group = nodes_group.selectAll("circle");
-                    golds_in_group = golds_group.selectAll("path");
-
-                    // de-highlight
-                    nodes_in_group.attr("opacity", d => path_nodes[d.id]===true?1:0.2);
-                    golds_in_group.attr("opacity", d => path_nodes[d.id]===true?1:0.2);
-
-                    nodes_in_group.each(function (d) {
-                        let node = d3.select(this);
-                        if(path_nodes[d.id]===true){
-                            path_nodes[d.id] = node;
-                        }
-                    });
-                    let maingroup_k = Math.min(width/(main_group_max_x-main_group_min_x), height/(main_group_max_y-main_group_min_y));
-                    let all_in_old_area = true;
-                    for(let new_node of new_nodes){
-                        let x = path_nodes[new_node].datum().x;
-                        let y = path_nodes[new_node].datum().y;
-                        if((x<now_area.x)||(x>now_area.x+now_area.width)||(y<now_area.y)||(y>now_area.y+now_area.height)){
-                            all_in_old_area = false;
-                            break;
-                        }
-                    }
-                    if(all_in_old_area){
-                        maingroup_k = Math.min(width/(main_group_max_x-main_group_min_x), height/(main_group_max_y-main_group_min_y));
-                    }
-                    let show_width = (main_group_max_x-main_group_min_x)*maingroup_k;
-                    let show_height = (main_group_max_y-main_group_min_y)*maingroup_k;
-                    if(old_transform === null){
-                        old_transform = {
-                            toString: function () {
-                                let self = this;
-                                return 'translate('+self.x+","+self.y+") scale("+self.k+")";
-                            }
-                        };
-                    }
-                    old_transform.k = maingroup_k;
-                    old_transform.x = width/2-(main_group_min_x+main_group_max_x)/2*maingroup_k;
-                    old_transform.y = height/2-(main_group_min_y+main_group_max_y)/2*maingroup_k;
-                    main_group
-                        .transition()
-                        .duration(AnimationDuration)
-                        .attr("transform", old_transform);
-                    that._maintain_size(old_transform);
-
-                console.log("Found paths:", path);
-                propagate_svg
-                    .append("g")
-                    .attr("class", "single-propagate")
-                    .selectAll("polyline")
-                    .data(path)
-                    .enter()
-                    .append("polyline")
-                    .attr("stroke-width", 2.0 * zoom_scale)
-                    .attr("stroke", d => color_label[d[2]])
-                    .attr("opacity", 1)
-                    .attr("marker-mid", d => "url(#arrow-"+d[2]+")")
-                    .attr("fill", "none")
-                    .attr("points", function (d) {
-                        let begin = [center_scale_x(path_nodes[d[1]].datum().x), center_scale_y(path_nodes[d[1]].datum().y)];
-                            let end = [center_scale_x(path_nodes[d[0]].datum().x), center_scale_y(path_nodes[d[0]].datum().y)];
-                            let mid = [(begin[0]+end[0])/2, (begin[1]+end[1])/2];
-                            return begin[0]+","+begin[1]+" "+mid[0]+","+mid[1]+" "+end[0]+","+end[1];
-                    })
-                    .on("mouseover", function (d) {
-                        console.log(d);
-                        focus_edge_id = d;
-                        console.log("focus_edge_id = " + focus_edge_id);
-                        focus_edge_node = this;
-                        d3.select(this).style("stroke-width", 4.0 * zoom_scale);
-                    })
-                .on("mouseout", function (d) {
-                    if (focus_edge_change_switch) {
-                        focus_edge_id = null;
-                        console.log("focus_edge_id = null");
-                        focus_edge_node = null;
-                        d3.select(this).style("stroke-width", 2.0 * zoom_scale);
-                    }
-                });
-                now_area = new_area;
-            $('.single-propagate').contextMenu(click_edge_menu, click_menu_settings);
-        }
-
         for (let d of focus_node_data) {
             if (d.label[iter] === -1 || d.label[0] !== -1) continue;
             console.log("Node:", d);
             let eid = d.id;
             let predict_label = d.label[iter];
-            for (let onepath of d.path[iter]) {
+            for (let onepath of d.path) {
                 if (onepath.length === 1) continue;
                 for (let i = 0; i < onepath.length - 1; i++) {
                     let s = onepath[i];
@@ -522,7 +463,7 @@ let GraphLayout = function (container) {
         }
         focus_node = JSON.parse(JSON.stringify(path_nodes));
         $.post("/graph/getArea", {
-                    "must_show_nodes":JSON.stringify(must_show_nodes),
+                    "must_show_nodes":JSON.stringify(must_show_nodes.concat(Object.keys(graph_data.nodes).map(d => parseInt(d)))),
                     "width":width,
                     "height":height
                 }, function (data) {
@@ -591,16 +532,30 @@ let GraphLayout = function (container) {
             await that._update_transform(state.area);
         }
         await that._update_view(rescale);
+        if(state.top_k_uncertain !== undefined){
+            console.log("get top k uncertain:", state.top_k_uncertain);
+            uncertain_nodes = state.top_k_uncertain;
+        }
+        if(state.fisheye !== undefined){
+            await that._draw_uncertain_pie_chart(0.2);
+        }
+        else {
+            await that._draw_uncertain_pie_chart(1);
+        }
+
         if(state.fisheye === "single"){
-            that._single_show_path();
+            await that._single_show_path();
         }
         else if(state.fisheye === "group"){
-            that._group_show_path();
+            await that._group_show_path();
         }
     };
 
     that._update_data = function (state) {
         graph_data = state.graph_data;
+        label_names = state.label_names;
+        iter = graph_data.nodes[0].label.length - 1;
+        console.log("iter", iter);
         that._update_delete_node_list();
         // that._update_click_menu();
         console.log("graph_data", graph_data);
@@ -608,47 +563,47 @@ let GraphLayout = function (container) {
     };
 
     that._draw_legend = function () {
-        $.post('/graph/GetLabels', {}, function (d) {
-            let labels = d;
-            labels.unshift("unlabel");
-            let label_num = labels.length;
-            let legend_svg = d3.select("#category-encoding");
-            legend_svg.select("#graph-legend-g").remove();
-            let legend_area = legend_svg.append("g")
-                .attr("id", "graph-legend-g");
-            let legend_width = $("#category-encoding").parent().width();
-            let padding = 10;
-            let delta = 15;
-            let text_delta = 5;
-            let legend_delta = 55;
-            let rect_width = 20;
-            let rect_height = 20;
-            let text_width = 40;
-            let x_item_num = Math.floor((legend_width - padding * 2) / (rect_width + text_width + delta + text_delta));
-            let y_item_num = Math.ceil(label_num / x_item_num);
-            let legend_height = y_item_num * (rect_height + delta) - rect_height + padding * 2;
-            legend_svg.attr("height", legend_height);
-            for (let i = 0; i < label_num; i++) {
-                legend_area.append("rect")
-                    .attr("x", padding + (i % x_item_num) * (rect_width + text_width + delta + text_delta))
-                    .attr("y", padding + Math.floor(i / x_item_num) * (rect_height + delta))
-                    .attr("width", rect_width)
-                    .attr("height", rect_height)
-                    .attr("fill", function () {
-                        if (i === 0) return color_unlabel;
-                        else return color_label[i - 1];
-                    });
-                legend_area.append("text")
-                    .attr("x", padding + (i % x_item_num) * (rect_width + text_width + delta + text_delta) + rect_width + text_delta)
-                    .attr("y", padding + Math.floor(i / x_item_num) * (rect_height + delta) + 14)
-                    .attr("text-anchor", "start")
-                    .attr("font-size", "13")
-                    .attr("fill", FontColor)
-                    .text(function () {
-                        return labels[i]
-                    })
-            }
-        })
+        // $.post('/graph/GetLabels', {}, function (d) {
+        let labels = label_names;
+        labels.unshift("unlabel");
+        let label_num = labels.length;
+        let legend_svg = d3.select("#category-encoding");
+        legend_svg.select("#graph-legend-g").remove();
+        let legend_area = legend_svg.append("g")
+            .attr("id", "graph-legend-g");
+        let legend_width = $("#category-encoding").parent().width();
+        let padding = 10;
+        let delta = 15;
+        let text_delta = 5;
+        let legend_delta = 55;
+        let rect_width = 20;
+        let rect_height = 20;
+        let text_width = 40;
+        let x_item_num = Math.floor((legend_width - padding * 2) / (rect_width + text_width + delta + text_delta));
+        let y_item_num = Math.ceil(label_num / x_item_num);
+        let legend_height = y_item_num * (rect_height + delta) - rect_height + padding * 2;
+        legend_svg.attr("height", legend_height);
+        for (let i = 0; i < label_num; i++) {
+            legend_area.append("rect")
+                .attr("x", padding + (i % x_item_num) * (rect_width + text_width + delta + text_delta))
+                .attr("y", padding + Math.floor(i / x_item_num) * (rect_height + delta))
+                .attr("width", rect_width)
+                .attr("height", rect_height)
+                .attr("fill", function () {
+                    if (i === 0) return color_unlabel;
+                    else return color_label[i - 1];
+                });
+            legend_area.append("text")
+                .attr("x", padding + (i % x_item_num) * (rect_width + text_width + delta + text_delta) + rect_width + text_delta)
+                .attr("y", padding + Math.floor(i / x_item_num) * (rect_height + delta) + 14)
+                .attr("text-anchor", "start")
+                .attr("font-size", "13")
+                .attr("fill", FontColor)
+                .text(function () {
+                    return labels[i]
+                })
+        }
+        // })
     };
 
     that.setIter = function (newiter) {
@@ -732,6 +687,20 @@ let GraphLayout = function (container) {
                 .attr("fill", "transparent")
                 .attr("stroke-width", 1);
         }
+        svg.select("#markers").append("marker")
+                .attr("id", "arrow-gray")
+                .attr("refX", 2)
+                .attr("refY", 2)
+                .attr("markerWidth", 10)
+                .attr("markerHeight", 10)
+                .attr("orient", "auto")
+                .attr("markerUnits", "strokeWidth")
+                .append("path")
+                .attr("d", "M0,4 L4,2 L0,0")
+                .attr("stroke", edge_color)
+                .attr("fill", "transparent")
+                .attr("opacity", 1)
+                .attr("stroke-width", 1);
     };
 
     that._update_transform = function(new_area) {
@@ -767,11 +736,18 @@ let GraphLayout = function (container) {
     };
 
     that._single_show_path = function(){
-                    nodes_in_group = nodes_group.selectAll("circle");
+        return new Promise(function (resolve, reject) {
+            nodes_in_group = nodes_group.selectAll("circle");
                     golds_in_group = golds_group.selectAll("path");
                     // de-highlight
-                    nodes_in_group.attr("opacity", d => path_nodes[d.id]===true?1:0.2);
-                    golds_in_group.attr("opacity", d => path_nodes[d.id]===true?1:0.2);
+                    nodes_in_group
+                        .transition()
+                        .duration(AnimationDuration)
+                        .attr("opacity", d => path_nodes[d.id]===true?1:0.2);
+                    golds_in_group
+                        .transition()
+                        .duration(AnimationDuration)
+                        .attr("opacity", d => path_nodes[d.id]===true?1:0.2);
 
                     svg.select("#single-propagate").remove();
                     nodes_in_group.each(function (d) {
@@ -780,7 +756,7 @@ let GraphLayout = function (container) {
                             path_nodes[d.id] = node;
                         }
                     });
-
+                    that._draw_score_pie_chart(Object.keys(path_nodes));
                     // let all_in_old_area = true;
                     // for(let new_node of new_nodes){
                     //     let x = path_nodes[new_node].datum().x;
@@ -798,101 +774,115 @@ let GraphLayout = function (container) {
 
 
                     let single_node_propagate = main_group.insert("g", ":first-child")
-                        .attr("id", "single-propagate")
-                        .selectAll("polyline")
-                        .data(path)
-                        .enter()
-                        .append("polyline")
-                        .on("mouseover", function (d) {
-                            console.log(d);
-                            if (focus_edge_change_switch) {
-                                focus_edge_id = d;
-                                console.log("focus_edge_id = " + focus_edge_id);
-                                focus_edge_node = this;
-                                d3.select(this).style("stroke-width", 4.0 * zoom_scale);
-                            }
-                            $.post("/graph/feature_distance", {
-                                path:JSON.stringify(d)
-                            }, function (data) {
-                                console.log("Distance between",d[0],d[1],"is:",data.distance);
+                            .attr("id", "single-propagate")
+                            .selectAll("polyline")
+                            .data(path)
+                            .enter()
+                            .append("polyline")
+                            .on("mouseover", function (d) {
+                                console.log(d);
+                                if (focus_edge_change_switch) {
+                                    focus_edge_id = d;
+                                    console.log("focus_edge_id = " + focus_edge_id);
+                                    focus_edge_node = this;
+                                    d3.select(this).style("stroke-width", 4.0 * zoom_scale);
+                                }
+                                $.post("/graph/feature_distance", {
+                                    path:JSON.stringify(d)
+                                }, function (data) {
+                                    console.log("Distance between",d[0],d[1],"is:",data.distance);
+                                })
+                                // that._update_click_menu();
                             })
-                            // that._update_click_menu();
-                        })
-                        .on("mouseout", function (d) {
-                            if (focus_edge_change_switch) {
-                                focus_edge_id = null;
-                                console.log("focus_edge_id = null");
-                                focus_edge_node = null;
-                                d3.select(this).style("stroke-width", 2.0 * zoom_scale);
-                            }
-                        })
-                        .attr("class", "edge-line")
-                        .attr("stroke-width", 2 * zoom_scale)
-                        .attr("stroke", d => color_label[d[2]])
-                        .attr("opacity", 0)
-                        .attr("marker-mid", d => "url(#arrow-" + d[2] + ")")
-                        .attr("fill", "none")
-                        .attr("points", function (d) {
-                            let begin = [center_scale_x(path_nodes[d[1]].datum().x), center_scale_y(path_nodes[d[1]].datum().y)];
-                            let end = [center_scale_x(path_nodes[d[0]].datum().x), center_scale_y(path_nodes[d[0]].datum().y)];
-                            let mid = [(begin[0]+end[0])/2, (begin[1]+end[1])/2];
-                            return begin[0]+","+begin[1]+" "+mid[0]+","+mid[1]+" "+end[0]+","+end[1];
-                        });
-                        single_node_propagate.transition()
-                        .duration(AnimationDuration)
-                        .attr("opacity", 1);
-                    // $('.edge-line').contextMenu(click_edge_menu, click_menu_settings);
-                    $('#single-propagate').contextMenu(click_edge_menu, click_menu_settings);
-                };
+                            .on("mouseout", function (d) {
+                                if (focus_edge_change_switch) {
+                                    focus_edge_id = null;
+                                    console.log("focus_edge_id = null");
+                                    focus_edge_node = null;
+                                    d3.select(this).style("stroke-width", 2.0 * zoom_scale);
+                                }
+                            })
+                            .attr("class", "edge-line")
+                            .attr("stroke-width", 2 * zoom_scale)
+                            .attr("stroke", edge_color)
+                            .attr("opacity", 0)
+                            .attr("marker-mid", d => "url(#arrow-gray)")
+                            .attr("fill", "none")
+                            .attr("points", function (d) {
+                                let begin = [center_scale_x(path_nodes[d[0]].datum().x), center_scale_y(path_nodes[d[0]].datum().y)];
+                                let end = [center_scale_x(path_nodes[d[1]].datum().x), center_scale_y(path_nodes[d[1]].datum().y)];
+                                let mid = [(begin[0]+end[0])/2, (begin[1]+end[1])/2];
+                                return begin[0]+","+begin[1]+" "+mid[0]+","+mid[1]+" "+end[0]+","+end[1];
+                            });
+                            single_node_propagate.transition()
+                            .duration(AnimationDuration)
+                            .attr("opacity", 1)
+                                .on("end", resolve);
+                        // $('.edge-line').contextMenu(click_edge_menu, click_menu_settings);
+                        $('#single-propagate').contextMenu(click_edge_menu, click_menu_settings);
+        });
+    };
 
     that._group_show_path = function(){
-        nodes_in_group = nodes_group.selectAll("circle");
-        golds_in_group = golds_group.selectAll("path");
+        return new Promise(function (resolve, reject) {
+            nodes_in_group = nodes_group.selectAll("circle");
+            golds_in_group = golds_group.selectAll("path");
 
-        // de-highlight
-        nodes_in_group.attr("opacity", d => path_nodes[d.id]===true?1:0.2);
-        golds_in_group.attr("opacity", d => path_nodes[d.id]===true?1:0.2);
-
-        nodes_in_group.each(function (d) {
-                        let node = d3.select(this);
-                        if(path_nodes[d.id]===true){
-                            path_nodes[d.id] = node;
+            // de-highlight
+            nodes_in_group
+                .transition()
+                .duration(AnimationDuration)
+                .attr("opacity", d => path_nodes[d.id]===true?1:0.2);
+            golds_in_group
+                .transition()
+                .duration(AnimationDuration)
+                .attr("opacity", d => path_nodes[d.id]===true?1:0.2);
+            nodes_in_group.each(function (d) {
+                            let node = d3.select(this);
+                            if(path_nodes[d.id]===true){
+                                path_nodes[d.id] = node;
+                            }
+                        });
+            that._draw_score_pie_chart(Object.keys(path_nodes));
+            let propagate_svg = main_group.insert("g", ":first-child").attr("id", "group-propagation");
+            propagate_svg.append("g")
+                .attr("class", "single-propagate")
+                .selectAll("polyline")
+                .data(path)
+                .enter()
+                .append("polyline")
+                .attr("stroke-width", 2.0 * zoom_scale)
+                .attr("stroke", edge_color)
+                .attr("opacity", 0)
+                .attr("marker-mid", d => "url(#arrow-gray)")
+                .attr("fill", "none")
+                .attr("points", function (d) {
+                            let begin = [center_scale_x(path_nodes[d[0]].datum().x), center_scale_y(path_nodes[d[0]].datum().y)];
+                                let end = [center_scale_x(path_nodes[d[1]].datum().x), center_scale_y(path_nodes[d[1]].datum().y)];
+                                let mid = [(begin[0]+end[0])/2, (begin[1]+end[1])/2];
+                                return begin[0]+","+begin[1]+" "+mid[0]+","+mid[1]+" "+end[0]+","+end[1];
+                        })
+                .on("mouseover", function (d) {
+                            console.log(d);
+                            focus_edge_id = d;
+                            console.log("focus_edge_id = " + focus_edge_id);
+                            focus_edge_node = this;
+                            d3.select(this).style("stroke-width", 4.0 * zoom_scale);
+                        })
+                .on("mouseout", function (d) {
+                        if (focus_edge_change_switch) {
+                            focus_edge_id = null;
+                            console.log("focus_edge_id = null");
+                            focus_edge_node = null;
+                            d3.select(this).style("stroke-width", 2.0 * zoom_scale);
                         }
-                    });
-        let propagate_svg = main_group.insert("g", ":first-child").attr("id", "group-propagation");
-        propagate_svg.append("g")
-            .attr("class", "single-propagate")
-            .selectAll("polyline")
-            .data(path)
-            .enter()
-            .append("polyline")
-            .attr("stroke-width", 2.0 * zoom_scale)
-            .attr("stroke", d => color_label[d[2]])
-            .attr("opacity", 1)
-            .attr("marker-mid", d => "url(#arrow-"+d[2]+")")
-            .attr("fill", "none")
-            .attr("points", function (d) {
-                        let begin = [center_scale_x(path_nodes[d[1]].datum().x), center_scale_y(path_nodes[d[1]].datum().y)];
-                            let end = [center_scale_x(path_nodes[d[0]].datum().x), center_scale_y(path_nodes[d[0]].datum().y)];
-                            let mid = [(begin[0]+end[0])/2, (begin[1]+end[1])/2];
-                            return begin[0]+","+begin[1]+" "+mid[0]+","+mid[1]+" "+end[0]+","+end[1];
                     })
-            .on("mouseover", function (d) {
-                        console.log(d);
-                        focus_edge_id = d;
-                        console.log("focus_edge_id = " + focus_edge_id);
-                        focus_edge_node = this;
-                        d3.select(this).style("stroke-width", 4.0 * zoom_scale);
-                    })
-            .on("mouseout", function (d) {
-                    if (focus_edge_change_switch) {
-                        focus_edge_id = null;
-                        console.log("focus_edge_id = null");
-                        focus_edge_node = null;
-                        d3.select(this).style("stroke-width", 2.0 * zoom_scale);
-                    }
-                });
-        $('.single-propagate').contextMenu(click_edge_menu, click_menu_settings);
+                .transition()
+                .duration(AnimationDuration)
+                .attr("opacity", 1)
+                .on("end", resolve);
+            $('.single-propagate').contextMenu(click_edge_menu, click_menu_settings);
+        });
     };
 
     that._create = async function () {
@@ -959,7 +949,7 @@ let GraphLayout = function (container) {
                     path = [];
                     path_nodes = {};
                     new_nodes = [];
-                    for (let onepath of d.path[iter]) {
+                    for (let onepath of d.path) {
                         if (onepath.length === 1) continue;
                         for (let i = 0; i < onepath.length - 1; i++) {
                             let s = onepath[i];
@@ -985,7 +975,7 @@ let GraphLayout = function (container) {
                         must_show_nodes.push(parseInt(node_id))
                     }
                     $.post("/graph/getArea", {
-                        "must_show_nodes":JSON.stringify(must_show_nodes),
+                        "must_show_nodes":JSON.stringify(must_show_nodes.concat(Object.keys(graph_data.nodes).map(d => parseInt(d)))),
                         "width":width,
                         "height":height
                     }, function (data) {
@@ -1067,6 +1057,7 @@ let GraphLayout = function (container) {
             //         .attr("stroke", "gray")
             //         .attr("opacity", 0.0);
             if((nodes_in_group.enter().size() === 0) && (golds_in_group.enter().size() === 0)){
+                console.log("no create");
                 resolve();
             }
         });
@@ -1264,6 +1255,7 @@ let GraphLayout = function (container) {
             //         .attr("x2", d => center_scale_x(nodes_data[d["e"]].x))
             //         .attr("y2", d => center_scale_y(nodes_data[d["e"]].y))
             if((nodes_in_group.size()===0) && (golds_in_group.size() === 0)){
+                console.log("no update");
                 resolve();
             }
         })
@@ -1286,6 +1278,7 @@ let GraphLayout = function (container) {
                     resolve();
                 });
             if((nodes_in_group.exit().size()===0) && (golds_in_group.exit().size() === 0)){
+                console.log("no remove");
                 resolve();
             }
         });
@@ -1326,8 +1319,11 @@ let GraphLayout = function (container) {
             golds_in_group = golds_group.selectAll("path")
                 .data(golds, d => d.id);
             //update view
+            console.log("remove");
             await that._remove();
+            console.log("update");
             await that._update();
+            console.log("create");
             await that._create();
 
             // remove lasso
@@ -1347,82 +1343,81 @@ let GraphLayout = function (container) {
     that._update_click_menu = function () {
         d3.selectAll(".iw-curMenu").remove();
 
-        $.post('/graph/GetLabels', {}, function (d) {
-                label_names = d;
-                let menu = [];
-                label_names.forEach(function(d, i){
-                    var sm = {
-                            title:d,
-                            name:d,
-                            color: color_label[i],
-                            className: "iw-mnotSelected label-menu-item",
-                            fun:function(){
-                                if (lasso_result.indexOf(focus_node_id) !== -1) {
-                                    for (let id in lasso_result) {
-                                        update_label_list[lasso_result[id]] = i;
-                                    }
-                                    for (let id of lasso_result) {
-                                        nodes_group.selectAll(`#id-${id}`).style("fill", color_label[i]);
-                                    }
-                                }
-                                else {
-                                    lasso_result = [];
-                                    update_label_list[focus_node_id] = i;
-                                    nodes_group.selectAll(`#id-${focus_node_id}`).style("fill", color_label[i]);
-                                }
-
-                                that._apply_delete_and_update_label();
-                                that._update_wait_list_group();
-                                console.log(update_label_list);
-                                focus_node_change_switch = true;
-                                focus_edge_change_switch = true;
-                            }
-                        };
-                        menu.push(sm);
-                    });
-                menu.push({
-                    title: 'Delete',
-                    name: 'Delete',
-                    color: '',
-                    className: "iw-mnotSelected delete-menu-item",
-                    fun: function () {
+        // $.post('/graph/GetLabels', {}, function (d) {
+        let menu = [];
+        label_names.forEach(function(d, i){
+            var sm = {
+                    title:d,
+                    name:d,
+                    color: color_label[i],
+                    className: "iw-mnotSelected label-menu-item",
+                    fun:function(){
                         if (lasso_result.indexOf(focus_node_id) !== -1) {
-                            for (let _ind of lasso_result) {
-                                delete_node_list.push({
-                                    url: DataLoader.image_url + "?filename=" + _ind + ".jpg",
-                                    id: _ind,
-                                    label: d3.select('#id-' + _ind).datum().label
-                                });
+                            for (let id in lasso_result) {
+                                update_label_list[lasso_result[id]] = i;
                             }
                             for (let id of lasso_result) {
-                                delete graph_data.nodes[id];
-                                nodes_group.selectAll(`#id-${id}`).style("display", "none");
+                                nodes_group.selectAll(`#id-${id}`).style("fill", color_label[i]);
                             }
-                            that._update_wait_list_group();
-                            console.log(delete_node_list);
                         }
                         else {
-                            delete_node_list.push({
-                                    url: DataLoader.image_url + "?filename=" + focus_node_id + ".jpg",
-                                    id: focus_node_id,
-                                    label: d3.select('#id-' + focus_node_id).datum().label
-                                });
-                            that._update_wait_list_group();
-                            delete graph_data.nodes[focus_node_id];
-                            nodes_group.selectAll(`#id-${focus_node_id}`).style("display", "none");
+                            lasso_result = [];
+                            update_label_list[focus_node_id] = i;
+                            nodes_group.selectAll(`#id-${focus_node_id}`).style("fill", color_label[i]);
                         }
+
+                        that._apply_delete_and_update_label();
+                        that._update_wait_list_group();
+                        console.log(update_label_list);
                         focus_node_change_switch = true;
                         focus_edge_change_switch = true;
                     }
-                });
-
-                click_node_menu = menu;
-                if (menu.length > 0) {
-                    $('#graph-view-tsne-point').contextMenu(click_node_menu, click_menu_settings);
+                };
+                menu.push(sm);
+            });
+        menu.push({
+            title: 'Delete',
+            name: 'Delete',
+            color: '',
+            className: "iw-mnotSelected delete-menu-item",
+            fun: function () {
+                if (lasso_result.indexOf(focus_node_id) !== -1) {
+                    for (let _ind of lasso_result) {
+                        delete_node_list.push({
+                            url: DataLoader.image_url + "?filename=" + _ind + ".jpg",
+                            id: _ind,
+                            label: d3.select('#id-' + _ind).datum().label
+                        });
+                    }
+                    for (let id of lasso_result) {
+                        delete graph_data.nodes[id];
+                        nodes_group.selectAll(`#id-${id}`).style("display", "none");
+                    }
+                    that._update_wait_list_group();
+                    console.log(delete_node_list);
                 }
-
+                else {
+                    delete_node_list.push({
+                            url: DataLoader.image_url + "?filename=" + focus_node_id + ".jpg",
+                            id: focus_node_id,
+                            label: d3.select('#id-' + focus_node_id).datum().label
+                        });
+                    that._update_wait_list_group();
+                    delete graph_data.nodes[focus_node_id];
+                    nodes_group.selectAll(`#id-${focus_node_id}`).style("display", "none");
+                }
+                focus_node_change_switch = true;
+                focus_edge_change_switch = true;
+            }
         });
-        let menu = [];
+
+        click_node_menu = menu;
+        if (menu.length > 0) {
+            $('#graph-view-tsne-point').contextMenu(click_node_menu, click_menu_settings);
+        }
+
+        // });
+        menu = [];
         menu.push({
             title: 'Delete',
             name: 'Delete',
@@ -1482,5 +1477,56 @@ let GraphLayout = function (container) {
             nodes_group.selectAll(`#id-${item["id"]}`).style("display", "none");
         }
     };
+
+    that._draw_score_pie_chart = function (focus_nodes_id) {
+        svg.select("#score-pie-chart-g").remove();
+        let pie = d3.pie().value(d => d);
+        let arc = d3.arc().outerRadius(8 * zoom_scale).innerRadius(5 * zoom_scale);
+        let pie_chart_data = focus_nodes_id.map(d => graph_data.nodes[d]);
+        let score_pie_chart_g = main_group.append("g").attr("id", "score-pie-chart-g");
+        for(let data of pie_chart_data){
+            let one_pie_chart = score_pie_chart_g.append("g")
+                .attr("id", "one-score-pie-chart-g")
+                .attr("transform", "translate("+center_scale_x(data.x)+","+center_scale_y(data.y)+")");
+            one_pie_chart.selectAll("path")
+                .data(pie(data.score[iter]))
+                .enter()
+                .append("path")
+                .attr("d", arc)
+                .attr("fill", (d,i) => color_label[i])
+                .attr("opacity", 0)
+                .transition()
+                .duration(AnimationDuration)
+                .attr("opacity", 1);
+
+        }
+    }
+
+    that._draw_uncertain_pie_chart = function (opacity) {
+        svg.select("#uncertain-pie-chart-g").remove();
+        let pie = d3.pie().value(d => d);
+        let arc = d3.arc().outerRadius(8 * zoom_scale).innerRadius(5 * zoom_scale);
+        let pie_chart_data = [];
+        for(let uncertain_id of uncertain_nodes){
+            if(graph_data.nodes[uncertain_id] !== undefined){
+                pie_chart_data.push(graph_data.nodes[uncertain_id]);
+            }
+        }
+        console.log("uncertain nodes number:", pie_chart_data.length);
+        let score_pie_chart_g = main_group.append("g").attr("id", "uncertain-pie-chart-g");
+        for(let data of pie_chart_data){
+            let one_pie_chart = score_pie_chart_g.append("g")
+                .attr("id", "one-uncertain-pie-chart-g")
+                .attr("transform", "translate("+center_scale_x(data.x)+","+center_scale_y(data.y)+")");
+            one_pie_chart.selectAll("path")
+                .data(pie(data.score[data.score.length-1]))
+                .enter()
+                .append("path")
+                .attr("d", arc)
+                .attr("fill", (d,i) => color_label[i])
+                .attr("opacity", opacity);
+
+        }
+    }
 };
 

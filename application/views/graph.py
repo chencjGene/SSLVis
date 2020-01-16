@@ -121,7 +121,7 @@ def app_fisheye():
     return fisheye(must_show_nodes, new_nodes, old_nodes, area, level, wh)
 
 # for debug
-@graph.route('/graph/feature_distance', methods=["post"])
+@graph.route('/graph/feature_distance', methods=["POST"])
 def app_get_feature_distance():
     path = json.loads(request.form["path"])
     distance = float(get_feature_distance(int(path[0]), int(path[1])))
@@ -130,7 +130,7 @@ def app_get_feature_distance():
     })
 
 # for debug
-@graph.route('/graph/feature', methods=["post"])
+@graph.route('/graph/feature', methods=["POST"])
 def app_get_feature():
     node_id = json.loads(request.form["id"])
     feature = get_feature(node_id)

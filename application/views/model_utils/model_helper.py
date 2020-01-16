@@ -17,6 +17,7 @@ from sklearn.metrics.pairwise import euclidean_distances, paired_distances
 from ..utils.log_utils import logger
 from ..utils.helper_utils import flow_statistic
 
+
 def build_laplacian_graph(affinity_matrix):
     instance_num = affinity_matrix.shape[0]
     laplacian = csgraph.laplacian(affinity_matrix, normed=True)
@@ -30,7 +31,7 @@ def build_laplacian_graph(affinity_matrix):
 
 
 def propagation(graph_matrix, affinity_matrix, train_y, alpha=0.2, max_iter=30,
-                tol=0.02, process_record=False, normalized=True):
+                tol=0.01, process_record=False, normalized=False):
     y = np.array(train_y)
     # label construction
     # construct a categorical distribution for classification only
@@ -71,9 +72,10 @@ def propagation(graph_matrix, affinity_matrix, train_y, alpha=0.2, max_iter=30,
 
     if process_record:
         label = label_distributions_.copy()
-        normalizer = np.sum(label, axis=1)[:, np.newaxis]
-        normalizer = normalizer + 1e-20
-        label /= normalizer
+        if normalized:
+            normalizer = np.sum(label, axis=1)[:, np.newaxis]
+            normalizer = normalizer + 1e-20
+            label /= normalizer
         process_data = [label]
         ent = entropy(label.T + 1e-20)
         all_entropy.append(ent.sum())
@@ -103,9 +105,10 @@ def propagation(graph_matrix, affinity_matrix, train_y, alpha=0.2, max_iter=30,
         n_iter_ += 1
         if process_record:
             label = label_distributions_.copy()
-            normalizer = np.sum(label, axis=1)[:, np.newaxis]
-            normalizer = normalizer + 1e-20
-            label /= normalizer
+            if normalized:
+                normalizer = np.sum(label, axis=1)[:, np.newaxis]
+                normalizer = normalizer + 1e-20
+                label /= normalizer
             process_data.append(label)
             ent = entropy(label.T + 1e-20)
             all_entropy.append(ent.sum())
@@ -140,6 +143,8 @@ def propagation(graph_matrix, affinity_matrix, train_y, alpha=0.2, max_iter=30,
         )
         n_iter_ += 1
 
+    unnorm_dist = label_distributions_.copy()
+
     if normalized:
         normalizer = np.sum(label_distributions_, axis=1)[:, np.newaxis]
         normalizer = normalizer + 1e-20
@@ -154,7 +159,7 @@ def propagation(graph_matrix, affinity_matrix, train_y, alpha=0.2, max_iter=30,
     if process_data is not None:
         process_data = np.array(process_data)
 
-    return label_distributions_, all_loss, all_entropy, process_data
+    return label_distributions_, all_loss, all_entropy, process_data, unnorm_dist
 
 
 def exact_influence(F, affinity_matrix, laplacian_matrix, alpha, train_y):
@@ -171,11 +176,11 @@ def exact_influence(F, affinity_matrix, laplacian_matrix, alpha, train_y):
             left_one_aff = affinity_matrix.copy()
             left_one_aff.data[start:end][idx] = 0
             left_one_lap = build_laplacian_graph(left_one_aff)
-            left_one_F, left_one_L, _, _ = propagation(left_one_lap,
-                                                    left_one_aff,
-                                                    train_y,
-                                                    alpha=alpha,
-                                                    normalized=False)
+            left_one_F, left_one_L, _, _, _ = propagation(left_one_lap,
+                                                          left_one_aff,
+                                                          train_y,
+                                                          alpha=alpha,
+                                                          normalized=False)
             left_one_dis = ((left_one_F[i] - F[i]) ** 2).sum() / (F[i, :] ** 2).sum()
             influence_matrix[i, j] = left_one_dis
     time_cost = time() - t0
