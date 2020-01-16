@@ -16,7 +16,7 @@ function set_up(dataset) {
     LossView.controlInstanceView = GraphView;
     LossView.controlInfoView = ImageView;
     DataLoader.set_graph_view(GraphView);
-    DataLoader.set_loss_view(LossView);
+    DataLoader.set_dist_view(LossView);
     DataLoader.set_image_view(ImageView);
 }
 
