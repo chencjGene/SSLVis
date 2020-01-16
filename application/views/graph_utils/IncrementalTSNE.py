@@ -187,8 +187,7 @@ class IncrementalTSNE:
                                 double* constraint_Y, int constraint_N, double alpha, double perplexity,
                                 double angle, int n_jobs, int n_iter, int random_state, int verbose,
                                 double accuracy, double early_exaggeration, double learning_rate,
-                                int skip_num_points, int exploration_n_iter, int *label, int* trust_id, double* trust_weight, 
-                                int trust_N, int* init_id, int init_N);
+                                int skip_num_points, int exploration_n_iter, int* labels, double label_alpha);
               void binary_search_perplexity(double* distances_nn, int* neighbors_nn, int N, int D,
                                 double perplexity, int verbose, double* conditional_P);
               void k_neighbors(double* X1, int N1, double* X2, int N2, int D, int n_neighbors, int* neighbors_nn, double* distances_nn,
@@ -229,7 +228,7 @@ class IncrementalTSNE:
         return self
     
     def fit_transform(self, X, _y=None, skip_num_points=0, constraint_X=None, constraint_Y=None, alpha=0,
-                      label=None, corrected_id=None, corrected_weight=None, init_id=None):
+                      label=None, corrected_id=None, corrected_weight=None, init_id=None, labels=None, label_alpha=0.3):
         """
         Fit X into an embedded space and return that transformed output.
 
@@ -258,11 +257,11 @@ class IncrementalTSNE:
             init_id = init_id.astype(np.int32, copy=True)
 
         embedding = self._fit(X, skip_num_points=skip_num_points, constraint_X=constraint_X, constraint_Y=constraint_Y,
-                              alpha=alpha, label=label, corrected_id=corrected_id, corrected_weight=corrected_weight, init_id=init_id)
+                              alpha=alpha, label=label, corrected_id=corrected_id, corrected_weight=corrected_weight, init_id=init_id, labels=labels, label_alpha=label_alpha)
         self.embedding_ = embedding
         return self.embedding_
     
-    def _fit(self, X, skip_num_points=0, constraint_X=None, constraint_Y=None, alpha=0, label=None, corrected_id=None, corrected_weight=None, init_id=None):
+    def _fit(self, X, skip_num_points=0, constraint_X=None, constraint_Y=None, alpha=0, label=None, corrected_id=None, corrected_weight=None, init_id=None, labels=None, label_alpha=0.3):
         """
         Fit the model using X as training data.
 
@@ -400,6 +399,11 @@ class IncrementalTSNE:
             X = np.array(X, copy=True).reshape(-1)
             Y = np.array(Y, copy=True).reshape(-1)
             cffi_X = self.ffi.cast('double*', X.ctypes.data)
+            if labels is None:
+                labels = np.zeros((N, ), dtype=int)
+                label_alpha = 1.0
+            cffi_labels = self.ffi.cast('int*', labels.ctypes.data)
+            cffi_label_alpha = label_alpha
             cffi_Y = self.ffi.cast('double*', Y.ctypes.data)
             if isinstance(constraint_X, np.ndarray):
                 # np.savetxt('X.txt', X)
@@ -440,8 +444,9 @@ class IncrementalTSNE:
                            self.perplexity, self.angle, self.n_jobs, self.n_iter,
                            cffi_random_state, cffi_verbose, self.accuracy,
                            self.early_exaggeration, self.learning_rate, skip_num_points,
-                           self._EXPLORATION_N_ITER, cffi_label, cffi_corrected_id, cffi_corrected_weight, corrected_N,
-                           cffi_init_id, init_N)
+                           self._EXPLORATION_N_ITER, cffi_labels, cffi_label_alpha)
+                # , cffi_label, cffi_corrected_id, cffi_corrected_weight, corrected_N,
+                #            cffi_init_id, init_N)
             t.daemon = True
             t.start()
             

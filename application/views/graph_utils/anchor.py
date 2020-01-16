@@ -39,9 +39,11 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, p
             # random labeled data position
             train_x_tsne = np.zeros((node_num, 2))
             labeled_data = []
+            train_y_final = [0] * node_num
             random.seed(seed=10)
             for i in range(node_num):
                 label = -1 if np.isclose(np.max(process_data[0][i]), 0) else int(np.argmax(process_data[0][i]))
+                train_y_final[i] = -1 if np.isclose(np.max(process_data[iter_num - 1][i]), 0) else int(np.argmax(process_data[iter_num - 1][i]))
                 if label > -1:
                     have = -1
                     for node_id in labeled_data:
@@ -53,6 +55,7 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, p
                     else:
                         train_x_tsne[i] = random.random((2))
                     labeled_data.append(i)
+            train_y_final = np.array(train_y_final)
             # random unlabeled data position
             err_cnt = 0
             for i in range(node_num):
@@ -89,7 +92,11 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, p
             for labeled_id in labeled_data:
                 plt.text(train_x_tsne[labeled_id][0], train_x_tsne[labeled_id][1], str(int(ground_truth[labeled_id])))
             # plt.show()
-            train_x_tsne = TSNE(n_components=2, verbose=True, method='exact', init=train_x_tsne, early_exaggeration=1).fit_transform(train_x)
+            # train_x_tsne = TSNE(n_components=2, verbose=True, method='exact', init=train_x_tsne, early_exaggeration=1).fit_transform(train_x)
+            train_x_tsne = IncrementalTSNE(n_components=2, verbose=True, init=train_x_tsne,
+                                early_exaggeration=1).fit_transform(train_x, labels=train_y_final, label_alpha=0.3)
+
+
             plt.figure()
             plt.scatter(train_x_tsne[:, 0], train_x_tsne[:, 1], s=2, c=colors)
             # plt.show()
@@ -183,7 +190,7 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, p
         selection = level_infos[0]['index']
         samples_x = train_x[selection]
         init_samples_x_tsne = train_x_tsne[selection]
-        samples_y = train_y[selection]
+        samples_y = np.array(train_y[selection], dtype=int)
         samples_truth = ground_truth[selection]
         clusters = level_infos[0]['clusters']
         constraint_selection = np.random.choice(len(selection), min(len(selection), max(10, int(0.2 * len(selection)))))
