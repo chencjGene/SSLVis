@@ -530,47 +530,47 @@ let GraphLayout = function (container) {
     };
 
     that._draw_legend = function () {
-        $.post('/graph/GetLabels', {}, function (d) {
-            let labels = d;
-            labels.unshift("unlabel");
-            let label_num = labels.length;
-            let legend_svg = d3.select("#category-encoding");
-            legend_svg.select("#graph-legend-g").remove();
-            let legend_area = legend_svg.append("g")
-                .attr("id", "graph-legend-g");
-            let legend_width = $("#category-encoding").parent().width();
-            let padding = 10;
-            let delta = 15;
-            let text_delta = 5;
-            let legend_delta = 55;
-            let rect_width = 20;
-            let rect_height = 20;
-            let text_width = 40;
-            let x_item_num = Math.floor((legend_width - padding * 2) / (rect_width + text_width + delta + text_delta));
-            let y_item_num = Math.ceil(label_num / x_item_num);
-            let legend_height = y_item_num * (rect_height + delta) - rect_height + padding * 2;
-            legend_svg.attr("height", legend_height);
-            for (let i = 0; i < label_num; i++) {
-                legend_area.append("rect")
-                    .attr("x", padding + (i % x_item_num) * (rect_width + text_width + delta + text_delta))
-                    .attr("y", padding + Math.floor(i / x_item_num) * (rect_height + delta))
-                    .attr("width", rect_width)
-                    .attr("height", rect_height)
-                    .attr("fill", function () {
-                        if (i === 0) return color_unlabel;
-                        else return color_label[i - 1];
-                    });
-                legend_area.append("text")
-                    .attr("x", padding + (i % x_item_num) * (rect_width + text_width + delta + text_delta) + rect_width + text_delta)
-                    .attr("y", padding + Math.floor(i / x_item_num) * (rect_height + delta) + 14)
-                    .attr("text-anchor", "start")
-                    .attr("font-size", "13")
-                    .attr("fill", FontColor)
-                    .text(function () {
-                        return labels[i]
-                    })
-            }
-        })
+        // $.post('/graph/GetLabels', {}, function (d) {
+        let labels = label_names;
+        labels.unshift("unlabel");
+        let label_num = labels.length;
+        let legend_svg = d3.select("#category-encoding");
+        legend_svg.select("#graph-legend-g").remove();
+        let legend_area = legend_svg.append("g")
+            .attr("id", "graph-legend-g");
+        let legend_width = $("#category-encoding").parent().width();
+        let padding = 10;
+        let delta = 15;
+        let text_delta = 5;
+        let legend_delta = 55;
+        let rect_width = 20;
+        let rect_height = 20;
+        let text_width = 40;
+        let x_item_num = Math.floor((legend_width - padding * 2) / (rect_width + text_width + delta + text_delta));
+        let y_item_num = Math.ceil(label_num / x_item_num);
+        let legend_height = y_item_num * (rect_height + delta) - rect_height + padding * 2;
+        legend_svg.attr("height", legend_height);
+        for (let i = 0; i < label_num; i++) {
+            legend_area.append("rect")
+                .attr("x", padding + (i % x_item_num) * (rect_width + text_width + delta + text_delta))
+                .attr("y", padding + Math.floor(i / x_item_num) * (rect_height + delta))
+                .attr("width", rect_width)
+                .attr("height", rect_height)
+                .attr("fill", function () {
+                    if (i === 0) return color_unlabel;
+                    else return color_label[i - 1];
+                });
+            legend_area.append("text")
+                .attr("x", padding + (i % x_item_num) * (rect_width + text_width + delta + text_delta) + rect_width + text_delta)
+                .attr("y", padding + Math.floor(i / x_item_num) * (rect_height + delta) + 14)
+                .attr("text-anchor", "start")
+                .attr("font-size", "13")
+                .attr("fill", FontColor)
+                .text(function () {
+                    return labels[i]
+                })
+        }
+        // })
     };
 
     that.setIter = function (newiter) {

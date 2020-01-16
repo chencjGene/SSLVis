@@ -173,7 +173,8 @@ DataLoaderClass = function (dataset) {
         console.log("get graph view");
         that.graph_view.component_update({
             "graph_data": that.state.graph_data,
-            "top_k_uncertain": that.state.top_k_uncertain
+            "top_k_uncertain": that.state.top_k_uncertain,
+            "label_names": that.state.label_names
         }, rescale);
     };
 
@@ -190,7 +191,8 @@ DataLoaderClass = function (dataset) {
         that.graph_view.component_update({
             "graph_data": that.state.graph_data,
             "area": that.state.area,
-            "fisheye":that.state.fisheyemode
+            "fisheye":that.state.fisheyemode,
+            "label_names": that.state.label_names
         }, rescale);
     };
 
