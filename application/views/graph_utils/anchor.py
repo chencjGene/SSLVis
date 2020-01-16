@@ -17,6 +17,8 @@ from ..graph_utils.BlueNoiseSampler import BlueNoiseSampC as BlueNoiseSampler
 from sklearn.manifold import TSNE
 from ..graph_utils.RandomSampler import random_sample
 
+top_k_uncertain = []
+
 def get_topk_uncertain(process_data, k = 10):
     iter_num = process_data.shape[0]
     node_num = process_data.shape[1]
@@ -27,6 +29,7 @@ def get_topk_uncertain(process_data, k = 10):
     return np.argsort(uncertain)[:k].tolist()
 
 def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, propagation_path, dataname, buf_path):
+    global top_k_uncertain
     anchor_path = os.path.join(buf_path, "anchors" + config.pkl_ext)
     current_pos_path = os.path.join(buf_path, "current_anchors" + config.pkl_ext)
     train_x = np.array(train_x, dtype=np.float64)
@@ -251,6 +254,7 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, p
     return [graph, top_k_uncertain]
 
 def updateAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, dataname, area, level, buf_path, propagation_path):
+    global top_k_uncertain
     anchor_path = os.path.join(buf_path, "anchors" + config.pkl_ext)
     current_pos_path = os.path.join(buf_path, "current_anchors" + config.pkl_ext)
     all_time = {
@@ -285,7 +289,15 @@ def updateAnchors(train_x, train_y, ground_truth, process_data, influence_matrix
                     old_position.append(point)
                 else:
                     new_selection.append(len(selection) - 1)
-
+        for uncertain_id in top_k_uncertain:
+            point = train_x_tsne[uncertain_id]
+            if area['x'] <= point[0] <= area['x'] + area['width'] and area['y'] <= point[1] <= area['y'] + area['height']:
+                selection.append(uncertain_id)
+                if ind in old_dic:
+                    old_selection.append(len(selection) - 1)
+                    old_position.append(point)
+                else:
+                    new_selection.append(len(selection) - 1)
         selection = np.array(selection)
         old_position = np.array(old_position)
         selection = selection[old_selection + new_selection]
@@ -404,6 +416,7 @@ def get_area(must_show_nodes, width, height, train_x, train_y, raw_graph, proces
     }
 
 def fisheyeAnchors(must_show_nodes, new_nodes, old_nodes, area, level, wh, train_x, train_y, raw_graph, process_data, influence_matrix, propagation_path, ground_truth, buf_path):
+    global top_k_uncertain
     with open(buf_path, "rb") as f:
         focus_path = []
         for u in must_show_nodes:
@@ -426,6 +439,9 @@ def fisheyeAnchors(must_show_nodes, new_nodes, old_nodes, area, level, wh, train
             if area['x'] <= _pos[i][0] <= area['x'] + area['width'] and area['y'] <= _pos[i][1] <= area['y'] + area[
                 'height'] and (ind not in selection):
                 selection.append(ind)
+        for uncertain_id in top_k_uncertain:
+            if uncertain_id not in selection:
+                selection.append(uncertain_id)
         # add must_have_nodes
         selection = list(dict.fromkeys(selection+new_nodes))
 
