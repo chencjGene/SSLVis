@@ -531,8 +531,8 @@ let GraphLayout = function (container) {
 
     that._draw_legend = function () {
         // $.post('/graph/GetLabels', {}, function (d) {
-        let labels = label_names;
-        labels.unshift("unlabel");
+        let labels = ["unlabeled"].concat(label_names);
+        // labels.unshift("unlabel");
         let label_num = labels.length;
         let legend_svg = d3.select("#category-encoding");
         legend_svg.select("#graph-legend-g").remove();
@@ -545,7 +545,7 @@ let GraphLayout = function (container) {
         let legend_delta = 55;
         let rect_width = 20;
         let rect_height = 20;
-        let text_width = 40;
+        let text_width = 45;
         let x_item_num = Math.floor((legend_width - padding * 2) / (rect_width + text_width + delta + text_delta));
         let y_item_num = Math.ceil(label_num / x_item_num);
         let legend_height = y_item_num * (rect_height + delta) - rect_height + padding * 2;
