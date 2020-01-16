@@ -609,6 +609,7 @@ let GraphLayout = function (container) {
 
     that._update_data = function (state) {
         graph_data = state.graph_data;
+        label_names = state.label_names;
         that._update_delete_node_list();
         // that._update_click_menu();
         console.log("graph_data", graph_data);
@@ -1376,82 +1377,81 @@ let GraphLayout = function (container) {
     that._update_click_menu = function () {
         d3.selectAll(".iw-curMenu").remove();
 
-        $.post('/graph/GetLabels', {}, function (d) {
-                label_names = d;
-                let menu = [];
-                label_names.forEach(function(d, i){
-                    var sm = {
-                            title:d,
-                            name:d,
-                            color: color_label[i],
-                            className: "iw-mnotSelected label-menu-item",
-                            fun:function(){
-                                if (lasso_result.indexOf(focus_node_id) !== -1) {
-                                    for (let id in lasso_result) {
-                                        update_label_list[lasso_result[id]] = i;
-                                    }
-                                    for (let id of lasso_result) {
-                                        nodes_group.selectAll(`#id-${id}`).style("fill", color_label[i]);
-                                    }
-                                }
-                                else {
-                                    lasso_result = [];
-                                    update_label_list[focus_node_id] = i;
-                                    nodes_group.selectAll(`#id-${focus_node_id}`).style("fill", color_label[i]);
-                                }
-
-                                that._apply_delete_and_update_label();
-                                that._update_wait_list_group();
-                                console.log(update_label_list);
-                                focus_node_change_switch = true;
-                                focus_edge_change_switch = true;
-                            }
-                        };
-                        menu.push(sm);
-                    });
-                menu.push({
-                    title: 'Delete',
-                    name: 'Delete',
-                    color: '',
-                    className: "iw-mnotSelected delete-menu-item",
-                    fun: function () {
+        // $.post('/graph/GetLabels', {}, function (d) {
+        let menu = [];
+        label_names.forEach(function(d, i){
+            var sm = {
+                    title:d,
+                    name:d,
+                    color: color_label[i],
+                    className: "iw-mnotSelected label-menu-item",
+                    fun:function(){
                         if (lasso_result.indexOf(focus_node_id) !== -1) {
-                            for (let _ind of lasso_result) {
-                                delete_node_list.push({
-                                    url: DataLoader.image_url + "?filename=" + _ind + ".jpg",
-                                    id: _ind,
-                                    label: d3.select('#id-' + _ind).datum().label
-                                });
+                            for (let id in lasso_result) {
+                                update_label_list[lasso_result[id]] = i;
                             }
                             for (let id of lasso_result) {
-                                delete graph_data.nodes[id];
-                                nodes_group.selectAll(`#id-${id}`).style("display", "none");
+                                nodes_group.selectAll(`#id-${id}`).style("fill", color_label[i]);
                             }
-                            that._update_wait_list_group();
-                            console.log(delete_node_list);
                         }
                         else {
-                            delete_node_list.push({
-                                    url: DataLoader.image_url + "?filename=" + focus_node_id + ".jpg",
-                                    id: focus_node_id,
-                                    label: d3.select('#id-' + focus_node_id).datum().label
-                                });
-                            that._update_wait_list_group();
-                            delete graph_data.nodes[focus_node_id];
-                            nodes_group.selectAll(`#id-${focus_node_id}`).style("display", "none");
+                            lasso_result = [];
+                            update_label_list[focus_node_id] = i;
+                            nodes_group.selectAll(`#id-${focus_node_id}`).style("fill", color_label[i]);
                         }
+
+                        that._apply_delete_and_update_label();
+                        that._update_wait_list_group();
+                        console.log(update_label_list);
                         focus_node_change_switch = true;
                         focus_edge_change_switch = true;
                     }
-                });
-
-                click_node_menu = menu;
-                if (menu.length > 0) {
-                    $('#graph-view-tsne-point').contextMenu(click_node_menu, click_menu_settings);
+                };
+                menu.push(sm);
+            });
+        menu.push({
+            title: 'Delete',
+            name: 'Delete',
+            color: '',
+            className: "iw-mnotSelected delete-menu-item",
+            fun: function () {
+                if (lasso_result.indexOf(focus_node_id) !== -1) {
+                    for (let _ind of lasso_result) {
+                        delete_node_list.push({
+                            url: DataLoader.image_url + "?filename=" + _ind + ".jpg",
+                            id: _ind,
+                            label: d3.select('#id-' + _ind).datum().label
+                        });
+                    }
+                    for (let id of lasso_result) {
+                        delete graph_data.nodes[id];
+                        nodes_group.selectAll(`#id-${id}`).style("display", "none");
+                    }
+                    that._update_wait_list_group();
+                    console.log(delete_node_list);
                 }
-
+                else {
+                    delete_node_list.push({
+                            url: DataLoader.image_url + "?filename=" + focus_node_id + ".jpg",
+                            id: focus_node_id,
+                            label: d3.select('#id-' + focus_node_id).datum().label
+                        });
+                    that._update_wait_list_group();
+                    delete graph_data.nodes[focus_node_id];
+                    nodes_group.selectAll(`#id-${focus_node_id}`).style("display", "none");
+                }
+                focus_node_change_switch = true;
+                focus_edge_change_switch = true;
+            }
         });
-        let menu = [];
+
+        click_node_menu = menu;
+        if (menu.length > 0) {
+            $('#graph-view-tsne-point').contextMenu(click_node_menu, click_menu_settings);
+        }
+
+        // });
+        menu = [];
         menu.push({
             title: 'Delete',
             name: 'Delete',
