@@ -298,11 +298,13 @@ def updateAnchors(train_x, train_y, ground_truth, process_data, influence_matrix
                     new_selection.append(len(selection) - 1)
         for uncertain_id in top_k_uncertain:
             point = train_x_tsne[uncertain_id]
+            if uncertain_id == 1335:
+                print(uncertain_id)
             if area['x'] <= point[0] <= area['x'] + area['width'] and area['y'] <= point[1] <= area['y'] + area['height']:
                 selection.append(uncertain_id)
-                if ind in old_dic:
+                if uncertain_id in old_dic:
                     old_selection.append(len(selection) - 1)
-                    old_position.append(point)
+                    old_position.append(old_dic[uncertain_id])
                 else:
                     new_selection.append(len(selection) - 1)
         selection = np.array(selection)

@@ -554,7 +554,7 @@ let GraphLayout = function (container) {
     that._update_data = function (state) {
         graph_data = state.graph_data;
         label_names = state.label_names;
-        iter = graph_data.nodes[0].label.length - 1;
+        iter = Object.values(graph_data.nodes)[0].label.length - 1;
         console.log("iter", iter);
         that._update_delete_node_list();
         // that._update_click_menu();
