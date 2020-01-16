@@ -17,6 +17,8 @@ from ..graph_utils.BlueNoiseSampler import BlueNoiseSampC as BlueNoiseSampler
 from sklearn.manifold import TSNE
 from ..graph_utils.RandomSampler import random_sample
 
+top_k_uncertain = []
+
 def get_topk_uncertain(process_data, k = 10):
     iter_num = process_data.shape[0]
     node_num = process_data.shape[1]
@@ -27,6 +29,7 @@ def get_topk_uncertain(process_data, k = 10):
     return np.argsort(uncertain)[:k].tolist()
 
 def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, propagation_path, dataname, buf_path):
+    global top_k_uncertain
     anchor_path = os.path.join(buf_path, "anchors" + config.pkl_ext)
     current_pos_path = os.path.join(buf_path, "current_anchors" + config.pkl_ext)
     train_x = np.array(train_x, dtype=np.float64)
@@ -47,10 +50,13 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, p
     if retsne:
         if train_x_tsne is None:
             # random labeled data position
+            train_y_final = [0] * node_num
             # train_x_tsne = np.zeros((node_num, 2))
             # labeled_data = []
             # random.seed(seed=10)
-            # for i in range(node_num):
+            for i in range(node_num):
+                train_y_final[i] = -1 if np.isclose(np.max(process_data[iter_num - 1][i]), 0) else int(
+                    np.argmax(process_data[iter_num - 1][i]))
             #     label = -1 if np.isclose(np.max(process_data[0][i]), 0) else int(np.argmax(process_data[0][i]))
             #     if label > -1:
             #         have = -1
@@ -63,6 +69,7 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, p
             #         else:
             #             train_x_tsne[i] = random.random((2))
             #         labeled_data.append(i)
+            train_y_final = np.array(train_y_final)
             # # random unlabeled data position
             # err_cnt = 0
             # for i in range(node_num):
@@ -99,7 +106,10 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, p
             # for labeled_id in labeled_data:
             #     plt.text(train_x_tsne[labeled_id][0], train_x_tsne[labeled_id][1], str(int(ground_truth[labeled_id])))
             # plt.show()
-            train_x_tsne = TSNE(n_components=2, verbose=True, method='exact', early_exaggeration=1).fit_transform(train_x)
+            # train_x_tsne = TSNE(n_components=2, verbose=True, method='exact', early_exaggeration=1).fit_transform(train_x)
+            train_x_tsne = IncrementalTSNE(n_components=2, verbose=True, init=train_x_tsne,
+                                           early_exaggeration=1).fit_transform(train_x, labels=train_y_final,
+                                                                               label_alpha=0.3)
             # plt.figure()
             # plt.scatter(train_x_tsne[:, 0], train_x_tsne[:, 1], s=2, c=colors)
             # plt.show()
@@ -195,15 +205,15 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, p
         selection = np.array(selection)
         samples_x = train_x[selection]
         init_samples_x_tsne = train_x_tsne[selection]
-        samples_y = train_y[selection]
+        samples_y = np.array(train_y[selection], dtype=int)
         samples_truth = ground_truth[selection]
         clusters = level_infos[0]['clusters']
         constraint_selection = np.random.choice(len(selection), min(len(selection), max(10, int(0.2 * len(selection)))))
         # samples_x_tsne = TSNE(n_components=2, n_jobs=20, init=init_samples_x_tsne, n_iter=250, early_exaggeration=1.0)\
         #     .fit_transform(samples_x)
-        # samples_x_tsne = IncrementalTSNE(n_components=2, n_jobs=20, init=init_samples_x_tsne, n_iter=100, early_exaggeration=1.0, exploration_n_iter=0)\
-        #     .fit_transform(samples_x, constraint_X=samples_x[constraint_selection], constraint_Y=init_samples_x_tsne[constraint_selection], alpha=0.1)
-        samples_x_tsne = init_samples_x_tsne
+        samples_x_tsne = IncrementalTSNE(n_components=2, n_jobs=20, init=init_samples_x_tsne, n_iter=100, early_exaggeration=1.0, exploration_n_iter=0)\
+            .fit_transform(samples_x, constraint_X=samples_x[constraint_selection], constraint_Y=init_samples_x_tsne[constraint_selection], alpha=0.1)
+        # samples_x_tsne = init_samples_x_tsne
         save = (selection, samples_x_tsne)
 
         with open(current_pos_path, "wb+") as f:
@@ -251,6 +261,7 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, p
     return [graph, top_k_uncertain]
 
 def updateAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, dataname, area, level, buf_path, propagation_path):
+    global top_k_uncertain
     anchor_path = os.path.join(buf_path, "anchors" + config.pkl_ext)
     current_pos_path = os.path.join(buf_path, "current_anchors" + config.pkl_ext)
     all_time = {
@@ -285,7 +296,15 @@ def updateAnchors(train_x, train_y, ground_truth, process_data, influence_matrix
                     old_position.append(point)
                 else:
                     new_selection.append(len(selection) - 1)
-
+        for uncertain_id in top_k_uncertain:
+            point = train_x_tsne[uncertain_id]
+            if area['x'] <= point[0] <= area['x'] + area['width'] and area['y'] <= point[1] <= area['y'] + area['height']:
+                selection.append(uncertain_id)
+                if ind in old_dic:
+                    old_selection.append(len(selection) - 1)
+                    old_position.append(point)
+                else:
+                    new_selection.append(len(selection) - 1)
         selection = np.array(selection)
         old_position = np.array(old_position)
         selection = selection[old_selection + new_selection]
@@ -404,6 +423,7 @@ def get_area(must_show_nodes, width, height, train_x, train_y, raw_graph, proces
     }
 
 def fisheyeAnchors(must_show_nodes, new_nodes, old_nodes, area, level, wh, train_x, train_y, raw_graph, process_data, influence_matrix, propagation_path, ground_truth, buf_path):
+    global top_k_uncertain
     with open(buf_path, "rb") as f:
         focus_path = []
         for u in must_show_nodes:
@@ -426,6 +446,9 @@ def fisheyeAnchors(must_show_nodes, new_nodes, old_nodes, area, level, wh, train
             if area['x'] <= _pos[i][0] <= area['x'] + area['width'] and area['y'] <= _pos[i][1] <= area['y'] + area[
                 'height'] and (ind not in selection):
                 selection.append(ind)
+        for uncertain_id in top_k_uncertain:
+            if uncertain_id not in selection:
+                selection.append(uncertain_id)
         # add must_have_nodes
         selection = list(dict.fromkeys(selection+new_nodes))
 
