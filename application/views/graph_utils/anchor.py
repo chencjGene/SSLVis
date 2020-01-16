@@ -17,6 +17,15 @@ from ..graph_utils.BlueNoiseSampler import BlueNoiseSampC as BlueNoiseSampler
 from sklearn.manifold import TSNE
 from ..graph_utils.RandomSampler import random_sample
 
+def get_topk_uncertain(process_data, k = 10):
+    iter_num = process_data.shape[0]
+    node_num = process_data.shape[1]
+    uncertain = np.ones((node_num))
+    for i in range(node_num):
+        sort_res = process_data[iter_num-1][i][np.argsort(process_data[iter_num-1][i])[-2:]]
+        uncertain[i] = sort_res[1]-sort_res[0]
+    return np.argsort(uncertain)[:k].tolist()
+
 def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, propagation_path, dataname, buf_path):
     anchor_path = os.path.join(buf_path, "anchors" + config.pkl_ext)
     current_pos_path = os.path.join(buf_path, "current_anchors" + config.pkl_ext)
@@ -27,6 +36,7 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, p
     target_num = 500
     retsne = not os.path.exists(anchor_path)
     train_x_tsne = None
+    top_k_uncertain = get_topk_uncertain(process_data, k = 10)
     if not retsne:
         train_x_tsne, level_infos = pickle.load(open(anchor_path, "rb"))
         top_num = len(level_infos[0]['index'])
@@ -181,6 +191,8 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, p
     with open(anchor_path, "rb") as f:
         train_x_tsne, level_infos = pickle.load(f)
         selection = level_infos[0]['index']
+        selection = list(dict.fromkeys(selection.tolist()+top_k_uncertain))
+        selection = np.array(selection)
         samples_x = train_x[selection]
         init_samples_x_tsne = train_x_tsne[selection]
         samples_y = train_y[selection]
@@ -207,7 +219,7 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, p
         iter_num = process_data.shape[0]
         labels = [int(np.argmax(process_data[j][id])) if np.max(process_data[j][id]) > 1e-4 else -1 for j in
                   range(iter_num)]
-        scores = [float(np.max(process_data[j][id])) for j in range(iter_num)]
+        scores = [process_data[j][id].tolist() for j in range(iter_num)]
         samples_nodes[id] = {
             "id": id,
             "x": samples_x_tsne[i][0],
@@ -236,7 +248,7 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, p
         "nodes": samples_nodes,
         # "edges": edges
     }
-    return graph
+    return [graph, top_k_uncertain]
 
 def updateAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, dataname, area, level, buf_path, propagation_path):
     anchor_path = os.path.join(buf_path, "anchors" + config.pkl_ext)
@@ -309,7 +321,7 @@ def updateAnchors(train_x, train_y, ground_truth, process_data, influence_matrix
         iter_num = process_data.shape[0]
         labels = [int(np.argmax(process_data[j][id])) if np.max(process_data[j][id]) > 1e-4 else -1 for j in
                   range(iter_num)]
-        scores = [float(np.max(process_data[j][id])) for j in range(iter_num)]
+        scores = [process_data[j][id].tolist() for j in range(iter_num)]
         samples_nodes[id] = {
             "id": id,
             "x": samples_x_tsne[i][0],
@@ -513,7 +525,7 @@ def fisheyeAnchors(must_show_nodes, new_nodes, old_nodes, area, level, wh, train
         iter_num = process_data.shape[0]
         labels = [int(np.argmax(process_data[j][id])) if np.max(process_data[j][id]) > 1e-4 else -1 for j in
                   range(iter_num)]
-        scores = [float(np.max(process_data[j][id])) for j in range(iter_num)]
+        scores = [process_data[j][id].tolist() for j in range(iter_num)]
         samples_nodes[id] = {
             "id": id,
             "x": samples_x_tsne[i][0],

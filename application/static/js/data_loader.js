@@ -55,7 +55,7 @@ DataLoaderClass = function (dataset) {
             that.get_manifest_handler(), "json", "GET");
 
         that.graph_node = new request_node(that.graph_url + params,
-            that.get_graph_handler(that.update_graph_view), "json", "GET");
+            that.get_graph_handler(that.get_graph_view), "json", "GET");
         that.graph_node.depend_on(that.manifest_node);
 
         that.update_graph_node = new request_node(that.update_graph_url + params,
@@ -166,6 +166,14 @@ DataLoaderClass = function (dataset) {
         that.image_view.component_update({
             "img_grid_urls": that.state.img_grid_urls
         })
+    };
+
+    that.get_graph_view = function(rescale) {
+        console.log("get graph view");
+        that.graph_view.component_update({
+            "graph_data": that.state.graph_data,
+            "top_k_uncertain": that.state.top_k_uncertain
+        }, rescale);
     };
 
     that.update_graph_view = function(rescale){

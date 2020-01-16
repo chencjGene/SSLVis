@@ -131,6 +131,7 @@ let GraphLayout = function (container) {
             .on('start', function () {
                 d3.selectAll(".iw-contextMenu").style("display", "none");
                 svg.select("#group-propagation").remove();
+                svg.select("#score-pie-chart-g").remove();
                 nodes_in_group.attr("opacity", 1);
                 golds_in_group.attr("opacity", 1);
                 // edges_in_group.attr("opacity", 0.4);
@@ -334,9 +335,12 @@ let GraphLayout = function (container) {
         edges_group.selectAll("line").style('stroke-width', zoom_scale);
         main_group.select("#group-propagation").selectAll("polyline").style('stroke-width', 2.0 * zoom_scale);
         main_group.select("#single-propagate").selectAll("polyline").style('stroke-width', 2.0 * zoom_scale);
+        let arc = d3.arc().outerRadius(8 * zoom_scale).innerRadius(5 * zoom_scale);
+        main_group.select("#score-pie-chart-g").selectAll("path").attr("d", arc);
     };
 
     that.lasso_start = function () {
+        svg.select("#score-pie-chart-g").remove();
         svg.select("#group-propagation").remove();
         nodes_in_group.attr("opacity", 1);
         golds_in_group.attr("opacity", 1);
@@ -591,6 +595,10 @@ let GraphLayout = function (container) {
             await that._update_transform(state.area);
         }
         await that._update_view(rescale);
+        if(state.top_k_uncertain !== undefined){
+            console.log("get top k uncertain:", state.top_k_uncertain);
+            that._draw_score_pie_chart(state.top_k_uncertain, true);
+        }
         if(state.fisheye === "single"){
             await that._single_show_path();
         }
@@ -787,7 +795,7 @@ let GraphLayout = function (container) {
                             path_nodes[d.id] = node;
                         }
                     });
-
+                    that._draw_score_pie_chart(Object.keys(path_nodes));
                     // let all_in_old_area = true;
                     // for(let new_node of new_nodes){
                     //     let x = path_nodes[new_node].datum().x;
@@ -868,13 +876,13 @@ let GraphLayout = function (container) {
                 .transition()
                 .duration(AnimationDuration)
                 .attr("opacity", d => path_nodes[d.id]===true?1:0.2);
-
             nodes_in_group.each(function (d) {
                             let node = d3.select(this);
                             if(path_nodes[d.id]===true){
                                 path_nodes[d.id] = node;
                             }
                         });
+            that._draw_score_pie_chart(Object.keys(path_nodes));
             let propagate_svg = main_group.insert("g", ":first-child").attr("id", "group-propagation");
             propagate_svg.append("g")
                 .attr("class", "single-propagate")
@@ -1503,5 +1511,25 @@ let GraphLayout = function (container) {
             nodes_group.selectAll(`#id-${item["id"]}`).style("display", "none");
         }
     };
+
+    that._draw_score_pie_chart = function (focus_nodes_id, show_last_iter = false) {
+        svg.select("#score-pie-chart-g").remove();
+        let pie = d3.pie().value(d => d);
+        let arc = d3.arc().outerRadius(8 * zoom_scale).innerRadius(5 * zoom_scale);
+        let pie_chart_data = focus_nodes_id.map(d => graph_data.nodes[d]);
+        let score_pie_chart_g = main_group.append("g").attr("id", "score-pie-chart-g");
+        for(let data of pie_chart_data){
+            let one_pie_chart = score_pie_chart_g.append("g")
+                .attr("id", "one-score-pie-chart-g")
+                .attr("transform", "translate("+center_scale_x(data.x)+","+center_scale_y(data.y)+")");
+            one_pie_chart.selectAll("path")
+                .data(pie(show_last_iter?data.score[data.score.length-1]:data.score[iter]))
+                .enter()
+                .append("path")
+                .attr("d", arc)
+                .attr("fill", (d,i) => color_label[i]);
+
+        }
+    }
 };
 
