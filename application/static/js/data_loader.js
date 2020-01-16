@@ -33,7 +33,7 @@ DataLoaderClass = function (dataset) {
 
     // views
     that.graph_view = null;
-    that.loss_view = null;
+    that.dist_view = null;
 
     // Data storage
     that.state = {
@@ -69,8 +69,7 @@ DataLoaderClass = function (dataset) {
             that.update_fisheye_graph_handler(that.update_fisheye_view), "json", "POST");
 
         that.flows_node = new request_node(that.flows_urls + params,
-            // TODO: update_loss_view -> update_dist_view
-            that.get_flows_handler(that.update_loss_view), "json", "GET");
+            that.get_flows_handler(that.update_dist_view), "json", "GET");
         that.flows_node.depend_on(that.graph_node);
 
         // that.loss_node = new request_node(that.loss_url + params,
@@ -142,9 +141,8 @@ DataLoaderClass = function (dataset) {
         v.set_data_manager(that);
     };
 
-    // TODO: set_loss_view -> set_dist_view
-    that.set_loss_view = function(v){
-        that.loss_view = v;
+    that.set_dist_view = function(v){
+        that.dist_view = v;
         v.set_data_manager(that);
     };
 
@@ -169,6 +167,7 @@ DataLoaderClass = function (dataset) {
         })
     };
 
+    // TODO: merge three graph update functions
     that.get_graph_view = function(rescale) {
         console.log("get graph view");
         that.graph_view.component_update({
@@ -196,10 +195,9 @@ DataLoaderClass = function (dataset) {
         }, rescale);
     };
 
-    // TODO: update_loss_view -> update_dist_view
-    that.update_loss_view = function(){
+    that.update_dist_view = function(){
         console.log("update loss view");
-        that.loss_view.component_update({
+        that.dist_view.component_update({
             "label_sums": that.state.label_sums,
             "flows": that.state.flows
         });
