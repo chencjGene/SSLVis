@@ -40,6 +40,7 @@ DataLoaderClass = function (dataset) {
         // manifest_data: null,
         k: null,
         filter_threshold: null,
+        label_names: null,
         graph_data: null,
         loss_data: null,
         img_url: null,
@@ -179,7 +180,8 @@ DataLoaderClass = function (dataset) {
     that.update_graph_view = function(rescale){
         console.log("update graph view");
         that.graph_view.component_update({
-            "graph_data": that.state.graph_data
+            "graph_data": that.state.graph_data,
+            "label_names": that.state.label_names
         }, rescale);
     };
 
