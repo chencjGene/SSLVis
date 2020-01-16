@@ -15,6 +15,7 @@ let GraphLayout = function (container) {
     let color_label = CategoryColor;
     let btn_select_color = "#560731";
     let btn_unselect_color = "#ffffff";
+    let edge_color = UnlabeledColor;
 
     let graph_data = null;
     let data_manager = null;
@@ -406,102 +407,12 @@ let GraphLayout = function (container) {
         new_nodes = [];
         let new_area = null;
 
-        function showpath(new_area){
-                    let main_group_min_x = center_scale_x(new_area.x);
-                    let main_group_min_y = center_scale_y(new_area.y);
-                    let main_group_max_x = center_scale_x(new_area.x+new_area.width);
-                    let main_group_max_y = center_scale_y(new_area.y+new_area.height);
-                    let x_offset = -main_group_min_x;
-                    let y_offset = -main_group_min_y;
-                    nodes_in_group = nodes_group.selectAll("circle");
-                    golds_in_group = golds_group.selectAll("path");
-
-                    // de-highlight
-                    nodes_in_group.attr("opacity", d => path_nodes[d.id]===true?1:0.2);
-                    golds_in_group.attr("opacity", d => path_nodes[d.id]===true?1:0.2);
-
-                    nodes_in_group.each(function (d) {
-                        let node = d3.select(this);
-                        if(path_nodes[d.id]===true){
-                            path_nodes[d.id] = node;
-                        }
-                    });
-                    let maingroup_k = Math.min(width/(main_group_max_x-main_group_min_x), height/(main_group_max_y-main_group_min_y));
-                    let all_in_old_area = true;
-                    for(let new_node of new_nodes){
-                        let x = path_nodes[new_node].datum().x;
-                        let y = path_nodes[new_node].datum().y;
-                        if((x<now_area.x)||(x>now_area.x+now_area.width)||(y<now_area.y)||(y>now_area.y+now_area.height)){
-                            all_in_old_area = false;
-                            break;
-                        }
-                    }
-                    if(all_in_old_area){
-                        maingroup_k = Math.min(width/(main_group_max_x-main_group_min_x), height/(main_group_max_y-main_group_min_y));
-                    }
-                    let show_width = (main_group_max_x-main_group_min_x)*maingroup_k;
-                    let show_height = (main_group_max_y-main_group_min_y)*maingroup_k;
-                    if(old_transform === null){
-                        old_transform = {
-                            toString: function () {
-                                let self = this;
-                                return 'translate('+self.x+","+self.y+") scale("+self.k+")";
-                            }
-                        };
-                    }
-                    old_transform.k = maingroup_k;
-                    old_transform.x = width/2-(main_group_min_x+main_group_max_x)/2*maingroup_k;
-                    old_transform.y = height/2-(main_group_min_y+main_group_max_y)/2*maingroup_k;
-                    main_group
-                        .transition()
-                        .duration(AnimationDuration)
-                        .attr("transform", old_transform);
-                    that._maintain_size(old_transform);
-
-                console.log("Found paths:", path);
-                propagate_svg
-                    .append("g")
-                    .attr("class", "single-propagate")
-                    .selectAll("polyline")
-                    .data(path)
-                    .enter()
-                    .append("polyline")
-                    .attr("stroke-width", 2.0 * zoom_scale)
-                    .attr("stroke", d => color_label[d[2]])
-                    .attr("opacity", 1)
-                    .attr("marker-mid", d => "url(#arrow-"+d[2]+")")
-                    .attr("fill", "none")
-                    .attr("points", function (d) {
-                        let begin = [center_scale_x(path_nodes[d[1]].datum().x), center_scale_y(path_nodes[d[1]].datum().y)];
-                            let end = [center_scale_x(path_nodes[d[0]].datum().x), center_scale_y(path_nodes[d[0]].datum().y)];
-                            let mid = [(begin[0]+end[0])/2, (begin[1]+end[1])/2];
-                            return begin[0]+","+begin[1]+" "+mid[0]+","+mid[1]+" "+end[0]+","+end[1];
-                    })
-                    .on("mouseover", function (d) {
-                        console.log(d);
-                        focus_edge_id = d;
-                        console.log("focus_edge_id = " + focus_edge_id);
-                        focus_edge_node = this;
-                        d3.select(this).style("stroke-width", 4.0 * zoom_scale);
-                    })
-                .on("mouseout", function (d) {
-                    if (focus_edge_change_switch) {
-                        focus_edge_id = null;
-                        console.log("focus_edge_id = null");
-                        focus_edge_node = null;
-                        d3.select(this).style("stroke-width", 2.0 * zoom_scale);
-                    }
-                });
-                now_area = new_area;
-            $('.single-propagate').contextMenu(click_edge_menu, click_menu_settings);
-        }
-
         for (let d of focus_node_data) {
             if (d.label[iter] === -1 || d.label[0] !== -1) continue;
             console.log("Node:", d);
             let eid = d.id;
             let predict_label = d.label[iter];
-            for (let onepath of d.path[iter]) {
+            for (let onepath of d.path) {
                 if (onepath.length === 1) continue;
                 for (let i = 0; i < onepath.length - 1; i++) {
                     let s = onepath[i];
@@ -740,6 +651,20 @@ let GraphLayout = function (container) {
                 .attr("fill", "transparent")
                 .attr("stroke-width", 1);
         }
+        svg.select("#markers").append("marker")
+                .attr("id", "arrow-gray")
+                .attr("refX", 2)
+                .attr("refY", 2)
+                .attr("markerWidth", 10)
+                .attr("markerHeight", 10)
+                .attr("orient", "auto")
+                .attr("markerUnits", "strokeWidth")
+                .append("path")
+                .attr("d", "M0,4 L4,2 L0,0")
+                .attr("stroke", edge_color)
+                .attr("fill", "transparent")
+                .attr("opacity", 1)
+                .attr("stroke-width", 1);
     };
 
     that._update_transform = function(new_area) {
@@ -843,13 +768,13 @@ let GraphLayout = function (container) {
                             })
                             .attr("class", "edge-line")
                             .attr("stroke-width", 2 * zoom_scale)
-                            .attr("stroke", d => color_label[d[2]])
+                            .attr("stroke", edge_color)
                             .attr("opacity", 0)
-                            .attr("marker-mid", d => "url(#arrow-" + d[2] + ")")
+                            .attr("marker-mid", d => "url(#arrow-gray)")
                             .attr("fill", "none")
                             .attr("points", function (d) {
-                                let begin = [center_scale_x(path_nodes[d[1]].datum().x), center_scale_y(path_nodes[d[1]].datum().y)];
-                                let end = [center_scale_x(path_nodes[d[0]].datum().x), center_scale_y(path_nodes[d[0]].datum().y)];
+                                let begin = [center_scale_x(path_nodes[d[0]].datum().x), center_scale_y(path_nodes[d[0]].datum().y)];
+                                let end = [center_scale_x(path_nodes[d[1]].datum().x), center_scale_y(path_nodes[d[1]].datum().y)];
                                 let mid = [(begin[0]+end[0])/2, (begin[1]+end[1])/2];
                                 return begin[0]+","+begin[1]+" "+mid[0]+","+mid[1]+" "+end[0]+","+end[1];
                             });
@@ -891,13 +816,13 @@ let GraphLayout = function (container) {
                 .enter()
                 .append("polyline")
                 .attr("stroke-width", 2.0 * zoom_scale)
-                .attr("stroke", d => color_label[d[2]])
+                .attr("stroke", edge_color)
                 .attr("opacity", 0)
-                .attr("marker-mid", d => "url(#arrow-"+d[2]+")")
+                .attr("marker-mid", d => "url(#arrow-gray)")
                 .attr("fill", "none")
                 .attr("points", function (d) {
-                            let begin = [center_scale_x(path_nodes[d[1]].datum().x), center_scale_y(path_nodes[d[1]].datum().y)];
-                                let end = [center_scale_x(path_nodes[d[0]].datum().x), center_scale_y(path_nodes[d[0]].datum().y)];
+                            let begin = [center_scale_x(path_nodes[d[0]].datum().x), center_scale_y(path_nodes[d[0]].datum().y)];
+                                let end = [center_scale_x(path_nodes[d[1]].datum().x), center_scale_y(path_nodes[d[1]].datum().y)];
                                 let mid = [(begin[0]+end[0])/2, (begin[1]+end[1])/2];
                                 return begin[0]+","+begin[1]+" "+mid[0]+","+mid[1]+" "+end[0]+","+end[1];
                         })
@@ -988,7 +913,7 @@ let GraphLayout = function (container) {
                     path = [];
                     path_nodes = {};
                     new_nodes = [];
-                    for (let onepath of d.path[iter]) {
+                    for (let onepath of d.path) {
                         if (onepath.length === 1) continue;
                         for (let i = 0; i < onepath.length - 1; i++) {
                             let s = onepath[i];
@@ -1096,6 +1021,7 @@ let GraphLayout = function (container) {
             //         .attr("stroke", "gray")
             //         .attr("opacity", 0.0);
             if((nodes_in_group.enter().size() === 0) && (golds_in_group.enter().size() === 0)){
+                console.log("no create");
                 resolve();
             }
         });
@@ -1293,6 +1219,7 @@ let GraphLayout = function (container) {
             //         .attr("x2", d => center_scale_x(nodes_data[d["e"]].x))
             //         .attr("y2", d => center_scale_y(nodes_data[d["e"]].y))
             if((nodes_in_group.size()===0) && (golds_in_group.size() === 0)){
+                console.log("no update");
                 resolve();
             }
         })
@@ -1315,6 +1242,7 @@ let GraphLayout = function (container) {
                     resolve();
                 });
             if((nodes_in_group.exit().size()===0) && (golds_in_group.exit().size() === 0)){
+                console.log("no remove");
                 resolve();
             }
         });
@@ -1355,8 +1283,11 @@ let GraphLayout = function (container) {
             golds_in_group = golds_group.selectAll("path")
                 .data(golds, d => d.id);
             //update view
+            console.log("remove");
             await that._remove();
+            console.log("update");
             await that._update();
+            console.log("create");
             await that._create();
 
             // remove lasso

@@ -36,7 +36,7 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, p
     target_num = 500
     retsne = not os.path.exists(anchor_path)
     train_x_tsne = None
-    top_k_uncertain = get_topk_uncertain(process_data, k = 10)
+    top_k_uncertain = get_topk_uncertain(process_data, k = 20)
     if not retsne:
         train_x_tsne, level_infos = pickle.load(open(anchor_path, "rb"))
         top_num = len(level_infos[0]['index'])
@@ -47,61 +47,61 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, p
     if retsne:
         if train_x_tsne is None:
             # random labeled data position
-            train_x_tsne = np.zeros((node_num, 2))
-            labeled_data = []
-            random.seed(seed=10)
-            for i in range(node_num):
-                label = -1 if np.isclose(np.max(process_data[0][i]), 0) else int(np.argmax(process_data[0][i]))
-                if label > -1:
-                    have = -1
-                    for node_id in labeled_data:
-                        old_label = -1 if np.isclose(np.max(process_data[0][node_id]), 0) else int(np.argmax(process_data[0][node_id]))
-                        if old_label==label:
-                            have = node_id
-                    if have > -1:
-                        train_x_tsne[i] = train_x_tsne[have]+0.1*(random.rand((2))-0.5)
-                    else:
-                        train_x_tsne[i] = random.random((2))
-                    labeled_data.append(i)
-            # random unlabeled data position
-            err_cnt = 0
-            for i in range(node_num):
-                predict_label = -1 if np.isclose(np.max(process_data[iter_num-1][i]), 0) else int(np.argmax(process_data[iter_num-1][i]))
-                init_label = -1 if np.isclose(np.max(process_data[0][i]), 0) else int(np.argmax(process_data[0][i]))
-                if predict_label > -1 and init_label == -1:
-                    target_ids = []
-                    for path in propagation_path[i][iter_num-1]:
-                        target_id = path[-1]
-                        if target_id not in target_ids:
-                            assert target_id in labeled_data
-                            target_ids.append(target_id)
-                    for id in target_ids:
-                        train_x_tsne[i] += train_x_tsne[id]
-                    train_x_tsne[i] /= len(target_ids)
-                    train_x_tsne[i] += 1e-4*(random.random((2))-0.5)
-                    if len(target_ids) == 0:
-                        err_cnt += 1
-                        for labeled_data_id in labeled_data:
-                            label = -1 if np.isclose(np.max(process_data[0][labeled_data_id]), 0) else int(
-                                np.argmax(process_data[0][labeled_data_id]))
-                            if label == predict_label:
-                                train_x_tsne[i] = train_x_tsne[labeled_data_id] + 1e-4*(random.random((2))-0.5)
-            # train_x_tsne = IncrementalTSNE(n_components=2, n_jobs=20).fit_transform(train_x)
-            print("err cnt:", err_cnt)
-            label_colors = ["#A9A9A9", "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2",
-                            "#ffdb45", "#bcbd22", "#17becf"]
-            colors = []
-            for node_id in range(node_num):
-
-                colors.append(label_colors[(-1 if np.isclose(np.max(process_data[iter_num-1][node_id]), 0) else int(np.argmax(process_data[iter_num-1][node_id]))) + 1])
-            plt.figure()
-            plt.scatter(train_x_tsne[:, 0], train_x_tsne[:, 1], s=2, c=colors)
-            for labeled_id in labeled_data:
-                plt.text(train_x_tsne[labeled_id][0], train_x_tsne[labeled_id][1], str(int(ground_truth[labeled_id])))
+            # train_x_tsne = np.zeros((node_num, 2))
+            # labeled_data = []
+            # random.seed(seed=10)
+            # for i in range(node_num):
+            #     label = -1 if np.isclose(np.max(process_data[0][i]), 0) else int(np.argmax(process_data[0][i]))
+            #     if label > -1:
+            #         have = -1
+            #         for node_id in labeled_data:
+            #             old_label = -1 if np.isclose(np.max(process_data[0][node_id]), 0) else int(np.argmax(process_data[0][node_id]))
+            #             if old_label==label:
+            #                 have = node_id
+            #         if have > -1:
+            #             train_x_tsne[i] = train_x_tsne[have]+0.1*(random.rand((2))-0.5)
+            #         else:
+            #             train_x_tsne[i] = random.random((2))
+            #         labeled_data.append(i)
+            # # random unlabeled data position
+            # err_cnt = 0
+            # for i in range(node_num):
+            #     predict_label = -1 if np.isclose(np.max(process_data[iter_num-1][i]), 0) else int(np.argmax(process_data[iter_num-1][i]))
+            #     init_label = -1 if np.isclose(np.max(process_data[0][i]), 0) else int(np.argmax(process_data[0][i]))
+            #     if predict_label > -1 and init_label == -1:
+            #         target_ids = []
+            #         for path in propagation_path[i][iter_num-1]:
+            #             target_id = path[-1]
+            #             if target_id not in target_ids:
+            #                 assert target_id in labeled_data
+            #                 target_ids.append(target_id)
+            #         for id in target_ids:
+            #             train_x_tsne[i] += train_x_tsne[id]
+            #         train_x_tsne[i] /= len(target_ids)
+            #         train_x_tsne[i] += 1e-4*(random.random((2))-0.5)
+            #         if len(target_ids) == 0:
+            #             err_cnt += 1
+            #             for labeled_data_id in labeled_data:
+            #                 label = -1 if np.isclose(np.max(process_data[0][labeled_data_id]), 0) else int(
+            #                     np.argmax(process_data[0][labeled_data_id]))
+            #                 if label == predict_label:
+            #                     train_x_tsne[i] = train_x_tsne[labeled_data_id] + 1e-4*(random.random((2))-0.5)
+            # # train_x_tsne = IncrementalTSNE(n_components=2, n_jobs=20).fit_transform(train_x)
+            # print("err cnt:", err_cnt)
+            # label_colors = ["#A9A9A9", "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2",
+            #                 "#ffdb45", "#bcbd22", "#17becf"]
+            # colors = []
+            # for node_id in range(node_num):
+            #
+            #     colors.append(label_colors[(-1 if np.isclose(np.max(process_data[iter_num-1][node_id]), 0) else int(np.argmax(process_data[iter_num-1][node_id]))) + 1])
+            # plt.figure()
+            # plt.scatter(train_x_tsne[:, 0], train_x_tsne[:, 1], s=2, c=colors)
+            # for labeled_id in labeled_data:
+            #     plt.text(train_x_tsne[labeled_id][0], train_x_tsne[labeled_id][1], str(int(ground_truth[labeled_id])))
             # plt.show()
-            train_x_tsne = TSNE(n_components=2, verbose=True, method='exact', init=train_x_tsne, early_exaggeration=1).fit_transform(train_x)
-            plt.figure()
-            plt.scatter(train_x_tsne[:, 0], train_x_tsne[:, 1], s=2, c=colors)
+            train_x_tsne = TSNE(n_components=2, verbose=True, method='exact', early_exaggeration=1).fit_transform(train_x)
+            # plt.figure()
+            # plt.scatter(train_x_tsne[:, 0], train_x_tsne[:, 1], s=2, c=colors)
             # plt.show()
             #normalize
             x_min = np.min(train_x_tsne[:, 0])

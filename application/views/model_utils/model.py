@@ -59,7 +59,7 @@ class SSLModel(object):
         self.selected_dir = self.data.selected_dir
         # self.n_neighbor = int(np.sqrt(self.data.get_train_num()))
         self.n_neighbor = 7
-        self.filter_threshold = 0.9
+        self.filter_threshold = 0.7
         logger.info("n_neighbor: {}".format(self.n_neighbor))
 
         self.simplified_affinity_matrix = None
@@ -276,48 +276,44 @@ class SSLModel(object):
         propagation_path = self.get_path_to_label(self.process_data, simplified_affinity_matrix)
         return simplified_affinity_matrix, propagation_path
 
-    def _find_path(self, path_stack, stack_len, edge_indices, edge_indptr, predict_labels, paths, iter, target_label):
+    def _find_path(self, path_stack, stack_len, edge_indices, edge_indptr, propagation_path, path_stack_flag):
         if stack_len == 0:
             return
         top_node = path_stack[stack_len-1]
-        if predict_labels[0][top_node] > -1:
-            # arrive target_label
-            paths.append(copy.copy(path_stack))
+        propagation_path[top_node].append(copy.copy(path_stack))
         edge_start_idx = edge_indptr[top_node]
         edge_end_idx = edge_indptr[top_node+1]
         for edge_idx in range(edge_start_idx, edge_end_idx):
             edge_id = int(edge_indices[edge_idx])
-            if edge_id in path_stack:
+            if path_stack_flag[edge_id]:
                 continue
             path_stack.append(edge_id)
-            self._find_path(path_stack, stack_len+1, edge_indices, edge_indptr, predict_labels, paths, iter, target_label)
+            path_stack_flag[edge_id] = True
+            self._find_path(path_stack, stack_len+1, edge_indices, edge_indptr, propagation_path, path_stack_flag)
         path_stack.pop()
+        path_stack_flag[top_node] = False
 
     def get_path_to_label(self, process_data, influence_matrix):
         iternum = process_data.shape[0]
         nodenum = process_data.shape[1]
-        propagation_path = [[[] for j in range(iternum)] for i in range(nodenum)]
-        edge_indices = influence_matrix.indices
-        edge_indptr = influence_matrix.indptr
-        # predict label
-        predict_labels = np.zeros((iternum, nodenum))
-        for iter in range(iternum):
+        propagation_path = [[] for i in range(nodenum)]
+        influence_matrix_trans = influence_matrix.transpose(copy = True).tocsr()
+        edge_indices = influence_matrix_trans.indices
+        edge_indptr = influence_matrix_trans.indptr
+        labeled_idx = []
+        for i, label in enumerate(self.data.get_train_label()):
+            if label > -1:
+                labeled_idx.append(i)
+        for labeled in labeled_idx:
+            path_stack_flag = {}
             for i in range(nodenum):
-                predict_label = np.argmax(process_data[iter][i])
-                predict_labels[iter][i] = -1 if np.isclose(process_data[iter][i][predict_label], 0) else predict_label
-
-        for iter in range(iternum):
-            for i in range(nodenum):
-                if (predict_labels[iter][i] == -1) or (propagation_path[i][iter] != []):
-                    continue
-                elif predict_labels[0][i] > -1:
-                    propagation_path[i][iter].append([i])
-                    continue
-                paths = []
-                self._find_path([int(i)], 1, edge_indices, edge_indptr, predict_labels, paths, iter, predict_labels[iter][i])
-                propagation_path[i][iter] += paths
-                #TODO: optimize
-
+                path_stack_flag[i] = False
+            path_stack_flag[int(labeled)] = True
+            self._find_path([int(labeled)], 1, edge_indices, edge_indptr, propagation_path, path_stack_flag)
+        propagation_path_cnt = 0
+        for node_paths in propagation_path:
+            propagation_path_cnt += len(node_paths)
+        print("propagation path num:", propagation_path_cnt)
         return propagation_path
 
     def _projection(self):
