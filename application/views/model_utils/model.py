@@ -53,7 +53,7 @@ class SSLModel(object):
         # signal is used to indicate that all data should be updated
         self.signal_state = False
         self._propagation = propagation
-        self.alpha = 0.5
+        self.alpha = 0.2
 
         self.data = Data(self.dataname, labeled_num, total_num)
         self.selected_dir = self.data.selected_dir
@@ -67,7 +67,7 @@ class SSLModel(object):
         # self._get_signal_state()
         # self._init()
 
-    def init(self, k, filter_threshold):
+    def init(self, k=None, filter_threshold=None):
         if k is not None:
             self.n_neighbor = k
         if filter_threshold is not None:
@@ -161,6 +161,8 @@ class SSLModel(object):
                                             shape=(instance_num, instance_num))
         logger.info("affinity_matrix construction finished!!")
         laplacian = build_laplacian_graph(affinity_matrix)
+        self.affinity_matrix = affinity_matrix
+        self.laplacian = laplacian
 
         train_gt = self.data.get_train_ground_truth()
         train_gt = np.array(train_gt)
@@ -208,17 +210,43 @@ class SSLModel(object):
 
     def simplify_influence_matrix(self, threshold=0.7):
         logger.info("begin simplify influence matrix")
+        laplacian = self.laplacian.tocsr()
+        unnorm_dist = self.unnorm_dist
+        n_samples, n_classes = unnorm_dist.shape
+        y = np.asarray(self.data.get_train_label())
+        classes = np.unique(y)
+        classes = (classes[classes != -1])
+        unlabeled = y == -1
+        labeled = (y > -1)
+        # initialize distributions
+        label_distributions_ = np.zeros((n_samples, n_classes))
+        for label in classes:
+            label_distributions_[y == label, classes == label] = 1
+        y_static_labeled = np.copy(label_distributions_)
+        y_static = y_static_labeled * (1 - self.alpha)
+
         simplified_affinity_matrix = self.influence_matrix.copy() * 0
         for i in range(simplified_affinity_matrix.shape[0]):
             start = self.influence_matrix.indptr[i]
             end = self.influence_matrix.indptr[i + 1]
             data_in_this_row = self.influence_matrix.data[start:end]
+            j_in_this_row = self.influence_matrix.indices[start:end]
             sorted_idx = data_in_this_row.argsort()[::-1]
             max_idx = []
             for k in range(len(sorted_idx)):
                 max_idx.append(sorted_idx[k])
-                if (data_in_this_row[max_idx].sum() /
-                        data_in_this_row.sum() > threshold):
+                # # Strategy 2
+                # if (data_in_this_row[max_idx].sum() /
+                #         data_in_this_row.sum() > threshold):
+                #     break
+                # Strategy 1
+                v = np.zeros(self.unnorm_dist.shape[1])
+                for _k in max_idx:
+                    v = v + self.alpha * laplacian[i, j_in_this_row[_k]] * unnorm_dist[j_in_this_row[_k]]
+                v = v + y_static[i]
+                err = np.sqrt(((v-unnorm_dist[i])**2).sum())
+                err_percent = err / np.sqrt((unnorm_dist[i]**2).sum())
+                if err_percent < (1 - self.filter_threshold):
                     break
             for k in max_idx:
                 simplified_affinity_matrix.data[start:end][k] = 1
