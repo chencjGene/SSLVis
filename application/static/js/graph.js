@@ -28,7 +28,7 @@ let GraphLayout = function (container) {
     let golds_in_group = null;
     let lasso_btn_path = null;
 
-    let AnimationDuration = 500;
+    let AnimationDuration = 1000;
 
     let main_group = null;
     let wait_list_group = null;
@@ -72,6 +72,10 @@ let GraphLayout = function (container) {
     let focus_node_change_switch = true;
     let focus_edge_node = null;
     let focus_edge_change_switch = true;
+
+    let path_nodes = {};
+    let new_nodes = [];
+    let path = [];
 
     that._init = function () {
         svg = container.selectAll('#graph-view-svg')
@@ -127,6 +131,7 @@ let GraphLayout = function (container) {
             .on('start', function () {
                 d3.selectAll(".iw-contextMenu").style("display", "none");
                 svg.select("#group-propagation").remove();
+                svg.select("#score-pie-chart-g").remove();
                 nodes_in_group.attr("opacity", 1);
                 golds_in_group.attr("opacity", 1);
                 // edges_in_group.attr("opacity", 0.4);
@@ -330,9 +335,12 @@ let GraphLayout = function (container) {
         edges_group.selectAll("line").style('stroke-width', zoom_scale);
         main_group.select("#group-propagation").selectAll("polyline").style('stroke-width', 2.0 * zoom_scale);
         main_group.select("#single-propagate").selectAll("polyline").style('stroke-width', 2.0 * zoom_scale);
+        let arc = d3.arc().outerRadius(8 * zoom_scale).innerRadius(5 * zoom_scale);
+        main_group.select("#score-pie-chart-g").selectAll("path").attr("d", arc);
     };
 
     that.lasso_start = function () {
+        svg.select("#score-pie-chart-g").remove();
         svg.select("#group-propagation").remove();
         nodes_in_group.attr("opacity", 1);
         golds_in_group.attr("opacity", 1);
@@ -391,11 +399,11 @@ let GraphLayout = function (container) {
         data_manager.update_image_view(lasso.selectedItems());
         console.log("focus nodes:", focus_node_data);
 
-        let propagate_svg = main_group.insert("g", ":first-child").attr("id", "group-propagation");
+
         let path_keys = [];
-        let path = [];
-        let path_nodes = {};
-        let new_nodes = [];
+        path = [];
+        path_nodes = {};
+        new_nodes = [];
         let new_area = null;
 
         function showpath(new_area){
@@ -553,7 +561,7 @@ let GraphLayout = function (container) {
                             y:node.y
                         }
                     }
-                    data_manager.update_fisheye_graph_node(old_nodes, new_nodes, new_area, current_level, width/height, showpath);
+                    data_manager.update_fisheye_graph_node(must_show_nodes, old_nodes, new_nodes, new_area, current_level, width/height, "group");
                 });
     };
 
@@ -580,10 +588,23 @@ let GraphLayout = function (container) {
         data_manager = _data_manager;
     };
 
-    that.component_update = function (state, rescale) {
+    that.component_update = async function (state, rescale) {
         console.log("graph component update");
         that._update_data(state);
-        that._update_view(rescale);
+        if(state.fisheye !== undefined){
+            await that._update_transform(state.area);
+        }
+        await that._update_view(rescale);
+        if(state.top_k_uncertain !== undefined){
+            console.log("get top k uncertain:", state.top_k_uncertain);
+            that._draw_score_pie_chart(state.top_k_uncertain, true);
+        }
+        if(state.fisheye === "single"){
+            await that._single_show_path();
+        }
+        else if(state.fisheye === "group"){
+            await that._group_show_path();
+        }
     };
 
     that._update_data = function (state) {
@@ -721,81 +742,51 @@ let GraphLayout = function (container) {
         }
     };
 
-    that._create = function () {
-        svg = container.select("#graph-view-svg");
-        let nodes = Object.values(graph_data.nodes);
-        // let edges = that._edge_reformulation(graph_data.edges);
-        let golds = nodes.filter(d => d.label[0] > -1);
-        // let links_data = graph_data.edges;
-        let nodes_data = graph_data.nodes;
-        width = $('#graph-view-svg').width();
-        height = $('#graph-view-svg').height();
+    that._update_transform = function(new_area) {
+        return new Promise(function (resolve, reject) {
+            width = $("#graph-view-svg").width();
+            height = $("#graph-view-svg").height();
+            let main_group_min_x = center_scale_x(new_area.x);
+            let main_group_min_y = center_scale_y(new_area.y);
+            let main_group_max_x = center_scale_x(new_area.x + new_area.width);
+            let main_group_max_y = center_scale_y(new_area.y + new_area.height);
+            let maingroup_k = Math.min(width/(main_group_max_x-main_group_min_x), height/(main_group_max_y-main_group_min_y));
+            if(old_transform === null){
+                old_transform = {
+                    toString: function () {
+                        let self = this;
+                        return 'translate(' + self.x + "," + self.y + ") scale(" + self.k + ")";
+                    }
+                };
+            }
+            old_transform.k = maingroup_k;
+            old_transform.x = width/2-(main_group_min_x+main_group_max_x)/2*maingroup_k;
+            old_transform.y = height/2-(main_group_min_y+main_group_max_y)/2*maingroup_k;
+            main_group
+                .transition()
+                .duration(AnimationDuration)
+                .attr("transform", old_transform)
+                .on("end", function () {
+                    resolve();
+                });
+            that._maintain_size(old_transform);
+            now_area = new_area;
+        });
+    };
 
-        nodes_in_group = nodes_group.selectAll("circle")
-            .data(nodes, d => d.id);
-        nodes_in_group.enter()
-            .append("circle")
-            .attr("id", d => "id-" + d.id)
-            .attr("class", "node-dot")
-            .attr("cx", d => center_scale_x(d.x))
-            .attr("cy", d => center_scale_y(d.y))
-            .attr("r", 3.5 * zoom_scale)
-            .attr("opacity", 0)
-            .attr("fill", function (d) {
-                if (show_ground_truth) {
-                    if (d.truth === -1) return color_unlabel;
-                    else return color_label[d.truth];
-                } else {
-                    if (d.label[iter] === -1) return color_unlabel;
-                    else return color_label[d.label[iter]];
-                }
-            })
-            .on("mouseover", function (d) {
-                let node = d3.select(this);
-                node.attr("r", 5 * zoom_scale);
-                // that._update_click_menu();
-                if (focus_node_change_switch) {
-                    focus_node_id = d.id;
-                    console.log("focus_node_id:" + focus_node_id);
-                }
-            })
-            .on("mouseout", function (d) {
-                let node = d3.select(this);
-                node.attr("r", 3.5 * zoom_scale);
-
-                if (focus_node_change_switch) {
-                    focus_node_id = null;
-                    console.log("focus_node_id = null");
-                }
-            })
-            .on("click", function (d) {
-                is_focus_mode = true;
-                focus_node = {};
-                lasso_result = [d.id];
-                focus_edge_id = null;
-                console.log("focus_edge_id = null");
-                focus_edge_node = null;
-                // that._update_click_menu();
-                let node = d3.select(this);
-                let new_area = null;
-                // added by changjian, 20191226
-                // showing image content
-                data_manager.update_image_view(node);
-                console.log("Node:", d);
-                function showpath(new_area){
-                    width = $("#graph-view-svg").width();
-                    height = $("#graph-view-svg").height();
-                    let main_group_min_x = center_scale_x(new_area.x);
-                    let main_group_min_y = center_scale_y(new_area.y);
-                    let main_group_max_x = center_scale_x(new_area.x + new_area.width);
-                    let main_group_max_y = center_scale_y(new_area.y + new_area.height);
-                    let x_offset = -main_group_min_x;
-                    let y_offset = -main_group_min_y;
-                    nodes_in_group = nodes_group.selectAll("circle");
+    that._single_show_path = function(){
+        return new Promise(function (resolve, reject) {
+            nodes_in_group = nodes_group.selectAll("circle");
                     golds_in_group = golds_group.selectAll("path");
                     // de-highlight
-                    nodes_in_group.attr("opacity", d => path_nodes[d.id]===true?1:0.2);
-                    golds_in_group.attr("opacity", d => path_nodes[d.id]===true?1:0.2);
+                    nodes_in_group
+                        .transition()
+                        .duration(AnimationDuration)
+                        .attr("opacity", d => path_nodes[d.id]===true?1:0.2);
+                    golds_in_group
+                        .transition()
+                        .duration(AnimationDuration)
+                        .attr("opacity", d => path_nodes[d.id]===true?1:0.2);
 
                     svg.select("#single-propagate").remove();
                     nodes_in_group.each(function (d) {
@@ -804,197 +795,310 @@ let GraphLayout = function (container) {
                             path_nodes[d.id] = node;
                         }
                     });
-                    let maingroup_k = Math.min(width/(main_group_max_x-main_group_min_x), height/(main_group_max_y-main_group_min_y));
-                    let all_in_old_area = true;
-                    for(let new_node of new_nodes){
-                        let x = path_nodes[new_node].datum().x;
-                        let y = path_nodes[new_node].datum().y;
-                        if((x<now_area.x)||(x>now_area.x+now_area.width)||(y<now_area.y)||(y>now_area.y+now_area.height)){
-                            all_in_old_area = false;
-                            break;
-                        }
-                    }
-                    if(all_in_old_area){
-                        maingroup_k = Math.min(width/(main_group_max_x-main_group_min_x), height/(main_group_max_y-main_group_min_y));
-                    }
+                    that._draw_score_pie_chart(Object.keys(path_nodes));
+                    // let all_in_old_area = true;
+                    // for(let new_node of new_nodes){
+                    //     let x = path_nodes[new_node].datum().x;
+                    //     let y = path_nodes[new_node].datum().y;
+                    //     if((x<now_area.x)||(x>now_area.x+now_area.width)||(y<now_area.y)||(y>now_area.y+now_area.height)){
+                    //         all_in_old_area = false;
+                    //         break;
+                    //     }
+                    // }
+                    // if(all_in_old_area){
+                    //     maingroup_k = Math.min(width/(main_group_max_x-main_group_min_x), height/(main_group_max_y-main_group_min_y));
+                    // }
                     // let show_width = (main_group_max_x-main_group_min_x)*maingroup_k;
                     // let show_height = (main_group_max_y-main_group_min_y)*maingroup_k;
-                    if(old_transform === null){
-                        old_transform = {
-                            toString: function () {
-                                let self = this;
-                                return 'translate(' + self.x + "," + self.y + ") scale(" + self.k + ")";
-                            }
-                        };
-                    }
-                    old_transform.k = maingroup_k;
-                    old_transform.x = width/2-(main_group_min_x+main_group_max_x)/2*maingroup_k;
-                    old_transform.y = height/2-(main_group_min_y+main_group_max_y)/2*maingroup_k;
-                    console.log("Found paths:", path);
+
+
                     let single_node_propagate = main_group.insert("g", ":first-child")
-                        .attr("id", "single-propagate")
-                        .selectAll("polyline")
-                        .data(path)
-                        .enter()
-                        .append("polyline")
-                        .attr("class", "edge-line")
-                        .attr("stroke-width", 2 * zoom_scale)
-                        .attr("stroke", color_label[predict_label])
-                        .attr("opacity", 1)
-                        .attr("marker-mid", "url(#arrow-" + predict_label + ")")
-                        .attr("fill", "none")
-                        .attr("points", function (d) {
-                            let begin = [center_scale_x(path_nodes[d[1]].datum().x), center_scale_y(path_nodes[d[1]].datum().y)];
-                            let end = [center_scale_x(path_nodes[d[0]].datum().x), center_scale_y(path_nodes[d[0]].datum().y)];
-                            let mid = [(begin[0]+end[0])/2, (begin[1]+end[1])/2];
-                            return begin[0]+","+begin[1]+" "+mid[0]+","+mid[1]+" "+end[0]+","+end[1];
-                        })
-                        .on("mouseover", function (d) {
-                            console.log(d);
-                            if (focus_edge_change_switch) {
-                                focus_edge_id = d;
-                                console.log("focus_edge_id = " + focus_edge_id);
-                                focus_edge_node = this;
-                                d3.select(this).style("stroke-width", 4.0 * zoom_scale);
+                            .attr("id", "single-propagate")
+                            .selectAll("polyline")
+                            .data(path)
+                            .enter()
+                            .append("polyline")
+                            .on("mouseover", function (d) {
+                                console.log(d);
+                                if (focus_edge_change_switch) {
+                                    focus_edge_id = d;
+                                    console.log("focus_edge_id = " + focus_edge_id);
+                                    focus_edge_node = this;
+                                    d3.select(this).style("stroke-width", 4.0 * zoom_scale);
+                                }
+                                $.post("/graph/feature_distance", {
+                                    path:JSON.stringify(d)
+                                }, function (data) {
+                                    console.log("Distance between",d[0],d[1],"is:",data.distance);
+                                })
+                                // that._update_click_menu();
+                            })
+                            .on("mouseout", function (d) {
+                                if (focus_edge_change_switch) {
+                                    focus_edge_id = null;
+                                    console.log("focus_edge_id = null");
+                                    focus_edge_node = null;
+                                    d3.select(this).style("stroke-width", 2.0 * zoom_scale);
+                                }
+                            })
+                            .attr("class", "edge-line")
+                            .attr("stroke-width", 2 * zoom_scale)
+                            .attr("stroke", d => color_label[d[2]])
+                            .attr("opacity", 0)
+                            .attr("marker-mid", d => "url(#arrow-" + d[2] + ")")
+                            .attr("fill", "none")
+                            .attr("points", function (d) {
+                                let begin = [center_scale_x(path_nodes[d[1]].datum().x), center_scale_y(path_nodes[d[1]].datum().y)];
+                                let end = [center_scale_x(path_nodes[d[0]].datum().x), center_scale_y(path_nodes[d[0]].datum().y)];
+                                let mid = [(begin[0]+end[0])/2, (begin[1]+end[1])/2];
+                                return begin[0]+","+begin[1]+" "+mid[0]+","+mid[1]+" "+end[0]+","+end[1];
+                            });
+                            single_node_propagate.transition()
+                            .duration(AnimationDuration)
+                            .attr("opacity", 1)
+                                .on("end", resolve);
+                        // $('.edge-line').contextMenu(click_edge_menu, click_menu_settings);
+                        $('#single-propagate').contextMenu(click_edge_menu, click_menu_settings);
+        });
+    };
+
+    that._group_show_path = function(){
+        return new Promise(function (resolve, reject) {
+            nodes_in_group = nodes_group.selectAll("circle");
+            golds_in_group = golds_group.selectAll("path");
+
+            // de-highlight
+            nodes_in_group
+                .transition()
+                .duration(AnimationDuration)
+                .attr("opacity", d => path_nodes[d.id]===true?1:0.2);
+            golds_in_group
+                .transition()
+                .duration(AnimationDuration)
+                .attr("opacity", d => path_nodes[d.id]===true?1:0.2);
+            nodes_in_group.each(function (d) {
+                            let node = d3.select(this);
+                            if(path_nodes[d.id]===true){
+                                path_nodes[d.id] = node;
                             }
-                            // that._update_click_menu();
-                        })
-                        .on("mouseout", function (d) {
-                            if (focus_edge_change_switch) {
-                                focus_edge_id = null;
-                                console.log("focus_edge_id = null");
-                                focus_edge_node = null;
-                                d3.select(this).style("stroke-width", 2.0 * zoom_scale);
-                            }
-                            console.log(d);
                         });
-                    main_group
-                        .transition()
-                        .duration(AnimationDuration)
-                        .attr("transform", old_transform);
-                    that._maintain_size(old_transform);
-                    now_area = new_area;
-                    // $('.edge-line').contextMenu(click_edge_menu, click_menu_settings);
-                    $('#single-propagate').contextMenu(click_edge_menu, click_menu_settings);
-                }
+            that._draw_score_pie_chart(Object.keys(path_nodes));
+            let propagate_svg = main_group.insert("g", ":first-child").attr("id", "group-propagation");
+            propagate_svg.append("g")
+                .attr("class", "single-propagate")
+                .selectAll("polyline")
+                .data(path)
+                .enter()
+                .append("polyline")
+                .attr("stroke-width", 2.0 * zoom_scale)
+                .attr("stroke", d => color_label[d[2]])
+                .attr("opacity", 0)
+                .attr("marker-mid", d => "url(#arrow-"+d[2]+")")
+                .attr("fill", "none")
+                .attr("points", function (d) {
+                            let begin = [center_scale_x(path_nodes[d[1]].datum().x), center_scale_y(path_nodes[d[1]].datum().y)];
+                                let end = [center_scale_x(path_nodes[d[0]].datum().x), center_scale_y(path_nodes[d[0]].datum().y)];
+                                let mid = [(begin[0]+end[0])/2, (begin[1]+end[1])/2];
+                                return begin[0]+","+begin[1]+" "+mid[0]+","+mid[1]+" "+end[0]+","+end[1];
+                        })
+                .on("mouseover", function (d) {
+                            console.log(d);
+                            focus_edge_id = d;
+                            console.log("focus_edge_id = " + focus_edge_id);
+                            focus_edge_node = this;
+                            d3.select(this).style("stroke-width", 4.0 * zoom_scale);
+                        })
+                .on("mouseout", function (d) {
+                        if (focus_edge_change_switch) {
+                            focus_edge_id = null;
+                            console.log("focus_edge_id = null");
+                            focus_edge_node = null;
+                            d3.select(this).style("stroke-width", 2.0 * zoom_scale);
+                        }
+                    })
+                .transition()
+                .duration(AnimationDuration)
+                .attr("opacity", 1)
+                .on("end", resolve);
+            $('.single-propagate').contextMenu(click_edge_menu, click_menu_settings);
+        });
+    };
 
-                if (d.label[iter] === -1 || d.label[0] !== -1) return;
+    that._create = async function () {
+        return new Promise(function (resolve, reject) {
+            svg = container.select("#graph-view-svg");
 
-                // get must show nodes
-                let predict_label = d.label[iter];
-                let path_keys = [];
-                let path = [];
-                let path_nodes = {};
-                let new_nodes = [];
-                for (let onepath of d.path[iter]) {
-                    if (onepath.length === 1) continue;
-                    for (let i = 0; i < onepath.length - 1; i++) {
-                        let s = onepath[i];
-                        let e = onepath[i + 1];
-                        let key = s + "," + e;
-                        if (path_keys.indexOf(key) === -1) {
-                            path_keys.push(key)
+            nodes_in_group.enter()
+                .append("circle")
+                .attr("id", d => "id-" + d.id)
+                .attr("class", "node-dot")
+                .attr("cx", d => center_scale_x(d.x))
+                .attr("cy", d => center_scale_y(d.y))
+                .attr("r", 3.5 * zoom_scale)
+                .attr("opacity", 0)
+                .attr("fill", function (d) {
+                    if (show_ground_truth) {
+                        if (d.truth === -1) return color_unlabel;
+                        else return color_label[d.truth];
+                    } else {
+                        if (d.label[iter] === -1) return color_unlabel;
+                        else return color_label[d.label[iter]];
+                    }
+                })
+                .on("mouseover", function (d) {
+                    let node = d3.select(this);
+                    node.attr("r", 5 * zoom_scale);
+                    // that._update_click_menu();
+                    if (focus_node_change_switch) {
+                        focus_node_id = d.id;
+                        console.log("focus_node_id:" + focus_node_id);
+                    }
+                    console.log(d.id)
+                })
+                .on("mouseout", function (d) {
+                    let node = d3.select(this);
+                    node.attr("r", 3.5 * zoom_scale);
+
+                    if (focus_node_change_switch) {
+                        focus_node_id = null;
+                        console.log("focus_node_id = null");
+                    }
+                })
+                .on("click", function (d) {
+                    is_focus_mode = true;
+                    focus_node = {};
+                    lasso_result = [d.id];
+                    focus_edge_id = null;
+                    console.log("focus_edge_id = null");
+                    focus_edge_node = null;
+                    // that._update_click_menu();
+                    let node = d3.select(this);
+                    let new_area = null;
+                    // added by changjian, 20191226
+                    // showing image content
+                    data_manager.update_image_view(node);
+                    console.log("Node:", d);
+
+
+                    if (d.label[iter] === -1 || d.label[0] !== -1) return;
+
+                    // get must show nodes
+                    let predict_label = d.label[iter];
+                    let path_keys = [];
+                    path = [];
+                    path_nodes = {};
+                    new_nodes = [];
+                    for (let onepath of d.path[iter]) {
+                        if (onepath.length === 1) continue;
+                        for (let i = 0; i < onepath.length - 1; i++) {
+                            let s = onepath[i];
+                            let e = onepath[i + 1];
+                            let key = s + "," + e;
+                            if (path_keys.indexOf(key) === -1) {
+                                path_keys.push(key)
+                            }
                         }
                     }
-                }
-                for (let path_key of path_keys) {
-                    let keys = path_key.split(",");
-                    let e = parseInt(keys[0]);
-                    let s = parseInt(keys[1]);
-                    path_nodes[e] = true;
-                    path_nodes[s] = true;
-                    path.push([e, s]);
-                }
-                focus_node = JSON.parse(JSON.stringify(path_nodes));
-                let must_show_nodes = [];
-                for(let node_id in path_nodes){
-                    if(graph_data.nodes[node_id] === undefined) new_nodes.push(parseInt(node_id));
-                    must_show_nodes.push(parseInt(node_id))
-                }
-                $.post("/graph/getArea", {
-                    "must_show_nodes":JSON.stringify(must_show_nodes),
-                    "width":width,
-                    "height":height
-                }, function (data) {
-                    // get k and level
-                    new_area = data.area;
-                    let main_group_min_x = center_scale_x(new_area.x);
-                    let main_group_min_y = center_scale_y(new_area.y);
-                    let main_group_max_x = center_scale_x(new_area.x + new_area.width);
-                    let main_group_max_y = center_scale_y(new_area.y + new_area.height);
-                    let maingroup_k = Math.min(width / (main_group_max_x - main_group_min_x), height / (main_group_max_y - main_group_min_y)) * 0.8;
-                    let target_level = current_level;
-                    let current_level_scale = Math.pow(2, target_level);
-                    while (maingroup_k > 2 * current_level_scale) {
-                        current_level_scale *= 2;
-                        target_level += 1;
+                    for (let path_key of path_keys) {
+                        let keys = path_key.split(",");
+                        let e = parseInt(keys[0]);
+                        let s = parseInt(keys[1]);
+                        path_nodes[e] = true;
+                        path_nodes[s] = true;
+                        path.push([e, s, predict_label]);
                     }
-                    while (maingroup_k < current_level_scale / 1.5 && target_level > 0) {
-                        current_level_scale /= 2;
-                        target_level -= 1;
+                    focus_node = JSON.parse(JSON.stringify(path_nodes));
+                    let must_show_nodes = [];
+                    for(let node_id in path_nodes){
+                        if(graph_data.nodes[node_id] === undefined) new_nodes.push(parseInt(node_id));
+                        must_show_nodes.push(parseInt(node_id))
                     }
-                    current_level = target_level;
-                    zoom_scale = 1.0 / maingroup_k;
-                    let old_nodes = {};
-                    for(let node_id in graph_data.nodes){
-                        let node = graph_data.nodes[node_id];
-                        old_nodes[node.id] = {
-                            id:node.id,
-                            x:node.x,
-                            y:node.y
+                    $.post("/graph/getArea", {
+                        "must_show_nodes":JSON.stringify(must_show_nodes),
+                        "width":width,
+                        "height":height
+                    }, function (data) {
+                        // get k and level
+                        new_area = data.area;
+                        let main_group_min_x = center_scale_x(new_area.x);
+                        let main_group_min_y = center_scale_y(new_area.y);
+                        let main_group_max_x = center_scale_x(new_area.x + new_area.width);
+                        let main_group_max_y = center_scale_y(new_area.y + new_area.height);
+                        let maingroup_k = Math.min(width / (main_group_max_x - main_group_min_x), height / (main_group_max_y - main_group_min_y)) * 0.8;
+                        let target_level = current_level;
+                        let current_level_scale = Math.pow(2, target_level);
+                        while (maingroup_k > 2 * current_level_scale) {
+                            current_level_scale *= 2;
+                            target_level += 1;
                         }
+                        while (maingroup_k < current_level_scale / 1.5 && target_level > 0) {
+                            current_level_scale /= 2;
+                            target_level -= 1;
+                        }
+                        current_level = target_level;
+                        zoom_scale = 1.0 / maingroup_k;
+                        let old_nodes = {};
+                        for(let node_id in graph_data.nodes){
+                            let node = graph_data.nodes[node_id];
+                            old_nodes[node.id] = {
+                                id:node.id,
+                                x:node.x,
+                                y:node.y
+                            }
+                        }
+                        data_manager.update_fisheye_graph_node(must_show_nodes, old_nodes, new_nodes, new_area, current_level, width/height, "single");
+                    });
+                })
+                .transition()
+                .duration(AnimationDuration)
+                .attr("opacity", function (d) {
+                    return (is_focus_mode && (!focus_node[d.id])) ? 0.2 : 1;
+                })
+                .on("end", resolve);
+            golds_in_group.enter()
+                .append("path")
+                .attr("id", d => "gold-" + d.id)
+                .attr("d", d => star_path(10 * zoom_scale, 4 * zoom_scale, center_scale_x(d.x), center_scale_y(d.y)))
+                .attr("fill", function (d) {
+                    if (show_ground_truth) {
+                        if (d.truth === -1) return color_unlabel;
+                        else return color_label[d.truth];
+                    } else {
+                        if (d.label[iter] === -1) return color_unlabel;
+                        else return color_label[d.label[iter]];
                     }
-                    data_manager.update_fisheye_graph_node(old_nodes, new_nodes, new_area, current_level, width/height, showpath);
-                });
-            })
-            .transition()
-            .duration(AnimationDuration)
-            .attr("opacity", function (d) {
-                return (is_focus_mode && (!focus_node[d.id])) ? 0.2 : 1;
-            });
+                })
+                .attr("stroke", "white")
+                .attr("stroke-width", 1.5)
+                .attr("opacity", 0)
+                .on("mouseover", function (d) {
+                    console.log("Label node id:", d.id)
+                })
+                .on("click", function (d) {
+                    let eid = d.id;
+                    let nodes = d3.select(this);
+                    data_manager.update_image_view(nodes);
+                })
+                .transition()
+                .duration(AnimationDuration)
+                .attr("opacity", d => (is_focus_mode && (!focus_node[d.id])) ? 0.2 : 1)
+                .on("end", resolve);
 
-        golds_in_group = golds_group.selectAll("path")
-            .data(golds, d => d.id);
-        golds_in_group.enter()
-            .append("path")
-            .attr("id", d => "gold-" + d.id)
-            .attr("d", d => star_path(10 * zoom_scale, 4 * zoom_scale, center_scale_x(d.x), center_scale_y(d.y)))
-            .attr("fill", function (d) {
-                if (show_ground_truth) {
-                    if (d.truth === -1) return color_unlabel;
-                    else return color_label[d.truth];
-                } else {
-                    if (d.label[iter] === -1) return color_unlabel;
-                    else return color_label[d.label[iter]];
-                }
-            })
-            .attr("stroke", "white")
-            .attr("stroke-width", 1.5)
-            .attr("opacity", 0)
-            .on("mouseover", function (d) {
-                console.log("Label node id:", d.id)
-            })
-            .on("click", function (d) {
-                let eid = d.id;
-                let nodes = d3.select(this);
-                data_manager.update_image_view(nodes);
-            })
-            .transition()
-            .duration(AnimationDuration)
-            .attr("opacity", d => (is_focus_mode && (!focus_node[d.id])) ? 0.2 : 1);
-
-
-        // edges_in_group = edges_group.selectAll("line")
-        //         .data(links_data);
-        // edges_in_group.enter()
-        //         .append("line")
-        //         .attr("x1", d => center_scale_x(nodes_data[d["s"]].x))
-        //         .attr("y1", d => center_scale_y(nodes_data[d["s"]].y))
-        //         .attr("x2", d => center_scale_x(nodes_data[d["e"]].x))
-        //         .attr("y2", d => center_scale_y(nodes_data[d["e"]].y))
-        //         .attr("stroke-width", zoom_scale)
-        //         .attr("stroke", "gray")
-        //         .attr("opacity", 0.0);
+            // edges_in_group = edges_group.selectAll("line")
+            //         .data(links_data);
+            // edges_in_group.enter()
+            //         .append("line")
+            //         .attr("x1", d => center_scale_x(nodes_data[d["s"]].x))
+            //         .attr("y1", d => center_scale_y(nodes_data[d["s"]].y))
+            //         .attr("x2", d => center_scale_x(nodes_data[d["e"]].x))
+            //         .attr("y2", d => center_scale_y(nodes_data[d["e"]].y))
+            //         .attr("stroke-width", zoom_scale)
+            //         .attr("stroke", "gray")
+            //         .attr("opacity", 0.0);
+            if((nodes_in_group.enter().size() === 0) && (golds_in_group.enter().size() === 0)){
+                resolve();
+            }
+        });
     };
 
     that._update_wait_list_group = function () {
@@ -1150,92 +1254,123 @@ let GraphLayout = function (container) {
         that._update_wait_list_group();
     };
 
-    that._update = function () {
-        nodes_in_group
-            .attr("fill", function (d) {
-                if (show_ground_truth) {
-                    if (d.truth === -1) return color_unlabel;
-                    else return color_label[d.truth];
-                } else {
-                    if (d.label[iter] === -1) return color_unlabel;
-                    else return color_label[d.label[iter]];
-                }
-            })
-            .transition()
-            .duration(AnimationDuration)
-            .attr("cx", d => center_scale_x(d.x))
-            .attr("cy", d => center_scale_y(d.y));
+    that._update = async function () {
+        return new Promise(function (resolve, reject) {
+            nodes_in_group
+                .attr("fill", function (d) {
+                    if (show_ground_truth) {
+                        if (d.truth === -1) return color_unlabel;
+                        else return color_label[d.truth];
+                    } else {
+                        if (d.label[iter] === -1) return color_unlabel;
+                        else return color_label[d.label[iter]];
+                    }
+                })
+                .transition()
+                .duration(AnimationDuration)
+                .attr("cx", d => center_scale_x(d.x))
+                .attr("cy", d => center_scale_y(d.y))
+                .on("end", function () {
+                    resolve();
+                });
 
-        golds_in_group
-            .attr("fill", function (d) {
-                if (show_ground_truth) {
-                    if (d.truth === -1) return color_unlabel;
-                    else return color_label[d.truth];
-                } else {
-                    if (d.label[iter] === -1) return color_unlabel;
-                    else return color_label[d.label[iter]];
-                }
-            })
-            // .transition()
-            // .duration(AnimationDuration)
-            .attr("d", d => star_path(10 * zoom_scale, 4 * zoom_scale, center_scale_x(d.x), center_scale_y(d.y)));
-        // let nodes_data = graph_data.nodes;
-        // edges_in_group.attr("x1", d => center_scale_x(nodes_data[d["s"]].x))
-        //         .attr("y1", d => center_scale_y(nodes_data[d["s"]].y))
-        //         .attr("x2", d => center_scale_x(nodes_data[d["e"]].x))
-        //         .attr("y2", d => center_scale_y(nodes_data[d["e"]].y))
+            golds_in_group
+                .attr("fill", function (d) {
+                    if (show_ground_truth) {
+                        if (d.truth === -1) return color_unlabel;
+                        else return color_label[d.truth];
+                    } else {
+                        if (d.label[iter] === -1) return color_unlabel;
+                        else return color_label[d.label[iter]];
+                    }
+                })
+                // .transition()
+                // .duration(AnimationDuration)
+                .attr("d", d => star_path(10 * zoom_scale, 4 * zoom_scale, center_scale_x(d.x), center_scale_y(d.y)));
+            // let nodes_data = graph_data.nodes;
+            // edges_in_group.attr("x1", d => center_scale_x(nodes_data[d["s"]].x))
+            //         .attr("y1", d => center_scale_y(nodes_data[d["s"]].y))
+            //         .attr("x2", d => center_scale_x(nodes_data[d["e"]].x))
+            //         .attr("y2", d => center_scale_y(nodes_data[d["e"]].y))
+            if((nodes_in_group.size()===0) && (golds_in_group.size() === 0)){
+                resolve();
+            }
+        })
     };
 
-    that._remove = function () {
-        nodes_in_group.exit()
-            .transition()
-            .duration(AnimationDuration)
-            .attr("opacity", 0)
-            .remove();
-        // edges_in_group.exit().remove();
-        golds_in_group.exit()
-            .transition()
-            .duration(AnimationDuration)
-            .attr("opacity", 0)
-            .remove();
+    that._remove = async function () {
+        return new Promise(function (resolve, reject) {
+           nodes_in_group.exit()
+                .transition()
+                .duration(AnimationDuration)
+                .attr("opacity", 0)
+                .remove();
+            // edges_in_group.exit().remove();
+            golds_in_group.exit()
+                .transition()
+                .duration(AnimationDuration)
+                .attr("opacity", 0)
+                .remove()
+                .on("end", function () {
+                    resolve();
+                });
+            if((nodes_in_group.exit().size()===0) && (golds_in_group.exit().size() === 0)){
+                resolve();
+            }
+        });
     };
 
-    that._update_view = function (rescale) {
-        // add svg defs
-        that._add_marker();
-        //change coordinates
-        that._center_tsne(rescale);
+    that._update_view = async function (rescale) {
+        return new Promise(async function (resolve, reject) {
+            // add svg defs
+            that._add_marker();
+            //change coordinates
+            that._center_tsne(rescale);
 
 
-        // for debug shouxing ===========================================
-        // svg = container.select("#graph-view-svg");
-        // width = $('#graph-view-svg').width();
-        // height = $('#graph-view-svg').height();
-        // main_group.selectAll('rect').remove();
-        // main_group.append('rect')
-        //     .attr('id', 'debug-shouxing')
-        //     .attr('x', 0)
-        //     .attr('y', 0)
-        //     .attr('width', width)
-        //     .attr('height', height)
-        //     .style('fill', 'gray')
-        //     .style('opacity', 0.3);
-        // =============================================================
+            // for debug shouxing ===========================================
+            // svg = container.select("#graph-view-svg");
+            // width = $('#graph-view-svg').width();
+            // height = $('#graph-view-svg').height();
+            // main_group.selectAll('rect').remove();
+            // main_group.append('rect')
+            //     .attr('id', 'debug-shouxing')
+            //     .attr('x', 0)
+            //     .attr('y', 0)
+            //     .attr('width', width)
+            //     .attr('height', height)
+            //     .style('fill', 'gray')
+            //     .style('opacity', 0.3);
+            // =============================================================
 
-        //update view
-        that._create();
-        that._update();
-        that._remove();
+            let nodes = Object.values(graph_data.nodes);
+            // let edges = that._edge_reformulation(graph_data.edges);
+            let golds = nodes.filter(d => d.label[0] > -1);
+            // let links_data = graph_data.edges;
+            width = $('#graph-view-svg').width();
+            height = $('#graph-view-svg').height();
 
-        // remove lasso
-        nodes_in_group = nodes_group.selectAll("circle");
-        svg.select(".lasso").remove();
-        lasso.items(nodes_in_group)
-            .targetArea(svg)
-            .on("start", that.lasso_start)
-            .on("draw", that.lasso_draw)
-            .on("end", that.lasso_end);
-        svg.call(lasso);
+            nodes_in_group = nodes_group.selectAll("circle")
+                .data(nodes, d => d.id);
+            golds_in_group = golds_group.selectAll("path")
+                .data(golds, d => d.id);
+            //update view
+            await that._remove();
+            await that._update();
+            await that._create();
+
+            // remove lasso
+            nodes_in_group = nodes_group.selectAll("circle");
+            svg.select(".lasso").remove();
+            lasso.items(nodes_in_group)
+                .targetArea(svg)
+                .on("start", that.lasso_start)
+                .on("draw", that.lasso_draw)
+                .on("end", that.lasso_end);
+            svg.call(lasso);
+            resolve();
+        });
+
     };
 
     that._update_click_menu = function () {
@@ -1376,5 +1511,25 @@ let GraphLayout = function (container) {
             nodes_group.selectAll(`#id-${item["id"]}`).style("display", "none");
         }
     };
+
+    that._draw_score_pie_chart = function (focus_nodes_id, show_last_iter = false) {
+        svg.select("#score-pie-chart-g").remove();
+        let pie = d3.pie().value(d => d);
+        let arc = d3.arc().outerRadius(8 * zoom_scale).innerRadius(5 * zoom_scale);
+        let pie_chart_data = focus_nodes_id.map(d => graph_data.nodes[d]);
+        let score_pie_chart_g = main_group.append("g").attr("id", "score-pie-chart-g");
+        for(let data of pie_chart_data){
+            let one_pie_chart = score_pie_chart_g.append("g")
+                .attr("id", "one-score-pie-chart-g")
+                .attr("transform", "translate("+center_scale_x(data.x)+","+center_scale_y(data.y)+")");
+            one_pie_chart.selectAll("path")
+                .data(pie(show_last_iter?data.score[data.score.length-1]:data.score[iter]))
+                .enter()
+                .append("path")
+                .attr("d", arc)
+                .attr("fill", (d,i) => color_label[i]);
+
+        }
+    }
 };
 

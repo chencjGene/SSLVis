@@ -908,5 +908,5 @@ class ConstraintTSNE:
 if __name__ == "__main__":
     import numpy as np
     X = np.array([[0, 0, 0], [0, 1, 1], [1, 0, 1], [1, 1, 1]])
-    X_embedded = ConstraintTSNE(n_components=2).fit_transform(X, focus_path=[[0,1]], m=0.1)
+    X_embedded = ConstraintTSNE(n_components=2).fit_transform(X, focus_path=[[0,1]], m=0.1, constraint_X=np.array([[0,0,0]]), constraint_Y=np.array([[0,0]]))
     print(X_embedded)

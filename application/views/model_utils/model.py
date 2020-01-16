@@ -280,15 +280,13 @@ class SSLModel(object):
         if stack_len == 0:
             return
         top_node = path_stack[stack_len-1]
-        if predict_labels[0][top_node] == target_label:
+        if predict_labels[0][top_node] > -1:
             # arrive target_label
             paths.append(copy.copy(path_stack))
         edge_start_idx = edge_indptr[top_node]
         edge_end_idx = edge_indptr[top_node+1]
         for edge_idx in range(edge_start_idx, edge_end_idx):
             edge_id = int(edge_indices[edge_idx])
-            if predict_labels[iter][edge_id] != target_label:
-                continue
             if edge_id in path_stack:
                 continue
             path_stack.append(edge_id)

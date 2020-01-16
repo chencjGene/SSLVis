@@ -112,9 +112,28 @@ def app_update_delete_and_change_label():
 @graph.route('/graph/fisheye', methods=["GET", "POST"])
 def app_fisheye():
     data = json.loads(request.data)
+    must_show_nodes = data['must_show_nodes']
     new_nodes = data['new_nodes']
     old_nodes = data['old_nodes']
     area = data['area']
     level = data['level']
     wh = data['wh']
-    return fisheye(new_nodes, old_nodes, area, level, wh)
+    return fisheye(must_show_nodes, new_nodes, old_nodes, area, level, wh)
+
+# for debug
+@graph.route('/graph/feature_distance', methods=["POST"])
+def app_get_feature_distance():
+    path = json.loads(request.form["path"])
+    distance = float(get_feature_distance(int(path[0]), int(path[1])))
+    return jsonify({
+        "distance":distance
+    })
+
+# for debug
+@graph.route('/graph/feature', methods=["POST"])
+def app_get_feature():
+    node_id = json.loads(request.form["id"])
+    feature = get_feature(node_id)
+    return jsonify({
+        "feature":feature
+    })
