@@ -72,6 +72,7 @@ let GraphLayout = function (container) {
     let lasso_result = [];
     let delete_node_list = [];
     let update_label_list = {};
+    // TODO: remove in the future
     let label_names = [];
 
     let is_focus_mode = false;
@@ -553,15 +554,18 @@ let GraphLayout = function (container) {
 
     that._update_data = function (state) {
         graph_data = state.graph_data;
+        // TODO: remove in the future
         label_names = state.label_names;
         iter = Object.values(graph_data.nodes)[0].label.length - 1;
         console.log("iter", iter);
         that._update_delete_node_list();
         // that._update_click_menu();
         console.log("graph_data", graph_data);
+        // remove in the future
         that._draw_legend();
     };
 
+    // TODO: remove in the future
     that._draw_legend = function () {
         // $.post('/graph/GetLabels', {}, function (d) {
         let labels = ["unlabeled"].concat(label_names);

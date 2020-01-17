@@ -7,18 +7,32 @@ let DistLayout = function (container) {
     that.container = container;
 
     let bbox = that.container.node().getBoundingClientRect();
+    // overall layout
     let width = bbox.width;
     let height = bbox.height;
-    let layout_width = width - 20;
-    let layout_height = height - 20;
-    let slider_width = width - 80;
-    let slider_x_shift = 40;
+    let x_shift = 40;
+    // legend layout
+    let legend_hight = 25;
+    let legend_width = width -60;
+    let legend_x_shift = x_shift - 10;
+    let legend_y_shift = 3;
+    let rect_width = 75;
+    let rect_height = legend_hight * 0.75;
+    let rect_margin = null;  // To be determined
+    // river layout
+    let node_width = 20;
+    let layout_width = legend_width;
+    let layout_height = height - legend_hight - 65;
+    let layout_x_shift = x_shift - node_width / 2;
+    let layout_y_shift = 10 + legend_hight;
+    // slider layout
+    let slider_width = legend_width - 20;
+    let slider_x_shift = x_shift;
     let slider_hump_length = 20;
     let slider_y_shift = height - 38;
     let slider_height = 6;
-    let node_width = 20;
 
-    console.log("Loss view", "layout width", layout_width, "layout height", layout_height);
+    console.log("Dist view", "layout width", layout_width, "layout height", layout_height);
     if (layout_width < 0) {
         console.log("error");
     }
@@ -27,12 +41,14 @@ let DistLayout = function (container) {
     let node_group = null;
     let link_group = null;
     let slider_group = null;
+    let legend_group = null;
 
     let data_manager = null;
 
     // data
     let nodes = null;
     let links = null;
+    let label_names = null;
     let colors = [UnlabeledColor].concat(CategoryColor);
     let slider_delta = null;
     let iter_list = null;
@@ -49,8 +65,8 @@ let DistLayout = function (container) {
     that._init = function () {
         svg = container.append("svg")
             .attr("id", "loss-view-svg")
-            .attr("width", layout_width)
-            .attr("height", layout_height);
+            .attr("width", width)
+            .attr("height", height);
         node_group = svg.append("g")
             .attr("id", "node_group")
             .attr("transform", "translate(" + 0 + ", " + 0 + ")");
@@ -60,6 +76,10 @@ let DistLayout = function (container) {
         slider_group = svg.append("g")
             .attr("id", "slider_group")
             .attr("transform", "translate(" + 0 + ", " + (slider_y_shift) + ")");
+        legend_group = svg.append("g")
+            .attr("id", "legend_group")
+            .attr("transform", "translate(" + legend_x_shift + ", " 
+                + legend_y_shift + ")");
     };
 
 
@@ -78,6 +98,12 @@ let DistLayout = function (container) {
     };
 
     that._update_data = function (state) {
+        // update label names
+        label_names = ["unlabeled"].concat(state.label_names);
+        rect_margin = (legend_width - label_names.length * rect_width)
+            / (label_names.length - 1);
+        console.log("rect-margin", rect_margin);
+        // update node and link data 
         current_iter = 0;
         let label_sums = state.label_sums;
         total_iters = label_sums.length;
@@ -157,8 +183,8 @@ let DistLayout = function (container) {
             .nodeId(d => d.name)
             .nodeWidth(node_width)
             .nodePadding(1)
-            .extent([[slider_x_shift - node_width/2, 5],
-                [slider_x_shift + slider_width + node_width/2, slider_y_shift - 15]])
+            .extent([[layout_x_shift, layout_y_shift],
+                [layout_x_shift + layout_width, layout_y_shift + layout_height]])
             .nodeSort((a, b) => (a.class - b.class));
         let res = sankey({
             nodes: _nodes.map(d => Object.assign({}, d)),
@@ -236,6 +262,9 @@ let DistLayout = function (container) {
 
         // create slider
         that._create_slider();
+
+        // create legend
+        that._create_legend();
     };
 
     that._focus_link = function(_d, _pinned){
@@ -266,7 +295,8 @@ let DistLayout = function (container) {
             .attr("stroke-opacity", 0.4);
     };
 
-    that._create_slider = function(){
+    that._create_slider = function(){        
+        let that = this;
         let xPositionScale = d3
             .scaleLinear()
             .domain([- slider_hump_length/slider_delta, total_iters - 1 + slider_hump_length/slider_delta])
@@ -367,9 +397,37 @@ let DistLayout = function (container) {
             .text(d => d);
     };
 
+    that._create_legend = function(){
+        console.log("begin create_legend", label_names);
+        legend_group.selectAll("rect.legend")
+            .data(label_names)
+            .enter()
+            .append("rect")
+            .attr("class", "legend")
+            .attr("width", rect_width)
+            .attr("height", rect_height)
+            .attr("x", (d,i) => (rect_width * i + rect_margin * i))
+            .attr("y", 0)
+            .attr("fill", (d,i) => colors[i]);
+        legend_group.selectAll("text.legend")
+            .data(label_names)
+            .enter()
+            .append("text")
+            .attr("class", "legend")
+            .attr("x", (d,i) => (rect_width * i + rect_margin * i + rect_width / 2))
+            .attr("y", rect_height / 2 + 5)
+            .attr("text-anchor", "middle")
+            .attr("font-size", 15)
+            .attr("fill", "white")
+            .text(d => d);
+    };
+
     that._update = function () {
         // update slider
         that._update_slider();
+
+        // update legend
+        that._update_legend();
     };
 
     that._update_slider = function(){
@@ -382,12 +440,24 @@ let DistLayout = function (container) {
             });
     };
 
+    that._update_legend = function(){
+
+    };
+
     that._remove = function () {
 
         // remove slider
         that._remove_slider();
+
+        // remove legend
+        that._remove_legend();
     };
+
     that._remove_slider = function() {
+
+    };
+
+    that._remove_legend = function(){
 
     };
 

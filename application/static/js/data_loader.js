@@ -199,7 +199,8 @@ DataLoaderClass = function (dataset) {
         console.log("update loss view");
         that.dist_view.component_update({
             "label_sums": that.state.label_sums,
-            "flows": that.state.flows
+            "flows": that.state.flows,
+            "label_names": that.state.label_names
         });
     };
 

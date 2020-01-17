@@ -53,12 +53,12 @@ body {
     width: 100%;
 }
 
-#loss-row {
-    height: 18%;
+#dist-row {
+    height: 22%;
 }
 
 #graph-row {
-    height: 81%;
+    height: 77%;
 }
 
 #history-row{
