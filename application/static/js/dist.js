@@ -18,7 +18,7 @@ let DistLayout = function (container) {
     let legend_y_shift = 3;
     let rect_width = 75;
     let rect_height = legend_hight * 0.75;
-    let rect_margin = null;  // To be determined
+    let rect_margin = null;  // To be determined according to data
     // river layout
     let node_width = 20;
     let layout_width = legend_width;
@@ -392,33 +392,57 @@ let DistLayout = function (container) {
             .append("text")
             .attr("class", "loss-text")
             .attr("x", (d,i) => xPositionScale(i))
-            .attr("y", 0 + 6)
+            .attr("y", 6)
             .attr("text-anchor", "middle")
             .text(d => d);
     };
 
     that._create_legend = function(){
         console.log("begin create_legend", label_names);
-        legend_group.selectAll("rect.legend")
+
+        // rectangle version
+        // legend_group.selectAll("rect.legend")
+        //     .data(label_names)
+        //     .enter()
+        //     .append("rect")
+        //     .attr("class", "legend")
+        //     .attr("width", rect_width)
+        //     .attr("height", rect_height)
+        //     .attr("x", (d,i) => (rect_width * i + rect_margin * i))
+        //     .attr("y", 0)
+        //     .attr("fill", (d,i) => colors[i]);
+        // legend_group.selectAll("text.legend")
+        //     .data(label_names)
+        //     .enter()
+        //     .append("text")
+        //     .attr("class", "legend")
+        //     .attr("x", (d,i) => (rect_width * i + rect_margin * i + rect_width / 2))
+        //     .attr("y", rect_height / 2 + 5)
+        //     .attr("text-anchor", "middle")
+        //     .attr("font-size", 15)
+        //     .attr("fill", FontColor)
+        //     .text(d => d);
+
+        // circle version
+        legend_group.selectAll("circle.legend")
             .data(label_names)
             .enter()
-            .append("rect")
+            .append("circle")
             .attr("class", "legend")
-            .attr("width", rect_width)
-            .attr("height", rect_height)
-            .attr("x", (d,i) => (rect_width * i + rect_margin * i))
-            .attr("y", 0)
+            .attr("cx", (d,i) => (rect_width * i + rect_margin * i))
+            .attr("cy", rect_height / 2)
+            .attr("r", 4)
             .attr("fill", (d,i) => colors[i]);
         legend_group.selectAll("text.legend")
             .data(label_names)
             .enter()
             .append("text")
             .attr("class", "legend")
-            .attr("x", (d,i) => (rect_width * i + rect_margin * i + rect_width / 2))
+            .attr("x", (d,i) => (rect_width * i + rect_margin * i + 10))
             .attr("y", rect_height / 2 + 5)
-            .attr("text-anchor", "middle")
+            .attr("text-anchor", "start")
             .attr("font-size", 15)
-            .attr("fill", "white")
+            .attr("fill", FontColor)
             .text(d => d);
     };
 
