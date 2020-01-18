@@ -49,6 +49,7 @@ let DistLayout = function (container) {
     let nodes = null;
     let links = null;
     let label_names = null;
+    let dist_mode = null;
     let colors = [UnlabeledColor].concat(CategoryColor);
     let slider_delta = null;
     let iter_list = null;
@@ -98,6 +99,9 @@ let DistLayout = function (container) {
     };
 
     that._update_data = function (state) {
+        // update dist mode
+        dist_mode = state.dist_mode;
+        console.log("dist_mode", dist_mode);
         // update label names
         label_names = ["unlabeled"].concat(state.label_names);
         rect_margin = (legend_width - label_names.length * rect_width)
@@ -105,10 +109,10 @@ let DistLayout = function (container) {
         console.log("rect-margin", rect_margin);
         // update node and link data 
         current_iter = 0;
-        let label_sums = state.label_sums;
+        let label_sums = JSON.parse(JSON.stringify(state.label_sums));
         total_iters = label_sums.length;
         iter_list = new Array(total_iters).fill().map((_, i) => i);
-        let flows = state.flows;
+        let flows = JSON.parse(JSON.stringify(state.flows));
         let class_num = label_sums[0].length;
 
         // scale
@@ -136,14 +140,13 @@ let DistLayout = function (container) {
                     next_vec[k] += flows[i][j][k];
                 }
             }
-            console.log(next_vec);
             label_sums[i + 1] = next_vec;
         }
 
-        // test
-        for (let i = 0; i < (total_iters - 1); i++) {
-            console.log(twoD_sum(flows[i]));
-        }
+        // // test
+        // for (let i = 0; i < (total_iters - 1); i++) {
+        //     console.log(twoD_sum(flows[i]));
+        // }
 
         // crete nodes
         let _nodes = [];
@@ -191,7 +194,7 @@ let DistLayout = function (container) {
             links: _links.map(d => Object.assign({}, d))
         });
         nodes = res.nodes;
-        links = res.links.filter(d => d.source_class !== d.target_class);
+        links = dist_mode ? res.links : res.links.filter(d => d.source_class !== d.target_class);
 
         // slider
         slider_delta = slider_width / (total_iters - 1);
@@ -218,7 +221,7 @@ let DistLayout = function (container) {
         // create nodes
         node_group
             .selectAll(".dist-node")
-            .data(nodes)
+            .data(nodes, d => d.name)
             .enter()
             .append("rect")
             .attr("class", "dist-node")
@@ -231,7 +234,7 @@ let DistLayout = function (container) {
 
         // create links
         let links_g = link_group.selectAll(".dist-link")
-            .data(links)
+            .data(links, d => "link-" + d.source.name + "-" + d.target.name)
             .enter()
             .append("g")
             .attr("class", "dist-link")
@@ -469,7 +472,15 @@ let DistLayout = function (container) {
     };
 
     that._remove = function () {
-
+        node_group
+            .selectAll(".dist-node")
+            .data(nodes, d => d.name)
+            .exit()
+            .remove();
+        link_group.selectAll(".dist-link")
+            .data(links, d => "link-" + d.source.name + "-" + d.target.name)
+            .exit()
+            .remove();
         // remove slider
         that._remove_slider();
 

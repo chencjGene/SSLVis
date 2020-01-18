@@ -46,7 +46,8 @@ DataLoaderClass = function (dataset) {
         img_url: null,
         ent_data: null,
         label_sums: null,
-        flows: null
+        flows: null,
+        dist_mode: true
     };
 
     // Define topological structure of data retrieval
@@ -167,7 +168,6 @@ DataLoaderClass = function (dataset) {
         })
     };
 
-    // TODO: merge three graph update functions
     that.get_graph_view = function(rescale) {
         console.log("get graph view");
         that.graph_view.component_update({
@@ -200,16 +200,16 @@ DataLoaderClass = function (dataset) {
         that.dist_view.component_update({
             "label_sums": that.state.label_sums,
             "flows": that.state.flows,
-            "label_names": that.state.label_names
+            "label_names": that.state.label_names,
+            "dist_mode": that.state.dist_mode
         });
     };
 
-    // that.update_ent_view = function(){
-    //     console.log("update ent view");
-    //     that.loss_view.component_update({
-    //         "ent_data": that.state.ent_data
-    //     })
-    // };
+    that.change_dist_mode = function(){
+        that.state.dist_mode = !that.state.dist_mode;
+        that.update_dist_view();
+    };
+
 
     that.init = function () {
         that._init();

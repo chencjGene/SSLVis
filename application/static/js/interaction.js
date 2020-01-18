@@ -12,4 +12,5 @@ function update_filter_threshold(threshold){
 
 function change_dist_mode(){
     console.log("change_dist_mode test");
+    DataLoader.change_dist_mode();
 }
