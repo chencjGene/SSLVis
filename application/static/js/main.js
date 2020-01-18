@@ -11,7 +11,7 @@ function load_data() {
 function set_up(dataset) {
     DataLoader = new DataLoaderClass(dataset);
     GraphView = new GraphLayout(d3.select("#my-graph-all"));
-    LossView = new DistLayout(d3.select("#loss-view"));
+    LossView = new DistLayout(d3.select("#dist-view"));
     ImageView = new ImageLayout(d3.select("#image-row"));
     LossView.controlInstanceView = GraphView;
     LossView.controlInfoView = ImageView;

@@ -1,4 +1,4 @@
-#loss-view {
+#dist-view {
     display: flex;
     flex-direction: row;
     width: 100%;
@@ -49,4 +49,18 @@
 
 .loss-text {
     pointer-events: none;
+}
+
+#switch{
+    min-height: 1.0rem;
+    padding-left: 4rem;
+}
+
+#switch-label{
+    color: #333333;
+    /*padding: 4px;*/
+    padding-top: 3px;
+    padding-right: 4px;
+    display: inline-block;
+    font-size:13px;
 }
