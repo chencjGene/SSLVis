@@ -57,8 +57,7 @@ let DistLayout = function (container) {
     let current_iter = 0;
 
     // flags
-    let click_link = null;
-    let pinned = null;
+    that.click_link = null;
     let draging = null;
     that.controlInstanceView = null;
     that.controlInfoView = null;
@@ -67,7 +66,10 @@ let DistLayout = function (container) {
         svg = container.append("svg")
             .attr("id", "loss-view-svg")
             .attr("width", width)
-            .attr("height", height);
+            .attr("height", height)
+            .on("click", function(){
+                that._unset_click_link();
+            });
         node_group = svg.append("g")
             .attr("id", "node_group")
             .attr("transform", "translate(" + 0 + ", " + 0 + ")");
@@ -259,9 +261,14 @@ let DistLayout = function (container) {
             .attr("stroke-width", d => Math.max(...[1.5, d.width]))
             .attr("stroke-opacity", 0.4)
             .style("fill-opacity", 0)
-            .on("mouseover", d => (that._focus_link(d,false)))
+            .on("mouseover", that._focus_link)
             .on("mouseout", that._unfocus_link)
-            .on("click", d => (that._focus_link(d,true)));
+            .on("click", function(d){
+                that.click_link = "link-" + d.source.name + "-" + d.target.name;
+                that.click_link = JSON.parse(JSON.stringify(that.click_link));
+                console.log("click_link", d);
+                that._focus_link(d);
+            });
 
         // create slider
         that._create_slider();
@@ -270,32 +277,45 @@ let DistLayout = function (container) {
         that._create_legend();
     };
 
-    that._focus_link = function(_d, _pinned){
-        if (_pinned){
-            pinned=false;
-            that._unfocus_link(_d);
-            pinned = true;
-        }
+    that._focus_link = function(_d){
         // console.log("test focus_link", _d);
+        console.log("focus_link", that.click_link);
         d3.selectAll(".dist-link")
             .selectAll("path")
             .attr("stroke-opacity", 0.1);
+
         d3.selectAll("#" + "link-" + _d.source.name + "-" + _d.target.name)
             .selectAll("path")
             .attr("stroke-width", Math.max(...[1.5, _d.width]) + 1.5)
             .attr("stroke-opacity", 0.4);
+        if(that.click_link){
+            d3.selectAll("#" + that.click_link)
+                .selectAll("path")
+                .attr("stroke-width", d => Math.max(...[1.5, d.width]) + 1.5)
+                .attr("stroke-opacity", 0.4);
+        }
     };
 
     that._unfocus_link = function(_d){
         // console.log("test unfocus_link", _d);
-        if (pinned){
-            console.log(pinned, "pinned in unfocus-link");
-            return;
+        console.log("unfocus_link", that.click_link);
+        if(that.click_link){
+            console.log("unfocus_link with highlight");
+            d3.selectAll("#" + that.click_link)
+                .selectAll("path")
+                .attr("stroke-width", d => Math.max(...[1.5, d.width]) + 1.5)
+                .attr("stroke-opacity", 0.4);
         }
-        d3.selectAll(".dist-link")
-            .selectAll("path")
-            .attr("stroke-width", d => Math.max(...[1.5, d.width]))
-            .attr("stroke-opacity", 0.4);
+        else{
+            d3.selectAll(".dist-link")
+                .selectAll("path")
+                .attr("stroke-width", d => Math.max(...[1.5, d.width]))
+                .attr("stroke-opacity", 0.4);
+        }
+    };
+
+    that._unset_click_link = function(){
+        // that.click_link = 1;
     };
 
     that._create_slider = function(){        
