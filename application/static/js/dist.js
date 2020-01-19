@@ -58,6 +58,7 @@ let DistLayout = function (container) {
 
     // flags
     that.click_link = null;
+    click_path_flag = false;
     let draging = null;
     that.controlInstanceView = null;
     that.controlInfoView = null;
@@ -266,6 +267,7 @@ let DistLayout = function (container) {
             .on("click", function(d){
                 that.click_link = "link-" + d.source.name + "-" + d.target.name;
                 that.click_link = JSON.parse(JSON.stringify(that.click_link));
+                click_path_flag = true;  //TODO: dirty manner
                 console.log("click_link", d);
                 that._focus_link(d);
             });
@@ -305,10 +307,12 @@ let DistLayout = function (container) {
                 .selectAll("path")
                 .attr("stroke-width", d => Math.max(...[1.5, d.width]) + 1.5)
                 .attr("stroke-opacity", 0.4);
-            d3.selectAll("#" + "link-" + _d.source.name + "-" + _d.target.name)
-                .selectAll("path")
-                .attr("stroke-width", d => Math.max(...[1.5, d.width]) + 1.5)
-                .attr("stroke-opacity", 0.1);
+            if (_d){
+                d3.selectAll("#" + "link-" + _d.source.name + "-" + _d.target.name)
+                    .selectAll("path")
+                    .attr("stroke-width", d => Math.max(...[1.5, d.width]) + 1.5)
+                    .attr("stroke-opacity", 0.1);
+            }
         }
         else{
             d3.selectAll(".dist-link")
@@ -320,6 +324,16 @@ let DistLayout = function (container) {
 
     that._unset_click_link = function(){
         // that.click_link = 1;
+        // console.log("unset_click_link");
+        // TODO: dirty manner
+        if (click_path_flag){
+            click_path_flag = false;
+        }
+        else{
+            console.log("click area other than path!!");
+            that.click_link = null;
+            that._unfocus_link();
+        }
     };
 
     that._create_slider = function(){        
