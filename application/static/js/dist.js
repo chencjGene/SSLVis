@@ -270,6 +270,7 @@ let DistLayout = function (container) {
                 that.click_link = JSON.parse(JSON.stringify(that.click_link));
                 click_path_flag = true;  //TODO: dirty manner
                 console.log("click_link", d);
+                data_manager.get_selected_flows(that.click_link);
                 that._focus_link(d);
             });
 

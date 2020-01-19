@@ -29,6 +29,7 @@ DataLoaderClass = function (dataset) {
     that.loss_node = null;
     that.ent_node = null;
     that.flows_node = null;
+    that.selected_flows_node = null;
     that.influence_filter_node = null;
 
     // views
@@ -212,6 +213,12 @@ DataLoaderClass = function (dataset) {
         that.update_dist_view();
     };
 
+    that.get_selected_flows = function(path_id){
+        that.selected_flows_node = new request_node(that.selected_flows_urls,
+            that.selected_flows_handler(), "json", "POST");
+        that.selected_flows_node.set_data({path_id});
+        that.selected_flows_node.notify();
+    }
 
     that.init = function () {
         that._init();

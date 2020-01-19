@@ -98,6 +98,16 @@ DataLoaderClass.prototype.get_flows_handler = function (callback) {
     return _flows_handler;
 };
 
+DataLoaderClass.prototype.selected_flows_handler = function(callback){
+    let that = this;
+
+    function _selected_flows_handler(data){
+        that.state.selected_flows = data.selected_flows;
+        if (callback) callback();
+    }
+    return _selected_flows_handler;
+}
+
 DataLoaderClass.prototype.set_influence_filter = function(callback){
     let that = this;
 
