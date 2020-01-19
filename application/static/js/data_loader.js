@@ -13,14 +13,13 @@ DataLoaderClass = function (dataset) {
     that.graph_url = "/graph/GetGraph";
     that.loss_url = "/graph/GetLoss";
     that.ent_url = "/graph/GetEnt";
-    that.flows_urls = "/graph/GetFlows";
-    that.flows_urls = "/graph/GetSelectedFlows";
-    that.image_url = "/info/image";
-    // that.set_knn_url = "/graph/setK";
     that.set_influence_filter_url = "/graph/SetInfluenceFilter";
     that.update_graph_url = "/graph/update";
     that.fisheye_graph_url = "/graph/fisheye";
     that.update_delete_and_change_label_url = "/graph/update_delete_and_change_label";
+    that.flows_urls = "/dist/GetFlows";
+    that.selected_flows_urls = "/dist/GetSelectedFlows";
+    that.image_url = "/info/image";
 
     // Request nodes
     that.manifest_node = null;
