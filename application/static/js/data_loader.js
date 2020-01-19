@@ -14,6 +14,7 @@ DataLoaderClass = function (dataset) {
     that.loss_url = "/graph/GetLoss";
     that.ent_url = "/graph/GetEnt";
     that.flows_urls = "/graph/GetFlows";
+    that.flows_urls = "/graph/GetSelectedFlows";
     that.image_url = "/info/image";
     // that.set_knn_url = "/graph/setK";
     that.set_influence_filter_url = "/graph/SetInfluenceFilter";
@@ -47,7 +48,8 @@ DataLoaderClass = function (dataset) {
         ent_data: null,
         label_sums: null,
         flows: null,
-        dist_mode: true
+        dist_mode: true,
+        selected_flows: null;
     };
 
     // Define topological structure of data retrieval
@@ -200,6 +202,7 @@ DataLoaderClass = function (dataset) {
         that.dist_view.component_update({
             "label_sums": that.state.label_sums,
             "flows": that.state.flows,
+            "selected_flows": that.state.selected_flows,
             "label_names": that.state.label_names,
             "dist_mode": that.state.dist_mode
         });

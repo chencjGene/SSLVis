@@ -116,6 +116,7 @@ let DistLayout = function (container) {
         total_iters = label_sums.length;
         iter_list = new Array(total_iters).fill().map((_, i) => i);
         let flows = JSON.parse(JSON.stringify(state.flows));
+        let selected_flows = state.selected_flows || null; //TODO: check correctness
         let class_num = label_sums[0].length;
 
         // scale
