@@ -305,6 +305,10 @@ let DistLayout = function (container) {
                 .selectAll("path")
                 .attr("stroke-width", d => Math.max(...[1.5, d.width]) + 1.5)
                 .attr("stroke-opacity", 0.4);
+            d3.selectAll("#" + "link-" + _d.source.name + "-" + _d.target.name)
+                .selectAll("path")
+                .attr("stroke-width", d => Math.max(...[1.5, d.width]) + 1.5)
+                .attr("stroke-opacity", 0.1);
         }
         else{
             d3.selectAll(".dist-link")
