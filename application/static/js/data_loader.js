@@ -49,7 +49,7 @@ DataLoaderClass = function (dataset) {
         label_sums: null,
         flows: null,
         dist_mode: true,
-        selected_flows: null;
+        selected_flows: null
     };
 
     // Define topological structure of data retrieval
