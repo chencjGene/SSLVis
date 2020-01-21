@@ -180,6 +180,7 @@ class SSLModel(object):
         self.labels[max_process_data <1e-4] = -1
         class_list = np.unique(train_y)
         class_list.sort()
+        self.class_list = class_list
         self.flows = np.zeros((iter-1, len(class_list), len(class_list)))
         for i in range(iter-1):
             self.flows[i] = flow_statistic(self.labels[i], self.labels[i+1], class_list)
@@ -360,6 +361,27 @@ class SSLModel(object):
             label_sums[i,:] = np.bincount(self.labels[i] + 1)
         return label_sums, self.flows.copy()
 
+    def get_selected_flows(self, data):
+        _, iter_prev, cls_prev, iter_next, cls_next = data.split("-")
+        iter_prev, cls_prev, iter_next, cls_next = \
+            [int(iter_prev), int(cls_prev) - 1, int(iter_prev), int(cls_next) - 1]
+        # print(iter_prev, cls_prev, iter_next, cls_next)
+        
+        print("total instance num", len(self.labels[0]))
+        idxs = []
+        for i in range(len(self.labels[0])):
+            if (self.labels[iter_prev][i] == cls_prev and \
+                self.labels[iter_next][i] == cls_next):
+                idxs.append(i)
+        idxs = np.array(idxs)
+        print("selected instances num", len(idxs))
+        iter = len(self.labels)
+        selected_flows = np.zeros((iter-1, len(self.class_list), len(self.class_list)))
+        for i in range(iter-1):
+            selected_flows[i] = flow_statistic(self.labels[i][idxs], \
+                self.labels[i+1][idxs], self.class_list)
+        return selected_flows
+        
     def get_data(self):
         train_X = self.data.get_train_X()
         train_y = self.data.get_train_label()

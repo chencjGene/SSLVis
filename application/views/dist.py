@@ -17,8 +17,7 @@ def app_get_flows():
 
 @dist.route("/dist/GetSelectedFlows", methods=["POST", "GET"])
 def app_get_selected_flows():
-    a = 1
     data = json.loads(request.data)
-    print(data)
-    # import Ipython; Ipython.embed();
-    return jsonify(data)
+    print(data) # for debug
+    # return jsonify(data)
+    return get_selected_flows(data["path_id"])

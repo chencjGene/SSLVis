@@ -108,6 +108,13 @@ class ExchangePortClass(object):
         }
         return jsonify(mat)
 
+    def get_selected_flows(self, data):
+        selected_flows = self.model.get_selected_flows(data)
+        mat = {
+            "selected_flows": selected_flows.tolist()
+        }
+        return jsonify(mat)
+
     def get_labels(self):
         labels = self.model.data.class_names
         return jsonify(labels)

@@ -32,6 +32,8 @@ def get_ent():
 def get_flows():
     return exchange_port.get_flows()
 
+def get_selected_flows(data):
+    return exchange_port.get_selected_flows(data)
 
 def get_labels():
     return exchange_port.get_labels()
