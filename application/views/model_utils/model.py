@@ -364,9 +364,9 @@ class SSLModel(object):
     def get_selected_flows(self, data):
         _, iter_prev, cls_prev, iter_next, cls_next = data.split("-")
         iter_prev, cls_prev, iter_next, cls_next = \
-            [int(iter_prev), int(cls_prev) - 1, int(iter_prev), int(cls_next) - 1]
-        # print(iter_prev, cls_prev, iter_next, cls_next)
-        
+            [int(iter_prev), int(cls_prev) - 1, int(iter_next), int(cls_next) - 1]
+        print(iter_prev, cls_prev, iter_next, cls_next)
+
         print("total instance num", len(self.labels[0]))
         idxs = []
         for i in range(len(self.labels[0])):

@@ -135,3 +135,11 @@ let oneD_sum = function(vec){
     }
     return sum;
 };
+
+function deepCopy(obj) {
+    let _obj = Array.isArray(obj) ? [] : {}
+    for (let i in obj) {
+      _obj[i] = typeof obj[i] === 'object' ? deepCopy(obj[i]) : obj[i]
+    }
+    return _obj
+  }

@@ -102,9 +102,11 @@ class ExchangePortClass(object):
 
     def get_flows(self):
         label_sums, flows = self.model.get_flows()
+        selected_flows = np.zeros(flows.shape).astype(int)
         mat = {
             "label_sums": label_sums.tolist(),
-            "flows": flows.tolist()
+            "flows": flows.tolist(),
+            "selected_flows": selected_flows.tolist()
         }
         return jsonify(mat)
 

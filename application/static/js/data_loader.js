@@ -215,7 +215,7 @@ DataLoaderClass = function (dataset) {
 
     that.get_selected_flows = function(path_id){
         that.selected_flows_node = new request_node(that.selected_flows_urls,
-            that.selected_flows_handler(), "json", "POST");
+            that.selected_flows_handler(that.update_dist_view), "json", "POST");
         that.selected_flows_node.set_data({path_id});
         that.selected_flows_node.notify();
     }

@@ -93,6 +93,7 @@ DataLoaderClass.prototype.get_flows_handler = function (callback) {
     function _flows_handler(data){
         that.state.label_sums = data.label_sums;
         that.state.flows = data.flows;
+        that.state.selected_flows = data.selected_flows;
         if (callback) callback();
     }
     return _flows_handler;
@@ -103,6 +104,7 @@ DataLoaderClass.prototype.selected_flows_handler = function(callback){
 
     function _selected_flows_handler(data){
         that.state.selected_flows = data.selected_flows;
+        console.log("selected_flows_handler", data);
         if (callback) callback();
     }
     return _selected_flows_handler;
