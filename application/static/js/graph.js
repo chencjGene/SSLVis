@@ -144,16 +144,7 @@ let GraphLayout = function (container) {
             // .translateExtent([[-100, -100], [100, 100]])
             .on('start', function () {
                 d3.selectAll(".iw-contextMenu").style("display", "none");
-                svg.select("#group-propagation").remove();
-                svg.select("#score-pie-chart-g").remove();
-                svg.select("#uncertain-pie-chart-g").selectAll("path").attr("opacity", 1);
-                nodes_in_group.attr("opacity", 1);
-                golds_in_group.attr("opacity", 1);
-                // edges_in_group.attr("opacity", 0.4);
-
-                svg.select("#single-propagate").remove();
-                nodes_in_group.attr("opacity", 1);
-                golds_in_group.attr("opacity", 1);
+                that._reset_focus();
                 focus_node_change_switch = true;
                 focus_edge_change_switch = true;
             })
@@ -321,6 +312,20 @@ let GraphLayout = function (container) {
         that._draw_labels_glyph();
     };
 
+    that._reset_focus = function() {
+        path_nodes = {};
+        svg.select("#group-propagation").remove();
+        svg.select("#score-pie-chart-g").remove();
+        svg.select("#uncertain-pie-chart-g").selectAll("path").attr("opacity", 1);
+        nodes_in_group.attr("opacity", 1);
+        golds_in_group.attr("opacity", 1);
+        // edges_in_group.attr("opacity", 0.4);
+
+        svg.select("#single-propagate").remove();
+        nodes_in_group.attr("opacity", 1);
+        golds_in_group.attr("opacity", 1);
+    };
+
     that._draw_labels_glyph = function () {
         let glyph_svg = d3.select("#label-glyph-svg");
         glyph_svg.append("path")
@@ -356,29 +361,20 @@ let GraphLayout = function (container) {
 
     that._maintain_size = function (transform_event) {
         zoom_scale = 1.0 / transform_event.k;
-        nodes_group.selectAll("circle").attr("r", 3.5 * zoom_scale);
+        nodes_group.selectAll("circle").attr("r", d => (uncertain_nodes.indexOf(d.id)===-1?3.5:5)*zoom_scale);
         golds_group.selectAll("path").attr("d", d => star_path(10 * zoom_scale, 4 * zoom_scale, center_scale_x(d.x), center_scale_y(d.y)));
         edges_group.selectAll("line").style('stroke-width', zoom_scale);
         main_group.select("#group-propagation").selectAll("polyline").style('stroke-width', 2.0 * zoom_scale);
         main_group.select("#single-propagate").selectAll("polyline").style('stroke-width', 2.0 * zoom_scale);
-        let arc = d3.arc().outerRadius(8 * zoom_scale).innerRadius(5 * zoom_scale);
+        let arc = d3.arc().outerRadius(11 * zoom_scale).innerRadius(7 * zoom_scale);
         main_group.select("#score-pie-chart-g").selectAll("path").attr("d", arc);
         main_group.select("#uncertain-pie-chart-g").selectAll("path").attr("d", arc);
     };
 
     that.lasso_start = function () {
-        svg.select("#score-pie-chart-g").remove();
-        svg.select("#group-propagation").remove();
-        svg.select("#uncertain-pie-chart-g").selectAll("path").attr("opacity", 1);
-        nodes_in_group.attr("opacity", 1);
-        golds_in_group.attr("opacity", 1);
-        // edges_in_group.attr("opacity", 0.4);
-
-        svg.select("#single-propagate").remove();
-        nodes_in_group.attr("opacity", 1);
-        golds_in_group.attr("opacity", 1);
+        that._reset_focus();
         lasso.items()
-            .attr("r", 3.5 * zoom_scale) // reset size
+            .attr("r", d => (uncertain_nodes.indexOf(d.id)===-1?3.5:5)*zoom_scale) // reset size
             .classed("not_possible", true)
             .classed("selected", false);
     };
@@ -394,7 +390,7 @@ let GraphLayout = function (container) {
         lasso.notPossibleItems()
             .classed("not_possible", true)
             .classed("possible", false)
-            .attr("r", 3.5 * zoom_scale);
+            .attr("r", d => (uncertain_nodes.indexOf(d.id)===-1?3.5:5)*zoom_scale);
 
     };
 
@@ -410,7 +406,7 @@ let GraphLayout = function (container) {
 
         // Reset the style of the not selected dots
         lasso.notSelectedItems()
-            .attr("r", 3.5 * zoom_scale);
+            .attr("r", d => (uncertain_nodes.indexOf(d.id)===-1?3.5:5)*zoom_scale);
 
         let focus_node_data = lasso.selectedItems().data();
         let focus_node_ids = focus_node_data.map(d => d.id);
@@ -529,14 +525,15 @@ let GraphLayout = function (container) {
     that.component_update = async function (state, rescale) {
         console.log("graph component update");
         that._update_data(state);
-        if(state.fisheye !== undefined){
-            await that._update_transform(state.area);
-        }
-        await that._update_view(rescale);
         if(state.top_k_uncertain !== undefined){
             console.log("get top k uncertain:", state.top_k_uncertain);
             uncertain_nodes = state.top_k_uncertain;
         }
+        if(state.fisheye !== undefined){
+            await that._update_transform(state.area);
+        }
+        await that._update_view(rescale);
+
         if(state.fisheye !== undefined){
             await that._draw_uncertain_pie_chart(0.2);
         }
@@ -747,7 +744,8 @@ let GraphLayout = function (container) {
                     nodes_in_group
                         .transition()
                         .duration(AnimationDuration)
-                        .attr("opacity", d => path_nodes[d.id]===true?1:0.2);
+                        .attr("opacity", d => path_nodes[d.id]===true?1:0.2)
+                        .attr("r", d => (path_nodes[d.id] === true)||(uncertain_nodes.indexOf(d.id)>-1)?5:1);
                     golds_in_group
                         .transition()
                         .duration(AnimationDuration)
@@ -836,7 +834,8 @@ let GraphLayout = function (container) {
             nodes_in_group
                 .transition()
                 .duration(AnimationDuration)
-                .attr("opacity", d => path_nodes[d.id]===true?1:0.2);
+                .attr("opacity", d => path_nodes[d.id]===true?1:0.2)
+                .attr("r", d => (path_nodes[d.id] === true)||(uncertain_nodes.indexOf(d.id)>-1)?5:1);
             golds_in_group
                 .transition()
                 .duration(AnimationDuration)
@@ -899,7 +898,7 @@ let GraphLayout = function (container) {
                 .attr("class", "node-dot")
                 .attr("cx", d => center_scale_x(d.x))
                 .attr("cy", d => center_scale_y(d.y))
-                .attr("r", 3.5 * zoom_scale)
+                .attr("r", d => (uncertain_nodes.indexOf(d.id)===-1?3.5:5)*zoom_scale)
                 .attr("opacity", 0)
                 .attr("fill", function (d) {
                     if (show_ground_truth) {
@@ -911,6 +910,9 @@ let GraphLayout = function (container) {
                     }
                 })
                 .on("mouseover", function (d) {
+                    if((uncertain_nodes.indexOf(d.id)!==-1)||(path_nodes[d.id]!==undefined)){
+                        return
+                    }
                     let node = d3.select(this);
                     node.attr("r", 5 * zoom_scale);
                     // that._update_click_menu();
@@ -921,6 +923,9 @@ let GraphLayout = function (container) {
                     console.log(d.id)
                 })
                 .on("mouseout", function (d) {
+                    if((uncertain_nodes.indexOf(d.id)!==-1)||(path_nodes[d.id]!==undefined)){
+                        return
+                    }
                     let node = d3.select(this);
                     node.attr("r", 3.5 * zoom_scale);
 
@@ -1485,7 +1490,7 @@ let GraphLayout = function (container) {
     that._draw_score_pie_chart = function (focus_nodes_id) {
         svg.select("#score-pie-chart-g").remove();
         let pie = d3.pie().value(d => d);
-        let arc = d3.arc().outerRadius(8 * zoom_scale).innerRadius(5 * zoom_scale);
+        let arc = d3.arc().outerRadius(11 * zoom_scale).innerRadius(7 * zoom_scale);
         let pie_chart_data = focus_nodes_id.map(d => graph_data.nodes[d]);
         let score_pie_chart_g = main_group.append("g").attr("id", "score-pie-chart-g");
         for(let data of pie_chart_data){
@@ -1509,7 +1514,7 @@ let GraphLayout = function (container) {
     that._draw_uncertain_pie_chart = function (opacity) {
         svg.select("#uncertain-pie-chart-g").remove();
         let pie = d3.pie().value(d => d);
-        let arc = d3.arc().outerRadius(8 * zoom_scale).innerRadius(5 * zoom_scale);
+        let arc = d3.arc().outerRadius(11 * zoom_scale).innerRadius(7 * zoom_scale);
         let pie_chart_data = [];
         for(let uncertain_id of uncertain_nodes){
             if(graph_data.nodes[uncertain_id] !== undefined){
