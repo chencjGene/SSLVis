@@ -298,8 +298,6 @@ def updateAnchors(train_x, train_y, ground_truth, process_data, influence_matrix
                     new_selection.append(len(selection) - 1)
         for uncertain_id in top_k_uncertain:
             point = train_x_tsne[uncertain_id]
-            if uncertain_id == 1335:
-                print(uncertain_id)
             if area['x'] <= point[0] <= area['x'] + area['width'] and area['y'] <= point[1] <= area['y'] + area['height']:
                 selection.append(uncertain_id)
                 if uncertain_id in old_dic:
@@ -419,6 +417,10 @@ def get_area(must_show_nodes, width, height, train_x, train_y, raw_graph, proces
     new_area["y"] = float(new_area["y"])
     new_area["width"] = float(new_area["width"])
     new_area["height"] = float(new_area["height"])
+    new_area["x"] -= float(new_area["width"])*0.1
+    new_area["y"] -= float(new_area["height"])*0.1
+    new_area["width"] *= 1.2
+    new_area["height"] *= 1.2
 
     return {
         "area":new_area
@@ -426,7 +428,14 @@ def get_area(must_show_nodes, width, height, train_x, train_y, raw_graph, proces
 
 def fisheyeAnchors(must_show_nodes, new_nodes, old_nodes, area, level, wh, train_x, train_y, raw_graph, process_data, influence_matrix, propagation_path, ground_truth, buf_path):
     global top_k_uncertain
-    with open(buf_path, "rb") as f:
+    anchor_path = os.path.join(buf_path, "anchors" + config.pkl_ext)
+    current_pos_path = os.path.join(buf_path, "current_anchors" + config.pkl_ext)
+    fb = open(current_pos_path, "rb")
+    old_ids, old_pos = pickle.load(fb)
+    old_dic = {}
+    for i, id in enumerate(old_ids):
+        old_dic[id] = old_pos[i]
+    with open(anchor_path, "rb") as f:
         focus_path = []
         for u in must_show_nodes:
             for v in must_show_nodes:
@@ -447,10 +456,14 @@ def fisheyeAnchors(must_show_nodes, new_nodes, old_nodes, area, level, wh, train
         for i, ind in enumerate(_selection):
             if area['x'] <= _pos[i][0] <= area['x'] + area['width'] and area['y'] <= _pos[i][1] <= area['y'] + area[
                 'height'] and (ind not in selection):
-                selection.append(ind)
+                selection.append(int(ind))
         for uncertain_id in top_k_uncertain:
-            if uncertain_id not in selection:
-                selection.append(uncertain_id)
+            point = train_x_tsne[uncertain_id]
+            if area['x'] <= point[0] <= area['x'] + area['width'] and area['y'] <= point[1] <= area['y'] + area[
+                'height']:
+                if uncertain_id not in selection:
+                    selection.append(int(uncertain_id))
+        old_cnt = len(selection)
         # add must_have_nodes
         selection = list(dict.fromkeys(selection+new_nodes))
 
@@ -465,6 +478,9 @@ def fisheyeAnchors(must_show_nodes, new_nodes, old_nodes, area, level, wh, train
             if str(id) in old_nodes.keys():
                 old_node = old_nodes[str(id)]
                 init_samples_x_tsne[i] = np.array([old_node['x'], old_node['y']])
+            elif int(id) in old_dic:
+                init_samples_x_tsne[i] = old_dic[id]
+
         min_x = np.min(init_samples_x_tsne[:, 0])
         min_y = np.min(init_samples_x_tsne[:, 1])
         max_x = np.max(init_samples_x_tsne[:, 0])
@@ -504,7 +520,7 @@ def fisheyeAnchors(must_show_nodes, new_nodes, old_nodes, area, level, wh, train
             print(path_idx[1], selection[path_idx[1]], train_x[selection[path_idx[1]]])
             print("distance", np.linalg.norm(train_x[selection[path_idx[0]]]-train_x[selection[path_idx[1]]], 2))
         samples_x_tsne = ConstraintTSNE(n_components=2, n_jobs=20, init=init_samples_x_tsne, n_iter=100, exploration_n_iter=0)\
-            .fit_transform(samples_x, focus_path=focus_path_idx, m=5, constraint_X=constraint_x, constraint_Y=constraint_y, alpha=0.2, skip_num_points=len(old_nodes.keys()))
+            .fit_transform(samples_x, focus_path=focus_path_idx, m=5, constraint_X=constraint_x, constraint_Y=constraint_y, alpha=0.2, skip_num_points=old_cnt)
         # samples_x_tsne = IncrementalTSNE(n_components=2, n_jobs=20, init=init_samples_x_tsne, n_iter=100, exploration_n_iter=0, early_exaggeration=1)\
         #     .fit_transform(samples_x, constraint_X=constraint_x, constraint_Y=constraint_y, alpha=0.2)
         # samples_x_tsne = init_samples_x_tsne
@@ -512,6 +528,10 @@ def fisheyeAnchors(must_show_nodes, new_nodes, old_nodes, area, level, wh, train
         # plt.title("output-"+str(sample_rate))
         # plt.scatter(samples_x_tsne[:, 0], samples_x_tsne[:, 1], s=10, c=colors)
         # plt.show()
+        save = (selection, samples_x_tsne)
+
+        with open(current_pos_path, "wb+") as f:
+            pickle.dump(save, f)
     # get new area
     min_x = np.min(samples_x_tsne[:, 0])
     min_y = np.min(samples_x_tsne[:, 1])

@@ -460,7 +460,7 @@ let GraphLayout = function (container) {
         }
         focus_node = JSON.parse(JSON.stringify(path_nodes));
         $.post("/graph/getArea", {
-                    "must_show_nodes":JSON.stringify(must_show_nodes.concat(Object.keys(graph_data.nodes).map(d => parseInt(d)))),
+                    "must_show_nodes":JSON.stringify(must_show_nodes),
                     "width":width,
                     "height":height
                 }, function (data) {
@@ -487,14 +487,16 @@ let GraphLayout = function (container) {
                     zoom_scale = 1.0 / maingroup_k;
                     console.log("current level", current_level, "current area", new_area);
                     let old_nodes = {};
-                    for(let node_id in graph_data.nodes){
-                        let node = graph_data.nodes[node_id];
-                        old_nodes[node.id] = {
-                            id:node.id,
-                            x:node.x,
-                            y:node.y
+                    for(let node_id of must_show_nodes){
+                            if(graph_data.nodes[node_id] !== undefined){
+                                let node = graph_data.nodes[node_id];
+                                old_nodes[node.id] = {
+                                    id:node.id,
+                                    x:node.x,
+                                    y:node.y
+                                }
+                            }
                         }
-                    }
                     data_manager.update_fisheye_graph_node(must_show_nodes, old_nodes, new_nodes, new_area, current_level, width/height, "group");
                 });
     };
@@ -529,10 +531,8 @@ let GraphLayout = function (container) {
             console.log("get top k uncertain:", state.top_k_uncertain);
             uncertain_nodes = state.top_k_uncertain;
         }
-        if(state.fisheye !== undefined){
-            await that._update_transform(state.area);
-        }
-        await that._update_view(rescale);
+
+        await that._update_view(rescale, state);
 
         if(state.fisheye !== undefined){
             await that._draw_uncertain_pie_chart(0.2);
@@ -749,10 +749,11 @@ let GraphLayout = function (container) {
                         .transition()
                         .duration(AnimationDuration)
                         .attr("opacity", d => path_nodes[d.id]===true?1:0.2)
-                        .attr("r", d => (path_nodes[d.id] === true)||(uncertain_nodes.indexOf(d.id)>-1)?5:1);
+                        .attr("r", d => ((path_nodes[d.id] === true)||(uncertain_nodes.indexOf(d.id)>-1)?5:1)*zoom_scale);
                     golds_in_group
                         .transition()
                         .duration(AnimationDuration)
+                        .attr("d", d => star_path(10 * zoom_scale, 4 * zoom_scale, center_scale_x(d.x), center_scale_y(d.y)))
                         .attr("opacity", d => path_nodes[d.id]===true?1:0.2);
 
                     svg.select("#single-propagate").remove();
@@ -839,7 +840,7 @@ let GraphLayout = function (container) {
                 .transition()
                 .duration(AnimationDuration)
                 .attr("opacity", d => path_nodes[d.id]===true?1:0.2)
-                .attr("r", d => (path_nodes[d.id] === true)||(uncertain_nodes.indexOf(d.id)>-1)?5:1);
+                .attr("r", d => ((path_nodes[d.id] === true)||(uncertain_nodes.indexOf(d.id)>-1)?5:1)*zoom_scale);
             golds_in_group
                 .transition()
                 .duration(AnimationDuration)
@@ -988,7 +989,7 @@ let GraphLayout = function (container) {
                         must_show_nodes.push(parseInt(node_id))
                     }
                     $.post("/graph/getArea", {
-                        "must_show_nodes":JSON.stringify(must_show_nodes.concat(Object.keys(graph_data.nodes).map(d => parseInt(d)))),
+                        "must_show_nodes":JSON.stringify(must_show_nodes),
                         "width":width,
                         "height":height
                     }, function (data) {
@@ -1012,12 +1013,14 @@ let GraphLayout = function (container) {
                         current_level = target_level;
                         zoom_scale = 1.0 / maingroup_k;
                         let old_nodes = {};
-                        for(let node_id in graph_data.nodes){
-                            let node = graph_data.nodes[node_id];
-                            old_nodes[node.id] = {
-                                id:node.id,
-                                x:node.x,
-                                y:node.y
+                        for(let node_id of must_show_nodes){
+                            if(graph_data.nodes[node_id] !== undefined){
+                                let node = graph_data.nodes[node_id];
+                                old_nodes[node.id] = {
+                                    id:node.id,
+                                    x:node.x,
+                                    y:node.y
+                                }
                             }
                         }
                         data_manager.update_fisheye_graph_node(must_show_nodes, old_nodes, new_nodes, new_area, current_level, width/height, "single");
@@ -1297,7 +1300,7 @@ let GraphLayout = function (container) {
         });
     };
 
-    that._update_view = async function (rescale) {
+    that._update_view = async function (rescale, state) {
         return new Promise(async function (resolve, reject) {
             // add svg defs
             that._add_marker();
@@ -1334,6 +1337,9 @@ let GraphLayout = function (container) {
             //update view
             console.log("remove");
             await that._remove();
+            if(state.fisheye !== undefined){
+                await that._update_transform(state.area);
+            }
             console.log("update");
             await that._update();
             console.log("create");
