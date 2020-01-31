@@ -4,6 +4,7 @@ from scipy import sparse
 from scipy.sparse import csgraph
 from scipy.sparse import linalg as splinalg
 from scipy.stats import entropy
+from sklearn.utils.extmath import safe_sparse_dot
 
 def local_update(selected_idxs, F, graph_matrix, affinity_matrix, train_y, alpha=0.2, max_iter=30,
                 tol=0.01, process_record=False, normalized=False):
@@ -30,18 +31,44 @@ def local_update(selected_idxs, F, graph_matrix, affinity_matrix, train_y, alpha
     labeled = (y > -1)
 
     # initialize distributions
-    label_distributions_ = np.zeros((n_samples, n_classes))
+    selected_idxs = np.array(selected_idxs)
+    selected_num = len(selected_idxs)
+    label_distributions_ = F
+    label_distributions_[selected_idxs, :] = \
+        np.zeros((selected_num, n_classes))
     for label in classes:
         label_distributions_[y == label, classes == label] = 1
 
-    y_static_labeled = np.copy(label_distributions_)
+    # TODO
+    y_static_labeled = np.copy(label_distributions_[selected_idxs, :])
     y_static = y_static_labeled * (1 - alpha)
+    print("y_static:", y_static.shape)
 
-    l_previous = np.zeros((n_samples, n_classes))
+    l_previous = F
+    l_previous = np.zeros((selected_num, n_classes))
 
     unlabeled = unlabeled[:, np.newaxis]
     if sparse.isspmatrix(graph_matrix):
         graph_matrix = graph_matrix.tocsr()
+
+    # init unselected instances
+    # Fs = label_distributions_[selected_idxs, :]
+    # Fs_previous = l_previous[selected_idxs, :]
+    
+    selected_graph_matrix = graph_matrix[selected_idxs, :]
+
+    for _ in range(max_iter):
+        if np.abs(label_distributions_ - l_previous).sum() < tol:
+            break
+        l_previous = label_distributions_.copy()
+        label_distributions_a = safe_sparse_dot(
+            selected_graph_matrix, label_distributions_)
+        print("label_distributions_a:", label_distributions_a.shape)
+
+        label_distributions_[selected_idxs, :] = np.multiply(
+                    alpha, label_distributions_a) + y_static
+        n_iter_ += 1
+
 
 def local_search_k():
     None
