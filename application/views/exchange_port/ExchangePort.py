@@ -171,7 +171,7 @@ class ExchangePortClass(object):
         raw_graph, process_data, influence_matrix, propagation_path \
             = self.model.get_graph_and_process_data()
         train_x, train_y = self.model.get_data()
-        buf_path = os.path.join(self.model.data.selected_dir, "anchors" + config.pkl_ext)
+        buf_path = self.model.data.selected_dir
         ground_truth = self.model.data.get_train_ground_truth()
 
         graph = fisheyeAnchors(must_show_nodes, new_nodes, old_nodes, area, level, wh, train_x, train_y, raw_graph, process_data, influence_matrix, propagation_path, ground_truth, buf_path)
