@@ -91,6 +91,9 @@ let GraphLayout = function (container) {
     let path = [];
     let uncertain_nodes = [];
 
+    let fisheye_res = {};
+    let nodes_in_focal_area = [];
+
     that._init = function () {
         svg = container.selectAll('#graph-view-svg')
             .attr("width", width)
@@ -522,6 +525,44 @@ let GraphLayout = function (container) {
         data_manager = _data_manager;
     };
 
+    that._show_fish_step = function(){
+        return new Promise(function (resolve, reject) {
+            console.log("now area:", now_area);
+            let focus_circle = that._get_focus_circle();
+            let fisheye_enlarge = that._fisheye_enlarge(focus_circle);
+            that.constraint_fd_layout(nodes_in_focal_area, focus_circle, fisheye_enlarge);
+            nodes_in_group
+                .transition()
+                .duration(AnimationDuration)
+                .attr("cx", d => center_scale_x(that.fisheye_x(d)))
+                .attr("cy", d => center_scale_y(that.fisheye_y(d)))
+                .on("end", resolve);
+
+            golds_in_group
+                .attr("fill", function (d) {
+                    if (show_ground_truth) {
+                        if (d.truth === -1) return color_unlabel;
+                        else return color_label[d.truth];
+                    } else {
+                        if (d.label[iter] === -1) return color_unlabel;
+                        else return color_label[d.label[iter]];
+                    }
+                })
+                .transition()
+                .duration(AnimationDuration)
+                .attr("d", d => star_path(10 * zoom_scale, 4 * zoom_scale, center_scale_x(that.fisheye_x(d)), center_scale_y(that.fisheye_y(d))));
+            // let nodes_data = graph_data.nodes;
+            // edges_in_group.attr("x1", d => center_scale_x(nodes_data[d["s"]].x))
+            //         .attr("y1", d => center_scale_y(nodes_data[d["s"]].y))
+            //         .attr("x2", d => center_scale_x(nodes_data[d["e"]].x))
+            //         .attr("y2", d => center_scale_y(nodes_data[d["e"]].y))
+            if((nodes_in_group.size()===0) && (golds_in_group.size() === 0)){
+                console.log("no update");
+                resolve();
+            }
+        })
+    };
+
     that.component_update = async function (state, rescale) {
         console.log("graph component update");
         that._update_data(state);
@@ -535,6 +576,7 @@ let GraphLayout = function (container) {
         await that._update_view(rescale);
 
         if(state.fisheye !== undefined){
+            await that._show_fish_step();
             await that._draw_uncertain_pie_chart(0.2);
         }
         else {
@@ -560,6 +602,20 @@ let GraphLayout = function (container) {
         console.log("graph_data", graph_data);
         // remove in the future
         that._draw_legend();
+    };
+
+    that.fisheye_x = function(node){
+        if(fisheye_res[node.id] !== undefined){
+            return fisheye_res[node.id].x;
+        }
+        return node.x;
+    };
+
+    that.fisheye_y = function(node){
+        if(fisheye_res[node.id] !== undefined){
+            return fisheye_res[node.id].y;
+        }
+        return node.y;
     };
 
     // TODO: remove in the future
@@ -736,6 +792,288 @@ let GraphLayout = function (container) {
         });
     };
 
+    that._get_focus_circle = function(){
+        let focus_ids = Object.keys(path_nodes);
+        let focus_circle = {
+            x:0,
+            y:0,
+            r:-1
+        };
+        let bound = {
+            xmin:100000,
+            xmax:-100000,
+            ymin:100000,
+            ymax:-100000
+        };
+
+        for(let focus_id of focus_ids){
+            let node = graph_data.nodes[focus_id];
+            if(node.x < bound.xmin){
+                bound.xmin = node.x;
+            }
+            if(node.x > bound.xmax){
+                bound.xmax = node.x;
+            }
+            if(node.y < bound.ymin){
+                bound.ymin = node.y;
+            }
+            if(node.y > bound.ymax){
+                bound.ymax = node.y;
+            }
+        }
+        focus_circle.x = (bound.xmin+bound.xmax)/2;
+        focus_circle.y = (bound.ymin+bound.ymax)/2;
+        focus_circle.r = Math.sqrt(Math.pow(focus_circle.x-bound.xmin, 2) + Math.pow(focus_circle.y-bound.ymin, 2));
+        // for debug!
+        main_group.select("#old-focus-circle").remove();
+        main_group.append("circle")
+            .attr("id", "old-focus-circle")
+            .attr("cx", center_scale_x(focus_circle.x))
+            .attr("cy", center_scale_y(focus_circle.y))
+            .attr("r", that._distance({x:center_scale_x(focus_circle.x),y:center_scale_y(focus_circle.y)},
+                {x:center_scale_x(focus_circle.x+focus_circle.r),y:center_scale_y(focus_circle.y)}))
+            .attr("stroke-dasharray", 3)
+            .attr("stroke-width", 2)
+            .attr("stroke", "red")
+            .attr("fill-opacity", 0);
+
+        return focus_circle;
+    };
+
+    that._get_bound_point = function(node, focus_circle) {
+        function get_point_in_line(a, b, c, type) {
+            if(type === 'x'){
+                let alpha = (c-focus_circle.x)/(a.x-focus_circle.x);
+                let y = (a.y-focus_circle.y)*alpha + focus_circle.y;
+                return {x:c,y:y};
+            }
+            else if(type === 'y'){
+                let alpha = (c-focus_circle.y)/(a.y-focus_circle.y);
+                let x = (a.x-focus_circle.x)*alpha + focus_circle.x;
+                return {x:x,y:c};
+            }
+        }
+        let candidates = [];
+        if(node.x >= focus_circle.x){
+            candidates.push(get_point_in_line(node, focus_circle, now_area.x+now_area.width, 'x'));
+        }
+        else {
+            candidates.push(get_point_in_line(node, focus_circle, now_area.x, 'x'));
+        }
+        if(node.y >= focus_circle.y){
+            candidates.push(get_point_in_line(node, focus_circle, now_area.y+now_area.height, 'y'));
+        }
+        else {
+            candidates.push(get_point_in_line(node, focus_circle, now_area.y, 'y'));
+        }
+        if((candidates[0].y >= now_area.y) && (candidates[0].y <= now_area.y + now_area.height)){
+            return candidates[0];
+        }
+        return candidates[1];
+    };
+
+    that._distance = function(a, b){
+        return Math.sqrt(Math.pow(a.x-b.x, 2) + Math.pow(a.y-b.y, 2))
+    };
+
+    that._fisheye_enlarge = function(focus_circle) {
+        let enlarge_res = {};
+        // get all points in focal area
+        nodes_in_focal_area = [];
+        let nodes_not_in_focal_area = [];
+        let magnification = 1;
+        for(let node of Object.values(graph_data.nodes)){
+            if(that._distance(node, focus_circle) <= focus_circle.r){
+                nodes_in_focal_area.push(node.id);
+            }
+            else {
+                nodes_not_in_focal_area.push(node.id);
+            }
+        }
+
+        // nodes not in focal area
+        for(let node_id of nodes_not_in_focal_area){
+            let node = graph_data.nodes[node_id];
+            let bound_point = that._get_bound_point(node, focus_circle);
+            let alpha = Math.abs((node.x-focus_circle.x)/(bound_point.x-focus_circle.x));
+            let beta = (magnification+1)*alpha/(magnification*alpha+1);
+            enlarge_res[node_id] = {};
+            enlarge_res[node_id].x = focus_circle.x + (bound_point.x - focus_circle.x) * beta;
+            enlarge_res[node_id].y = focus_circle.y + (bound_point.y - focus_circle.y) * beta;
+        }
+
+        //get new focus circle r
+        let circle_bound_points = [{x:focus_circle.x, y:focus_circle.y-focus_circle.r},
+            {x:focus_circle.x+focus_circle.r, y:focus_circle.y},
+            {x:focus_circle.x, y:focus_circle.y+focus_circle.r},
+            {x:focus_circle.x-focus_circle.r, y:focus_circle.y}
+        ];
+        let new_r = 10000;
+        for(let point of circle_bound_points){
+            let bound_point = that._get_bound_point(point, focus_circle);
+            let alpha = Math.abs((point.x-focus_circle.x)/(bound_point.x-focus_circle.x));
+            let beta = (magnification+1)*alpha/(magnification*alpha+1);
+            let new_bound_point = {};
+            new_bound_point.x = focus_circle.x + (bound_point.x - focus_circle.x) * beta;
+            new_bound_point.y = focus_circle.y + (bound_point.y - focus_circle.y) * beta;
+            let dis = that._distance(new_bound_point, focus_circle);
+            if(dis < new_r) new_r = dis;
+        }
+
+        //nodes in focus circle
+        let alpha = new_r / focus_circle.r;
+        for(let node_id of nodes_in_focal_area){
+            let node = graph_data.nodes[node_id];
+            enlarge_res[node_id] = {};
+            enlarge_res[node_id].x = focus_circle.x + (node.x - focus_circle.x) * alpha;
+            enlarge_res[node_id].y = focus_circle.y + (node.y - focus_circle.y) * alpha;
+        }
+
+        // for debug!
+        main_group.select("#new-focus-circle").remove();
+        main_group.append("circle")
+            .attr("id", "new-focus-circle")
+            .attr("cx", center_scale_x(focus_circle.x))
+            .attr("cy", center_scale_y(focus_circle.y))
+            .attr("r", that._distance({x:center_scale_x(focus_circle.x),y:center_scale_y(focus_circle.y)},
+                {x:center_scale_x(focus_circle.x+new_r),y:center_scale_y(focus_circle.y)}))
+            .attr("stroke-dasharray", 3)
+            .attr("stroke-width", 2)
+            .attr("stroke", "blue")
+            .attr("fill-opacity", 0);
+        fisheye_res = enlarge_res;
+        return enlarge_res;
+    };
+
+    that.constraint_fd_layout = function(nodes_in_focal_area, focus_circle, enlarge_result){
+        let fd_p = {};
+        for(let node_id of nodes_in_focal_area){
+            fd_p[node_id] = {x:enlarge_result[node_id].x, y:enlarge_result[node_id].y};
+        }
+        let fd_v = {};
+        for(let node_id of Object.keys(fd_p)){
+            fd_v[node_id] = {x:0, y:0};
+        }
+        let fd_a = JSON.parse(JSON.stringify(fd_v));
+        let mass = 1;
+        let repulsive_weight = 10/Math.pow(nodes_in_focal_area.length, 0.5);
+        let attractive_weight = 3;
+        let center_weight = 1;
+        let init_position_weight = nodes_in_focal_area.length;
+        function tick() {
+            //update a
+            for(let node_id of Object.keys(fd_a)){
+                fd_a[node_id] = {x:0, y:0};
+            }
+            // repulsive
+            for(let u_id of nodes_in_focal_area){
+                for(let v_id of nodes_in_focal_area){
+                    if(u_id === v_id) continue;
+                    let d = that._distance(fd_p[u_id], fd_p[v_id])+0.0001;
+                    let f = repulsive_weight /d;
+                    let direction_x = fd_p[u_id].x>fd_p[v_id].x?1:-1;
+                    let dis_x = direction_x * (fd_p[u_id].x - fd_p[v_id].x);
+                    let cos = dis_x/d;
+                    let f_x =f * cos * direction_x;
+                    fd_a[u_id].x += f_x/mass;
+                    let direction_y = fd_p[u_id].y>fd_p[v_id].y?1:-1;
+                    let dis_y = direction_y * (fd_p[u_id].y - fd_p[v_id].y);
+                    let sin = dis_y/d;
+                    let f_y = f * sin * direction_y;
+                    fd_a[u_id].y += f_y/mass;
+                }
+            }
+            // attractive
+            for(let way of path){
+                let u_id = way[0];
+                let v_id = way[1];
+                let d = that._distance(fd_p[u_id], fd_p[v_id]);
+                let f = attractive_weight * Math.pow(d, 2);
+                let direction_x = fd_p[u_id].x>fd_p[v_id].x?1:-1;
+                let dis_x = direction_x * (fd_p[u_id].x - fd_p[v_id].x);
+                let cos = dis_x/d;
+                let f_x =f * cos;
+                let a_x = Math.min(f_x/mass, dis_x*0.1);
+                fd_a[u_id].x -= a_x*direction_x;
+                fd_a[v_id].x += a_x*direction_x;
+
+                let direction_y = fd_p[u_id].y>fd_p[v_id].y?1:-1;
+                let dis_y = direction_y * (fd_p[u_id].y - fd_p[v_id].y);
+                let sin = dis_y/d;
+                let f_y = f * sin;
+                let a_y = Math.min(f_y/mass, dis_y*0.1);
+                fd_a[u_id].y -= a_y*direction_y;
+                fd_a[v_id].y += a_y*direction_y;
+            }
+            // center
+            for(let u_id of nodes_in_focal_area){
+                let d = that._distance(fd_p[u_id], focus_circle);
+                let f = center_weight * Math.pow(d, 2);
+                let direction_x = fd_p[u_id].x>focus_circle.x?1:-1;
+                let dis_x = direction_x * (fd_p[u_id].x - focus_circle.x);
+                let cos = dis_x/d;
+                let f_x =f * cos;
+                let a_x = Math.min(f_x/mass, dis_x*0.1);
+                fd_a[u_id].x -= a_x*direction_x;
+
+                let direction_y = fd_p[u_id].y>focus_circle.y?1:-1;
+                let dis_y = direction_y * (fd_p[u_id].y - focus_circle.y);
+                let sin = dis_y/d;
+                let f_y = f * sin;
+                let a_y = Math.min(f_y/mass, dis_y*0.1);
+                fd_a[u_id].y -= a_y*direction_y;
+            }
+            // init position
+            for(let u_id of nodes_in_focal_area){
+                let d = that._distance(fd_p[u_id], graph_data.nodes[u_id]);
+                let f = init_position_weight * Math.pow(d, 2);
+                let direction_x = fd_p[u_id].x>graph_data.nodes[u_id].x?1:-1;
+                let dis_x = direction_x * (fd_p[u_id].x - graph_data.nodes[u_id].x);
+                let cos = dis_x/d;
+                let f_x =f * cos;
+                let a_x = Math.min(f_x/mass, dis_x*0.1);
+                fd_a[u_id].x -= a_x*direction_x;
+
+                let direction_y = fd_p[u_id].y>graph_data.nodes[u_id].y?1:-1;
+                let dis_y = direction_y * (fd_p[u_id].y - graph_data.nodes[u_id].y);
+                let sin = dis_y/d;
+                let f_y = f * sin;
+                let a_y = Math.min(f_y/mass, dis_y*0.1);
+                fd_a[u_id].y -= a_y*direction_y;
+            }
+
+
+            //get all a
+            let all_a = 0;
+            for(let node of Object.values(fd_a)){
+                all_a += Math.abs(node.x);
+                all_a += Math.abs(node.y);
+            }
+            console.log("all a", all_a);
+
+            //update p
+            for(let u_id of nodes_in_focal_area){
+                let x_dir = fd_a[u_id].x>0?1:-1;
+                let x_a = Math.min(x_dir*fd_a[u_id].x, 3);
+                let y_dir = fd_a[u_id].y>0?1:-1;
+                let y_a = Math.min(y_dir*fd_a[u_id].y, 3);
+                fd_p[u_id].x += x_dir*x_a;
+                fd_p[u_id].y += y_dir*y_a;
+            }
+        }
+
+        for(let i=0; i<100; i++) tick();
+        for(let node_id of Object.keys(graph_data.nodes)){
+            if(fd_p[node_id] !== undefined){
+                fisheye_res[node_id] = fd_p[node_id];
+            }
+            else {
+                fisheye_res[node_id] = enlarge_result[node_id];
+            }
+        }
+        return fd_p;
+    };
+
     that._single_show_path = function(){
         return new Promise(function (resolve, reject) {
             nodes_in_group = nodes_group.selectAll("circle");
@@ -811,8 +1149,8 @@ let GraphLayout = function (container) {
                             .attr("marker-mid", d => "url(#arrow-gray)")
                             .attr("fill", "none")
                             .attr("points", function (d) {
-                                let begin = [center_scale_x(path_nodes[d[0]].datum().x), center_scale_y(path_nodes[d[0]].datum().y)];
-                                let end = [center_scale_x(path_nodes[d[1]].datum().x), center_scale_y(path_nodes[d[1]].datum().y)];
+                                let begin = [center_scale_x(that.fisheye_x(path_nodes[d[0]].datum())), center_scale_y(that.fisheye_y(path_nodes[d[0]].datum()))];
+                                let end = [center_scale_x(that.fisheye_x(path_nodes[d[1]].datum())), center_scale_y(that.fisheye_y(path_nodes[d[1]].datum()))];
                                 let mid = [(begin[0]+end[0])/2, (begin[1]+end[1])/2];
                                 return begin[0]+","+begin[1]+" "+mid[0]+","+mid[1]+" "+end[0]+","+end[1];
                             });
@@ -860,8 +1198,8 @@ let GraphLayout = function (container) {
                 .attr("marker-mid", d => "url(#arrow-gray)")
                 .attr("fill", "none")
                 .attr("points", function (d) {
-                            let begin = [center_scale_x(path_nodes[d[0]].datum().x), center_scale_y(path_nodes[d[0]].datum().y)];
-                                let end = [center_scale_x(path_nodes[d[1]].datum().x), center_scale_y(path_nodes[d[1]].datum().y)];
+                            let begin = [center_scale_x(that.fisheye_x(path_nodes[d[0]].datum())), center_scale_y(that.fisheye_y(path_nodes[d[0]].datum()))];
+                                let end = [center_scale_x(that.fisheye_x(path_nodes[d[1]].datum())), center_scale_y(that.fisheye_y(path_nodes[d[1]].datum()))];
                                 let mid = [(begin[0]+end[0])/2, (begin[1]+end[1])/2];
                                 return begin[0]+","+begin[1]+" "+mid[0]+","+mid[1]+" "+end[0]+","+end[1];
                         })
@@ -1496,7 +1834,7 @@ let GraphLayout = function (container) {
         for(let data of pie_chart_data){
             let one_pie_chart = score_pie_chart_g.append("g")
                 .attr("id", "one-score-pie-chart-g")
-                .attr("transform", "translate("+center_scale_x(data.x)+","+center_scale_y(data.y)+")");
+                .attr("transform", "translate("+center_scale_x(that.fisheye_x(data))+","+center_scale_y(that.fisheye_y(data))+")");
             one_pie_chart.selectAll("path")
                 .data(pie(data.score[iter]))
                 .enter()
@@ -1509,7 +1847,7 @@ let GraphLayout = function (container) {
                 .attr("opacity", 1);
 
         }
-    }
+    };
 
     that._draw_uncertain_pie_chart = function (opacity) {
         svg.select("#uncertain-pie-chart-g").remove();
@@ -1526,7 +1864,7 @@ let GraphLayout = function (container) {
         for(let data of pie_chart_data){
             let one_pie_chart = score_pie_chart_g.append("g")
                 .attr("id", "one-uncertain-pie-chart-g")
-                .attr("transform", "translate("+center_scale_x(data.x)+","+center_scale_y(data.y)+")");
+                .attr("transform", "translate("+center_scale_x(that.fisheye_x(data))+","+center_scale_y(that.fisheye_y(data))+")");
             one_pie_chart.selectAll("path")
                 .data(pie(data.score[data.score.length-1]))
                 .enter()
