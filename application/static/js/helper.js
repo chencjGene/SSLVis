@@ -136,6 +136,34 @@ let oneD_sum = function(vec){
     return sum;
 };
 
+
+let curve_mid = function (u, v) {
+    let mid = [(u[0]+v[0])/2, (u[1]+v[1])/2];
+    // console.log(Math.sqrt(Math.pow(u[0]-v[0], 2), Math.pow(u[1]-v[1], 2)))
+    // let c = Math.sqrt(Math.pow(u[0]-v[0], 2), Math.pow(u[1]-v[1], 2))*0.3;
+    let c = 40+(Math.random()-0.5)*5;
+    //TODO y2==y1
+    if(u[0] === v[0]){
+        // return [u[0]]
+    }
+    else if(u[1] === v[1]){
+
+    }
+    else {
+        let tmp = Math.sqrt(c/(1+Math.pow((u[0]-v[0])/(u[1]-v[1]), 2)));
+        let res_x1 = tmp+(u[0]+v[0])/2;
+        let res_x2 = -tmp+(u[0]+v[0])/2;
+        let res_y1 = (u[0]-v[0])*(res_x1-(u[0]+v[0])/2)/(v[1]-u[1])+(u[1]+v[1])/2;
+        let res_y2 = (u[0]-v[0])*(res_x2-(u[0]+v[0])/2)/(v[1]-u[1])+(u[1]+v[1])/2;
+        if((res_x1-(u[0]+v[0])/2)*(v[1]-u[1])-(v[0]-u[0])*(res_y1-(u[1]+v[1])/2) < 0){
+            return [res_x1, res_y1]
+        }
+        else {
+            return [res_x2, res_y2]
+        }
+    }
+}
+
 function deepCopy(obj) {
     let _obj = Array.isArray(obj) ? [] : {}
     for (let i in obj) {

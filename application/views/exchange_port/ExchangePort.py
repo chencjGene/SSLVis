@@ -166,7 +166,7 @@ class ExchangePortClass(object):
         pass
         # TODO rerun the model and return the graph
 
-    def fisheye(self,must_show_nodes, new_nodes, old_nodes, area, level, wh):
+    def fisheye(self,must_show_nodes, area, level, wh):
         # get meta data
         raw_graph, process_data, influence_matrix, propagation_path \
             = self.model.get_graph_and_process_data()
@@ -174,7 +174,7 @@ class ExchangePortClass(object):
         buf_path = self.model.data.selected_dir
         ground_truth = self.model.data.get_train_ground_truth()
 
-        graph = fisheyeAnchors(must_show_nodes, new_nodes, old_nodes, area, level, wh, train_x, train_y, raw_graph, process_data, influence_matrix, propagation_path, ground_truth, buf_path)
+        graph = fisheyeAnchors(must_show_nodes, area, level, wh, train_x, train_y, raw_graph, process_data, influence_matrix, propagation_path, ground_truth, buf_path)
         return jsonify(graph)
 
     def get_feature_distance(self, uid, vid):

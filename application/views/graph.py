@@ -109,12 +109,10 @@ def app_update_delete_and_change_label():
 def app_fisheye():
     data = json.loads(request.data)
     must_show_nodes = data['must_show_nodes']
-    new_nodes = data['new_nodes']
-    old_nodes = data['old_nodes']
     area = data['area']
     level = data['level']
     wh = data['wh']
-    return fisheye(must_show_nodes, new_nodes, old_nodes, area, level, wh)
+    return fisheye(must_show_nodes, area, level, wh)
 
 # for debug
 @graph.route('/graph/feature_distance', methods=["POST"])

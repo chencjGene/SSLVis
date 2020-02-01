@@ -106,11 +106,9 @@ DataLoaderClass = function (dataset) {
         that.update_delete_and_change_label_node.notify();
     };
 
-    that.update_fisheye_graph_node = function(must_show_nodes, old_nodes, new_nodes, area, level, wh, fisheye_mode) {
+    that.update_fisheye_graph_node = function(must_show_nodes, area, level, wh, fisheye_mode) {
         that.fisheye_graph_node.set_data({
             'must_show_nodes':must_show_nodes,
-            'new_nodes':new_nodes,
-            'old_nodes':old_nodes,
             'area':area,
             'level':level,
             'wh':wh

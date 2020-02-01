@@ -426,7 +426,7 @@ def get_area(must_show_nodes, width, height, train_x, train_y, raw_graph, proces
         "area":new_area
     }
 
-def fisheyeAnchors(must_show_nodes, new_nodes, old_nodes, area, level, wh, train_x, train_y, raw_graph, process_data, influence_matrix, propagation_path, ground_truth, buf_path):
+def fisheyeAnchors(must_show_nodes, area, level, wh, train_x, train_y, raw_graph, process_data, influence_matrix, propagation_path, ground_truth, buf_path):
     global top_k_uncertain
     anchor_path = os.path.join(buf_path, "anchors" + config.pkl_ext)
     current_pos_path = os.path.join(buf_path, "current_anchors" + config.pkl_ext)
@@ -450,19 +450,30 @@ def fisheyeAnchors(must_show_nodes, new_nodes, old_nodes, area, level, wh, train
         _selection = level_infos[level]['index']
         _pos = train_x_tsne[_selection]
         selection = []
-        for node_id in old_nodes.keys():
-            if int(node_id) not in selection:
-                selection.append(int(node_id))
+        new_nodes = []
         for i, ind in enumerate(_selection):
             if area['x'] <= _pos[i][0] <= area['x'] + area['width'] and area['y'] <= _pos[i][1] <= area['y'] + area[
                 'height'] and (ind not in selection):
-                selection.append(int(ind))
+                    if int(ind) in old_dic:
+                        selection.append(int(ind))
+                    else:
+                        new_nodes.append(int(ind))
+
+        for node_id in must_show_nodes:
+            if int(node_id) not in selection:
+                if int(node_id) in old_dic:
+                    selection.append(int(node_id))
+                else:
+                    new_nodes.append(int(node_id))
         for uncertain_id in top_k_uncertain:
             point = train_x_tsne[uncertain_id]
             if area['x'] <= point[0] <= area['x'] + area['width'] and area['y'] <= point[1] <= area['y'] + area[
                 'height']:
                 if uncertain_id not in selection:
-                    selection.append(int(uncertain_id))
+                    if int(uncertain_id) in old_dic:
+                        selection.append(int(uncertain_id))
+                    else:
+                        new_nodes.append(int(uncertain_id))
         old_cnt = len(selection)
         # add must_have_nodes
         selection = list(dict.fromkeys(selection+new_nodes))
@@ -474,39 +485,8 @@ def fisheyeAnchors(must_show_nodes, new_nodes, old_nodes, area, level, wh, train
         samples_truth = ground_truth[selection]
         clusters = level_infos[level]['clusters']
 
-        for i, id in enumerate(selection):
-            if str(id) in old_nodes.keys():
-                old_node = old_nodes[str(id)]
-                init_samples_x_tsne[i] = np.array([old_node['x'], old_node['y']])
-            elif int(id) in old_dic:
-                init_samples_x_tsne[i] = old_dic[id]
-
-        min_x = np.min(init_samples_x_tsne[:, 0])
-        min_y = np.min(init_samples_x_tsne[:, 1])
-        max_x = np.max(init_samples_x_tsne[:, 0])
-        max_y = np.max(init_samples_x_tsne[:, 1])
-        # add constraint
-        sample_rate = 1
-        constraint_num = max(0, int(len(old_nodes.keys())*sample_rate))
-        print("constraint num:", constraint_num)
-        all_idx = np.arange(0, len(old_nodes.keys()))
-        np.random.shuffle(all_idx)
-        constraint_idx = all_idx[:constraint_num]
-        constraint_x = samples_x[constraint_idx]
-        constraint_y = init_samples_x_tsne[constraint_idx]
-        focus_path_idx = []
-        for path in focus_path:
-            path_idx = []
-            for i, idx in enumerate(selection):
-                if idx == path[0]:
-                    path_idx.append(i)
-                    break
-            for i, idx in enumerate(selection):
-                if idx == path[1]:
-                    path_idx.append(i)
-                    break
-            assert len(path_idx)==2
-            focus_path_idx.append(path_idx)
+        for i, id in enumerate(selection[:old_cnt]):
+            init_samples_x_tsne[i] = old_dic[id]
         # label_colors = ["#A9A9A9", "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2", "#ffdb45", "#bcbd22", "#17becf"]
         # colors = []
         # for node_id in selection:
@@ -514,13 +494,11 @@ def fisheyeAnchors(must_show_nodes, new_nodes, old_nodes, area, level, wh, train
         # plt.figure()
         # plt.title("init-"+str(sample_rate))
         # plt.scatter(init_samples_x_tsne[:,0], init_samples_x_tsne[:, 1], s=10, c=colors)
-        for path_idx in focus_path_idx:
-            print("focus path idx:", path_idx)
-            print(path_idx[0], selection[path_idx[0]], train_x[selection[path_idx[0]]])
-            print(path_idx[1], selection[path_idx[1]], train_x[selection[path_idx[1]]])
-            print("distance", np.linalg.norm(train_x[selection[path_idx[0]]]-train_x[selection[path_idx[1]]], 2))
-        samples_x_tsne = ConstraintTSNE(n_components=2, n_jobs=20, init=init_samples_x_tsne, n_iter=100, exploration_n_iter=0)\
-            .fit_transform(samples_x, focus_path=focus_path_idx, m=5, constraint_X=constraint_x, constraint_Y=constraint_y, alpha=0.2, skip_num_points=old_cnt)
+        # samples_x_tsne = ConstraintTSNE(n_components=2, n_jobs=20, init=init_samples_x_tsne, n_iter=100, exploration_n_iter=0)\
+        #     .fit_transform(samples_x, focus_path=focus_path_idx, m=5, constraint_X=constraint_x, constraint_Y=constraint_y, alpha=0.2, skip_num_points=old_cnt)
+        samples_x_tsne = IncrementalTSNE(n_components=2, n_jobs=20, init=init_samples_x_tsne, n_iter=250,
+                                         exploration_n_iter=0).fit_transform(samples_x,
+                                                                             skip_num_points=old_cnt)
         # samples_x_tsne = IncrementalTSNE(n_components=2, n_jobs=20, init=init_samples_x_tsne, n_iter=100, exploration_n_iter=0, early_exaggeration=1)\
         #     .fit_transform(samples_x, constraint_X=constraint_x, constraint_Y=constraint_y, alpha=0.2)
         # samples_x_tsne = init_samples_x_tsne
