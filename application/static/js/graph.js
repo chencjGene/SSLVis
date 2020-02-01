@@ -237,19 +237,21 @@ let GraphLayout = function (container) {
                 console.log(d3.event.transform, area, current_level);
                 let send_zoom_idx = send_zoom_cnt++;
                 send_zoom_request[send_zoom_idx] = true;
-                for(let i=0;i<send_zoom_idx;i++){
-                    send_zoom_request[i] = false;
-                }
+
                 setTimeout(function () {
-                    if(send_zoom_request[send_zoom_idx]){
+                    if(send_zoom_request[send_zoom_idx+1] === undefined){
                         console.log(send_zoom_idx);
                         DataLoader.update_graph_notify(area, target_level);
+                        now_area = area;
 
                     }
                 }, send_zoom_timeout);
-                now_area = area;
+
             }
-            old_transform = d3.event.transform;
+            else {
+                old_transform = d3.event.transform;
+            }
+
         }
 
         svg.on("mousedown", function () {
@@ -896,7 +898,6 @@ let GraphLayout = function (container) {
     that._create = async function () {
         return new Promise(function (resolve, reject) {
             svg = container.select("#graph-view-svg");
-
             nodes_in_group.enter()
                 .append("circle")
                 .attr("id", d => "id-" + d.id)
@@ -1283,16 +1284,15 @@ let GraphLayout = function (container) {
                 .transition()
                 .duration(AnimationDuration)
                 .attr("opacity", 0)
-                .remove();
+                .remove()
+               .on("end", resolve);
             // edges_in_group.exit().remove();
             golds_in_group.exit()
                 .transition()
                 .duration(AnimationDuration)
                 .attr("opacity", 0)
                 .remove()
-                .on("end", function () {
-                    resolve();
-                });
+                .on("end", resolve);
             if((nodes_in_group.exit().size()===0) && (golds_in_group.exit().size() === 0)){
                 console.log("no remove");
                 resolve();
