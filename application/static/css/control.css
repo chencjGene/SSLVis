@@ -288,3 +288,13 @@ label.field.focused .psuedo_select ul {
 .pulldown-icon-path {
   fill: #969696;
 }
+
+#uncertainty-widget {
+  display: flex;
+  flex-direction: row;
+  flex: 0 1 75px;
+}
+
+#uncertainty-font {
+  flex: 0 1 50px;
+}

@@ -76,7 +76,6 @@ let GraphLayout = function (container) {
     // TODO: remove in the future
     let label_names = [];
 
-    let is_focus_mode = false;
     let focus_node = {};
     let focus_edge_id = null;
     let focus_node_id = null;
@@ -259,16 +258,16 @@ let GraphLayout = function (container) {
 
         svg.on("mousedown", function () {
             console.log(d3.event.button);
-            is_focus_mode = false;
+            // is_focus_mode = false;
             d3.selectAll(".iw-contextMenu").style("display", "none");
             // svg.select("#group-propagation").remove();
-            nodes_in_group.attr("opacity", 1);
-            golds_in_group.attr("opacity", 1);
+            // nodes_in_group.attr("opacity", 1);
+            // golds_in_group.attr("opacity", 1);
             // edges_in_group.attr("opacity", 0.4);
 
             // svg.select("#single-propagate").remove();
-            nodes_in_group.attr("opacity", 1);
-            golds_in_group.attr("opacity", 1);
+            // nodes_in_group.attr("opacity", 1);
+            // golds_in_group.attr("opacity", 1);
         });
 
         svg.on(".drag", null);
@@ -359,9 +358,24 @@ let GraphLayout = function (container) {
         that._draw_labels_glyph();
     };
 
+    that.r = function(id) {
+        if(show_fisheye){
+            if(uncertain_nodes.indexOf(id) > -1 || selection_nodes.indexOf(id) > -1 || path_nodes[id] !== undefined){
+                return 5*zoom_scale;
+            }
+            return 1*zoom_scale
+        }
+        else {
+            if(uncertain_nodes.indexOf(id) > -1 || selection_nodes.indexOf(id) > -1){
+                return 5*zoom_scale;
+            }
+            return 3.5*zoom_scale
+        }
+    };
+
     that._reset_focus = function() {
         path_nodes = {};
-        nodes_in_group.attr("r", d => (uncertain_nodes.indexOf(d.id)===-1?3.5:5)*zoom_scale);
+        nodes_in_group.attr("r", d => that.r(d.id));
         svg.select("#group-propagation").remove();
         svg.select("#score-pie-chart-g").remove();
         svg.select("#uncertain-pie-chart-g").selectAll("path").attr("opacity", 1);
@@ -409,7 +423,7 @@ let GraphLayout = function (container) {
 
     that._maintain_size = function (transform_event) {
         zoom_scale = 1.0 / transform_event.k;
-        nodes_group.selectAll("circle").attr("r", d => (uncertain_nodes.indexOf(d.id)===-1?3.5:5)*zoom_scale);
+        nodes_group.selectAll("circle").attr("r", d => that.r(d.id));
         golds_group.selectAll("path").attr("d", d => star_path(10 * zoom_scale, 4 * zoom_scale, center_scale_x(d.x), center_scale_y(d.y)))
             .attr("stroke-width", 1.5*zoom_scale);
         edges_group.selectAll("line").style('stroke-width', zoom_scale);
@@ -420,9 +434,53 @@ let GraphLayout = function (container) {
         main_group.select("#uncertain-pie-chart-g").selectAll("path").attr("d", arc);
     };
 
+    that.uncertainty_scented_widget = function(points_id, container) {
+        // uncertainty interval
+        let min_certainty = 0;
+        let max_certainty = 1;
+        let certainty_cnt = 10;
+        function interval_idx(certainty){
+            if(certainty === max_certainty){
+                return certainty_cnt-1;
+            }
+            return Math.floor(certainty/((max_certainty-min_certainty)/certainty_cnt));
+        }
+
+
+        // certainty distribution
+        let certainty_distribution = [];
+        for(let i=0; i<certainty_cnt; i++) certainty_distribution.push([]);
+        for(let node_id of points_id){
+            let scores = graph_data.nodes[node_id].score[iter];
+            let sort_score = JSON.parse(JSON.stringify(scores));
+            sort_score.sort(function(a,b){return parseFloat(a)-parseFloat(b)});
+            let uncertainty = sort_score[sort_score.length-1]-sort_score[sort_score.length-2];
+            certainty_distribution[interval_idx(uncertainty)].push(node_id);
+        }
+
+        // draw
+        container.select("*").remove();
+        let bbox = container.node().getBBox();
+        console.log("uncertainty:", bbox);
+        let x = d3.scaleBand().rangeRound([bbox.width*0.1, bbox.width*0.9], .04).domain([0, certainty_cnt]);
+        let y = d3.scaleLinear().range([bbox.height*0.9, bbox.height*0.1]).domain([0, 1]);
+        container.selectAll("rect")
+            .data(certainty_distribution)
+            .enter()
+            .append("rect")
+            .attr("class", "uncertainty-rect")
+            .style("fill", "steelblue")
+          .attr("x", function(d, i) { return x(i); })
+          .attr("width", x.bandwidth())
+          .attr("y", function(d, i) { return y(d.length); })
+          .attr("height", function(d) {
+              return bbox.height*0.9 - y(d.length);
+          });
+    };
+
     that.lasso_start = function () {
         lasso.items()
-            .attr("r", d => (uncertain_nodes.indexOf(d.id)===-1?3.5:5)*zoom_scale) // reset size
+            .attr("r", d => that.r(d.id)) // reset size
             .classed("not_possible", true)
             .classed("selected", false);
     };
@@ -438,13 +496,13 @@ let GraphLayout = function (container) {
         lasso.notPossibleItems()
             .classed("not_possible", true)
             .classed("possible", false)
-            .attr("r", d => (uncertain_nodes.indexOf(d.id)===-1?3.5:5)*zoom_scale);
+            .attr("r", d => that.r(d.id));
 
     };
 
     that.update_selection_nodes = function (update_nodes_id) {
         // remove old selection
-        nodes_in_group.attr("r", d => ((uncertain_nodes.indexOf(d.id)>-1)?5:3.5)*zoom_scale);
+        nodes_in_group.attr("r", d => that.r(d.id));
         // update new selection data
         selection_nodes = update_nodes_id;
         //check if all selection nodes have been loaded(action when click label change view)
@@ -458,7 +516,7 @@ let GraphLayout = function (container) {
         }
         if(all_load === true){
             // since all selection nodes are loaded, we directly show new selection
-            nodes_in_group.attr("r", d => (((selection_nodes.indexOf(d.id)>-1)||(uncertain_nodes.indexOf(d.id)>-1))?5:3.5)*zoom_scale);
+            nodes_in_group.attr("r", d => that.r(d.id));
         }
         else {
             // first, figure out whether all selection nodes are in current area
@@ -528,7 +586,6 @@ let GraphLayout = function (container) {
             console.log("No node need focus.");
             return
         }
-        is_focus_mode = true;
 
         //TODO change
         // data_manager.update_image_view(lasso.selectedItems());
@@ -617,7 +674,7 @@ let GraphLayout = function (container) {
 
         // Reset the style of the not selected dots
         lasso.notSelectedItems()
-            .attr("r", d => (uncertain_nodes.indexOf(d.id)===-1?3.5:5)*zoom_scale);
+            .attr("r", d => that.r(d.id));
         lasso_result = lasso.selectedItems().data().map(d => d.id);
         if(lasso.selectedItems().size() === 0){
             console.log("lasso size = 0");
@@ -669,6 +726,7 @@ let GraphLayout = function (container) {
         if(state.fisheye === "group"){
             await that._group_show_path();
         }
+        that.uncertainty_scented_widget(Object.keys(graph_data.nodes).map(d => parseInt(d)), d3.select("#uncertainty-svg"))
         // debug
         // main_group.select("#debug-area").remove();
         // let draw_area = {
@@ -889,7 +947,7 @@ let GraphLayout = function (container) {
                 .transition()
                 .duration(AnimationDuration)
                 .attr("opacity", d => path_nodes[d.id]===true?1:0.2)
-                .attr("r", d => ((path_nodes[d.id] === true)||(uncertain_nodes.indexOf(d.id)>-1)?5:1)*zoom_scale);
+                .attr("r", d => that.r(d.id));
             golds_in_group
                 .transition()
                 .duration(AnimationDuration)
@@ -908,21 +966,24 @@ let GraphLayout = function (container) {
             }
             that._draw_score_pie_chart(draw_score_ids);
             let propagate_svg = main_group.insert("g", ":first-child").attr("id", "group-propagation");
+            let lineGenerator = d3.line().curve(d3.curveCardinal.tension(0));
             propagate_svg.append("g")
                 .attr("class", "single-propagate")
-                .selectAll("polyline")
+                .selectAll("path")
                 .data(path)
                 .enter()
-                .append("polyline")
+                .append("path")
                 .attr("stroke-width", 2.0 * zoom_scale)
                 .attr("stroke", edge_color)
                 .attr("opacity", 0)
                 .attr("marker-mid", d => "url(#arrow-gray)")
                 .attr("fill", "none")
-                .attr("points", function (d) {
+                .attr("d", function (d) {
                             let begin = [center_scale_x(path_nodes[d[0]].datum().x), center_scale_y(path_nodes[d[0]].datum().y)];
                                 let end = [center_scale_x(path_nodes[d[1]].datum().x), center_scale_y(path_nodes[d[1]].datum().y)];
-                                let mid = [(begin[0]+end[0])/2, (begin[1]+end[1])/2];
+                                // let mid = [(begin[0]+end[0])/2, (begin[1]+end[1])/2];
+                                let mid = curve_mid(begin, end);
+                                return lineGenerator([begin,mid, end]);
                                 return begin[0]+","+begin[1]+" "+mid[0]+","+mid[1]+" "+end[0]+","+end[1];
                         })
                 .on("mouseover", function (d) {
@@ -957,7 +1018,7 @@ let GraphLayout = function (container) {
                 .attr("class", "node-dot")
                 .attr("cx", d => center_scale_x(d.x))
                 .attr("cy", d => center_scale_y(d.y))
-                .attr("r", d => ((uncertain_nodes.indexOf(d.id)===-1)&&(selection_nodes.indexOf(d.id)===-1)?3.5:5)*zoom_scale)
+                .attr("r", d => that.r(d.id))
                 .attr("opacity", 0)
                 .attr("fill", function (d) {
                     if (show_ground_truth) {
@@ -982,11 +1043,8 @@ let GraphLayout = function (container) {
                     console.log(d.id)
                 })
                 .on("mouseout", function (d) {
-                    if((uncertain_nodes.indexOf(d.id)!==-1)||(path_nodes[d.id]!==undefined)){
-                        return
-                    }
                     let node = d3.select(this);
-                    node.attr("r", 3.5 * zoom_scale);
+                    node.attr("r", d => that.r(d.id));
 
                     if (focus_node_change_switch) {
                         focus_node_id = null;
@@ -1214,7 +1272,7 @@ let GraphLayout = function (container) {
                         else return color_label[d.label[iter]];
                     }
                 })
-                .attr("r", d=> ((uncertain_nodes.indexOf(d.id)===-1)&&(selection_nodes.indexOf(d.id)===-1)?3.5:5)*zoom_scale)
+                .attr("r", d => that.r(d.id))
                 .transition()
                 .duration(AnimationDuration)
                 .attr("cx", d => center_scale_x(d.x))
