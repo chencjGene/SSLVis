@@ -28,6 +28,7 @@ let GraphLayout = function (container) {
     let nodes_in_group = null;
     let golds_in_group = null;
     let lasso_btn_path = null;
+    let fisheye_btn_path = null;
 
     let AnimationDuration = 1000;
 
@@ -86,10 +87,13 @@ let GraphLayout = function (container) {
     let send_zoom_cnt = 0;
     let send_zoom_request = {};
 
+    let selection_nodes = [];
     let path_nodes = {};
     let new_nodes = [];
     let path = [];
     let uncertain_nodes = [];
+
+    let show_fisheye = false;
 
     that._init = function () {
         svg = container.selectAll('#graph-view-svg')
@@ -144,7 +148,6 @@ let GraphLayout = function (container) {
             // .translateExtent([[-100, -100], [100, 100]])
             .on('start', function () {
                 d3.selectAll(".iw-contextMenu").style("display", "none");
-                that._reset_focus();
                 focus_node_change_switch = true;
                 focus_edge_change_switch = true;
             })
@@ -300,10 +303,52 @@ let GraphLayout = function (container) {
             }
         });
 
+        $("#fisheye-btn")
+            .click(function () {
+                if(show_fisheye){
+                    show_fisheye = false;
+                    that.hide_selection_nodes_path();
+                    $("#fisheye-btn").css("background-color", "gray");
+                    fisheye_btn_path.attr("stroke", "white").attr("fill", "white");
+                }
+                else {
+                    show_fisheye = true;
+                    if(if_lasso){
+                        that._change_lasso_mode();
+                    }
+                    that.show_selection_nodes_path();
+                    $("#fisheye-btn").css("background-color", btn_select_color);
+                    fisheye_btn_path.attr("stroke", "white").attr("fill", "white");
+                }
+            })
+            .on("mouseover", function () {
+            if (d3.select("#fisheye-btn").style("background-color") === "rgba(0, 0, 0, 0)"
+                || d3.select("#fisheye-btn").style("background-color") === "white"
+                || d3.select("#fisheye-btn").style("background-color") === "rgb(255, 255, 255)") {
+                d3.select("#fisheye-btn").style("background", "gray");
+                fisheye_btn_path.attr("stroke", "white").attr("fill", "white");
+            }
+        })
+            .on("mousemove", function () {
+            if (d3.select("#fisheye-btn").style("background-color") === "rgba(0, 0, 0, 0)"
+                || d3.select("#fisheye-btn").style("background-color") === "white"
+                || d3.select("#fisheye-btn").style("background-color") === "rgb(255, 255, 255)") {
+                d3.select("#fisheye-btn").style("background", "gray");
+                fisheye_btn_path.attr("stroke", "white").attr("fill", "white");
+            }
+        })
+            .on("mouseout", function () {
+            if (d3.select("#fisheye-btn").style("background-color") === "gray") {
+                d3.select("#fisheye-btn").style("background", "white");
+                fisheye_btn_path.attr("stroke", "black").attr("fill", "black");
+            }
+        });
+
         edges_group = main_group.append("g").attr("id", "graph-view-link-g");
         nodes_group = main_group.append("g").attr("id", "graph-view-tsne-point");
         golds_group = main_group.append("g").attr("id", "golds-g");
         lasso_btn_path = d3.select("#lasso-btn").select("path");
+        fisheye_btn_path = d3.select("#fisheye-btn").select("path");
 
         click_menu_settings = {
             'mouseClick': 'right',
@@ -316,6 +361,7 @@ let GraphLayout = function (container) {
 
     that._reset_focus = function() {
         path_nodes = {};
+        nodes_in_group.attr("r", d => (uncertain_nodes.indexOf(d.id)===-1?3.5:5)*zoom_scale);
         svg.select("#group-propagation").remove();
         svg.select("#score-pie-chart-g").remove();
         svg.select("#uncertain-pie-chart-g").selectAll("path").attr("opacity", 1);
@@ -364,7 +410,8 @@ let GraphLayout = function (container) {
     that._maintain_size = function (transform_event) {
         zoom_scale = 1.0 / transform_event.k;
         nodes_group.selectAll("circle").attr("r", d => (uncertain_nodes.indexOf(d.id)===-1?3.5:5)*zoom_scale);
-        golds_group.selectAll("path").attr("d", d => star_path(10 * zoom_scale, 4 * zoom_scale, center_scale_x(d.x), center_scale_y(d.y)));
+        golds_group.selectAll("path").attr("d", d => star_path(10 * zoom_scale, 4 * zoom_scale, center_scale_x(d.x), center_scale_y(d.y)))
+            .attr("stroke-width", 1.5*zoom_scale);
         edges_group.selectAll("line").style('stroke-width', zoom_scale);
         main_group.select("#group-propagation").selectAll("polyline").style('stroke-width', 2.0 * zoom_scale);
         main_group.select("#single-propagate").selectAll("polyline").style('stroke-width', 2.0 * zoom_scale);
@@ -374,7 +421,6 @@ let GraphLayout = function (container) {
     };
 
     that.lasso_start = function () {
-        that._reset_focus();
         lasso.items()
             .attr("r", d => (uncertain_nodes.indexOf(d.id)===-1?3.5:5)*zoom_scale) // reset size
             .classed("not_possible", true)
@@ -396,33 +442,33 @@ let GraphLayout = function (container) {
 
     };
 
-    that.lasso_end = function () {
-        lasso.items()
-            .classed("not_possible", false)
-            .classed("possible", false);
+    that.update_selection_nodes = function (update_nodes_id) {
+        // remove old selection
+        nodes_in_group.attr("r", d => ((uncertain_nodes.indexOf(d.id)>-1)?5:3.5)*zoom_scale);
+        // update new selection data
+        selection_nodes = update_nodes_id;
+        // show new selection
+        nodes_in_group.attr("r", d => (((selection_nodes.indexOf(d.id)>-1)||(uncertain_nodes.indexOf(d.id)>-1))?5:3.5)*zoom_scale);
+    };
 
-        // Style the selected dots
-        lasso.selectedItems()
-            .classed("selected", true)
-            .attr("r", 5 * zoom_scale);
-
-        // Reset the style of the not selected dots
-        lasso.notSelectedItems()
-            .attr("r", d => (uncertain_nodes.indexOf(d.id)===-1?3.5:5)*zoom_scale);
-
-        let focus_node_data = lasso.selectedItems().data();
-        let focus_node_ids = focus_node_data.map(d => d.id);
-        lasso_result = focus_node_ids;
+    that.show_selection_nodes_path = function () {
+        let focus_node_data = [];
+        for(let id of selection_nodes){
+            let node = graph_data.nodes[id];
+            if(node.label[0] !== -1 || node.label[iter] === -1) continue;
+            focus_node_data.push(graph_data.nodes[id]);
+        }
+        console.log("show nodes:", focus_node_data);
         focus_edge_id = null;
-        console.log("focus_edge_id = null");
         focus_edge_node = null;
-        // that._update_click_menu();
         if (focus_node_data.length === 0) {
-            // console.log("No node need focus.");
+            console.log("No node need focus.");
             return
         }
         is_focus_mode = true;
-        data_manager.update_image_view(lasso.selectedItems());
+
+        //TODO change
+        // data_manager.update_image_view(lasso.selectedItems());
         console.log("focus nodes:", focus_node_data);
 
 
@@ -503,6 +549,32 @@ let GraphLayout = function (container) {
                 });
     };
 
+    that.hide_selection_nodes_path = function () {
+        that._reset_focus();
+    };
+
+    that.lasso_end = function () {
+        lasso.items()
+            .classed("not_possible", false)
+            .classed("possible", false);
+
+        // Style the selected dots
+        lasso.selectedItems()
+            .classed("selected", true)
+            .attr("r", 5 * zoom_scale);
+
+        // Reset the style of the not selected dots
+        lasso.notSelectedItems()
+            .attr("r", d => (uncertain_nodes.indexOf(d.id)===-1?3.5:5)*zoom_scale);
+        lasso_result = lasso.selectedItems().data().map(d => d.id);
+        if(lasso.selectedItems().size() === 0){
+            console.log("lasso size = 0");
+            return
+        }
+        let new_selection = lasso.selectedItems().data().map(d => d.id);
+        that.update_selection_nodes(new_selection);
+    };
+
     that._change_lasso_mode = function () {
         if (if_lasso) {
             if_lasso = false;
@@ -542,13 +614,26 @@ let GraphLayout = function (container) {
         else {
             await that._draw_uncertain_pie_chart(1);
         }
-
-        if(state.fisheye === "single"){
-            await that._single_show_path();
-        }
-        else if(state.fisheye === "group"){
+        if(state.fisheye === "group"){
             await that._group_show_path();
         }
+        // debug
+        // main_group.select("#debug-area").remove();
+        // let draw_area = {
+        //     x_min:now_area.x,
+        //     y_min:now_area.y,
+        //     x_max:now_area.x+now_area.width,
+        //     y_max:now_area.y+now_area.height
+        // };
+        // main_group.append("rect")
+        //     .attr("id", "debug-area")
+        //     .attr("x", center_scale_x(draw_area.x_min))
+        //     .attr("y", center_scale_y(draw_area.y_min))
+        //     .attr("width", center_scale_x(draw_area.x_max)-center_scale_x(draw_area.x_min))
+        //     .attr("height", center_scale_y(draw_area.y_max)-center_scale_y(draw_area.y_min))
+        //     .attr("stroke-width", 2)
+        //     .attr("stroke", "red")
+        //     .attr("fill-opacity", 0);
     };
 
     that._update_data = function (state) {
@@ -742,96 +827,6 @@ let GraphLayout = function (container) {
         return Math.sqrt(Math.pow(a.x-b.x, 2) + Math.pow(a.y-b.y, 2))
     };
 
-    that._single_show_path = function(){
-        return new Promise(function (resolve, reject) {
-            nodes_in_group = nodes_group.selectAll("circle");
-                    golds_in_group = golds_group.selectAll("path");
-                    // de-highlight
-                    nodes_in_group
-                        .transition()
-                        .duration(AnimationDuration)
-                        .attr("opacity", d => path_nodes[d.id]===true?1:0.2)
-                        .attr("r", d => ((path_nodes[d.id] === true)||(uncertain_nodes.indexOf(d.id)>-1)?5:1)*zoom_scale);
-                    golds_in_group
-                        .transition()
-                        .duration(AnimationDuration)
-                        .attr("d", d => star_path(10 * zoom_scale, 4 * zoom_scale, center_scale_x(d.x), center_scale_y(d.y)))
-                        .attr("opacity", d => path_nodes[d.id]===true?1:0.2);
-
-                    svg.select("#single-propagate").remove();
-                    nodes_in_group.each(function (d) {
-                        let node = d3.select(this);
-                        if(path_nodes[d.id]===true){
-                            path_nodes[d.id] = node;
-                        }
-                    });
-                    that._draw_score_pie_chart(Object.keys(path_nodes));
-                    // let all_in_old_area = true;
-                    // for(let new_node of new_nodes){
-                    //     let x = path_nodes[new_node].datum().x;
-                    //     let y = path_nodes[new_node].datum().y;
-                    //     if((x<now_area.x)||(x>now_area.x+now_area.width)||(y<now_area.y)||(y>now_area.y+now_area.height)){
-                    //         all_in_old_area = false;
-                    //         break;
-                    //     }
-                    // }
-                    // if(all_in_old_area){
-                    //     maingroup_k = Math.min(width/(main_group_max_x-main_group_min_x), height/(main_group_max_y-main_group_min_y));
-                    // }
-                    // let show_width = (main_group_max_x-main_group_min_x)*maingroup_k;
-                    // let show_height = (main_group_max_y-main_group_min_y)*maingroup_k;
-
-
-                    let single_node_propagate = main_group.insert("g", ":first-child")
-                            .attr("id", "single-propagate")
-                            .selectAll("polyline")
-                            .data(path)
-                            .enter()
-                            .append("polyline")
-                            .on("mouseover", function (d) {
-                                console.log(d);
-                                if (focus_edge_change_switch) {
-                                    focus_edge_id = d;
-                                    console.log("focus_edge_id = " + focus_edge_id);
-                                    focus_edge_node = this;
-                                    d3.select(this).style("stroke-width", 4.0 * zoom_scale);
-                                }
-                                $.post("/graph/feature_distance", {
-                                    path:JSON.stringify(d)
-                                }, function (data) {
-                                    console.log("Distance between",d[0],d[1],"is:",data.distance);
-                                })
-                                // that._update_click_menu();
-                            })
-                            .on("mouseout", function (d) {
-                                if (focus_edge_change_switch) {
-                                    focus_edge_id = null;
-                                    console.log("focus_edge_id = null");
-                                    focus_edge_node = null;
-                                    d3.select(this).style("stroke-width", 2.0 * zoom_scale);
-                                }
-                            })
-                            .attr("class", "edge-line")
-                            .attr("stroke-width", 2 * zoom_scale)
-                            .attr("stroke", edge_color)
-                            .attr("opacity", 0)
-                            .attr("marker-mid", d => "url(#arrow-gray)")
-                            .attr("fill", "none")
-                            .attr("points", function (d) {
-                                let begin = [center_scale_x(path_nodes[d[0]].datum().x), center_scale_y(path_nodes[d[0]].datum().y)];
-                                let end = [center_scale_x(path_nodes[d[1]].datum().x), center_scale_y(path_nodes[d[1]].datum().y)];
-                                let mid = [(begin[0]+end[0])/2, (begin[1]+end[1])/2];
-                                return begin[0]+","+begin[1]+" "+mid[0]+","+mid[1]+" "+end[0]+","+end[1];
-                            });
-                            single_node_propagate.transition()
-                            .duration(AnimationDuration)
-                            .attr("opacity", 1)
-                                .on("end", resolve);
-                        // $('.edge-line').contextMenu(click_edge_menu, click_menu_settings);
-                        $('#single-propagate').contextMenu(click_edge_menu, click_menu_settings);
-        });
-    };
-
     that._group_show_path = function(){
         return new Promise(function (resolve, reject) {
             nodes_in_group = nodes_group.selectAll("circle");
@@ -853,7 +848,13 @@ let GraphLayout = function (container) {
                                 path_nodes[d.id] = node;
                             }
                         });
-            that._draw_score_pie_chart(Object.keys(path_nodes));
+            let draw_score_ids = [];
+            for(let id of Object.keys(path_nodes)){
+                if(graph_data.nodes[id].label[0] === -1){
+                    draw_score_ids.push(id)
+                }
+            }
+            that._draw_score_pie_chart(draw_score_ids);
             let propagate_svg = main_group.insert("g", ":first-child").attr("id", "group-propagation");
             propagate_svg.append("g")
                 .attr("class", "single-propagate")
@@ -941,96 +942,12 @@ let GraphLayout = function (container) {
                     }
                 })
                 .on("click", function (d) {
-                    is_focus_mode = true;
-                    focus_node = {};
-                    lasso_result = [d.id];
-                    focus_edge_id = null;
-                    console.log("focus_edge_id = null");
-                    focus_edge_node = null;
-                    // that._update_click_menu();
-                    let node = d3.select(this);
-                    let new_area = null;
-                    // added by changjian, 20191226
-                    // showing image content
-                    data_manager.update_image_view(node);
-                    console.log("Node:", d);
-
-
-                    if (d.label[iter] === -1 || d.label[0] !== -1) return;
-
-                    // get must show nodes
-                    let predict_label = d.label[iter];
-                    let path_keys = [];
-                    path = [];
-                    path_nodes = {};
-                    new_nodes = [];
-                    for (let onepath of d.path) {
-                        if (onepath.length === 1) continue;
-                        for (let i = 0; i < onepath.length - 1; i++) {
-                            let s = onepath[i];
-                            let e = onepath[i + 1];
-                            let key = s + "," + e;
-                            if (path_keys.indexOf(key) === -1) {
-                                path_keys.push(key)
-                            }
-                        }
-                    }
-                    for (let path_key of path_keys) {
-                        let keys = path_key.split(",");
-                        let e = parseInt(keys[0]);
-                        let s = parseInt(keys[1]);
-                        path_nodes[e] = true;
-                        path_nodes[s] = true;
-                        path.push([e, s, predict_label]);
-                    }
-                    focus_node = JSON.parse(JSON.stringify(path_nodes));
-                    let must_show_nodes = [];
-                    for(let node_id in path_nodes){
-                        if(graph_data.nodes[node_id] === undefined) new_nodes.push(parseInt(node_id));
-                        must_show_nodes.push(parseInt(node_id))
-                    }
-                    $.post("/graph/getArea", {
-                        "must_show_nodes":JSON.stringify(must_show_nodes),
-                        "width":width,
-                        "height":height
-                    }, function (data) {
-                        // get k and level
-                        new_area = data.area;
-                        let main_group_min_x = center_scale_x(new_area.x);
-                        let main_group_min_y = center_scale_y(new_area.y);
-                        let main_group_max_x = center_scale_x(new_area.x + new_area.width);
-                        let main_group_max_y = center_scale_y(new_area.y + new_area.height);
-                        let maingroup_k = Math.min(width / (main_group_max_x - main_group_min_x), height / (main_group_max_y - main_group_min_y)) * 0.8;
-                        let target_level = current_level;
-                        let current_level_scale = Math.pow(2, target_level);
-                        while (maingroup_k > 2 * current_level_scale) {
-                            current_level_scale *= 2;
-                            target_level += 1;
-                        }
-                        while (maingroup_k < current_level_scale / 1.5 && target_level > 0) {
-                            current_level_scale /= 2;
-                            target_level -= 1;
-                        }
-                        current_level = target_level;
-                        zoom_scale = 1.0 / maingroup_k;
-                        let old_nodes = {};
-                        for(let node_id of must_show_nodes){
-                            if(graph_data.nodes[node_id] !== undefined){
-                                let node = graph_data.nodes[node_id];
-                                old_nodes[node.id] = {
-                                    id:node.id,
-                                    x:node.x,
-                                    y:node.y
-                                }
-                            }
-                        }
-                        data_manager.update_fisheye_graph_node(must_show_nodes, old_nodes, new_nodes, new_area, current_level, width/height, "single");
-                    });
+                     that.update_selection_nodes([d.id]);
                 })
                 .transition()
                 .duration(AnimationDuration)
                 .attr("opacity", function (d) {
-                    return (is_focus_mode && (!focus_node[d.id])) ? 0.2 : 1;
+                    return (focus_node[d.id]!==undefined) ? 0.2 : 1;
                 })
                 .on("end", resolve);
             golds_in_group.enter()
@@ -1047,7 +964,7 @@ let GraphLayout = function (container) {
                     }
                 })
                 .attr("stroke", "white")
-                .attr("stroke-width", 1.5)
+                .attr("stroke-width", 1.5*zoom_scale)
                 .attr("opacity", 0)
                 .on("mouseover", function (d) {
                     console.log("Label node id:", d.id)
@@ -1059,7 +976,7 @@ let GraphLayout = function (container) {
                 })
                 .transition()
                 .duration(AnimationDuration)
-                .attr("opacity", d => (is_focus_mode && (!focus_node[d.id])) ? 0.2 : 1)
+                .attr("opacity", d => (focus_node[d.id]!==undefined) ? 0.2 : 1)
                 .on("end", resolve);
 
             // edges_in_group = edges_group.selectAll("line")
