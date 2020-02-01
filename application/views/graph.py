@@ -50,6 +50,11 @@ def app_get_graph():
     init_model(k, filter_threshold)
     return get_graph()
 
+@graph.route("/graph/LocalUpdateK", methods=["GET", "POST"])
+def app_local_update_k():
+    data = json.loads(request.data)
+    selected_idxs = data["selected_idxs"]
+    return local_update_k(selected_idxs)
 
 @graph.route('/graph/GetLoss', methods=['POST', 'GET'])
 def app_get_loss():

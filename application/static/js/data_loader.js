@@ -134,8 +134,11 @@ DataLoaderClass = function (dataset) {
 
     that.local_update_k = function(selected_idxs){
         let params = "?dataset=" + that.dataset;
-        that.local_update_k_node = new request_node(that.local_update_k + params,
+        that.local_update_k_node = new request_node(that.local_update_k_url + params,
             that.local_update_k_handler(), "json", "POST");
+        let data = {selected_idxs};
+        that.local_update_k_node.set_data(data);
+        that.local_update_k_node.notify();
     };
 
     that.update_filter_threshold = function(threshold){

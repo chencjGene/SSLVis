@@ -92,6 +92,10 @@ class ExchangePortClass(object):
 
         return jsonify(graph)
 
+    def local_update_k(self, selected_idxs):
+        res = self.model.local_search_k(selected_idxs)
+        return jsonify(res)
+
     def get_loss(self):
         loss = self.model.get_loss()
         return jsonify(loss.tolist())
