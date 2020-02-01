@@ -13,6 +13,7 @@ DataLoaderClass = function (dataset) {
     that.graph_url = "/graph/GetGraph";
     that.loss_url = "/graph/GetLoss";
     that.ent_url = "/graph/GetEnt";
+    that.local_update_k_url = "/graph/LocalUpdateK";
     that.set_influence_filter_url = "/graph/SetInfluenceFilter";
     that.update_graph_url = "/graph/update";
     that.fisheye_graph_url = "/graph/fisheye";
@@ -31,6 +32,7 @@ DataLoaderClass = function (dataset) {
     that.flows_node = null;
     that.selected_flows_node = null;
     that.influence_filter_node = null;
+    that.local_update_k_node = null;
 
     // views
     that.graph_view = null;
@@ -128,6 +130,12 @@ DataLoaderClass = function (dataset) {
         that.loss_node.set_pending();
         that.ent_node.set_pending();
         that.graph_node.notify();
+    };
+
+    that.local_update_k = function(selected_idxs){
+        let params = "?dataset=" + that.dataset;
+        that.local_update_k_node = new request_node(that.local_update_k + params,
+            that.local_update_k_handler(), "json", "POST");
     };
 
     that.update_filter_threshold = function(threshold){
