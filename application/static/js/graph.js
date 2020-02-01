@@ -447,8 +447,71 @@ let GraphLayout = function (container) {
         nodes_in_group.attr("r", d => ((uncertain_nodes.indexOf(d.id)>-1)?5:3.5)*zoom_scale);
         // update new selection data
         selection_nodes = update_nodes_id;
-        // show new selection
-        nodes_in_group.attr("r", d => (((selection_nodes.indexOf(d.id)>-1)||(uncertain_nodes.indexOf(d.id)>-1))?5:3.5)*zoom_scale);
+        //check if all selection nodes have been loaded(action when click label change view)
+        let all_load = true;
+        let new_nodes = [];
+        for(let select_node of selection_nodes){
+            if(graph_data.nodes[select_node]===undefined){
+                all_load = false;
+                new_nodes.push(select_node);
+            }
+        }
+        if(all_load === true){
+            // since all selection nodes are loaded, we directly show new selection
+            nodes_in_group.attr("r", d => (((selection_nodes.indexOf(d.id)>-1)||(uncertain_nodes.indexOf(d.id)>-1))?5:3.5)*zoom_scale);
+        }
+        else {
+            // first, figure out whether all selection nodes are in current area
+            $.post("/graph/getArea", {
+                    "must_show_nodes":JSON.stringify(selection_nodes),
+                    "width":width,
+                    "height":height
+                }, function (data) {
+                let selection_area = data.area;
+                if((selection_area.x>=now_area.x)
+                    &&((selection_area.width+selection_area.x)<=(now_area.x+now_area.width))
+                    &&(selection_area.y>=now_area.y)
+                    &&((selection_area.height+selection_area.y)<=(now_area.y+now_area.height))){
+                    // all selection nodes in now area
+                    console.log("in area");
+                    let must_show_nodes = Object.keys(graph_data.nodes).map(d => parseInt(d));
+                    data_manager.update_fisheye_graph_node(must_show_nodes.concat(new_nodes), now_area, current_level, width/height, "none");
+                }else {
+                    // some selection nodes not in now area,need to zoom in to that area
+                    console.log("out of area");
+                    $.post("/graph/getArea" , {
+                    "must_show_nodes":JSON.stringify(selection_nodes),
+                    "width":width,
+                    "height":height
+                }, function (data) {
+                        // get k and level
+                        width = $("#graph-view-svg").width();
+                        height = $("#graph-view-svg").height();
+                        let new_area = data.area;
+                        let main_group_min_x = center_scale_x(new_area.x);
+                        let main_group_min_y = center_scale_y(new_area.y);
+                        let main_group_max_x = center_scale_x(new_area.x+new_area.width);
+                        let main_group_max_y = center_scale_y(new_area.y+new_area.height);
+                        let maingroup_k = Math.min(width/(main_group_max_x-main_group_min_x), height/(main_group_max_y-main_group_min_y));
+                        let target_level = current_level;
+                        let current_level_scale = Math.pow(2, target_level);
+                        while (maingroup_k > 2 * current_level_scale) {
+                            current_level_scale *= 2;
+                            target_level += 1;
+                        }
+                        while (maingroup_k < current_level_scale / 1.5 && target_level > 0) {
+                            current_level_scale /= 2;
+                            target_level -= 1;
+                        }
+                        current_level = target_level;
+                        zoom_scale = 1.0 / maingroup_k;
+                        console.log("current level", current_level, "current area", new_area);
+                        data_manager.update_fisheye_graph_node(selection_nodes, new_area, current_level, width/height, "none");
+
+                    })
+                }
+            });
+        }
     };
 
     that.show_selection_nodes_path = function () {
@@ -534,18 +597,7 @@ let GraphLayout = function (container) {
                     current_level = target_level;
                     zoom_scale = 1.0 / maingroup_k;
                     console.log("current level", current_level, "current area", new_area);
-                    let old_nodes = {};
-                    for(let node_id of must_show_nodes){
-                            if(graph_data.nodes[node_id] !== undefined){
-                                let node = graph_data.nodes[node_id];
-                                old_nodes[node.id] = {
-                                    id:node.id,
-                                    x:node.x,
-                                    y:node.y
-                                }
-                            }
-                        }
-                    data_manager.update_fisheye_graph_node(must_show_nodes, old_nodes, new_nodes, new_area, current_level, width/height, "group");
+                    data_manager.update_fisheye_graph_node(must_show_nodes, new_area, current_level, width/height, "group");
                 });
     };
 
@@ -608,7 +660,7 @@ let GraphLayout = function (container) {
 
         await that._update_view(rescale, state);
 
-        if(state.fisheye !== undefined){
+        if(state.fisheye === 'group'){
             await that._draw_uncertain_pie_chart(0.2);
         }
         else {
@@ -905,7 +957,7 @@ let GraphLayout = function (container) {
                 .attr("class", "node-dot")
                 .attr("cx", d => center_scale_x(d.x))
                 .attr("cy", d => center_scale_y(d.y))
-                .attr("r", d => (uncertain_nodes.indexOf(d.id)===-1?3.5:5)*zoom_scale)
+                .attr("r", d => ((uncertain_nodes.indexOf(d.id)===-1)&&(selection_nodes.indexOf(d.id)===-1)?3.5:5)*zoom_scale)
                 .attr("opacity", 0)
                 .attr("fill", function (d) {
                     if (show_ground_truth) {
@@ -1162,6 +1214,7 @@ let GraphLayout = function (container) {
                         else return color_label[d.label[iter]];
                     }
                 })
+                .attr("r", d=> ((uncertain_nodes.indexOf(d.id)===-1)&&(selection_nodes.indexOf(d.id)===-1)?3.5:5)*zoom_scale)
                 .transition()
                 .duration(AnimationDuration)
                 .attr("cx", d => center_scale_x(d.x))
