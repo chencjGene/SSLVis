@@ -78,7 +78,7 @@ def local_update(selected_idxs, F, graph_matrix, affinity_matrix, train_y, alpha
     return label_distributions_
 
 def local_search_k(k_list, n_neighbors, selected_idxs, F, initial_affinity_matrix, 
-    train_X, train_y, neighbors):
+    train_y, neighbors):
     normalizer = np.sum(F, axis=1)[:, np.newaxis] + 1e-20
     norm_F = F / normalizer
     original_ent = entropy(norm_F.T + 1e-20)

@@ -24,7 +24,7 @@ from ..utils.embedder_utils import Embedder
 from .data import Data
 from .LSLabelSpreading import LSLabelSpreading
 from .model_helper import propagation, approximated_influence, exact_influence
-
+from .model_update import local_search_k
 
 DEBUG = False
 
@@ -76,6 +76,7 @@ class SSLModel(object):
             self.n_neighbor, self.filter_threshold
         ))
         self._preprocess_neighbors()
+        self._construct_graph()
         self._training()
         # self._projection()
 
@@ -133,16 +134,18 @@ class SSLModel(object):
         np.save(neighbors_path, neighbors)
         np.save(neighbors_weight_path, neighbors_weight)
 
-    def _training(self):
+    def _construct_graph(self):
         # load neighbors information
         neighbors_path = os.path.join(self.selected_dir, "neighbors.npy")
         neighbors_weight_path = os.path.join(self.selected_dir,
                                              "neighbors_weight.npy")
         neighbors = np.load(neighbors_path)
+        self.neighbors = neighbors
         neighbors_weight = np.load(neighbors_weight_path)
         instance_num = neighbors.shape[0]
         train_y = self.data.get_train_label()
         train_y = np.array(train_y)
+        self.train_y = train_y
 
         # get knn graph in a csr form
         indptr = [i * self.n_neighbor for i in range(instance_num + 1)]
@@ -164,6 +167,11 @@ class SSLModel(object):
         self.affinity_matrix = affinity_matrix
         self.laplacian = laplacian
 
+
+    def _training(self):
+        affinity_matrix = self.affinity_matrix
+        laplacian = self.laplacian
+        train_y = self.train_y
         train_gt = self.data.get_train_ground_truth()
         train_gt = np.array(train_gt)
         pred_dist, loss, ent, process_data, unnorm_dist = \
@@ -208,6 +216,17 @@ class SSLModel(object):
                                    laplacian, self.alpha, train_y)
         pickle_save_data(influence_matrix_path, self.influence_matrix)
         return
+
+    def local_search_k(self, selected_idxs):
+        k_list = list(range(3,20))
+        affinity_matrix = local_search_k(k_list, self.n_neighbor, 
+            selected_idxs, self.unnorm_dist, self.affinity_matrix, 
+            self.train_y, self.neighbors)
+        laplacian_matrix = build_laplacian_graph(affinity_matrix)
+        self.affinity_matrix = affinity_matrix
+        self.laplacian = laplacian_matrix
+        self._training()
+        None
 
     def simplify_influence_matrix(self, threshold=0.7):
         logger.info("begin simplify influence matrix")
