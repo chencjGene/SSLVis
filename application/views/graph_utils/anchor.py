@@ -28,7 +28,7 @@ def get_topk_uncertain(process_data, k = 10):
         uncertain[i] = sort_res[1]-sort_res[0]
     return np.argsort(uncertain)[:k].tolist()
 
-def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, propagation_path, dataname, buf_path):
+def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, propagation_path, dataname, buf_path, degree):
     global top_k_uncertain
     anchor_path = os.path.join(buf_path, "anchors" + config.pkl_ext)
     current_pos_path = os.path.join(buf_path, "current_anchors" + config.pkl_ext)
@@ -123,15 +123,6 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, p
             # train_x_tsne[:,0] = (train_x_tsne[:,0]-x_min)/x_len
             # train_x_tsne[:,1] = (train_x_tsne[:,1]-y_min)/y_len
             # check edge distance
-            all_distance = 0
-            indptr = influence_matrix.indptr
-            indices = influence_matrix.indices
-            for i in range(node_num):
-                begin = indptr[i]
-                end = indptr[i+1]
-                for j in indices[begin:end]:
-                    all_distance += np.linalg.norm(train_x_tsne[i]-train_x_tsne[j], 2)
-            print("Edge length sum:", all_distance)
         if node_num > target_num:
             label_idxes = np.argwhere(train_y != -1).flatten()
             label_num = int(label_idxes.shape[0])
@@ -237,7 +228,9 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, p
             "label": labels,
             "score": scores,
             "truth": samples_truth[i],
-            "path":propagation_path[id]
+            "path":propagation_path[id],
+            "in_degree":int(degree[id][1]),
+            "out_degree":int(degree[id][0])
         }
 
     # added by changjian, 201912241926
@@ -260,7 +253,7 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, p
     }
     return [graph, top_k_uncertain]
 
-def updateAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, dataname, area, level, buf_path, propagation_path):
+def updateAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, dataname, area, level, buf_path, propagation_path, degree):
     global top_k_uncertain
     anchor_path = os.path.join(buf_path, "anchors" + config.pkl_ext)
     current_pos_path = os.path.join(buf_path, "current_anchors" + config.pkl_ext)
@@ -348,7 +341,9 @@ def updateAnchors(train_x, train_y, ground_truth, process_data, influence_matrix
             "label": labels,
             "score": scores,
             "truth": samples_truth[i],
-            "path": propagation_path[id]
+            "path": propagation_path[id],
+            "in_degree": int(degree[id][1]),
+            "out_degree": int(degree[id][0])
         }
     now = time.time()
     all_time["format_data"] += now - start
@@ -426,7 +421,7 @@ def get_area(must_show_nodes, width, height, train_x, train_y, raw_graph, proces
         "area":new_area
     }
 
-def fisheyeAnchors(must_show_nodes, area, level, wh, train_x, train_y, raw_graph, process_data, influence_matrix, propagation_path, ground_truth, buf_path):
+def fisheyeAnchors(must_show_nodes, area, level, wh, train_x, train_y, raw_graph, process_data, influence_matrix, propagation_path, ground_truth, buf_path, degree):
     global top_k_uncertain
     anchor_path = os.path.join(buf_path, "anchors" + config.pkl_ext)
     current_pos_path = os.path.join(buf_path, "current_anchors" + config.pkl_ext)
@@ -556,7 +551,9 @@ def fisheyeAnchors(must_show_nodes, area, level, wh, train_x, train_y, raw_graph
             "label": labels,
             "score": scores,
             "truth": samples_truth[i],
-            "path": propagation_path[id]
+            "path": propagation_path[id],
+            "in_degree": int(degree[id][1]),
+            "out_degree": int(degree[id][0])
         }
 
     graph = {

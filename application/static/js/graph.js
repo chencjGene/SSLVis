@@ -85,6 +85,7 @@ let GraphLayout = function (container) {
     let send_zoom_timeout = 1000;
     let send_zoom_cnt = 0;
     let send_zoom_request = {};
+    let first_load = true;
 
     let selection_nodes = [];
     let path_nodes = {};
@@ -93,6 +94,13 @@ let GraphLayout = function (container) {
     let uncertain_nodes = [];
 
     let show_fisheye = false;
+    let widget_width = 0;
+    let widget_height = 0;
+    let control_items = {};
+    let label_items = {};
+    let uncertain_items = {};
+    let indegree_items = {};
+    let outdegree_items = {};
 
     that._init = function () {
         svg = container.selectAll('#graph-view-svg')
@@ -137,6 +145,9 @@ let GraphLayout = function (container) {
 
         that._update_wait_list_group();
 
+        $("#widget-chosen a").on("click", function () {
+           that.reset_widget_items();
+        });
 
         // d3.select("#my-graph-right").on("mouseover", function () {
         //     wait_list_group.style("display", "none");
@@ -356,6 +367,8 @@ let GraphLayout = function (container) {
 
         that._update_click_menu();
         that._draw_labels_glyph();
+        widget_width = $("#overview-uncertainty-svg").width();
+        widget_height = $("#overview-uncertainty-svg").height();
     };
 
     that.r = function(id) {
@@ -370,6 +383,45 @@ let GraphLayout = function (container) {
                 return 5*zoom_scale;
             }
             return 3.5*zoom_scale
+        }
+    };
+
+    that.reset_widget_items = function() {
+        //clear data
+        for(let node_id of Object.keys(graph_data.nodes)){
+            uncertain_items[node_id] = false;
+            label_items[node_id] = true;
+            indegree_items[node_id] = true;
+            outdegree_items[node_id] = true;
+            control_items[node_id] = false;
+        }
+
+        //remove pie chart
+        that._remove_score_pie_chart(true);
+
+        //reset widget drag position and rect opacity
+        let container_width = widget_width;
+        let container_height = widget_height;
+        for(let type of ["overview", "current", "selection"]){
+            for(let widget of ["uncertainty", "label", "indegree", "outdegree"]){
+                let container = d3.select("#"+type+"-"+widget+"-svg");
+                if(widget === "uncertainty"){
+                    container.selectAll("rect")
+                        .attr("opacity", 0.5);
+                    container.select(".start-drag")
+                        .attr("transform", "translate("+(container_width*0.87)+","+(container_height*0.9)+")");
+                    container.select(".end-drag")
+                        .attr("transform", "translate("+(container_width*0.9)+","+(container_height*0.9)+")");
+                }
+                else {
+                    container.selectAll("rect")
+                        .attr("opacity", 1);
+                    container.select(".start-drag")
+                        .attr("transform", "translate("+(container_width*0.1)+","+(container_height*0.9)+")");
+                    container.select(".end-drag")
+                        .attr("transform", "translate("+(container_width*0.9)+","+(container_height*0.9)+")");
+                }
+            }
         }
     };
 
@@ -434,11 +486,35 @@ let GraphLayout = function (container) {
         main_group.select("#uncertain-pie-chart-g").selectAll("path").attr("d", arc);
     };
 
-    that.uncertainty_scented_widget = function(points_id, container) {
+    that.draw_scented_widget = function(points_id, type) {
+        that.uncertainty_scented_widget(points_id, "#"+type+"-uncertainty-svg");
+        that.label_scented_widget(points_id, "#"+type+"-label-svg");
+        that.in_degree_scented_widget(points_id, "#"+type+"-indegree-svg");
+        that.out_degree_scented_widget(points_id, "#"+type+"-outdegree-svg")
+    };
+
+    that.update_widget_showing_items = function(ids) {
+        let remove_nodes = [];
+        let add_nodes = [];
+        for(let node_id of ids){
+            let new_flag = label_items[node_id]&&uncertain_items[node_id]&&indegree_items[node_id]&&outdegree_items[node_id];
+            if(new_flag === true && control_items[node_id] === false){
+                add_nodes.push(node_id);
+            }
+            else if(new_flag === false && control_items[node_id] === true){
+                remove_nodes.push(node_id);
+            }
+            control_items[node_id] = new_flag;
+        }
+        that._remove_score_pie_chart(false, remove_nodes);
+        that._draw_score_pie_chart(add_nodes);
+    };
+
+    that.uncertainty_scented_widget = function(points_id, container_id) {
         // uncertainty interval
         let min_certainty = 0;
         let max_certainty = 1;
-        let certainty_cnt = 10;
+        let certainty_cnt = 20;
         function interval_idx(certainty){
             if(certainty === max_certainty){
                 return certainty_cnt-1;
@@ -449,33 +525,530 @@ let GraphLayout = function (container) {
 
         // certainty distribution
         let certainty_distribution = [];
+        let all_num = points_id.length;
+        let max_len = 0;
         for(let i=0; i<certainty_cnt; i++) certainty_distribution.push([]);
         for(let node_id of points_id){
+            if(graph_data.nodes[node_id] === undefined){
+                console.log("no node:", node_id);
+                continue
+            }
             let scores = graph_data.nodes[node_id].score[iter];
             let sort_score = JSON.parse(JSON.stringify(scores));
             sort_score.sort(function(a,b){return parseFloat(a)-parseFloat(b)});
             let uncertainty = sort_score[sort_score.length-1]-sort_score[sort_score.length-2];
-            certainty_distribution[interval_idx(uncertainty)].push(node_id);
+            // change certainty to uncertainty
+            uncertainty = 1-uncertainty;
+            let distribution_box = certainty_distribution[interval_idx(uncertainty)];
+            distribution_box.push(node_id);
+            if(distribution_box.length > max_len){
+                max_len = distribution_box.length;
+            }
         }
 
         // draw
-        container.select("*").remove();
-        let bbox = container.node().getBBox();
-        console.log("uncertainty:", bbox);
-        let x = d3.scaleBand().rangeRound([bbox.width*0.1, bbox.width*0.9], .04).domain([0, certainty_cnt]);
-        let y = d3.scaleLinear().range([bbox.height*0.9, bbox.height*0.1]).domain([0, 1]);
+        let container = d3.select(container_id);
+        let container_width = widget_width;
+        let container_height = widget_height;
+        container.selectAll("*").remove();
+        let x = d3.scaleBand().rangeRound([container_width*0.1, container_width*0.9], .05).paddingInner(0.05).domain(d3.range(certainty_cnt));
+        let y = d3.scaleLinear().range([container_height*0.85, container_height*0.05]).domain([0, 1]);
+
+        //draw bar chart
         container.selectAll("rect")
             .data(certainty_distribution)
             .enter()
             .append("rect")
-            .attr("class", "uncertainty-rect")
-            .style("fill", "steelblue")
+            .style("fill", "#880e4f")
           .attr("x", function(d, i) { return x(i); })
           .attr("width", x.bandwidth())
-          .attr("y", function(d, i) { return y(d.length); })
+          .attr("y", function(d, i) { return y(d.length/max_len); })
           .attr("height", function(d) {
-              return bbox.height*0.9 - y(d.length);
-          });
+              return container_height*0.85 - y(d.length/max_len);
+          })
+            .attr("opacity", 0.5);
+        // draw x-axis
+        container.append("g")
+            .append("line")
+            .attr("x1", container_width*0.1)
+            .attr("y1", container_height*0.85)
+            .attr("x2", container_width*0.9)
+            .attr("y2", container_height*0.85)
+            .attr("stroke", "black")
+            .attr("stroke-width", 1);
+        //draw dragble
+        let draggable_item_path = "M0 -6 L6 6 L-6 6 Z";
+        let start_drag = container.append("path")
+            .attr("class", "start-drag")
+            .attr("d", draggable_item_path)
+            .attr("fill", "#880e4f")
+            .attr("transform", "translate("+(container_width*0.87)+","+(container_height*0.9)+")");
+        let end_drag = container.append("path")
+            .attr("class", "end-drag")
+            .attr("d", draggable_item_path)
+            .attr("fill", "#880e4f")
+            .attr("transform", "translate("+(container_width*0.9)+","+(container_height*0.9)+")");
+        start_drag.call(d3.drag()
+                .on("drag", function () {
+                    let x = d3.event.x;
+                    let drag_btn = d3.select(this);
+                    let min_x = container_width*0.09;
+                    let max_x = -1;
+                    let end_pos = end_drag.attr("transform").slice(end_drag.attr("transform").indexOf("(")+1, end_drag.attr("transform").indexOf(","));
+                    max_x = parseFloat(end_pos);
+                    if((x<=min_x)||(x>=max_x)) return;
+                    drag_btn.attr("transform", "translate("+(x)+","+(container_height*0.9)+")");
+                    let change = false;
+                    container.selectAll("rect").attr("opacity", function (d) {
+                        let rect = d3.select(this);
+                        let rect_x = parseFloat(rect.attr("x"));
+                        let rect_width = parseFloat(rect.attr("width"));
+                        if((rect_x>=x)&&(rect_x+rect_width<=max_x)){
+                            // in control
+                            if(rect.attr("opacity")!=1)change = true;
+                            for(let id of d){
+                                uncertain_items[id] = true;
+                            }
+                            if(change) that.update_widget_showing_items(d);
+                            return 1
+                        }
+                        if(rect.attr("opacity")!=0.5)change = true;
+                        for(let id of d){
+                                uncertain_items[id] = false;
+                        }
+                        if(change) that.update_widget_showing_items(d);
+                        return 0.5
+                    })
+                }));
+        end_drag.call(d3.drag()
+                .on("drag", function () {
+                    let x = d3.event.x;
+                    let drag_btn = d3.select(this);
+                    let max_x = container_width*0.91;
+                    let min_x = -1;
+                    let end_pos = start_drag.attr("transform").slice(end_drag.attr("transform").indexOf("(")+1, end_drag.attr("transform").indexOf(","));
+                    min_x = parseFloat(end_pos);
+                    if((x<=min_x)||(x>=max_x)) return;
+                    drag_btn.attr("transform", "translate("+(x)+","+(container_height*0.9)+")");
+                    let change = false;
+                    container.selectAll("rect").attr("opacity", function (d) {
+                        let rect = d3.select(this);
+                        let rect_x = parseFloat(rect.attr("x"));
+                        let rect_width = parseFloat(rect.attr("width"));
+                        if((rect_x>=min_x)&&(rect_x+rect_width<=x)){
+                            // in control
+                            if(rect.attr("opacity")!=1)change = true;
+                            for(let id of d){
+                                uncertain_items[id] = true;
+                            }
+                            if(change) that.update_widget_showing_items(d);
+                            return 1
+                        }
+                        if(rect.attr("opacity")!=0.5)change = true;
+                        for(let id of d){
+                                uncertain_items[id] = false;
+                        }
+                        if(change) that.update_widget_showing_items(d);
+                        return 0.5
+                    })
+                }))
+    };
+
+    that.label_scented_widget = function(points_id, container_id) {
+        // label interval
+        let min_label_id = 0;
+        let max_label_id = 9;
+        let label_cnt = max_label_id-min_label_id+1;
+        function interval_idx(label_id){
+            return label_id;
+        }
+
+
+        // label distribution
+        let label_distribution = [];
+        let max_len = 0;
+        for(let i=0; i<label_cnt; i++) label_distribution.push([]);
+        for(let node_id of points_id){
+            if(graph_data.nodes[node_id] === undefined){
+                console.log("no node:", node_id);
+                continue
+            }
+            let predict_label = graph_data.nodes[node_id].label[iter];
+            let distribution_box = label_distribution[interval_idx(predict_label)];
+            distribution_box.push(node_id);
+            if(distribution_box.length > max_len){
+                max_len = distribution_box.length;
+            }
+        }
+
+        // draw
+        let container = d3.select(container_id);
+        let container_width = widget_width;
+        let container_height = widget_height;
+        container.selectAll("*").remove();
+        let x = d3.scaleBand().rangeRound([container_width*0.1, container_width*0.9], .05).paddingInner(0.05).domain(d3.range(label_cnt));
+        let y = d3.scaleLinear().range([container_height*0.85, container_height*0.05]).domain([0, 1]);
+        container.selectAll("rect")
+            .data(label_distribution)
+            .enter()
+            .append("rect")
+            .style("fill", (d, i) => color_label[i])
+          .attr("x", function(d, i) { return x(i); })
+          .attr("width", x.bandwidth())
+          .attr("y", function(d, i) { return y(d.length/max_len); })
+          .attr("height", function(d) {
+              return container_height*0.85 - y(d.length/max_len);
+          })
+            .attr("opacity", 1);
+        container.append("g")
+            .append("line")
+            .attr("x1", container_width*0.1)
+            .attr("y1", container_height*0.85)
+            .attr("x2", container_width*0.9)
+            .attr("y2", container_height*0.85)
+            .attr("stroke", "black")
+            .attr("stroke-width", 1);
+        //draw dragble
+        let draggable_item_path = "M0 -6 L6 6 L-6 6 Z";
+        let start_drag = container.append("path")
+            .attr("class", "start-drag")
+            .attr("d", draggable_item_path)
+            .attr("fill", "#880e4f")
+            .attr("transform", "translate("+(container_width*0.1)+","+(container_height*0.9)+")");
+        let end_drag = container.append("path")
+            .attr("class", "end-drag")
+            .attr("d", draggable_item_path)
+            .attr("fill", "#880e4f")
+            .attr("transform", "translate("+(container_width*0.9)+","+(container_height*0.9)+")");
+        start_drag.call(d3.drag()
+                .on("drag", function () {
+                    let x = d3.event.x;
+                    let drag_btn = d3.select(this);
+                    let min_x = container_width*0.09;
+                    let max_x = -1;
+                    let end_pos = end_drag.attr("transform").slice(end_drag.attr("transform").indexOf("(")+1, end_drag.attr("transform").indexOf(","));
+                    max_x = parseFloat(end_pos);
+                    if((x<=min_x)||(x>=max_x)) return;
+                    drag_btn.attr("transform", "translate("+(x)+","+(container_height*0.9)+")");
+                    let change = false;
+                    container.selectAll("rect").attr("opacity", function (d) {
+                        let rect = d3.select(this);
+                        let rect_x = parseFloat(rect.attr("x"));
+                        let rect_width = parseFloat(rect.attr("width"));
+                        if((rect_x>=x)&&(rect_x+rect_width<=max_x)){
+                            // in control
+                            if(rect.attr("opacity")!=1)change = true;
+                            for(let id of d){
+                                label_items[id] = true;
+                            }
+                            if(change) that.update_widget_showing_items(d);
+                            return 1
+                        }
+                        if(rect.attr("opacity")!=0.5)change = true;
+                        for(let id of d){
+                            label_items[id] = false;
+                        }
+                        if(change) that.update_widget_showing_items(d);
+                        return 0.5
+                    })
+                }));
+        end_drag.call(d3.drag()
+                .on("drag", function () {
+                    let x = d3.event.x;
+                    let drag_btn = d3.select(this);
+                    let max_x = container_width*0.91;
+                    let min_x = -1;
+                    let end_pos = start_drag.attr("transform").slice(end_drag.attr("transform").indexOf("(")+1, end_drag.attr("transform").indexOf(","));
+                    min_x = parseFloat(end_pos);
+                    if((x<=min_x)||(x>=max_x)) return;
+                    drag_btn.attr("transform", "translate("+(x)+","+(container_height*0.9)+")");
+                    let change = false;
+                    container.selectAll("rect").attr("opacity", function (d) {
+                        let rect = d3.select(this);
+                        let rect_x = parseFloat(rect.attr("x"));
+                        let rect_width = parseFloat(rect.attr("width"));
+                        if((rect_x>=min_x)&&(rect_x+rect_width<=x)){
+                            // in control
+                            if(rect.attr("opacity")!=1)change = true;
+                            for(let id of d){
+                                label_items[id] = true;
+                            }
+                            if(change) that.update_widget_showing_items();
+                            return 1
+                        }
+                        if(rect.attr("opacity")!=0.5)change = true;
+                        for(let id of d){
+                                label_items[id] = false;
+                        }
+                        if(change) that.update_widget_showing_items();
+                        return 0.5
+                    })
+                }))
+    };
+
+    that.in_degree_scented_widget = function(points_id, container_id) {
+        // in degree interval
+        let min_degree = 0;
+        let max_degree = 7;
+        let degree_cnt = max_degree-min_degree;
+        function interval_idx(in_degree){
+            return in_degree>=max_degree?max_degree-1:in_degree;
+        }
+
+
+        // degree distribution
+        let degree_distribution = [];
+        let max_len = 0;
+        for(let i=0; i<degree_cnt; i++) degree_distribution.push([]);
+        for(let node_id of points_id){
+            if(graph_data.nodes[node_id] === undefined){
+                console.log("no node:", node_id);
+                continue
+            }
+            let in_degree = graph_data.nodes[node_id].in_degree;
+            let distribution_box = degree_distribution[interval_idx(in_degree)];
+            distribution_box.push(node_id);
+            if(distribution_box.length > max_len){
+                max_len = distribution_box.length;
+            }
+        }
+
+        // draw
+        let container = d3.select(container_id);
+        let container_width = widget_width;
+        let container_height = widget_height;
+        container.selectAll("*").remove();
+        let x = d3.scaleBand().rangeRound([container_width*0.1, container_width*0.9], .05).paddingInner(0.05).domain(d3.range(degree_cnt));
+        let y = d3.scaleLinear().range([container_height*0.85, container_height*0.05]).domain([0, 1]);
+        container.selectAll("rect")
+            .data(degree_distribution)
+            .enter()
+            .append("rect")
+            .style("fill", "#880e4f")
+          .attr("x", function(d, i) { return x(i); })
+          .attr("width", x.bandwidth())
+          .attr("y", function(d, i) { return y(d.length/max_len); })
+          .attr("height", function(d) {
+              return container_height*0.85 - y(d.length/max_len);
+          })
+            .attr("opacity", 1);
+        container.append("g")
+            .append("line")
+            .attr("x1", container_width*0.1)
+            .attr("y1", container_height*0.85)
+            .attr("x2", container_width*0.9)
+            .attr("y2", container_height*0.85)
+            .attr("stroke", "black")
+            .attr("stroke-width", 1);
+        //draw dragble
+        let draggable_item_path = "M0 -6 L6 6 L-6 6 Z";
+        let start_drag = container.append("path")
+            .attr("class", "start-drag")
+            .attr("d", draggable_item_path)
+            .attr("fill", "#880e4f")
+            .attr("transform", "translate("+(container_width*0.1)+","+(container_height*0.9)+")");
+        let end_drag = container.append("path")
+            .attr("class", "end-drag")
+            .attr("d", draggable_item_path)
+            .attr("fill", "#880e4f")
+            .attr("transform", "translate("+(container_width*0.9)+","+(container_height*0.9)+")");
+
+        start_drag.call(d3.drag()
+                .on("drag", function () {
+                    let x = d3.event.x;
+                    let drag_btn = d3.select(this);
+                    let min_x = container_width*0.09;
+                    let max_x = -1;
+                    let end_pos = end_drag.attr("transform").slice(end_drag.attr("transform").indexOf("(")+1, end_drag.attr("transform").indexOf(","));
+                    max_x = parseFloat(end_pos);
+                    if((x<=min_x)||(x>=max_x)) return;
+                    drag_btn.attr("transform", "translate("+(x)+","+(container_height*0.9)+")");
+                    let change = false;
+                    container.selectAll("rect").attr("opacity", function (d) {
+                        let rect = d3.select(this);
+                        let rect_x = parseFloat(rect.attr("x"));
+                        let rect_width = parseFloat(rect.attr("width"));
+                        if((rect_x>=x)&&(rect_x+rect_width<=max_x)){
+                            // in control
+                            if(rect.attr("opacity")!=1)change = true;
+                            for(let id of d){
+                                outdegree_items[id] = true;
+                            }
+                            if(change) that.update_widget_showing_items(d);
+                            return 1
+                        }
+                        if(rect.attr("opacity")!=0.5)change = true;
+                        for(let id of d){
+                                outdegree_items[id] = false;
+                        }
+                        if(change) that.update_widget_showing_items(d);
+                        return 0.5
+                    })
+                }));
+        end_drag.call(d3.drag()
+                .on("drag", function () {
+                    let x = d3.event.x;
+                    let drag_btn = d3.select(this);
+                    let max_x = container_width*0.91;
+                    let min_x = -1;
+                    let end_pos = start_drag.attr("transform").slice(end_drag.attr("transform").indexOf("(")+1, end_drag.attr("transform").indexOf(","));
+                    min_x = parseFloat(end_pos);
+                    if((x<=min_x)||(x>=max_x)) return;
+                    drag_btn.attr("transform", "translate("+(x)+","+(container_height*0.9)+")");
+                    let change = false;
+                    container.selectAll("rect").attr("opacity", function (d) {
+                        let rect = d3.select(this);
+                        let rect_x = parseFloat(rect.attr("x"));
+                        let rect_width = parseFloat(rect.attr("width"));
+                        if((rect_x>=min_x)&&(rect_x+rect_width<=x)){
+                            // in control
+                            if(rect.attr("opacity")!=1)change = true;
+                            for(let id of d){
+                                indegree_items[id] = true;
+                            }
+                            if(change) that.update_widget_showing_items();
+                            return 1
+                        }
+                        if(rect.attr("opacity")!=0.5)change = true;
+                        for(let id of d){
+                                indegree_items[id] = false;
+                        }
+                        if(change) that.update_widget_showing_items();
+                        return 0.5
+                    })
+                }))
+    };
+
+    that.out_degree_scented_widget = function(points_id, container_id) {
+        // out degree interval
+        let min_degree = 0;
+        let max_degree = 10;
+        let degree_cnt = max_degree-min_degree;
+        function interval_idx(out_degree){
+            return out_degree>=max_degree?max_degree-1:out_degree;
+        }
+
+
+        // degree distribution
+        let degree_distribution = [];
+        let max_len = 0;
+        for(let i=0; i<degree_cnt; i++) degree_distribution.push([]);
+        for(let node_id of points_id){
+            if(graph_data.nodes[node_id] === undefined){
+                console.log("no node:", node_id);
+                continue
+            }
+            let in_degree = graph_data.nodes[node_id].out_degree;
+            let distribution_box = degree_distribution[interval_idx(in_degree)];
+            distribution_box.push(node_id);
+            if(distribution_box.length > max_len){
+                max_len = distribution_box.length;
+            }
+        }
+
+        // draw
+        let container = d3.select(container_id);
+        let container_width = widget_width;
+        let container_height = widget_height;
+        container.selectAll("*").remove();
+        let x = d3.scaleBand().rangeRound([container_width*0.1, container_width*0.9], .05).paddingInner(0.05).domain(d3.range(degree_cnt));
+        let y = d3.scaleLinear().range([container_height*0.85, container_height*0.05]).domain([0, 1]);
+        container.selectAll("rect")
+            .data(degree_distribution)
+            .enter()
+            .append("rect")
+            .style("fill", "#880e4f")
+          .attr("x", function(d, i) { return x(i); })
+          .attr("width", x.bandwidth())
+          .attr("y", function(d, i) { return y(d.length/max_len); })
+          .attr("height", function(d) {
+              return container_height*0.85 - y(d.length/max_len);
+          })
+            .attr("opacity", 1);
+        container.append("g")
+            .append("line")
+            .attr("x1", container_width*0.1)
+            .attr("y1", container_height*0.85)
+            .attr("x2", container_width*0.9)
+            .attr("y2", container_height*0.85)
+            .attr("stroke", "black")
+            .attr("stroke-width", 1);
+        //draw dragble
+        let draggable_item_path = "M0 -6 L6 6 L-6 6 Z";
+        let start_drag = container.append("path")
+            .attr("class", "start-drag")
+            .attr("d", draggable_item_path)
+            .attr("fill", "#880e4f")
+            .attr("transform", "translate("+(container_width*0.1)+","+(container_height*0.9)+")");
+        let end_drag = container.append("path")
+            .attr("class", "end-drag")
+            .attr("d", draggable_item_path)
+            .attr("fill", "#880e4f")
+            .attr("transform", "translate("+(container_width*0.9)+","+(container_height*0.9)+")");
+        start_drag.call(d3.drag()
+                .on("drag", function () {
+                    let x = d3.event.x;
+                    let drag_btn = d3.select(this);
+                    let min_x = container_width*0.09;
+                    let max_x = -1;
+                    let end_pos = end_drag.attr("transform").slice(end_drag.attr("transform").indexOf("(")+1, end_drag.attr("transform").indexOf(","));
+                    max_x = parseFloat(end_pos);
+                    if((x<=min_x)||(x>=max_x)) return;
+                    drag_btn.attr("transform", "translate("+(x)+","+(container_height*0.9)+")");
+                    let change = false;
+                    container.selectAll("rect").attr("opacity", function (d) {
+                        let rect = d3.select(this);
+                        let rect_x = parseFloat(rect.attr("x"));
+                        let rect_width = parseFloat(rect.attr("width"));
+                        if((rect_x>=x)&&(rect_x+rect_width<=max_x)){
+                            // in control
+                            if(rect.attr("opacity")!=1)change = true;
+                            for(let id of d){
+                                outdegree_items[id] = true;
+                            }
+                            if(change) that.update_widget_showing_items(d);
+                            return 1
+                        }
+                        if(rect.attr("opacity")!=0.5)change = true;
+                        for(let id of d){
+                                outdegree_items[id] = false;
+                        }
+                        if(change) that.update_widget_showing_items(d);
+                        return 0.5
+                    })
+                }));
+        end_drag.call(d3.drag()
+                .on("drag", function () {
+                    let x = d3.event.x;
+                    let drag_btn = d3.select(this);
+                    let max_x = container_width*0.91;
+                    let min_x = -1;
+                    let end_pos = start_drag.attr("transform").slice(end_drag.attr("transform").indexOf("(")+1, end_drag.attr("transform").indexOf(","));
+                    min_x = parseFloat(end_pos);
+                    if((x<=min_x)||(x>=max_x)) return;
+                    drag_btn.attr("transform", "translate("+(x)+","+(container_height*0.9)+")");
+                    let change = false;
+                    container.selectAll("rect").attr("opacity", function (d) {
+                        let rect = d3.select(this);
+                        let rect_x = parseFloat(rect.attr("x"));
+                        let rect_width = parseFloat(rect.attr("width"));
+                        if((rect_x>=min_x)&&(rect_x+rect_width<=x)){
+                            // in control
+                            if(rect.attr("opacity")!=1)change = true;
+                            for(let id of d){
+                                outdegree_items[id] = true;
+                            }
+                            if(change) that.update_widget_showing_items(d);
+                            return 1
+                        }
+                        if(rect.attr("opacity")!=0.5)change = true;
+                        if(change) that.update_widget_showing_items(d);
+                        for(let id of d){
+                                outdegree_items[id] = false;
+                            }
+                        return 0.5
+                    })
+                }));
     };
 
     that.lasso_start = function () {
@@ -514,9 +1087,12 @@ let GraphLayout = function (container) {
                 new_nodes.push(select_node);
             }
         }
+        // data_manager.update_image_view(selection_nodes);
         if(all_load === true){
             // since all selection nodes are loaded, we directly show new selection
             nodes_in_group.attr("r", d => that.r(d.id));
+            //draw current area info
+            that.draw_scented_widget(selection_nodes, "selection");
         }
         else {
             // first, figure out whether all selection nodes are in current area
@@ -587,8 +1163,6 @@ let GraphLayout = function (container) {
             return
         }
 
-        //TODO change
-        // data_manager.update_image_view(lasso.selectedItems());
         console.log("focus nodes:", focus_node_data);
 
 
@@ -726,7 +1300,14 @@ let GraphLayout = function (container) {
         if(state.fisheye === "group"){
             await that._group_show_path();
         }
-        that.uncertainty_scented_widget(Object.keys(graph_data.nodes).map(d => parseInt(d)), d3.select("#uncertainty-svg"))
+        if(first_load){
+            // draw overview info
+            first_load = false;
+            that.draw_scented_widget(Object.keys(graph_data.nodes).map(d => parseInt(d)), "overview");
+            that.reset_widget_items();
+        }
+        //draw current area info
+        that.draw_scented_widget(Object.keys(graph_data.nodes).map(d => parseInt(d)), "current");
         // debug
         // main_group.select("#debug-area").remove();
         // let draw_area = {
@@ -757,6 +1338,8 @@ let GraphLayout = function (container) {
         console.log("graph_data", graph_data);
         // remove in the future
         that._draw_legend();
+
+
     };
 
     // TODO: remove in the future
@@ -964,6 +1547,7 @@ let GraphLayout = function (container) {
                     draw_score_ids.push(id)
                 }
             }
+            that._remove_score_pie_chart(true);
             that._draw_score_pie_chart(draw_score_ids);
             let propagate_svg = main_group.insert("g", ":first-child").attr("id", "group-propagation");
             let lineGenerator = d3.line().curve(d3.curveCardinal.tension(0));
@@ -1526,19 +2110,28 @@ let GraphLayout = function (container) {
     };
 
     that._draw_score_pie_chart = function (focus_nodes_id) {
-        svg.select("#score-pie-chart-g").remove();
         let pie = d3.pie().value(d => d);
         let arc = d3.arc().outerRadius(11 * zoom_scale).innerRadius(7 * zoom_scale);
-        let pie_chart_data = focus_nodes_id.map(d => graph_data.nodes[d]);
-        let score_pie_chart_g = main_group.append("g").attr("id", "score-pie-chart-g");
+        let pie_chart_data = [];
+        for(let node_id of focus_nodes_id){
+            if(graph_data.nodes[node_id] !== undefined){
+                pie_chart_data.push(graph_data.nodes[node_id])
+            }
+        }
+        let score_pie_chart_g = main_group.select("#score-pie-chart-g");
+        if(score_pie_chart_g.size() === 0){
+            score_pie_chart_g = main_group.append("g").attr("id", "score-pie-chart-g");
+        }
         for(let data of pie_chart_data){
             let one_pie_chart = score_pie_chart_g.append("g")
-                .attr("id", "one-score-pie-chart-g")
-                .attr("transform", "translate("+center_scale_x(data.x)+","+center_scale_y(data.y)+")");
+                .attr("id", "one-score-pie-chart-"+data.id)
+                .attr("transform", "translate("+center_scale_x(data.x)+","+center_scale_y(data.y)+")")
+                .attr("opacity", 1);
             one_pie_chart.selectAll("path")
                 .data(pie(data.score[iter]))
                 .enter()
                 .append("path")
+                .attr("id", "score-pie-"+data.id)
                 .attr("d", arc)
                 .attr("fill", (d,i) => color_label[i])
                 .attr("opacity", 0)
@@ -1546,6 +2139,25 @@ let GraphLayout = function (container) {
                 .duration(AnimationDuration)
                 .attr("opacity", 1);
 
+        }
+    };
+
+    that._remove_score_pie_chart = function (remove_all, focus_nodes_id) {
+        if(remove_all){
+            svg.select("#score-pie-chart-g").remove();
+        }
+        else {
+            for(let id of focus_nodes_id){
+                let score_pie_chart_g = main_group.select("#score-pie-chart-g");
+                score_pie_chart_g.select("#one-score-pie-chart-"+id)
+                    .transition()
+                    .duration(AnimationDuration)
+                    .attr("opacity", 0)
+                    .on("end", function () {
+                        let pie_chart = d3.select(this);
+                        pie_chart.remove();
+                    });
+            }
         }
     };
 

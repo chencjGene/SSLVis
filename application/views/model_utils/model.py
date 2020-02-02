@@ -340,6 +340,20 @@ class SSLModel(object):
         pickle_save_data(projection_filepath, self.embed_X)
         return
 
+    def get_in_out_degree(self, influence_matrix):
+        edge_indices = influence_matrix.indices
+        edge_indptr = influence_matrix.indptr
+        node_num = edge_indptr.shape[0]-1
+
+        degree = np.zeros((node_num, 2))
+        for node_id in range(node_num):
+            start_idx = edge_indptr[node_id]
+            end_idx = edge_indptr[node_id+1]
+            degree[node_id][1] += end_idx-start_idx
+            for target_id in edge_indices[start_idx:end_idx]:
+                degree[target_id][0] += 1
+        return degree
+
     def get_graph_and_process_data(self, filter_threshold=None):
         if filter_threshold is not None:
             self.filter_threshold = filter_threshold
@@ -347,7 +361,7 @@ class SSLModel(object):
             self.simplified_affinity_matrix = None
         if (self.propagation_path == None) or (self.simplified_affinity_matrix == None):
             self.simplified_affinity_matrix, self.propagation_path = self.simplify_influence_matrix(threshold=self.filter_threshold)
-        return self.graph, self.process_data, self.simplified_affinity_matrix, self.propagation_path
+        return self.graph, self.process_data, self.simplified_affinity_matrix, self.propagation_path, self.get_in_out_degree(self.simplified_affinity_matrix)
 
     def get_loss(self):
         return self.loss

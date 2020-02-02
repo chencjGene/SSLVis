@@ -80,7 +80,7 @@ class ExchangePortClass(object):
         return dist
 
     def get_graph(self, filter_threshold=None):
-        raw_graph, process_data, influence_matrix, propagation_path \
+        raw_graph, process_data, influence_matrix, propagation_path, degree \
             = self.model.get_graph_and_process_data(filter_threshold=filter_threshold)
         train_x, train_y = self.model.get_data()
         buf_path = self.model.data.selected_dir
@@ -88,7 +88,7 @@ class ExchangePortClass(object):
 
         graph = getAnchors(train_x, train_y, ground_truth,
                            process_data, influence_matrix, propagation_path, self.dataname,
-                           buf_path)
+                           buf_path, degree)
 
         return jsonify(graph)
 
@@ -131,7 +131,7 @@ class ExchangePortClass(object):
     def update_graph(self, area, level):
         all_time = {"get_meta_data":0, "update_anchor":0, "jsonify":0}
         start = time.time()
-        raw_graph, process_data, influence_matrix, propagation_path \
+        raw_graph, process_data, influence_matrix, propagation_path, degree \
             = self.model.get_graph_and_process_data()
         train_x, train_y = self.model.get_data()
         ground_truth = self.model.data.get_train_ground_truth()
@@ -140,7 +140,7 @@ class ExchangePortClass(object):
         start = now
         graph = updateAnchors(train_x, train_y, ground_truth,
                            process_data, influence_matrix, self.dataname, area, level,
-                           self.model.data.selected_dir, propagation_path)
+                           self.model.data.selected_dir, propagation_path, degree)
         now = time.time()
         all_time["update_anchor"] += now - start
         start = now
@@ -153,7 +153,7 @@ class ExchangePortClass(object):
 
     def get_area(self, must_show_nodes, width, height):
         # get meta data
-        raw_graph, process_data, influence_matrix, propagation_path \
+        raw_graph, process_data, influence_matrix, propagation_path,degree \
             = self.model.get_graph_and_process_data()
         train_x, train_y = self.model.get_data()
         buf_path = os.path.join(self.model.data.selected_dir, "anchors" + config.pkl_ext)
@@ -168,13 +168,14 @@ class ExchangePortClass(object):
 
     def fisheye(self,must_show_nodes, area, level, wh):
         # get meta data
-        raw_graph, process_data, influence_matrix, propagation_path \
+        raw_graph, process_data, influence_matrix, propagation_path, degree \
             = self.model.get_graph_and_process_data()
         train_x, train_y = self.model.get_data()
         buf_path = self.model.data.selected_dir
         ground_truth = self.model.data.get_train_ground_truth()
 
-        graph = fisheyeAnchors(must_show_nodes, area, level, wh, train_x, train_y, raw_graph, process_data, influence_matrix, propagation_path, ground_truth, buf_path)
+        graph = fisheyeAnchors(must_show_nodes, area, level, wh, train_x, train_y, raw_graph, process_data,
+                               influence_matrix, propagation_path, ground_truth, buf_path, degree)
         return jsonify(graph)
 
     def get_feature_distance(self, uid, vid):
