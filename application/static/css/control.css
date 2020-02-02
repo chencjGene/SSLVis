@@ -289,12 +289,31 @@ label.field.focused .psuedo_select ul {
   fill: #969696;
 }
 
-#uncertainty-widget {
+.widget-info-widget {
   display: flex;
   flex-direction: row;
-  flex: 0 1 75px;
+  height: 75px;
+  justify-content: space-between;
 }
 
-#uncertainty-font {
+.widget-info-font {
   flex: 0 1 50px;
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: center;
+  margin-left: 10px;
+
+  font-size: large;
+  font-weight: 700;
+}
+
+.widget-info-svg {
+  flex: 0 1 300px
+}
+
+.nav-link {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #333333;
 }
