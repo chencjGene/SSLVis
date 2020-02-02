@@ -9,7 +9,7 @@ from sklearn.utils.extmath import safe_sparse_dot
 from application.views.model_utils.model_helper import build_laplacian_graph
 
 def local_update(selected_idxs, F, graph_matrix, affinity_matrix, train_y, alpha=0.2, max_iter=30,
-                tol=0.01, process_record=False, normalized=False):
+                tol=0.001, process_record=False, normalized=False):
     #: F must be the unnormalized one 
     # TODO: make it more efficient
     y = np.array(train_y)
@@ -36,7 +36,7 @@ def local_update(selected_idxs, F, graph_matrix, affinity_matrix, train_y, alpha
     # initialize distributions
     selected_idxs = np.array(selected_idxs)
     selected_num = len(selected_idxs)
-    label_distributions_ = F
+    label_distributions_ = F.copy()
     label_distributions_[selected_idxs, :] = \
         np.zeros((selected_num, n_classes))
     for label in classes:
@@ -44,10 +44,10 @@ def local_update(selected_idxs, F, graph_matrix, affinity_matrix, train_y, alpha
 
     y_static_labeled = np.copy(label_distributions_[selected_idxs, :])
     y_static = y_static_labeled * (1 - alpha)
-    print("y_static:", y_static.shape)
+    print("y_static sum:", y_static.sum())
 
-    l_previous = F
-    l_previous = np.zeros((selected_num, n_classes))
+    l_previous = F.copy()
+    l_previous[selected_idxs,] = np.zeros((selected_num, n_classes))
 
     unlabeled = unlabeled[:, np.newaxis]
     if sparse.isspmatrix(graph_matrix):
@@ -59,13 +59,14 @@ def local_update(selected_idxs, F, graph_matrix, affinity_matrix, train_y, alpha
     
     selected_graph_matrix = graph_matrix[selected_idxs, :]
 
+    n_iter_ = 0
     for _ in range(max_iter):
         if np.abs(label_distributions_ - l_previous).sum() < tol:
             break
         l_previous = label_distributions_.copy()
         label_distributions_a = safe_sparse_dot(
             selected_graph_matrix, label_distributions_)
-        print("label_distributions_a:", label_distributions_a.shape)
+        # print("label_distributions_a:", label_distributions_a.shape)
 
         label_distributions_[selected_idxs, :] = np.multiply(
                     alpha, label_distributions_a) + y_static
@@ -81,39 +82,55 @@ def local_search_k(k_list, n_neighbors, selected_idxs, F, initial_affinity_matri
     train_y, neighbors):
     normalizer = np.sum(F, axis=1)[:, np.newaxis] + 1e-20
     norm_F = F / normalizer
-    original_ent = entropy(norm_F.T + 1e-20)
+    original_ent = entropy(norm_F.T + 1e-20).mean()
     best_affinity_matrix = None
     min_ent = original_ent
     best_k = None
     best_affinity_matrix = None
+    best_pred = None
     selected_num = len(selected_idxs)
     instance_num = len(train_y)
-    for local_k in k_list:
-        #TODO: construct affinity_matrix based on k and selected_idxs
-        # affinity_matrix = None
+
+    unselected_idxs = np.ones(instance_num).astype(bool)
+    unselected_idxs[selected_idxs] = False
+    unselected_idxs = np.array(range(instance_num))[unselected_idxs]
+
+    # for local_k in k_list:
+    for local_k in [2]:
         indptr = [i * local_k for i in range(selected_num + 1)]
         indices = neighbors[selected_idxs][:, :local_k].reshape(-1).tolist()
         data = neighbors[selected_idxs][:, :local_k].reshape(-1)
         data = (data * 0 + 1.0).tolist()
         selected_affinity_matrix = sparse.csr_matrix((data, indices, indptr),
-            shape=(selected_num, instance_num))
-        affinity_matrix = initial_affinity_matrix.copy()
-        affinity_matrix[selected_affinity_matrix,:] = selected_affinity_matrix        
+            shape=(selected_num, instance_num)).toarray()
+        affinity_matrix = initial_affinity_matrix.toarray()
+        # affinity_matrix[selected_idxs,:] =  0
+        affinity_matrix[selected_idxs,:] = selected_affinity_matrix
+        affinity_matrix = sparse.csr_matrix(affinity_matrix)        
         
-        affinity_matrix = affinity_matrix + affinity_matrix.T
+        # TODO: disable it for DEBUG
+        # affinity_matrix = affinity_matrix + affinity_matrix.T
         affinity_matrix = sparse.csr_matrix((np.ones(len(affinity_matrix.data)).tolist(),
                                              affinity_matrix.indices, affinity_matrix.indptr),
                                             shape=(instance_num, instance_num))
+        affinity_matrix.setdiag(0)
+        print("sum compare", affinity_matrix.sum(), initial_affinity_matrix.sum())
+        print("affinity_matrix diff:", \
+            np.abs(affinity_matrix - initial_affinity_matrix).sum())
         laplacian_matrix = build_laplacian_graph(affinity_matrix)
         pred = local_update(selected_idxs, F, laplacian_matrix, affinity_matrix,
             train_y, normalized=True)
-        ent = entropy(pred.T + 1e-20).sum()
+        import IPython; IPython.embed(); exit()
+        ent = entropy(pred.T + 1e-20).mean()
+        print(local_k, ent, min_ent, np.abs(norm_F[unselected_idxs] - pred[unselected_idxs]).sum())
         if ent < min_ent:
+            print("update k:", ent, min_ent)
             min_ent = ent 
             best_k = local_k
             best_affinity_matrix = affinity_matrix
-         
-    return best_affinity_matrix # return the affinity_matrix
+            best_pred = pred
+    print("best local k:", best_k)
+    return best_affinity_matrix, pred
 
 def add_edge():
     None

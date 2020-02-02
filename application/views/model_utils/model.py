@@ -218,14 +218,21 @@ class SSLModel(object):
         return
 
     def local_search_k(self, selected_idxs):
-        # k_list = list(range(3,20))
-        # affinity_matrix = local_search_k(k_list, self.n_neighbor, 
-        #     selected_idxs, self.unnorm_dist, self.affinity_matrix, 
-        #     self.train_y, self.neighbors)
-        # laplacian_matrix = build_laplacian_graph(affinity_matrix)
-        # self.affinity_matrix = affinity_matrix
-        # self.laplacian = laplacian_matrix
-        # self._training()
+        k_list = list(range(1,40))
+        affinity_matrix, pred = local_search_k(k_list, self.n_neighbor, 
+            selected_idxs, self.unnorm_dist, self.affinity_matrix, 
+            self.train_y, self.neighbors)
+        logger.info("searched affinity_matrix diff: {}".format(
+            np.abs(self.affinity_matrix - affinity_matrix).sum()
+        ))
+        laplacian_matrix = build_laplacian_graph(affinity_matrix)
+        pred_y = pred.argmax(axis=1)
+        train_gt = self.data.get_train_ground_truth()
+        acc = accuracy_score(train_gt, pred_y)
+        logger.info("model accuracy: {}".format(acc))
+        self.affinity_matrix = affinity_matrix
+        self.laplacian = laplacian_matrix
+        self._training()
         return {"test": "success"}
 
     def simplify_influence_matrix(self, threshold=0.7):
