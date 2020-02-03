@@ -539,6 +539,9 @@ let GraphLayout = function (container) {
             }
 
         }
+        if(remove_nodes.length >0 || add_nodes.length>0){
+            data_manager.get_dist_view(Object.keys(graph_data.nodes).filter(d => control_items[d]>0).map(d => parseInt(d)));
+        }
         console.log(remove_nodes, add_nodes);
     };
 
@@ -1406,6 +1409,7 @@ let GraphLayout = function (container) {
         }
         //draw current area info
         that.draw_scented_widget(Object.keys(graph_data.nodes).map(d => parseInt(d)), "current");
+        data_manager.get_dist_view(Object.keys(graph_data.nodes).map(d => parseInt(d)));
         // debug
         // main_group.select("#debug-area").remove();
         // let draw_area = {
