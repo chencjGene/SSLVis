@@ -89,7 +89,6 @@ class ExchangePortClass(object):
         graph = getAnchors(train_x, train_y, ground_truth,
                            process_data, influence_matrix, propagation_path, self.dataname,
                            buf_path, degree)
-        self.selected_idxs = list(graph[0]["nodes"].keys())
 
         return jsonify(graph)
 
@@ -105,8 +104,8 @@ class ExchangePortClass(object):
         ent = self.model.get_ent()
         return jsonify(ent.tolist())
 
-    def get_flows(self):
-        label_sums, flows = self.model.get_flows(self.selected_idxs)
+    def get_flows(self, selected_idxs):
+        label_sums, flows = self.model.get_flows(selected_idxs)
         selected_flows = np.zeros(flows.shape).astype(int)
         mat = {
             "label_sums": label_sums.tolist(),

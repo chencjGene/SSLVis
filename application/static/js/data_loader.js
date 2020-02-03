@@ -73,10 +73,6 @@ DataLoaderClass = function (dataset) {
         that.fisheye_graph_node = new request_node(that.fisheye_graph_url + params,
             that.update_fisheye_graph_handler(that.update_fisheye_view), "json", "POST");
 
-        that.flows_node = new request_node(that.flows_urls + params,
-            that.get_flows_handler(that.update_dist_view), "json", "GET");
-        that.flows_node.depend_on(that.graph_node);
-
         // that.loss_node = new request_node(that.loss_url + params,
         //     that.get_loss_handler(that.update_loss_view), "json", "GET");
         // that.loss_node.depend_on(that.graph_node);
@@ -203,13 +199,18 @@ DataLoaderClass = function (dataset) {
         }, rescale);
     };
 
+    that.get_dist_view = function(selected_idxs){
+        let params = "?dataset=" + that.dataset;
+        that.flows_node = new request_node(that.flows_urls + params,
+            that.get_flows_handler(that.update_dist_view), "json", "POST");
+        that.flows_node.set_data(selected_idxs);
+        that.flows_node.notify();
+        // that.flows_node.depend_on(that.graph_node);
+
+    }
+
     that.update_dist_view = function(){
         console.log("update loss view");
-        let selected_idxs = [];
-        for(let i in that.state.graph_data.nodes){
-            selected_idxs.push(i);
-        }
-        console.log("selected_idxs", selected_idxs);
         that.dist_view.component_update({
             "label_sums": that.state.label_sums,
             "flows": that.state.flows,
