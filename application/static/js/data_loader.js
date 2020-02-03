@@ -206,6 +206,11 @@ DataLoaderClass = function (dataset) {
 
     that.update_dist_view = function(){
         console.log("update loss view");
+        let selected_idxs = [];
+        for(let i in that.state.graph_data.nodes){
+            selected_idxs.push(i);
+        }
+        console.log("selected_idxs", selected_idxs);
         that.dist_view.component_update({
             "label_sums": that.state.label_sums,
             "flows": that.state.flows,
