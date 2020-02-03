@@ -382,7 +382,7 @@ let GraphLayout = function (container) {
         }
     };
 
-    that.reset_widget_items = function() {
+    that.init_widget_items = function() {
         //clear data
         for(let node_id of Object.keys(graph_data.nodes)){
             uncertain_items[node_id] = false;
@@ -390,34 +390,6 @@ let GraphLayout = function (container) {
             indegree_items[node_id] = true;
             outdegree_items[node_id] = true;
             control_items[node_id] = false;
-        }
-
-        //remove pie chart
-        that._remove_score_pie_chart(true);
-
-        //reset widget drag position and rect opacity
-        let container_width = widget_width;
-        let container_height = widget_height;
-        for(let type of ["overview", "current", "selection"]){
-            for(let widget of ["uncertainty", "label", "indegree", "outdegree"]){
-                let container = d3.select("#"+type+"-"+widget+"-svg");
-                if(widget === "uncertainty"){
-                    container.selectAll(".widget-bar-chart")
-                        .attr("opacity", 0.5);
-                    container.select(".start-drag")
-                        .attr("transform", "translate("+(container_width*0.87)+","+(container_height*0.9)+")");
-                    container.select(".end-drag")
-                        .attr("transform", "translate("+(container_width*0.9)+","+(container_height*0.9)+")");
-                }
-                else {
-                    container.selectAll(".widget-bar-chart")
-                        .attr("opacity", 1);
-                    container.select(".start-drag")
-                        .attr("transform", "translate("+(container_width*0.1)+","+(container_height*0.9)+")");
-                    container.select(".end-drag")
-                        .attr("transform", "translate("+(container_width*0.9)+","+(container_height*0.9)+")");
-                }
-            }
         }
     };
 
@@ -1350,7 +1322,7 @@ let GraphLayout = function (container) {
         }
         //draw current area info
         if(first_load){
-            // that.reset_widget_items();
+            that.init_widget_items()
         }
         that.draw_scented_widget(Object.keys(graph_data.nodes).map(d => parseInt(d)), "current");
         // debug
