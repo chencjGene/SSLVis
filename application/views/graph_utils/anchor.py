@@ -39,7 +39,6 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, p
     target_num = 500
     retsne = not os.path.exists(anchor_path)
     train_x_tsne = None
-    top_k_uncertain = get_topk_uncertain(process_data, k = 20)
     if not retsne:
         train_x_tsne, level_infos = pickle.load(open(anchor_path, "rb"))
         top_num = len(level_infos[0]['index'])
@@ -192,7 +191,7 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, p
     with open(anchor_path, "rb") as f:
         train_x_tsne, level_infos = pickle.load(f)
         selection = level_infos[0]['index']
-        selection = list(dict.fromkeys(selection.tolist()+top_k_uncertain))
+        selection = list(dict.fromkeys(selection.tolist()))
         selection = np.array(selection)
         samples_x = train_x[selection]
         init_samples_x_tsne = train_x_tsne[selection]
@@ -251,7 +250,7 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, p
         "nodes": samples_nodes,
         # "edges": edges
     }
-    return [graph, top_k_uncertain]
+    return graph
 
 def updateAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, dataname, area, level, buf_path, propagation_path, degree):
     global top_k_uncertain
