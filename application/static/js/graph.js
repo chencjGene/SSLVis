@@ -104,6 +104,7 @@ let GraphLayout = function (container) {
     let indegree_items = {};
     let outdegree_items = {};
     let top_k_uncertainty = [];
+    let label_rect = {};
 
     that._init = function () {
         svg = container.selectAll('#graph-view-svg')
@@ -406,12 +407,29 @@ let GraphLayout = function (container) {
 
     that.init_widget_items = function() {
         //clear data
+        uncertain_items = {};
+        label_items = {};
+        indegree_items = {};
+        outdegree_items = {};
+        control_items = {};
         for(let node_id of Object.keys(graph_data.nodes)){
             uncertain_items[node_id] = true;
             label_items[node_id] = true;
             indegree_items[node_id] = true;
             outdegree_items[node_id] = true;
             control_items[node_id] = true;
+        }
+        //reset widget drag position and rect opacity
+        let container_width = widget_width;
+        let container_height = widget_height;
+        for(let widget of ["uncertainty", "indegree", "outdegree"]){
+            let container = d3.select("#current-"+widget+"-svg");
+            container.selectAll("rect")
+                        .attr("opacity", 1);
+            container.select(".start-drag")
+                        .attr("transform", "translate("+(container_width*0.1)+","+(container_height*0.9)+")");
+            container.select(".end-drag")
+                        .attr("transform", "translate("+(container_width*0.9)+","+(container_height*0.9)+")");
         }
     };
 
@@ -520,6 +538,9 @@ let GraphLayout = function (container) {
                 }
             }
 
+        }
+        if(remove_nodes.length >0 || add_nodes.length>0){
+            data_manager.get_dist_view(Object.keys(graph_data.nodes).filter(d => control_items[d]>0).map(d => parseInt(d)));
         }
         console.log(remove_nodes, add_nodes);
     };
@@ -697,6 +718,7 @@ let GraphLayout = function (container) {
         }
 
         // draw
+        label_rect = {}
         let container = d3.select(container_id);
         let container_width = widget_width;
         let container_height = widget_height;
@@ -704,7 +726,7 @@ let GraphLayout = function (container) {
         let x = d3.scaleBand().rangeRound([container_width*0.1, container_width*0.9], .05).paddingInner(0.05).domain(d3.range(label_cnt));
         let y = d3.scaleLinear().range([container_height*0.85, container_height*0.05]).domain([0, 1]);
         // draw rect
-        let label_rect = {};
+
         if(container.select("#current-label-rects").size() === 0){
             container.append("g")
                 .attr("id", "current-label-rects");
@@ -757,6 +779,15 @@ let GraphLayout = function (container) {
                     that.update_widget_showing_items(label_rect[i].data);
                 }
             })
+            .each(function (d, i) {
+                let rect = d3.select(this);
+                label_rect[i] = {
+                    label:i,
+                    rect:rect,
+                    data:d
+                }
+            });
+        rects
             .each(function (d, i) {
                 let rect = d3.select(this);
                 label_rect[i] = {
@@ -848,6 +879,18 @@ let GraphLayout = function (container) {
                     let checkbox = d3.select(this);
                     label_rect[i].checkbox = checkbox;
                 })
+        }
+        else {
+            container.select("#current-label-checkbox-hover")
+                .selectAll("rect")
+                .data(Object.values(label_rect));
+            container.select("#current-label-checkbox")
+                .selectAll("use")
+                .data(Object.values(label_rect))
+                .each(function (d, i) {
+                    let checkbox = d3.select(this);
+                    label_rect[i].checkbox = checkbox;
+                });
         }
     };
 
@@ -1361,11 +1404,12 @@ let GraphLayout = function (container) {
         if(state.fisheye === "group"){
             await that._group_show_path();
         }
-        //draw current area info
-        if(first_load){
-            that.init_widget_items()
+        else {
+            that.init_widget_items();
         }
+        //draw current area info
         that.draw_scented_widget(Object.keys(graph_data.nodes).map(d => parseInt(d)), "current");
+        data_manager.get_dist_view(Object.keys(graph_data.nodes).map(d => parseInt(d)));
         // debug
         // main_group.select("#debug-area").remove();
         // let draw_area = {
