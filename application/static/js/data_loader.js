@@ -181,7 +181,6 @@ DataLoaderClass = function (dataset) {
         console.log("get graph view");
         that.graph_view.component_update({
             "graph_data": that.state.graph_data,
-            "top_k_uncertain": that.state.top_k_uncertain,
             "label_names": that.state.label_names
         }, rescale);
     };

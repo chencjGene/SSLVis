@@ -24,9 +24,11 @@ let GraphLayout = function (container) {
     let edges_group = null;
     let nodes_group = null;
     let golds_group = null;
+    let uncertainty_group = null;
     let edges_in_group = null;
     let nodes_in_group = null;
     let golds_in_group = null;
+    let uncertainty_in_group = null;
     let lasso_btn_path = null;
     let fisheye_btn_path = null;
 
@@ -101,6 +103,7 @@ let GraphLayout = function (container) {
     let uncertain_items = {};
     let indegree_items = {};
     let outdegree_items = {};
+    let top_k_uncertainty = [];
 
     that._init = function () {
         svg = container.selectAll('#graph-view-svg')
@@ -353,6 +356,7 @@ let GraphLayout = function (container) {
         edges_group = main_group.append("g").attr("id", "graph-view-link-g");
         nodes_group = main_group.append("g").attr("id", "graph-view-tsne-point");
         golds_group = main_group.append("g").attr("id", "golds-g");
+        uncertainty_group = main_group.append("g").attr("id", "uncertainty-g");
         lasso_btn_path = d3.select("#lasso-btn").select("path");
         fisheye_btn_path = d3.select("#fisheye-btn").select("path");
 
@@ -369,43 +373,59 @@ let GraphLayout = function (container) {
 
     that.r = function(id) {
         if(show_fisheye){
-            if(uncertain_nodes.indexOf(id) > -1 || selection_nodes.indexOf(id) > -1 || path_nodes[id] !== undefined){
+            if( selection_nodes.indexOf(id) > -1 || path_nodes[id] !== undefined){
                 return 5*zoom_scale;
             }
             return 3.5*zoom_scale
         }
         else {
-            if(uncertain_nodes.indexOf(id) > -1 || selection_nodes.indexOf(id) > -1){
+            if( selection_nodes.indexOf(id) > -1){
                 return 5*zoom_scale;
             }
             return 3.5*zoom_scale
+        }
+    };
+
+    that.opacity = function(id) {
+        if(show_fisheye){
+            if( path_nodes[id] !== undefined){
+                return 1;
+            }
+            else if(control_items[id] === false){
+                return 0;
+            }
+            return 0.2
+        }
+        else {
+            if(control_items[id] === false){
+                return 0;
+            }
+            return 1
         }
     };
 
     that.init_widget_items = function() {
         //clear data
         for(let node_id of Object.keys(graph_data.nodes)){
-            uncertain_items[node_id] = false;
+            uncertain_items[node_id] = true;
             label_items[node_id] = true;
             indegree_items[node_id] = true;
             outdegree_items[node_id] = true;
-            control_items[node_id] = false;
+            control_items[node_id] = true;
         }
     };
 
     that._reset_focus = function() {
         path_nodes = {};
+        focus_node = {};
         nodes_in_group.attr("r", d => that.r(d.id));
         svg.select("#group-propagation").remove();
         svg.select("#score-pie-chart-g").remove();
-        svg.select("#uncertain-pie-chart-g").selectAll("path").attr("opacity", 1);
-        nodes_in_group.attr("opacity", 1);
-        golds_in_group.attr("opacity", 1);
-        // edges_in_group.attr("opacity", 0.4);
+        nodes_in_group.attr("opacity", d => that.opacity(d.id));
+        golds_in_group.attr("opacity", d => that.opacity(d.id));
+        uncertainty_in_group.attr("opacity", d => that.opacity(d.id));
 
         svg.select("#single-propagate").remove();
-        nodes_in_group.attr("opacity", 1);
-        golds_in_group.attr("opacity", 1);
     };
 
     that._draw_labels_glyph = function () {
@@ -450,8 +470,7 @@ let GraphLayout = function (container) {
         main_group.select("#group-propagation").selectAll("polyline").style('stroke-width', 2.0 * zoom_scale);
         main_group.select("#single-propagate").selectAll("polyline").style('stroke-width', 2.0 * zoom_scale);
         let arc = d3.arc().outerRadius(11 * zoom_scale).innerRadius(7 * zoom_scale);
-        main_group.select("#score-pie-chart-g").selectAll("path").attr("d", arc);
-        main_group.select("#uncertain-pie-chart-g").selectAll("path").attr("d", arc);
+        main_group.selectAll(".pie-chart").selectAll("path").attr("d", arc);
     };
 
     that.draw_scented_widget = function(points_id, type) {
@@ -468,15 +487,41 @@ let GraphLayout = function (container) {
             let new_flag = label_items[node_id]&&uncertain_items[node_id]&&indegree_items[node_id]&&outdegree_items[node_id];
             if(new_flag === true && control_items[node_id] === false){
                 add_nodes.push(node_id);
+                control_items[node_id] = new_flag;
+                graph_data.nodes[node_id].node.transition()
+                    .duration(AnimationDuration)
+                    .attr("opacity", d => that.opacity(d.id));
+                if(graph_data.nodes[node_id].starnode !== undefined){
+                    graph_data.nodes[node_id].starnode.transition()
+                    .duration(AnimationDuration)
+                    .attr("opacity", d => that.opacity(d.id));
+                }
+                if(graph_data.nodes[node_id].piechart !== undefined){
+                    graph_data.nodes[node_id].piechart.transition()
+                    .duration(AnimationDuration)
+                    .attr("opacity", d => that.opacity(d.id));
+                }
             }
             else if(new_flag === false && control_items[node_id] === true){
                 remove_nodes.push(node_id);
+                control_items[node_id] = new_flag;
+                graph_data.nodes[node_id].node.transition()
+                    .duration(AnimationDuration)
+                    .attr("opacity", d => that.opacity(d.id));
+                if(graph_data.nodes[node_id].starnode !== undefined){
+                    graph_data.nodes[node_id].starnode.transition()
+                    .duration(AnimationDuration)
+                    .attr("opacity", d => that.opacity(d.id));
+                }
+                if(graph_data.nodes[node_id].piechart !== undefined){
+                    graph_data.nodes[node_id].piechart.transition()
+                    .duration(AnimationDuration)
+                    .attr("opacity", d => that.opacity(d.id));
+                }
             }
-            control_items[node_id] = new_flag;
+
         }
         console.log(remove_nodes, add_nodes);
-        that._remove_score_pie_chart(false, remove_nodes);
-        that._draw_score_pie_chart(add_nodes);
     };
 
     that.uncertainty_scented_widget = function(points_id, container_id) {
@@ -536,7 +581,7 @@ let GraphLayout = function (container) {
           .attr("height", function(d) {
               return container_height*0.85 - y(d.length/max_len);
           })
-            .attr("opacity", 0.5);
+            .attr("opacity", 1);
         // draw x-axis
         container.append("g")
             .append("line")
@@ -552,7 +597,7 @@ let GraphLayout = function (container) {
             .attr("class", "start-drag")
             .attr("d", draggable_item_path)
             .attr("fill", "#880e4f")
-            .attr("transform", "translate("+(container_width*0.87)+","+(container_height*0.9)+")");
+            .attr("transform", "translate("+(container_width*0.1)+","+(container_height*0.9)+")");
         let end_drag = container.append("path")
             .attr("class", "end-drag")
             .attr("d", draggable_item_path)
@@ -1263,18 +1308,24 @@ let GraphLayout = function (container) {
 
         // Style the selected dots
         lasso.selectedItems()
-            .classed("selected", true)
-            .attr("r", 5 * zoom_scale);
+            .classed("selected", d => control_items[d.id]===true)
+            .attr("r", d => control_items[d.id]===true?5 * zoom_scale:3.5*zoom_scale);
 
         // Reset the style of the not selected dots
         lasso.notSelectedItems()
             .attr("r", d => that.r(d.id));
         lasso_result = lasso.selectedItems().data().map(d => d.id);
-        if(lasso.selectedItems().size() === 0){
+
+        let new_selection_tmp = lasso.selectedItems().data().map(d => d.id);
+        // remove hided lasso items
+        let new_selection = [];
+        for(let node_id of new_selection_tmp){
+            if(control_items[node_id] === true) new_selection.push(node_id);
+        }
+        if(new_selection.length === 0){
             console.log("lasso size = 0");
             return
         }
-        let new_selection = lasso.selectedItems().data().map(d => d.id);
         that.update_selection_nodes(new_selection);
     };
 
@@ -1304,19 +1355,9 @@ let GraphLayout = function (container) {
     that.component_update = async function (state, rescale) {
         console.log("graph component update");
         that._update_data(state);
-        if(state.top_k_uncertain !== undefined){
-            console.log("get top k uncertain:", state.top_k_uncertain);
-            uncertain_nodes = state.top_k_uncertain;
-        }
 
         await that._update_view(rescale, state);
 
-        if(state.fisheye === 'group'){
-            await that._draw_uncertain_pie_chart(0.2);
-        }
-        else {
-            await that._draw_uncertain_pie_chart(1);
-        }
         if(state.fisheye === "group"){
             await that._group_show_path();
         }
@@ -1355,7 +1396,8 @@ let GraphLayout = function (container) {
         console.log("graph_data", graph_data);
         // remove in the future
         that._draw_legend();
-
+        // get uncertainty
+        top_k_uncertainty = that.get_top_k_uncertainty(20);
 
     };
 
@@ -1522,23 +1564,11 @@ let GraphLayout = function (container) {
             old_transform.x = width/2-(main_group_min_x+main_group_max_x)/2*maingroup_k;
             old_transform.y = height/2-(main_group_min_y+main_group_max_y)/2*maingroup_k;
 
-            main_group
+            svg
                 .transition()
                 .duration(AnimationDuration)
-                .attr("transform", old_transform)
+                .call(zoom.transform, d3.zoomIdentity.translate(old_transform.x, old_transform.y).scale(old_transform.k))
                 .on("end", function () {
-                    function interpolateZoom(translate, scale) {
-
-                        return d3.transition().duration(150).tween("zoom", function() {
-                            var iTranslate = d3.interpolate(zoom.translate(), translate),
-                                iScale = d3.interpolate(zoom.scale(), scale);
-
-                            return function(t) {
-                                zoom.scale(iScale(t)).translate(iTranslate(t));
-                            };
-                        });
-                    }
-                    interpolateZoom([old_transform.x, old_transform.y], old_transform.k);
                     resolve();
                 });
             that._maintain_size(old_transform);
@@ -1554,17 +1584,22 @@ let GraphLayout = function (container) {
         return new Promise(function (resolve, reject) {
             nodes_in_group = nodes_group.selectAll("circle");
             golds_in_group = golds_group.selectAll("path");
+            uncertainty_in_group = uncertainty_group.selectAll(".pie-chart");
 
             // de-highlight
+            uncertainty_in_group
+                .transition()
+                .duration(AnimationDuration)
+                .attr("opacity", d => that.opacity(d.id))
             nodes_in_group
                 .transition()
                 .duration(AnimationDuration)
-                .attr("opacity", d => path_nodes[d.id]===true?1:0.2)
+                .attr("opacity", d => that.opacity(d.id))
                 .attr("r", d => that.r(d.id));
             golds_in_group
                 .transition()
                 .duration(AnimationDuration)
-                .attr("opacity", d => path_nodes[d.id]===true?1:0.2);
+                .attr("opacity", d => that.opacity(d.id));
             nodes_in_group.each(function (d) {
                             let node = d3.select(this);
                             if(path_nodes[d.id]===true){
@@ -1643,8 +1678,14 @@ let GraphLayout = function (container) {
                         else return color_label[d.label[iter]];
                     }
                 })
+                .each(function (d) {
+                    let node = d3.select(this);
+                    d.node = node;
+                })
                 .on("mouseover", function (d) {
-                    if((uncertain_nodes.indexOf(d.id)!==-1)||(path_nodes[d.id]!==undefined)){
+                    // check if hided
+                    if(control_items[d.id] === false) return;
+                    if((path_nodes[d.id]!==undefined)){
                         return
                     }
                     let node = d3.select(this);
@@ -1657,6 +1698,8 @@ let GraphLayout = function (container) {
                     console.log(d.id)
                 })
                 .on("mouseout", function (d) {
+                    // check if hided
+                    if(control_items[d.id] === false) return;
                     let node = d3.select(this);
                     node.attr("r", d => that.r(d.id));
 
@@ -1666,13 +1709,13 @@ let GraphLayout = function (container) {
                     }
                 })
                 .on("click", function (d) {
+                    // check if hided
+                    if(control_items[d.id] === false) return;
                      that.update_selection_nodes([d.id]);
                 })
                 .transition()
                 .duration(AnimationDuration)
-                .attr("opacity", function (d) {
-                    return (focus_node[d.id]!==undefined) ? 0.2 : 1;
-                })
+                .attr("opacity", d => that.opacity(d.id))
                 .on("end", resolve);
             golds_in_group.enter()
                 .append("path")
@@ -1690,18 +1733,49 @@ let GraphLayout = function (container) {
                 .attr("stroke", "white")
                 .attr("stroke-width", 1.5*zoom_scale)
                 .attr("opacity", 0)
+                .each(function (d) {
+                    let node = d3.select(this);
+                    d.starnode = node;
+                })
                 .on("mouseover", function (d) {
+                    // check if hided
+                    if(control_items[d.id] === false) return;
                     console.log("Label node id:", d.id)
                 })
                 .on("click", function (d) {
+                    // check if hided
+                    if(control_items[d.id] === false) return;
                     let eid = d.id;
                     let nodes = d3.select(this);
                     data_manager.update_image_view(nodes);
                 })
                 .transition()
                 .duration(AnimationDuration)
-                .attr("opacity", d => (focus_node[d.id]!==undefined) ? 0.2 : 1)
+                .attr("opacity", d => that.opacity(d.id))
                 .on("end", resolve);
+
+            let pie = d3.pie().value(d => d);
+            let arc = d3.arc().outerRadius(11 * zoom_scale).innerRadius(7 * zoom_scale);
+            uncertainty_in_group.enter()
+                .append("g")
+                .attr("class", "pie-chart")
+                .each(function (d) {
+                    let node = d3.select(this);
+                    d.piechart = node;
+                })
+                .attr("transform", d =>"translate("+center_scale_x(d.x)+","+center_scale_y(d.y)+")")
+                .attr("opacity", 1)
+                .selectAll("path")
+                .data(d => pie(d.score[iter]))
+                .enter()
+                .append("path")
+                .attr("id", d => "score-pie-"+d.id)
+                .attr("d", arc)
+                .attr("fill", (d,i) => color_label[i])
+                .attr("opacity", 0)
+                .transition()
+                .duration(AnimationDuration)
+                .attr("opacity", d => that.opacity(d.id));
 
             // edges_in_group = edges_group.selectAll("line")
             //         .data(links_data);
@@ -1714,7 +1788,7 @@ let GraphLayout = function (container) {
             //         .attr("stroke-width", zoom_scale)
             //         .attr("stroke", "gray")
             //         .attr("opacity", 0.0);
-            if((nodes_in_group.enter().size() === 0) && (golds_in_group.enter().size() === 0)){
+            if((nodes_in_group.enter().size() === 0) && (golds_in_group.enter().size() === 0)&&(uncertainty_in_group.enter().size() === 0)){
                 console.log("no create");
                 resolve();
             }
@@ -1877,6 +1951,10 @@ let GraphLayout = function (container) {
     that._update = async function () {
         return new Promise(function (resolve, reject) {
             nodes_in_group
+                .each(function (d) {
+                    let node = d3.select(this);
+                    d.node = node;
+                })
                 .attr("fill", function (d) {
                     if (show_ground_truth) {
                         if (d.truth === -1) return color_unlabel;
@@ -1896,6 +1974,10 @@ let GraphLayout = function (container) {
                 });
 
             golds_in_group
+                .each(function (d) {
+                    let node = d3.select(this);
+                    d.starnode = node;
+                })
                 .attr("fill", function (d) {
                     if (show_ground_truth) {
                         if (d.truth === -1) return color_unlabel;
@@ -1908,12 +1990,25 @@ let GraphLayout = function (container) {
                 // .transition()
                 // .duration(AnimationDuration)
                 .attr("d", d => star_path(10 * zoom_scale, 4 * zoom_scale, center_scale_x(d.x), center_scale_y(d.y)));
-            // let nodes_data = graph_data.nodes;
-            // edges_in_group.attr("x1", d => center_scale_x(nodes_data[d["s"]].x))
-            //         .attr("y1", d => center_scale_y(nodes_data[d["s"]].y))
-            //         .attr("x2", d => center_scale_x(nodes_data[d["e"]].x))
-            //         .attr("y2", d => center_scale_y(nodes_data[d["e"]].y))
-            if((nodes_in_group.size()===0) && (golds_in_group.size() === 0)){
+            let pie = d3.pie().value(d => d);
+            let arc = d3.arc().outerRadius(11 * zoom_scale).innerRadius(7 * zoom_scale);
+            uncertainty_in_group
+                .each(function (d) {
+                    let node = d3.select(this);
+                    d.piechart = node;
+                })
+                .transition()
+                .duration(AnimationDuration)
+                .attr("transform", d =>"translate("+center_scale_x(d.x)+","+center_scale_y(d.y)+")");
+            uncertainty_in_group.selectAll("path")
+                .data(d => pie(d.score[iter]))
+                .append("path")
+                .attr("id", d => "score-pie-"+d.id)
+                .attr("d", arc)
+                .attr("fill", (d,i) => color_label[i])
+                .attr("opacity", d => that.opacity(d.id));
+
+            if((nodes_in_group.size()===0) && (golds_in_group.size() === 0) && (uncertainty_in_group.size() === 0)){
                 console.log("no update");
                 resolve();
             }
@@ -1935,7 +2030,14 @@ let GraphLayout = function (container) {
                 .attr("opacity", 0)
                 .remove()
                 .on("end", resolve);
-            if((nodes_in_group.exit().size()===0) && (golds_in_group.exit().size() === 0)){
+
+            uncertainty_in_group.exit()
+                .transition()
+                .duration(AnimationDuration)
+                .attr("opacity", 0)
+                .remove()
+                .on("end", resolve);
+            if((nodes_in_group.exit().size()===0) && (golds_in_group.exit().size() === 0) && (uncertainty_in_group.exit().size() === 0)){
                 console.log("no remove");
                 resolve();
             }
@@ -1968,6 +2070,8 @@ let GraphLayout = function (container) {
             let nodes = Object.values(graph_data.nodes);
             // let edges = that._edge_reformulation(graph_data.edges);
             let golds = nodes.filter(d => d.label[0] > -1);
+            let uncertaintys = nodes.filter(d => top_k_uncertainty.indexOf(d.id)>-1);
+            console.log(uncertaintys)
             // let links_data = graph_data.edges;
             width = $('#graph-view-svg').width();
             height = $('#graph-view-svg').height();
@@ -1976,6 +2080,8 @@ let GraphLayout = function (container) {
                 .data(nodes, d => d.id);
             golds_in_group = golds_group.selectAll("path")
                 .data(golds, d => d.id);
+            uncertainty_in_group = uncertainty_group.selectAll(".pie-chart")
+                .data(uncertaintys, d => d.id);
             //update view
             console.log("remove");
             await that._remove();
@@ -2172,9 +2278,37 @@ let GraphLayout = function (container) {
         }
     };
 
+    that.get_uncertainty = function(node_id) {
+        let scores = graph_data.nodes[node_id].score[iter];
+        let sort_score = JSON.parse(JSON.stringify(scores));
+        sort_score.sort(function(a,b){return parseFloat(a)-parseFloat(b)});
+        let uncertainty = sort_score[sort_score.length-1]-sort_score[sort_score.length-2];
+        // change certainty to uncertainty
+        return  1-uncertainty;
+    };
+
+    that.get_top_k_uncertainty = function(k) {
+        let uncertainty = [];
+        for(let node_id of Object.keys(graph_data.nodes)){
+            uncertainty.push({
+                id:node_id,
+                uncertainty:that.get_uncertainty(node_id)
+            })
+        }
+        uncertainty.sort((a, b) => b.uncertainty-a.uncertainty);
+        let top_k = [];
+        for(let i=0; i<Math.min(k, uncertainty.length); i++) top_k.push(parseInt(uncertainty[i].id));
+        return top_k;
+
+    };
+
     that._remove_score_pie_chart = function (remove_all, focus_nodes_id) {
         if(remove_all){
-            svg.select("#score-pie-chart-g").remove();
+            svg.select("#score-pie-chart-g")
+                .transition()
+                .duration(AnimationDuration)
+                .attr("opacity", 0)
+                .remove();
         }
         else {
             for(let id of focus_nodes_id){
@@ -2183,39 +2317,9 @@ let GraphLayout = function (container) {
                     .transition()
                     .duration(AnimationDuration)
                     .attr("opacity", 0)
-                    .on("end", function () {
-                        let pie_chart = d3.select(this);
-                        pie_chart.remove();
-                    });
+                    .remove();
             }
         }
     };
-
-    that._draw_uncertain_pie_chart = function (opacity) {
-        svg.select("#uncertain-pie-chart-g").remove();
-        let pie = d3.pie().value(d => d);
-        let arc = d3.arc().outerRadius(11 * zoom_scale).innerRadius(7 * zoom_scale);
-        let pie_chart_data = [];
-        for(let uncertain_id of uncertain_nodes){
-            if(graph_data.nodes[uncertain_id] !== undefined){
-                pie_chart_data.push(graph_data.nodes[uncertain_id]);
-            }
-        }
-        console.log("uncertain nodes number:", pie_chart_data.length);
-        let score_pie_chart_g = main_group.append("g").attr("id", "uncertain-pie-chart-g");
-        for(let data of pie_chart_data){
-            let one_pie_chart = score_pie_chart_g.append("g")
-                .attr("id", "one-uncertain-pie-chart-g")
-                .attr("transform", "translate("+center_scale_x(data.x)+","+center_scale_y(data.y)+")");
-            one_pie_chart.selectAll("path")
-                .data(pie(data.score[data.score.length-1]))
-                .enter()
-                .append("path")
-                .attr("d", arc)
-                .attr("fill", (d,i) => color_label[i])
-                .attr("opacity", opacity);
-
-        }
-    }
 };
 
