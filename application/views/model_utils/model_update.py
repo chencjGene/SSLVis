@@ -5,8 +5,10 @@ from scipy.sparse import csgraph
 from scipy.sparse import linalg as splinalg
 from scipy.stats import entropy
 from sklearn.utils.extmath import safe_sparse_dot
+from sklearn.metrics import accuracy_score
 
 from application.views.model_utils.model_helper import build_laplacian_graph
+from application.views.model_utils.model_helper import propagation
 
 def local_update(selected_idxs, F, graph_matrix, affinity_matrix, train_y, alpha=0.2, max_iter=30,
                 tol=0.001, process_record=False, normalized=False):
@@ -76,10 +78,18 @@ def local_update(selected_idxs, F, graph_matrix, affinity_matrix, train_y, alpha
         normalizer = np.sum(label_distributions_, axis=1)[:, np.newaxis]
         normalizer = normalizer + 1e-20
         label_distributions_ /= normalizer
-    return label_distributions_
+    return label_distributions_, n_iter_
+
+def full_update(selected_idxs, F, graph_matrix, affinity_matrix, train_y, alpha=0.2, max_iter=30,
+                tol=0.001, process_record=False, normalized=False):
+        pred_dist, loss, ent, process_data, unnorm_dist = \
+            propagation(graph_matrix, affinity_matrix, train_y,
+                              alpha=alpha, process_record=True,
+                              normalized=True)
+        return pred_dist, 1
 
 def local_search_k(k_list, n_neighbors, selected_idxs, F, initial_affinity_matrix, 
-    train_y, neighbors):
+    train_y, neighbors, gt):
     normalizer = np.sum(F, axis=1)[:, np.newaxis] + 1e-20
     norm_F = F / normalizer
     original_ent = entropy(norm_F.T + 1e-20).mean()
@@ -95,8 +105,8 @@ def local_search_k(k_list, n_neighbors, selected_idxs, F, initial_affinity_matri
     unselected_idxs[selected_idxs] = False
     unselected_idxs = np.array(range(instance_num))[unselected_idxs]
 
-    # for local_k in k_list:
-    for local_k in [2]:
+    for local_k in k_list:
+    # for local_k in [2]:
         indptr = [i * local_k for i in range(selected_num + 1)]
         indices = neighbors[selected_idxs][:, :local_k].reshape(-1).tolist()
         data = neighbors[selected_idxs][:, :local_k].reshape(-1)
@@ -104,12 +114,11 @@ def local_search_k(k_list, n_neighbors, selected_idxs, F, initial_affinity_matri
         selected_affinity_matrix = sparse.csr_matrix((data, indices, indptr),
             shape=(selected_num, instance_num)).toarray()
         affinity_matrix = initial_affinity_matrix.toarray()
-        # affinity_matrix[selected_idxs,:] =  0
         affinity_matrix[selected_idxs,:] = selected_affinity_matrix
         affinity_matrix = sparse.csr_matrix(affinity_matrix)        
         
         # TODO: disable it for DEBUG
-        # affinity_matrix = affinity_matrix + affinity_matrix.T
+        affinity_matrix = affinity_matrix + affinity_matrix.T
         affinity_matrix = sparse.csr_matrix((np.ones(len(affinity_matrix.data)).tolist(),
                                              affinity_matrix.indices, affinity_matrix.indptr),
                                             shape=(instance_num, instance_num))
@@ -118,18 +127,18 @@ def local_search_k(k_list, n_neighbors, selected_idxs, F, initial_affinity_matri
         print("affinity_matrix diff:", \
             np.abs(affinity_matrix - initial_affinity_matrix).sum())
         laplacian_matrix = build_laplacian_graph(affinity_matrix)
-        pred = local_update(selected_idxs, F, laplacian_matrix, affinity_matrix,
+        pred, iter_num = local_update(selected_idxs, F, laplacian_matrix, affinity_matrix,
             train_y, normalized=True)
-        import IPython; IPython.embed(); exit()
+        acc = accuracy_score(gt, pred.argmax(axis=1))
         ent = entropy(pred.T + 1e-20).mean()
-        print(local_k, ent, min_ent, np.abs(norm_F[unselected_idxs] - pred[unselected_idxs]).sum())
+        print(local_k, acc, ent, min_ent, iter_num)
         if ent < min_ent:
             print("update k:", ent, min_ent)
             min_ent = ent 
             best_k = local_k
             best_affinity_matrix = affinity_matrix
             best_pred = pred
-    print("best local k:", best_k)
+    print("best local k:", best_k, "best_ent", min_ent, "original_ent", original_ent)
     return best_affinity_matrix, pred
 
 def add_edge():

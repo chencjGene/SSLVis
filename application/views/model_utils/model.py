@@ -201,6 +201,9 @@ class SSLModel(object):
         pred_y = pred_dist.argmax(axis=1)
         acc = accuracy_score(train_gt, pred_y)
         logger.info("model accuracy: {}, iter: {}".format(acc, iter))
+        logger.info("model entropy: {}".format(entropy(pred_dist.T + 1e-20).mean()))
+        
+        self.evaluate()
 
         influence_matrix_path = os.path.join(self.selected_dir,
                                              "{}_{}_influence_matrix.pkl"
@@ -219,17 +222,17 @@ class SSLModel(object):
 
     def local_search_k(self, selected_idxs):
         k_list = list(range(1,40))
+        train_gt = self.data.get_train_ground_truth()
         affinity_matrix, pred = local_search_k(k_list, self.n_neighbor, 
             selected_idxs, self.unnorm_dist, self.affinity_matrix, 
-            self.train_y, self.neighbors)
+            self.train_y, self.neighbors, train_gt)
         logger.info("searched affinity_matrix diff: {}".format(
             np.abs(self.affinity_matrix - affinity_matrix).sum()
         ))
         laplacian_matrix = build_laplacian_graph(affinity_matrix)
         pred_y = pred.argmax(axis=1)
-        train_gt = self.data.get_train_ground_truth()
         acc = accuracy_score(train_gt, pred_y)
-        logger.info("model accuracy: {}".format(acc))
+        logger.info("model accuracy without full update: {}".format(acc))
         self.affinity_matrix = affinity_matrix
         self.laplacian = laplacian_matrix
         self._training()
@@ -343,8 +346,24 @@ class SSLModel(object):
         print("propagation path num:", propagation_path_cnt)
         return propagation_path
 
+    def evaluate(self):
+        train_X = self.data.get_train_X()
+        test_X = self.data.get_test_X()
+        test_y = self.data.get_test_ground_truth()
+        pred = self.pred_dist
+        logger.info("test_X.shape: {}".format(str(test_X.shape)))
+        nn_fit = NearestNeighbors(self.n_neighbor, n_jobs=-4).fit(train_X)
+        weight_matrices = nn_fit.kneighbors(test_X, return_distance=False)
+        probabilities = np.array([
+                np.sum(pred[weight_matrix], axis=0)
+                for weight_matrix in weight_matrices])
+        normalizer = np.atleast_2d(np.sum(probabilities, axis=1)).T
+        probabilities /= normalizer
+        acc = accuracy_score(test_y, probabilities.argmax(axis=1))
+        logger.info("test accuracy: {}".format(acc))
+
     def _projection(self):
-        # this function is disabled
+        # TODO: this function is disabled
         projection_filepath = os.path.join(self.data_root, config.projection_buffer_name)
         if check_exist(projection_filepath) \
                 and (not self.signal_state):
