@@ -177,6 +177,8 @@ let ImageLayout = function (container){
             .attr("height", grid_size+4)
             .attr("stroke-width", 4)
             .attr("stroke", function (d) {
+                return color_unlabel;
+                // TODO get label from back-end
                 let node = d.node.datum();
                 if(node.label[iter] === -1) return color_unlabel;
                     else return color_label[node.label[iter]];
@@ -190,14 +192,11 @@ let ImageLayout = function (container){
             .attr("width", grid_size)
             .attr("height", grid_size)
             .on("click", function (d, i) {
-                let node = d.node;
-                if(detail_pos === i){
-                    node.attr("r", 3.5);
-                }
-                else {
-                    node.attr("r", 5);
-                }
-                that._show_detail(d, i);
+                return color_unlabel;
+                // TODO get label from back-end
+                let node = d.node.datum();
+                if(node.label[iter] === -1) return color_unlabel;
+                    else return color_label[node.label[iter]];
             });
 
 
@@ -213,9 +212,7 @@ let ImageLayout = function (container){
 
         img_grids_g.select("rect")
             .attr("stroke", function (d) {
-                    let node = d.node.datum();
-                    if(node.label[iter] === -1) return color_unlabel;
-                        else return color_label[node.label[iter]];
+
                 });
 
         img_grids_g

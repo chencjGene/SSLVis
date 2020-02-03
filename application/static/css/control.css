@@ -317,3 +317,7 @@ label.field.focused .psuedo_select ul {
   font-weight: 700;
   color: #333333;
 }
+
+#current-label-widget {
+  height: 90px;
+}

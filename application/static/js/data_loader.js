@@ -155,14 +155,12 @@ DataLoaderClass = function (dataset) {
     // update img_url in states and update ImageView
     that.update_image_view = function(nodes){
         that.state.img_grid_urls = [];
-        nodes.each(function (d) {
-            let node = d3.select(this);
+        for(let node_id of nodes){
             that.state.img_grid_urls.push({
-                url:that.image_url + "?filename=" + d.id + ".jpg",
-                id:d.id,
-                node:node
+                url:that.image_url + "?filename=" + node_id + ".jpg",
+                id:node_id,
             })
-        });
+        }
         that.image_view.component_update({
             "img_grid_urls": that.state.img_grid_urls
         })

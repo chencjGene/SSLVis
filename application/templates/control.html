@@ -42,42 +42,17 @@
                   <span class="range-slider__value">0</span>
                 </div>
             </div>
-            <div class="filter-container">
-                <ul class="nav nav-tabs" id="widget-chosen">
-                    <li class="nav-item"><a data-toggle="tab" class="nav-link active" href="#overview-div">Overview</a></li>
-                    <li class="nav-item"><a data-toggle="tab" class="nav-link" href="#current-div">Current Area</a></li>
-                    <li class="nav-item"><a data-toggle="tab" class="nav-link" href="#selection-div">Selection</a></li>
-                </ul>
-                <div class="tab-content">
-                    <div id="overview-div" class="tab-pane fade show active">
-                        <div class="overview-scented-widget-container">
-                            <div id="overview-label-widget" class="widget-info-widget">
-                                <div id="overview-label-font" class="widget-info-font">Label</div>
-                                <svg id="overview-label-svg" class="widget-info-svg">
-                                </svg>
-                            </div>
-                            <div id="overview-uncertainty-widget" class="widget-info-widget">
-                                <div id="overview-uncertainty-font" class="widget-info-font">Uncertainty</div>
-                                <svg id="overview-uncertainty-svg" class="widget-info-svg">
-                                </svg>
-                            </div>
-                            <div id="overview-indegree-widget" class="widget-info-widget">
-                                <div id="overview-indegree-font" class="widget-info-font">Indegree</div>
-                                <svg id="overview-indegree-svg" class="widget-info-svg">
-                                </svg>
-                            </div>
-                            <div id="overview-outdegree-widget" class="widget-info-widget">
-                                <div id="overview-outdegree-font" class="widget-info-font">Outdegree</div>
-                                <svg id="overview-outdegree-svg" class="widget-info-svg">
-                                </svg>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="current-div" class="tab-pane fade">
-                        <div class="current-scented-widget-container">
+            <div id="toolbar-title">FILTER</div>
+            <div class="current-scented-widget-container">
                             <div id="current-label-widget" class="widget-info-widget">
                                 <div id="current-label-font" class="widget-info-font">Label</div>
                                 <svg id="current-label-svg" class="widget-info-svg">
+                                    <symbol id="check-select" viewBox="0 0 24 24">
+                                        <path d="M10.041 17l-4.5-4.319 1.395-1.435 3.08 2.937 7.021-7.183 1.422 1.409-8.418 8.591zm-5.041-15c-1.654 0-3 1.346-3 3v14c0 1.654 1.346 3 3 3h14c1.654 0 3-1.346 3-3v-14c0-1.654-1.346-3-3-3h-14zm19 3v14c0 2.761-2.238 5-5 5h-14c-2.762 0-5-2.239-5-5v-14c0-2.761 2.238-5 5-5h14c2.762 0 5 2.239 5 5z"/>
+                                    </symbol>
+                                    <symbol id="check-no-select" viewBox="0 0 24 24">
+                                        <path d="M5 2c-1.654 0-3 1.346-3 3v14c0 1.654 1.346 3 3 3h14c1.654 0 3-1.346 3-3v-14c0-1.654-1.346-3-3-3h-14zm19 3v14c0 2.761-2.238 5-5 5h-14c-2.762 0-5-2.239-5-5v-14c0-2.761 2.238-5 5-5h14c2.762 0 5 2.239 5 5z"/>
+                                    </symbol>
                                 </svg>
                             </div>
                             <div id="current-uncertainty-widget" class="widget-info-widget">
@@ -96,33 +71,7 @@
                                 </svg>
                             </div>
                         </div>
-                    </div>
-                    <div id="selection-div" class="tab-pane fade">
-                        <div class="selection-scented-widget-container">
-                            <div id="selection-label-widget" class="widget-info-widget">
-                                <div id="selection-label-font" class="widget-info-font">Label</div>
-                                <svg id="selection-label-svg" class="widget-info-svg">
-                                </svg>
-                            </div>
-                            <div id="selection-uncertainty-widget" class="widget-info-widget">
-                                <div id="selection-uncertainty-font" class="widget-info-font">Uncertainty</div>
-                                <svg id="selection-uncertainty-svg" class="widget-info-svg">
-                                </svg>
-                            </div>
-                            <div id="selection-indegree-widget" class="widget-info-widget">
-                                <div id="selection-indegree-font" class="widget-info-font">Indegree</div>
-                                <svg id="selection-indegree-svg" class="widget-info-svg">
-                                </svg>
-                            </div>
-                            <div id="selection-outdegree-widget" class="widget-info-widget">
-                                <div id="selection-outdegree-font" class="widget-info-font">Outdegree</div>
-                                <svg id="selection-outdegree-svg" class="widget-info-svg">
-                                </svg>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+
 
         </div>
 {#        <div id="encoding">#}
