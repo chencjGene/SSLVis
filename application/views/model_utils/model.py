@@ -395,11 +395,17 @@ class SSLModel(object):
     def get_ent(self):
         return self.ent
 
-    def get_flows(self):
-        label_sums = np.zeros((self.labels.shape[0], self.flows.shape[1]))
+    def get_flows(self, idxs):
+        iter = len(self.labels)
+        selected_flows = np.zeros((iter-1, len(self.class_list), len(self.class_list)))
+        for i in range(iter-1):
+            selected_flows[i] = flow_statistic(self.labels[i][idxs], \
+                self.labels[i+1][idxs], self.class_list)
+        label_sums = np.zeros((self.labels.shape[0], selected_flows.shape[1]))
         for i in range(self.labels.shape[0]):
-            label_sums[i,:] = np.bincount(self.labels[i] + 1)
-        return label_sums, self.flows.copy()
+            labels = self.labels[i][idxs]
+            label_sums[i,:] = np.bincount(labels + 1)
+        return label_sums, selected_flows
 
     def get_selected_flows(self, data):
         _, iter_prev, cls_prev, iter_next, cls_next = data.split("-")

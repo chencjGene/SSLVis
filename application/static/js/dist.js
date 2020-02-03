@@ -548,6 +548,42 @@ let DistLayout = function (container) {
     };
 
     that._update = function () {
+        // update nodes
+        node_group
+            .selectAll(".dist-node")
+            .data(nodes, d => d.name)
+            .attr("id", d => d.name)
+            .attr("x", d => d.x0)
+            .attr("y", d => d.y0)
+            .attr("height", d => d.y1 - d.y0)
+            .attr("width", d => d.x1 - d.x0)
+            .style("fill", d => d.color);
+
+        // update links
+        let links_g = link_group.selectAll(".dist-link")
+            .data(links, d => "link-" + d.source.name + "-" + d.target.name)
+            .attr("id", d => "link-" + d.source.name + "-" + d.target.name);
+        const gradient = links_g.append("linearGradient")
+            .attr("gradientUnits", "userSpaceOnUse")
+            .attr("id", function (d) {
+                d.uid = "gc" + d.source.name + "-" + d.target.name;
+                return d.uid;
+            })
+            .attr("x1", d => d.source.x1)
+            .attr("x2", d => d.target.x0);
+        gradient.append("stop")
+            .attr("offset", "0%")
+            .attr("stop-color", d => d.source.color);
+        gradient.append("stop")
+            .attr("offset", "100%")
+            .attr("stop-color", d => d.target.color);
+        links_g.select("path")
+            .attr("d", d3.sankeyLinkHorizontal())
+            .attr("stroke", d => "url(#" + d.uid + ")")
+            .attr("stroke-width", d => Math.max(...[1.5, d.width]))
+            .attr("stroke-opacity", 0.4)
+            .style("fill-opacity", 0);
+
         // update slider
         that._update_slider();
 

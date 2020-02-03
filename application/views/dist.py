@@ -13,7 +13,9 @@ dist = Blueprint("dist", __name__)
 
 @dist.route("/dist/GetFlows", methods=["POST", "GET"])
 def app_get_flows():
-    return get_flows()
+    data = json.loads(request.data)
+    selected_idxs = [int(i) for i in data]
+    return get_flows(selected_idxs)
 
 @dist.route("/dist/GetSelectedFlows", methods=["POST", "GET"])
 def app_get_selected_flows():

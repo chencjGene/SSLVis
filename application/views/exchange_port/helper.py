@@ -30,8 +30,8 @@ def get_loss():
 def get_ent():
     return exchange_port.get_ent()
 
-def get_flows():
-    return exchange_port.get_flows()
+def get_flows(selected_idxs):
+    return exchange_port.get_flows(selected_idxs)
 
 def get_selected_flows(data):
     return exchange_port.get_selected_flows(data)
