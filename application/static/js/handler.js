@@ -120,3 +120,14 @@ DataLoaderClass.prototype.set_influence_filter = function(callback){
 
     return _influence_filter_handler;
 };
+
+DataLoaderClass.prototype.local_update_k_handler = function(callback){
+    let that = this;
+
+    function _local_update_k_handler(data){
+        console.log("local_update_k_handler", data);
+
+        if(callback) callback();
+    }
+    return _local_update_k_handler;
+}

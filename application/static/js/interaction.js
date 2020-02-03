@@ -6,6 +6,12 @@ function update_k(k){
     DataLoader.update_k(k);
 }
 
+function local_update_k(selected_idxs){
+    // TODO: for DEBUG
+    selected_idxs = [1,2,3];
+    DataLoader.local_update_k(selected_idxs);
+}
+
 function update_filter_threshold(threshold){
     DataLoader.update_filter_threshold(threshold);
 }
