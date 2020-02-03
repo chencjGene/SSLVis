@@ -115,9 +115,10 @@ class ExchangePortClass(object):
         return jsonify(mat)
 
     def get_selected_flows(self, data):
-        selected_flows = self.model.get_selected_flows(data)
+        selected_flows, selected_idxs = self.model.get_selected_flows(data)
         mat = {
-            "selected_flows": selected_flows.tolist()
+            "selected_flows": selected_flows.tolist(),
+            "selected_idxs": selected_idxs.tolist()
         }
         return jsonify(mat)
 

@@ -420,7 +420,7 @@ class SSLModel(object):
         for i in range(iter-1):
             selected_flows[i] = flow_statistic(self.labels[i][idxs], \
                 self.labels[i+1][idxs], self.class_list)
-        return selected_flows
+        return selected_flows, idxs
         
     def get_data(self):
         train_X = self.data.get_train_X()
