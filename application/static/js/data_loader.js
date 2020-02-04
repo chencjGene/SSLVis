@@ -58,7 +58,7 @@ DataLoaderClass = function (dataset) {
     that._init = function () {
         let params = "?dataset=" + that.dataset;
         that.manifest_node = new request_node(that.manifest_url + params,
-            that.get_manifest_handler(), "json", "GET");
+            that.get_manifest_handler(that.update_control_info), "json", "GET");
 
         that.graph_node = new request_node(that.graph_url + params,
             that.get_graph_handler(that.get_graph_view), "json", "GET");
@@ -230,7 +230,12 @@ DataLoaderClass = function (dataset) {
             that.selected_flows_handler(that.update_dist_view), "json", "POST");
         that.selected_flows_node.set_data({path_id});
         that.selected_flows_node.notify();
-    }
+    };
+
+    that.update_control_info = function() {
+        $("#labeled-num").text(that.state.labeled_num + " Labeled data");
+        $("#unlabeled-num").text(that.state.unlabeled_num + " Unlabeled data");
+    };
 
     that.init = function () {
         that._init();

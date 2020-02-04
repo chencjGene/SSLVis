@@ -45,7 +45,9 @@ class ExchangePortClass(object):
         manifest = {
             "k": self.model.n_neighbor,
             "filter_threshold": self.model.filter_threshold,
-            "label_names": self.model.data.class_names
+            "label_names": self.model.data.class_names,
+            "labeled_num": self.model.data.selected_labeled_num,
+            "all_num": self.model.data.selected_total_num
         }
         return jsonify(manifest)
 
