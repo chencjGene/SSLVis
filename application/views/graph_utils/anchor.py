@@ -30,6 +30,7 @@ def get_topk_uncertain(process_data, k = 10):
 
 def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, propagation_path, dataname, buf_path, degree):
     global top_k_uncertain
+
     anchor_path = os.path.join(buf_path, "anchors" + config.pkl_ext)
     current_pos_path = os.path.join(buf_path, "current_anchors" + config.pkl_ext)
     train_x = np.array(train_x, dtype=np.float64)
@@ -515,7 +516,10 @@ def fisheyeAnchors(must_show_nodes, area, level, wh, train_x, train_y, raw_graph
         "width":float(max_x-min_x),
         "height":float(max_y-min_y)
     }
-    new_wh = new_area["width"] / new_area["height"]
+    if new_area["height"] == 0:
+        new_wh = 1
+    else:
+        new_wh = new_area["width"] / new_area["height"]
     old_wh = wh
     if old_wh > new_wh:
         min_x -= (new_area["height"] * old_wh - new_area["width"]) / 2
@@ -558,4 +562,4 @@ def fisheyeAnchors(must_show_nodes, area, level, wh, train_x, train_y, raw_graph
     graph = {
         "nodes": samples_nodes,
     }
-    return [graph, new_area]
+    return [graph, area]
