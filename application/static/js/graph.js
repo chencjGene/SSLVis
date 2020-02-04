@@ -590,28 +590,42 @@ let GraphLayout = function (container) {
         let y = d3.scaleLinear().range([container_height*0.85, container_height*0.05]).domain([0, 1]);
 
         //draw bar chart
-        container.selectAll("rect")
-            .data(certainty_distribution)
+        if(container.select("#current-uncertainty-rects").size() === 0){
+            container.append("g")
+                .attr("id", "current-uncertainty-rects");
+        }
+        let rects = container.select("#current-uncertainty-rects").selectAll("rect").data(certainty_distribution);
+        rects
             .enter()
             .append("rect")
             .attr("class", "widget-bar-chart")
             .style("fill", "rgb(127, 127, 127)")
-          .attr("x", function(d, i) { return x(i); })
-          .attr("width", x.bandwidth())
-          .attr("y", function(d, i) { return y(d.length/max_len); })
-          .attr("height", function(d) {
-              return container_height*0.85 - y(d.length/max_len);
-          })
+            .attr("x", function(d, i) { return x(i); })
+            .attr("width", x.bandwidth())
+            .attr("y", function(d, i) { return y(d.length/max_len); })
+            .attr("height", function(d) {
+                return container_height*0.85 - y(d.length/max_len);
+            })
             .attr("opacity", 1);
+        rects.transition()
+            .duration(AnimationDuration)
+            .attr("y", function(d, i) { return y(d.length/max_len); })
+            .attr("height", function(d) {
+                return container_height*0.85 - y(d.length/max_len);
+            });
         // draw x-axis
-        container.append("g")
-            .append("line")
-            .attr("x1", container_width*0.1)
-            .attr("y1", container_height*0.85)
-            .attr("x2", container_width*0.9)
-            .attr("y2", container_height*0.85)
-            .attr("stroke", "black")
-            .attr("stroke-width", 1);
+        if(container.select("#current-uncertainty-axis").size() === 0){
+            container.append("g")
+                .attr("id","current-uncertainty-axis")
+                .append("line")
+                .attr("x1", container_width*0.1)
+                .attr("y1", container_height*0.85)
+                .attr("x2", container_width*0.9)
+                .attr("y2", container_height*0.85)
+                .attr("stroke", "black")
+                .attr("stroke-width", 1);
+        }
+
         //draw dragble
         let draggable_item_path = "M0 -6 L6 6 L-6 6 Z";
         let start_drag = container.append("path")
@@ -692,7 +706,7 @@ let GraphLayout = function (container) {
 
     that.label_scented_widget = function(points_id, container_id) {
         // label interval
-        let min_label_id = 0;
+        let min_label_id = -1;
         let max_label_id = 9;
         let label_cnt = max_label_id-min_label_id+1;
         function interval_idx(label_id){
@@ -710,7 +724,7 @@ let GraphLayout = function (container) {
                 continue
             }
             let predict_label = graph_data.nodes[node_id].label[iter];
-            let distribution_box = label_distribution[interval_idx(predict_label)];
+            let distribution_box = label_distribution[interval_idx(predict_label)+1];
             distribution_box.push(node_id);
             if(distribution_box.length > max_len){
                 max_len = distribution_box.length;
@@ -718,7 +732,7 @@ let GraphLayout = function (container) {
         }
 
         // draw
-        label_rect = {}
+        label_rect = {};
         let container = d3.select(container_id);
         let container_width = widget_width;
         let container_height = widget_height;
@@ -736,7 +750,7 @@ let GraphLayout = function (container) {
             .enter()
             .append("rect")
             .attr("class", "widget-bar-chart")
-            .style("fill", (d, i) => color_label[i])
+            .style("fill", (d, i) => i===0?color_unlabel:color_label[i-1])
             .attr("x", function(d, i) { return x(i); })
             .attr("width", x.bandwidth())
             .attr("y", function(d, i) { return y(d.length/max_len); })
@@ -800,8 +814,8 @@ let GraphLayout = function (container) {
             .duration(AnimationDuration)
             .attr("y", function(d, i) { return y(d.length/max_len); })
             .attr("height", function(d) {
-              return container_height*0.85 - y(d.length/max_len);
-          });
+                  return container_height*0.85 - y(d.length/max_len);
+              });
         // draw axis
         if(container.select("#current-label-axis").size() === 0){
             container.append("g")
