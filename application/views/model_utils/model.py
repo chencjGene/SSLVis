@@ -423,7 +423,9 @@ class SSLModel(object):
         label_sums = np.zeros((self.labels.shape[0], selected_flows.shape[1]))
         for i in range(self.labels.shape[0]):
             labels = self.labels[i][idxs]
-            label_sums[i,:] = np.bincount(labels + 1)
+            bins = np.bincount(labels + 1)
+            missed_num = label_sums[i].shape[0] - len(bins)
+            label_sums[i,:] = np.concatenate((bins, np.zeros(missed_num)))
         return label_sums, selected_flows
 
     def get_selected_flows(self, data):
