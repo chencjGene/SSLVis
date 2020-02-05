@@ -106,6 +106,9 @@ let GraphLayout = function (container) {
     let top_k_uncertainty = [];
     let label_rect = {};
 
+    let label_num = 0;
+    let unlabel_num = 0;
+
     that._init = function () {
         svg = container.selectAll('#graph-view-svg')
             .attr("width", width)
@@ -1531,6 +1534,9 @@ let GraphLayout = function (container) {
         // get uncertainty
         top_k_uncertainty = that.get_top_k_uncertainty(20);
 
+        label_num, unlabel_num = that.get_labeled_and_unlabeled_num();
+        console.log(label_num, unlabel_num)
+
     };
 
     // TODO: remove in the future
@@ -1707,6 +1713,16 @@ let GraphLayout = function (container) {
             that._maintain_size(old_transform);
             now_area = new_area;
         });
+    };
+
+    that.get_labeled_and_unlabeled_num = function () {
+        let label_num = 0;
+        let unlabel_num = 0;
+        for(let node of Object.values(graph_data.nodes)){
+            if(node.label[0] > -1) label_num++;
+            else if(node.label[0] === -1) unlabel_num++;
+        }
+        return label_num, unlabel_num
     };
 
     that._distance = function(a, b){

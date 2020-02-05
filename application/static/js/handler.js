@@ -15,6 +15,8 @@ DataLoaderClass.prototype.get_manifest_handler = function (callback) {
         that.state.k = data.k;
         that.state.filter_threshold = data.filter_threshold;
         that.state.label_names = data.label_names;
+        that.state.labeled_num = data.labeled_num;
+        that.state.unlabeled_num = data.all_num-data.labeled_num;
         if (callback) callback();
     }
 
