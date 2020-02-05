@@ -1396,11 +1396,9 @@ let GraphLayout = function (container) {
             console.log("Node:", d);
             let eid = d.id;
             let predict_label = d.label[iter];
-            for (let onepath of d.path) {
-                if (onepath.length === 1) continue;
-                for (let i = onepath.length-2; i < onepath.length - 1; i++) {
-                    let s = onepath[i];
-                    let e = onepath[i + 1];
+            for (let source_node of d.path) {
+                let s = source_node;
+                    let e = d.id;
                     let key = s + "," + e;
                     if (path_keys.indexOf(key) === -1) {
                         path_keys.push(key);
@@ -1411,7 +1409,6 @@ let GraphLayout = function (container) {
                         path_nodes[s] = true;
                         path.push([e, s, predict_label]);
                     }
-                }
             }
         }
         let must_show_nodes = [];

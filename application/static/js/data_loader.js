@@ -37,6 +37,7 @@ DataLoaderClass = function (dataset) {
     // views
     that.graph_view = null;
     that.dist_view = null;
+    that.history_view = null;
 
     // Data storage
     that.state = {
@@ -151,6 +152,11 @@ DataLoaderClass = function (dataset) {
 
     that.set_dist_view = function(v){
         that.dist_view = v;
+        v.set_data_manager(that);
+    };
+
+    that.set_history_view = function(v){
+        that.history_view = v;
         v.set_data_manager(that);
     };
 

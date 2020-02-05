@@ -327,23 +327,13 @@ class SSLModel(object):
         iternum = process_data.shape[0]
         nodenum = process_data.shape[1]
         propagation_path = [[] for i in range(nodenum)]
-        influence_matrix_trans = influence_matrix.transpose(copy = True).tocsr()
-        edge_indices = influence_matrix_trans.indices
-        edge_indptr = influence_matrix_trans.indptr
-        labeled_idx = []
-        for i, label in enumerate(self.data.get_train_label()):
-            if label > -1:
-                labeled_idx.append(i)
-        for labeled in labeled_idx:
-            path_stack_flag = {}
-            for i in range(nodenum):
-                path_stack_flag[i] = False
-            path_stack_flag[int(labeled)] = True
-            self._find_path([int(labeled)], 1, edge_indices, edge_indptr, propagation_path, path_stack_flag)
-        propagation_path_cnt = 0
-        for node_paths in propagation_path:
-            propagation_path_cnt += len(node_paths)
-        print("propagation path num:", propagation_path_cnt)
+        edge_indices = influence_matrix.indices
+        edge_indptr = influence_matrix.indptr
+        for node_id in range(nodenum):
+            start_idx = edge_indptr[node_id]
+            end_idx = edge_indptr[node_id+1]
+            for target_id in edge_indices[start_idx:end_idx]:
+                propagation_path[int(node_id)].append(int(target_id))
         return propagation_path
 
     def evaluate(self):

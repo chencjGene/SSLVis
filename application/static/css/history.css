@@ -1,3 +1,7 @@
 #history-row {
     background-color: #fafafa;
 }
+
+#history-row {
+    overflow-y: auto;
+}
