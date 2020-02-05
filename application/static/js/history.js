@@ -124,7 +124,7 @@ let HistoryLayout = function (container) {
                 .attr("x", width*0.65)
                 .attr("y", row_height*(row_idx+0.5)+row_offset)
                 .attr("text-anchor", "start")
-                .text("Margin:"+row_data.margin)
+                .text("Entropy:"+row_data.margin)
         }
 
         //draw line
@@ -151,6 +151,9 @@ let HistoryLayout = function (container) {
                     // let mid = [(begin[0]+end[0])/2, (begin[1]+end[1])/2];
                     let mid1 = [node_offset_x+20, row_height*(begin_idx+0.5)+row_offset+20];
                     let mid2 = [node_offset_x+20, row_height*(end_idx+0.5)+row_offset-20];
+                    if(end_idx === begin_idx + 1){
+                        return lineGenerator([begin, end]);
+                    }
                     return lineGenerator([begin,mid1, mid2, end]);
                 })
     };
