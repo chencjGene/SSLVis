@@ -149,8 +149,9 @@ let HistoryLayout = function (container) {
                     let begin = [node_offset_x, row_height*(begin_idx+0.5)+row_offset];
                     let end = [node_offset_x, row_height*(end_idx+0.5)+row_offset];
                     // let mid = [(begin[0]+end[0])/2, (begin[1]+end[1])/2];
-                    let mid = [node_offset_x+30, row_height*((begin_idx+end_idx)/2+0.5)+row_offset];
-                    return lineGenerator([begin,mid, end]);
+                    let mid1 = [node_offset_x+20, row_height*(begin_idx+0.5)+row_offset+20];
+                    let mid2 = [node_offset_x+20, row_height*(end_idx+0.5)+row_offset-20];
+                    return lineGenerator([begin,mid1, mid2, end]);
                 })
     };
 

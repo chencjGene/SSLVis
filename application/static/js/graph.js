@@ -486,11 +486,12 @@ let GraphLayout = function (container) {
         nodes_group.selectAll("circle").attr("r", d => that.r(d.id));
         golds_group.selectAll("path").attr("d", d => star_path(10 * zoom_scale, 4 * zoom_scale, center_scale_x(d.x), center_scale_y(d.y)))
             .attr("stroke-width", 1.5*zoom_scale);
-        edges_group.selectAll("line").style('stroke-width', zoom_scale);
-        main_group.select("#group-propagation").selectAll("polyline").style('stroke-width', 2.0 * zoom_scale);
-        main_group.select("#single-propagate").selectAll("polyline").style('stroke-width', 2.0 * zoom_scale);
+        // edges_group.selectAll("line").style('stroke-width', zoom_scale);
+        main_group.select("#group-propagation").selectAll("path").style('stroke-width', 2.0 * zoom_scale);
+        // main_group.select("#single-propagate").selectAll("polyline").style('stroke-width', 2.0 * zoom_scale);
         let arc = d3.arc().outerRadius(11 * zoom_scale).innerRadius(7 * zoom_scale);
-        main_group.selectAll(".pie-chart").selectAll("path").attr("d", arc);
+        main_group.selectAll("#score-pie-chart-g").selectAll("path").attr("d", arc);
+        main_group.selectAll("#uncertainty-g").selectAll("path").attr("d", arc);
     };
 
     that.draw_scented_widget = function(points_id, type) {

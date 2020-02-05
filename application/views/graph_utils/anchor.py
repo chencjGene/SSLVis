@@ -218,7 +218,7 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, p
     for i in range(selection.shape[0]):
         id = int(selection[i])
         iter_num = process_data.shape[0]
-        labels = [int(np.argmax(process_data[j][id])) if np.max(process_data[j][id]) > 1e-4 else -1 for j in
+        labels = [int(np.argmax(process_data[j][id])) if np.max(process_data[j][id]) > 0 else -1 for j in
                   range(iter_num)]
         scores = [process_data[j][id].tolist() for j in range(iter_num)]
         samples_nodes[id] = {
@@ -331,7 +331,7 @@ def updateAnchors(train_x, train_y, ground_truth, process_data, influence_matrix
     for i in range(len(selection)):
         id = int(selection[i])
         iter_num = process_data.shape[0]
-        labels = [int(np.argmax(process_data[j][id])) if np.max(process_data[j][id]) > 1e-4 else -1 for j in
+        labels = [int(np.argmax(process_data[j][id])) if np.max(process_data[j][id]) > 0 else -1 for j in
                   range(iter_num)]
         scores = [process_data[j][id].tolist() for j in range(iter_num)]
         samples_nodes[id] = {
@@ -544,7 +544,7 @@ def fisheyeAnchors(must_show_nodes, area, level, wh, train_x, train_y, raw_graph
     for i in range(len(selection)):
         id = int(selection[i])
         iter_num = process_data.shape[0]
-        labels = [int(np.argmax(process_data[j][id])) if np.max(process_data[j][id]) > 1e-4 else -1 for j in
+        labels = [int(np.argmax(process_data[j][id])) if np.max(process_data[j][id]) > 0 else -1 for j in
                   range(iter_num)]
         scores = [process_data[j][id].tolist() for j in range(iter_num)]
         samples_nodes[id] = {
