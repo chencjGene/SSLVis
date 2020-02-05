@@ -59,7 +59,7 @@ class SSLModel(object):
         # self.data.case_set_rest_idxs()
         self.selected_dir = self.data.selected_dir
         # self.n_neighbor = int(np.sqrt(self.data.get_train_num()))
-        self.n_neighbor = 3
+        self.n_neighbor = 2
         self.filter_threshold = 0.7
         logger.info("n_neighbor: {}".format(self.n_neighbor))
 
