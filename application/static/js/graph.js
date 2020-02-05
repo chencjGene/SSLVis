@@ -1371,7 +1371,7 @@ let GraphLayout = function (container) {
         let focus_node_data = [];
         for(let id of selection_nodes){
             let node = graph_data.nodes[id];
-            if(node.label[0] !== -1 || node.label[iter] === -1) continue;
+            // if(node.label[0] !== -1 || node.label[iter] === -1) continue;
             focus_node_data.push(graph_data.nodes[id]);
         }
         console.log("show nodes:", focus_node_data);
@@ -1392,7 +1392,7 @@ let GraphLayout = function (container) {
         let new_area = null;
 
         for (let d of focus_node_data) {
-            if (d.label[iter] === -1 || d.label[0] !== -1) continue;
+            // if (d.label[iter] === -1 || d.label[0] !== -1) continue;
             console.log("Node:", d);
             let eid = d.id;
             let predict_label = d.label[iter];
