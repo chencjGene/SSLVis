@@ -127,7 +127,7 @@ def local_search_k(k_list, n_neighbors, selected_idxs, F, initial_affinity_matri
         print("affinity_matrix diff:", \
             np.abs(affinity_matrix - initial_affinity_matrix).sum())
         laplacian_matrix = build_laplacian_graph(affinity_matrix)
-        pred, iter_num = local_update(selected_idxs, F, laplacian_matrix, affinity_matrix,
+        pred, iter_num = full_update(selected_idxs, F, laplacian_matrix, affinity_matrix,
             train_y, normalized=True)
         acc = accuracy_score(gt, pred.argmax(axis=1))
         ent = entropy(pred.T + 1e-20).mean()

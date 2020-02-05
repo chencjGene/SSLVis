@@ -26,6 +26,7 @@ class Data(object):
         self.selected_total_num = total_num
         self.seed = seed
         self.selected_dir = None
+        self.rest_idxs = None
 
         self._load_data()
 
@@ -62,6 +63,7 @@ class Data(object):
             idx_info = pickle_load_data(idx_info_path)
             self.train_idx = idx_info["train_idx"]
             self.selected_labeled_idx = idx_info["selected_labeled_idx"]
+            self.rest_idxs = np.array(range(len(self.train_idx)))
             return
         # selected_labeled_idx = np.random.choice(self.labeled_idx, self.selected_labeled_num, replace=False)
         # class balance selection
@@ -98,6 +100,14 @@ class Data(object):
         }
         pickle_save_data(idx_info_path, idx_info)
 
+    def case_set_rest_idxs(self):
+        gt = self.get_train_ground_truth()
+        self.rest_idxs = np.array(range(len(gt)))[gt!=-1]
+        print("rest_idxs len: ", len(self.rest_idxs))
+
+    def get_rest_idxs(self):
+        return self.rest_idxs.copy()
+
     def get_train_num(self):
         return len(self.train_idx)
 
@@ -105,19 +115,19 @@ class Data(object):
         return self.class_names
 
     def get_train_X(self):
-        return self.X[np.array(self.train_idx)].copy()
+        return self.X[np.array(self.train_idx)].copy()[self.rest_idxs]
 
     def get_train_label(self):
         y = np.ones(self.X.shape[0]) * -1
         y[np.array(self.selected_labeled_idx)] = self.y[np.array(self.selected_labeled_idx)]
         y = y[np.array(self.train_idx)]
-        return y.astype(int)
+        return y.astype(int)[self.rest_idxs]
 
     def get_train_idx(self):
-        return self.train_idx.copy()
+        return self.train_idx.copy()[self.rest_idxs]
 
     def get_train_ground_truth(self):
-        return self.y[np.array(self.train_idx)].copy().astype(int)
+        return self.y[np.array(self.train_idx)].copy().astype(int)[self.rest_idxs]
 
     def get_test_X(self):
         return self.X[np.array(self.test_idx)].copy()

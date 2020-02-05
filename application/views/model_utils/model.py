@@ -42,7 +42,7 @@ def build_laplacian_graph(affinity_matrix):
 
 
 class SSLModel(object):
-    def __init__(self, dataname, labeled_num=None, total_num=None):
+    def __init__(self, dataname, labeled_num=None, total_num=None, seed=123):
         self.dataname = dataname
         self.data_root = os.path.join(config.data_root, self.dataname)
 
@@ -56,6 +56,7 @@ class SSLModel(object):
         self.alpha = 0.2
 
         self.data = Data(self.dataname, labeled_num, total_num)
+        # self.data.case_set_rest_idxs()
         self.selected_dir = self.data.selected_dir
         # self.n_neighbor = int(np.sqrt(self.data.get_train_num()))
         self.n_neighbor = 3
@@ -65,7 +66,6 @@ class SSLModel(object):
         self.simplified_affinity_matrix = None
         self.propagation_path = None
         # self._get_signal_state()
-        # self._init()
 
     def init(self, k=None, filter_threshold=None):
         if k is not None:
@@ -140,8 +140,11 @@ class SSLModel(object):
         neighbors_weight_path = os.path.join(self.selected_dir,
                                              "neighbors_weight.npy")
         neighbors = np.load(neighbors_path)
-        self.neighbors = neighbors
         neighbors_weight = np.load(neighbors_weight_path)
+        # rest_idxs = self.data.get_rest_idxs()
+        # neighbors = neighbors[rest_idxs, :][:, rest_idxs]
+        # neighbors_weight = neighbors_weight[rest_idxs, :][:, rest_idxs]
+        self.neighbors = neighbors
         instance_num = neighbors.shape[0]
         train_y = self.data.get_train_label()
         train_y = np.array(train_y)
@@ -405,6 +408,7 @@ class SSLModel(object):
         return self.ent
 
     def get_flows(self, idxs):
+        self.selected_idxs = idxs
         iter = len(self.labels)
         selected_flows = np.zeros((iter-1, len(self.class_list), len(self.class_list)))
         for i in range(iter-1):
@@ -431,6 +435,7 @@ class SSLModel(object):
                 self.labels[iter_next][i] == cls_next):
                 idxs.append(i)
         idxs = np.array(idxs)
+        idxs = np.array([i for i in idxs if i in self.selected_idxs])
         print("selected instances num", len(idxs))
         iter = len(self.labels)
         selected_flows = np.zeros((iter-1, len(self.class_list), len(self.class_list)))
