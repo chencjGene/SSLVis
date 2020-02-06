@@ -56,10 +56,10 @@ class SSLModel(object):
         self.alpha = 0.2
 
         self.data = Data(self.dataname, labeled_num, total_num)
-        # self.data.case_set_rest_idxs()
+        self.data.case_set_rest_idxs()
         self.selected_dir = self.data.selected_dir
         # self.n_neighbor = int(np.sqrt(self.data.get_train_num()))
-        self.n_neighbor = 3
+        self.n_neighbor = 5
         self.filter_threshold = 0.7
         logger.info("n_neighbor: {}".format(self.n_neighbor))
 
@@ -206,7 +206,7 @@ class SSLModel(object):
         logger.info("model accuracy: {}, iter: {}".format(acc, iter))
         logger.info("model entropy: {}".format(entropy(pred_dist.T + 1e-20).mean()))
         
-        # self.evaluate()
+        self.adaptive_evaluation()
 
         influence_matrix_path = os.path.join(self.selected_dir,
                                              "{}_{}_influence_matrix.pkl"
@@ -341,10 +341,19 @@ class SSLModel(object):
 
     def evaluate(self):
         train_X = self.data.get_train_X()
+        train_idx = self.data.get_train_idx()
         test_X = self.data.get_test_X()
         test_y = self.data.get_test_ground_truth()
         pred = self.pred_dist
+        label = pred.argmax(axis=1)
+        logger.info("train_X.shape: {}".format(str(train_X.shape)))
         logger.info("test_X.shape: {}".format(str(test_X.shape)))
+        mat = {
+            "X": train_idx,
+            "y": label,
+        }
+        import scipy.io as sio
+        sio.savemat("train.mat", mat)
         nn_fit = NearestNeighbors(self.n_neighbor, n_jobs=-4).fit(train_X)
         weight_matrices = nn_fit.kneighbors(test_X, return_distance=False)
         probabilities = np.array([
@@ -354,6 +363,49 @@ class SSLModel(object):
         probabilities /= normalizer
         acc = accuracy_score(test_y, probabilities.argmax(axis=1))
         logger.info("test accuracy: {}".format(acc))
+
+    def adaptive_evaluation(self):
+        train_X = self.data.get_train_X()
+        affinity_matrix = self.affinity_matrix
+        pred = self.pred_dist
+        test_X = self.data.get_test_X()
+        test_y = self.data.get_test_ground_truth()
+        nn_fit = NearestNeighbors(self.n_neighbor, n_jobs=-4).fit(train_X)
+        logger.info("nn construction finished!")
+        neighbor_result = nn_fit.kneighbors_graph(test_X,
+                                                  self.max_neighbors,
+                                                  # 2,
+                                                  mode="distance")
+        logger.info("neighbor_result got!")
+        estimate_k = 5
+        s = 0
+        labels = []
+        for i in range(test_X.shape[0]):
+            start = neighbor_result.indptr[i]
+            end = neighbor_result.indptr[i + 1]
+            j_in_this_row = neighbor_result.indices[start:end]
+            data_in_this_row = neighbor_result.data[start:end]
+            sorted_idx = data_in_this_row.argsort()
+            assert (len(sorted_idx) == self.max_neighbors)
+            j_in_this_row = j_in_this_row[sorted_idx]
+            estimated_idxs = j_in_this_row[:estimate_k]
+            adaptive_k = affinity_matrix[estimated_idxs, :].sum() / estimate_k
+            selected_idxs = j_in_this_row[:int(adaptive_k)]
+            p = pred[selected_idxs].sum(axis=0)
+            labels.append(p.argmax())
+            s += adaptive_k
+            # print(adaptive_k)
+        acc = accuracy_score(test_y, labels)
+        logger.info("test accuracy: {}".format(acc))
+        print(s/test_X.shape[0])
+
+            # data_in_this_row = data_in_this_row[sorted_idx]
+            # neighbors[i, :] = j_in_this_row
+            # neighbors_weight[i, :] = data_in_this_row
+
+
+
+
 
     def _projection(self):
         # TODO: this function is disabled
