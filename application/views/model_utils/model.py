@@ -56,9 +56,8 @@ class SSLModel(object):
         self.alpha = 0.2
 
         self.data = Data(self.dataname, labeled_num, total_num)
-        self.data.case_set_rest_idxs()
+        # self.data.case_set_rest_idxs()
         self.selected_dir = self.data.selected_dir
-        # self.n_neighbor = int(np.sqrt(self.data.get_train_num()))
         self.n_neighbor = 5
         self.filter_threshold = 0.7
         logger.info("n_neighbor: {}".format(self.n_neighbor))
@@ -403,32 +402,6 @@ class SSLModel(object):
             # neighbors[i, :] = j_in_this_row
             # neighbors_weight[i, :] = data_in_this_row
 
-
-
-
-
-    def _projection(self):
-        # TODO: this function is disabled
-        projection_filepath = os.path.join(self.data_root, config.projection_buffer_name)
-        if check_exist(projection_filepath) \
-                and (not self.signal_state):
-            logger.info("loading projection result from buffer")
-            self.model = pickle_load_data(projection_filepath)
-            return
-
-        # get projection from scratch
-        train_X = self.data.get_train_X()
-        train_y = self.data.get_train_label()
-        train_y = np.array(train_y)
-        train_gt = self.data.get_train_ground_truth()
-        train_gt = np.array(train_gt)
-        embedder = Embedder("tsne", n_components=2, random_state=123)
-        self.embed_X = embedder.fit_transform(train_X, train_y)
-        logger.info("get projection result")
-
-        # save projection buffer
-        pickle_save_data(projection_filepath, self.embed_X)
-        return
 
     def get_in_out_degree(self, influence_matrix):
         edge_indices = influence_matrix.indices
