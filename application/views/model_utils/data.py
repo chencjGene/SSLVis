@@ -236,3 +236,10 @@ class GraphData(Data):
         logger.info("affinity_matrix construction finished!!")
         self.affinity_matrix = affinity_matrix
         return affinity_matrix
+
+    def get_neighbors_model(self):
+        neighbors_model_path = os.path.join(self.selected_dir, "neighbors_model.pkl")
+        if os.path.exists(neighbors_model_path):
+            self._preprocess_neighbors()
+        neighbors_model = pickle_load_data(neighbors_model_path)
+        return neighbors_model

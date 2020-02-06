@@ -234,20 +234,10 @@ class SSLModel(object):
 
     def evaluate(self):
         train_X = self.data.get_train_X()
-        train_idx = self.data.get_train_idx()
         test_X = self.data.get_test_X()
         test_y = self.data.get_test_ground_truth()
         pred = self.pred_dist
-        label = pred.argmax(axis=1)
-        logger.info("train_X.shape: {}".format(str(train_X.shape)))
-        logger.info("test_X.shape: {}".format(str(test_X.shape)))
-        mat = {
-            "X": train_idx,
-            "y": label,
-        }
-        import scipy.io as sio
-        sio.savemat("train.mat", mat)
-        nn_fit = NearestNeighbors(self.n_neighbor, n_jobs=-4).fit(train_X)
+        nn_fit = self.data.get_neighbors_model()
         weight_matrices = nn_fit.kneighbors(test_X, return_distance=False)
         probabilities = np.array([
                 np.sum(pred[weight_matrix], axis=0)
@@ -263,12 +253,11 @@ class SSLModel(object):
         pred = self.pred_dist
         test_X = self.data.get_test_X()
         test_y = self.data.get_test_ground_truth()
-        nn_fit = NearestNeighbors(self.n_neighbor, n_jobs=-4).fit(train_X)
+        nn_fit = self.data.get_neighbors_model()
         logger.info("nn construction finished!")
         neighbor_result = nn_fit.kneighbors_graph(test_X,
-                                                  1000,
-                                                  # 2,
-                                                  mode="distance")
+                                            100,
+                                            mode="distance")
         logger.info("neighbor_result got!")
         estimate_k = 5
         s = 0
@@ -279,7 +268,7 @@ class SSLModel(object):
             j_in_this_row = neighbor_result.indices[start:end]
             data_in_this_row = neighbor_result.data[start:end]
             sorted_idx = data_in_this_row.argsort()
-            assert (len(sorted_idx) == 1000)
+            assert (len(sorted_idx) == 100)
             j_in_this_row = j_in_this_row[sorted_idx]
             estimated_idxs = j_in_this_row[:estimate_k]
             adaptive_k = affinity_matrix[estimated_idxs, :].sum() / estimate_k
@@ -291,10 +280,6 @@ class SSLModel(object):
         acc = accuracy_score(test_y, labels)
         logger.info("test accuracy: {}".format(acc))
         print(s/test_X.shape[0])
-
-            # data_in_this_row = data_in_this_row[sorted_idx]
-            # neighbors[i, :] = j_in_this_row
-            # neighbors_weight[i, :] = data_in_this_row
 
 
     def get_in_out_degree(self, influence_matrix):
