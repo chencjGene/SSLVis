@@ -2,6 +2,8 @@ import numpy as np
 import os
 import abc
 from scipy import sparse
+from anytree import Node
+from anytree.exporter import DictExporter
 
 from sklearn.neighbors.unsupervised import NearestNeighbors
 
@@ -142,13 +144,22 @@ class Data(object):
     def get_test_ground_truth(self):
         return self.y[np.array(self.test_idx)].copy().astype(int)
 
+    def remove_instance(self, idxs):
+        None
+
+    def label_instance(self, idxs, labels):
+        None
+
 class GraphData(Data):
     def __init__(self, dataname, labeled_num=None, total_num=None, seed=123):
         super(GraphData, self).__init__(dataname, labeled_num, total_num, seed)
         
         self.max_neighbors = 1000
         self.affinity_matrix = None
-
+        self.state_idx = 0
+        self.state = {}
+        self.state_data = {}
+        self.current_state = None
 
     def _preprocess_neighbors(self):
         neighbors_model_path = os.path.join(self.selected_dir, "neighbors_model.pkl")
@@ -235,6 +246,17 @@ class GraphData(Data):
                                             shape=(instance_num, instance_num))
         logger.info("affinity_matrix construction finished!!")
         self.affinity_matrix = affinity_matrix
+
+        # init action trail
+        self.state = Node(str(self.state_idx))
+        self.state_idx = self.state_idx + 1
+        self.current_state = self.state
+        self.state_data[self.current_state.name] = {
+            "affinity_matrix": self.affinity_matrix.copy(),
+            "train_y": self.get_train_label(),
+            "node": self.current_state
+        }
+
         return affinity_matrix
 
     def get_neighbors_model(self):
@@ -243,3 +265,43 @@ class GraphData(Data):
             self._preprocess_neighbors()
         neighbors_model = pickle_load_data(neighbors_model_path)
         return neighbors_model
+
+    def record_state(self):
+        new_state = Node(self.state_idx, parent=self.current_state)
+        self.state_idx = self.state_idx + 1
+        self.current_state = new_state 
+        self.state_data[self.current_state.name] = {
+            "affinity_matrix": self.affinity_matrix.copy(),
+            "train_y": self.get_train_label(),
+            "node": self.current_state
+        }
+    
+    def return_state(self):
+        # root = {"id": self.state.name}
+        # visiting_state = [self.state]
+        # visiting_node = [root]
+        # while len(visiting_node):
+        #     state = visiting_state[0]
+        #     visiting_state = visiting_state[1:]
+        #     node = visiting_node[0]
+        #     visiting_node = visiting_node[1:]
+        #     node["entropy"] = 1
+        #     node["children"] = []
+        #     children = state.children 
+        #     for c in children:
+        #         node[children].append({
+        #             "id": c.name
+        #         })
+        # TODO: add data
+        dict_exporter = DictExporter()
+        tree = dict_exporter.export(self.state)
+        return tree
+                
+
+    def add_edge(self, added_edges):
+        None
+    
+    def remove_edge(self, added_edges):
+        None
+    
+    
