@@ -1,15 +1,22 @@
 import numpy as np
 import os
 import abc
+from scipy import sparse
 
+from sklearn.neighbors.unsupervised import NearestNeighbors
 
 from application.views.utils.config_utils import config
 from application.views.utils.helper_utils import pickle_save_data, json_load_data,\
     pickle_load_data, json_save_data, check_dir
 from application.views.utils.log_utils import logger
 
+from .model_helper import build_laplacian_graph
 
 class Data(object):
+    '''
+    1. read data from buffer
+    2. manage history state
+    '''
     def __init__(self, dataname, labeled_num=None, total_num=None, seed=123):
         self.dataname = dataname
         self.data_root = os.path.join(config.data_root, self.dataname)
@@ -135,28 +142,97 @@ class Data(object):
     def get_test_ground_truth(self):
         return self.y[np.array(self.test_idx)].copy().astype(int)
 
-    # def get_graph_data(self):
-    #     X, label, ground_truth = read_data(self.data_root, "train")
-    #     idx = np.array(range(X.shape[0]))
-    #     np.random.shuffle(idx)
-    #     idx = idx[:500]
-    #     X = X[idx]
-    #     label = label[idx]
-    #     ground_truth = ground_truth[idx]
-    #     print("X.shape", X.shape)
-    #     A = kneighbors_graph(X, 10, mode="connectivity", include_self=True)
-    #     connect = A.toarray()
-    #
-    #     node = [{"id":i, "c":int(label[i]), "p":int(ground_truth[i])} for i in range(500)]
-    #     link = []
-    #     for i in range(500):
-    #         for j in range(500):
-    #             if connect[i][j] > 0:
-    #                 link.append([i,j, float(np.dot(X[i], X[j]))])
-    #
-    #     graph = {
-    #         "node": node,
-    #         "link": link
-    #     }
-    #
-    #     return graph
+class GraphData(Data):
+    def __init__(self, dataname, labeled_num=None, total_num=None, seed=123):
+        super(GraphData, self).__init__(dataname, labeled_num, total_num, seed)
+        
+        self.max_neighbors = 1000
+        self.affinity_matrix = None
+
+
+    def _preprocess_neighbors(self):
+        neighbors_model_path = os.path.join(self.selected_dir, "neighbors_model.pkl")
+        neighbors_path = os.path.join(self.selected_dir, "neighbors.npy")
+        neighbors_weight_path = os.path.join(self.selected_dir,
+                                             "neighbors_weight.npy")
+        if os.path.exists(neighbors_model_path) and \
+            os.path.exists(neighbors_path) and \
+            os.path.exists(neighbors_weight_path):
+            logger.info("neighbors and neighbor_weight exist!!!")
+            return
+        logger.info("neighbors and neighbor_weight "
+                    "do not exist, preprocessing!")
+        train_X = self.get_train_X()
+        train_y = self.get_train_label()
+        train_y = np.array(train_y)
+        self.max_neighbors = min(len(train_y), self.max_neighbors)
+        logger.info("data shape: {}, labeled_num: {}"
+                    .format(str(train_X.shape), sum(train_y != -1)))
+        nn_fit = NearestNeighbors(7, n_jobs=-4).fit(train_X)
+        logger.info("nn construction finished!")
+        neighbor_result = nn_fit.kneighbors_graph(nn_fit._fit_X,
+                                                  self.max_neighbors,
+                                                  # 2,
+                                                  mode="distance")
+        logger.info("neighbor_result got!")
+        neighbors = np.zeros((train_X.shape[0],
+                              self.max_neighbors)).astype(int)
+        neighbors_weight = np.zeros((train_X.shape[0], self.max_neighbors))
+        for i in range(train_X.shape[0]):
+            start = neighbor_result.indptr[i]
+            end = neighbor_result.indptr[i + 1]
+            j_in_this_row = neighbor_result.indices[start:end]
+            data_in_this_row = neighbor_result.data[start:end]
+            sorted_idx = data_in_this_row.argsort()
+            assert (len(sorted_idx) == self.max_neighbors)
+            j_in_this_row = j_in_this_row[sorted_idx]
+            data_in_this_row = data_in_this_row[sorted_idx]
+            neighbors[i, :] = j_in_this_row
+            neighbors_weight[i, :] = data_in_this_row
+
+        logger.info("preprocessed neighbors got!")
+
+        # save neighbors information
+        pickle_save_data(neighbors_model_path, nn_fit)
+        np.save(neighbors_path, neighbors)
+        np.save(neighbors_weight_path, neighbors_weight)
+
+    def get_graph(self, n_neighbor=None):
+        if self.affinity_matrix is None:
+            self._construct_graph(n_neighbor)
+        return self.affinity_matrix.copy()
+
+    def _construct_graph(self, n_neighbor=None):
+        # create neighbors buffer
+        self._preprocess_neighbors()
+
+        # load neighbors information
+        neighbors_path = os.path.join(self.selected_dir, "neighbors.npy")
+        neighbors_weight_path = os.path.join(self.selected_dir,
+                                             "neighbors_weight.npy")
+        neighbors = np.load(neighbors_path)
+        neighbors_weight = np.load(neighbors_weight_path)
+        self.neighbors = neighbors
+        instance_num = neighbors.shape[0]
+        train_y = self.get_train_label()
+        train_y = np.array(train_y)
+        self.train_y = train_y
+
+        # get knn graph in a csr form
+        indptr = [i * n_neighbor for i in range(instance_num + 1)]
+        logger.info("get indptr")
+        indices = neighbors[:, :n_neighbor].reshape(-1).tolist()
+        logger.info("get indices")
+        data = neighbors_weight[:, :n_neighbor].reshape(-1)
+        logger.info("get data")
+        data = (data * 0 + 1.0).tolist()
+        logger.info("get data in connectivity")
+        affinity_matrix = sparse.csr_matrix((data, indices, indptr),
+                                            shape=(instance_num, instance_num))
+        affinity_matrix = affinity_matrix + affinity_matrix.T
+        affinity_matrix = sparse.csr_matrix((np.ones(len(affinity_matrix.data)).tolist(),
+                                             affinity_matrix.indices, affinity_matrix.indptr),
+                                            shape=(instance_num, instance_num))
+        logger.info("affinity_matrix construction finished!!")
+        self.affinity_matrix = affinity_matrix
+        return affinity_matrix
