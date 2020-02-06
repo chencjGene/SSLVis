@@ -20,12 +20,10 @@ function set_up(dataset) {
     DataLoader.set_dist_view(LossView);
     DataLoader.set_image_view(ImageView);
     DataLoader.set_history_view(HistoryView);
-    //debug
-    HistoryView._update_view();
 }
 
 function clean_dom() {
-
+    
 }
 
 

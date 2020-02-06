@@ -138,3 +138,15 @@ DataLoaderClass.prototype.local_update_k_handler = function(callback){
     }
     return _local_update_k_handler;
 }
+
+DataLoaderClass.prototype.update_history_handler = function(callback){
+    let that = this;
+
+    function _update_history_handler(data){
+        console.log("update_history_handler");
+        that.state.history_data = data;
+
+        if (callback) callback();
+    }
+    return _update_history_handler;
+}

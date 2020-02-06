@@ -192,3 +192,9 @@ class ExchangePortClass(object):
     def get_feature(self, id):
         train_x, _ = self.model.get_data()
         return train_x[id].tolist()
+
+    def get_history(self):
+        return self.model.get_history()
+    
+    def set_history(self, id):
+        return self.model.set_history(id)

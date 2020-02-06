@@ -21,6 +21,8 @@ DataLoaderClass = function (dataset) {
     that.flows_urls = "/dist/GetFlows";
     that.selected_flows_urls = "/dist/GetSelectedFlows";
     that.image_url = "/info/image";
+    that.get_history_url = "/history/GetHistory";
+    that.set_history_url = "/history/SetHistory";
 
     // Request nodes
     that.manifest_node = null;
@@ -33,6 +35,8 @@ DataLoaderClass = function (dataset) {
     that.selected_flows_node = null;
     that.influence_filter_node = null;
     that.local_update_k_node = null;
+    that.get_history_node = null;
+    that.set_history_node = null;
 
     // views
     that.graph_view = null;
@@ -52,7 +56,8 @@ DataLoaderClass = function (dataset) {
         label_sums: null,
         flows: null,
         dist_mode: true,
-        selected_flows: null
+        selected_flows: null,
+        history_data: null
     };
 
     // Define topological structure of data retrieval
@@ -73,6 +78,10 @@ DataLoaderClass = function (dataset) {
 
         that.fisheye_graph_node = new request_node(that.fisheye_graph_url + params,
             that.update_fisheye_graph_handler(that.update_fisheye_view), "json", "POST");
+
+        that.get_history_node = new request_node(that.get_history_url + params,
+            that.update_history_handler(that.update_history_view), "json", "GET");
+        that.get_history_node.depend_on(that.graph_node);
 
         // that.loss_node = new request_node(that.loss_url + params,
         //     that.get_loss_handler(that.update_loss_view), "json", "GET");
@@ -204,6 +213,13 @@ DataLoaderClass = function (dataset) {
             "label_names": that.state.label_names
         }, rescale);
     };
+
+    that.update_history_view = function(){
+        console.log("update history view");
+        that.history_view.component_update({
+            "history_data": that.state.history_data
+        });
+    }
 
     that.get_dist_view = function(selected_idxs){
         let params = "?dataset=" + that.dataset;

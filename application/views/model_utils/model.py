@@ -352,3 +352,9 @@ class SSLModel(object):
         train_X = self.data.get_train_X()
         train_y = self.data.get_train_label()
         return train_X, train_y
+
+    def get_history(self):
+        return self.data.return_state()
+    
+    def set_history(self, id):
+        return self.data.change_state(id)

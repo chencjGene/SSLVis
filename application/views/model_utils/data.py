@@ -296,6 +296,9 @@ class GraphData(Data):
         dict_exporter = DictExporter()
         tree = dict_exporter.export(self.state)
         return tree
+
+    def change_state(self, id):
+        None
                 
 
     def add_edge(self, added_edges):
