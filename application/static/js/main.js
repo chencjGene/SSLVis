@@ -14,12 +14,14 @@ function set_up(dataset) {
     LossView = new DistLayout(d3.select("#dist-view"));
     ImageView = new ImageLayout(d3.select("#image-row"));
     HistoryView = new HistoryLayout(d3.select("#history-row"));
+    FilterView = new FilterLayout(d3.select(".current-scented-widget-container"));
     LossView.controlInstanceView = GraphView;
     LossView.controlInfoView = ImageView;
     DataLoader.set_graph_view(GraphView);
     DataLoader.set_dist_view(LossView);
     DataLoader.set_image_view(ImageView);
     DataLoader.set_history_view(HistoryView);
+    DataLoader.set_filter_view(FilterView);
     //debug
     HistoryView._update_view();
 }

@@ -91,7 +91,6 @@ let DistLayout = function (container) {
                 + legend_y_shift + ")");
     };
 
-
     that.set_data_manager = function (_data_manager) {
         data_manager = _data_manager;
     };

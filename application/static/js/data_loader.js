@@ -38,6 +38,7 @@ DataLoaderClass = function (dataset) {
     that.graph_view = null;
     that.dist_view = null;
     that.history_view = null;
+    that.filter_view = null;
 
     // Data storage
     that.state = {
@@ -52,7 +53,16 @@ DataLoaderClass = function (dataset) {
         label_sums: null,
         flows: null,
         dist_mode: true,
-        selected_flows: null
+        selected_flows: null,
+        // scented widget info:
+        label_widget_data: null,
+        label_widget_range:[-1, -1],
+        uncertainty_widget_data: null,
+        uncertainty_widget_range: [-1, -1],
+        indegree_widget_data: null,
+        indegree_widget_range: [-1, -1],
+        outdegree_widget_data: null,
+        outdegree_widget_range: [-1, -1]
     };
 
     // Define topological structure of data retrieval
@@ -241,6 +251,38 @@ DataLoaderClass = function (dataset) {
     that.update_control_info = function() {
         $("#labeled-num").text(that.state.labeled_num + " Labeled data");
         $("#unlabeled-num").text(that.state.unlabeled_num + " Unlabeled data");
+    };
+
+    //filter view:
+    that.set_filter_view = function(v){
+        that.filter_view = v;
+        v.set_data_manager();
+    };
+
+    that.get_filter_view = function(state) {
+        that.state.uncertainty_widget_data = state.uncertainty_widget_data;
+        that.state.uncertainty_widget_range = state.uncertainty_widget_range;
+        that.state.label_widget_data = state.label_widget_data;
+        that.state.label_widget_range = state.label_widget_range;
+        that.state.indegree_widget_data = state.indegree_widget_data;
+        that.state.indegree_widget_range = state.indegree_widget_range;
+        that.state.outdegree_widget_data = state.outdegree_widget_data;
+        that.state.outdegree_widget_range = state.outdegree_widget_range;
+        that.update_filter_view();
+    };
+
+    that.update_filter_view = function() {
+        console.log("update filter view");
+        that.filter_view.component_update({
+            "uncertainty_widget_data": that.state.uncertainty_widget_data,
+            "uncertainty_widget_range": that.state.uncertainty_widget_range,
+            "label_widget_data": that.state.label_widget_data,
+            "label_widget_range": that.state.label_widget_range,
+            "indegree_widget_data": that.state.indegree_widget_data,
+            "indegree_widget_range":that.state.indegree_widget_range,
+            "outdegree_widget_data":that.state.outdegree_widget_data,
+            "outdegree_widget_range":that.state.outdegree_widget_range
+        });
     };
 
     that.init = function () {

@@ -494,25 +494,6 @@ let GraphLayout = function (container) {
         main_group.selectAll("#uncertainty-g").selectAll("path").attr("d", arc);
     };
 
-    that.draw_scented_widget = function(points_id, type) {
-        that.uncertainty_scented_widget(points_id, "#"+type+"-uncertainty-svg");
-        that.label_scented_widget(points_id, "#"+type+"-label-svg");
-        that.in_degree_scented_widget(points_id, "#"+type+"-indegree-svg");
-        that.out_degree_scented_widget(points_id, "#"+type+"-outdegree-svg");
-
-        // set data flags
-        for(let node_id of Object.keys(graph_data.nodes).map(d => parseInt(d))){
-            let new_flag = label_items[node_id]&&uncertain_items[node_id]&&indegree_items[node_id]&&outdegree_items[node_id];
-            if(new_flag === true && control_items[node_id] === false){
-                control_items[node_id] = new_flag;
-            }
-            else if(new_flag === false && control_items[node_id] === true){
-                control_items[node_id] = new_flag;
-            }
-
-        }
-    };
-
     that.update_widget_showing_items = function(ids) {
         let remove_nodes = [];
         let add_nodes = [];
@@ -558,686 +539,6 @@ let GraphLayout = function (container) {
             data_manager.get_dist_view(Object.keys(graph_data.nodes).filter(d => control_items[d]>0).map(d => parseInt(d)));
         }
         console.log(remove_nodes, add_nodes);
-    };
-
-    that.uncertainty_scented_widget = function(points_id, container_id) {
-        // uncertainty interval
-        let min_certainty = 0;
-        let max_certainty = 1;
-        let certainty_cnt = 20;
-        function interval_idx(certainty){
-            if(certainty === max_certainty){
-                return certainty_cnt-1;
-            }
-            return Math.floor(certainty/((max_certainty-min_certainty)/certainty_cnt));
-        }
-
-
-        // certainty distribution
-        let certainty_distribution = [];
-        let all_num = points_id.length;
-        let max_len = 0;
-        for(let i=0; i<certainty_cnt; i++) certainty_distribution.push([]);
-        for(let node_id of points_id){
-            if(graph_data.nodes[node_id] === undefined){
-                console.log("no node:", node_id);
-                continue
-            }
-            let scores = graph_data.nodes[node_id].score[iter];
-            let sort_score = JSON.parse(JSON.stringify(scores));
-            sort_score.sort(function(a,b){return parseFloat(a)-parseFloat(b)});
-            let uncertainty = sort_score[sort_score.length-1]-sort_score[sort_score.length-2];
-            // change certainty to uncertainty
-            uncertainty = 1-uncertainty;
-            let distribution_box = certainty_distribution[interval_idx(uncertainty)];
-            distribution_box.push(node_id);
-            if(distribution_box.length > max_len){
-                max_len = distribution_box.length;
-            }
-        }
-
-        // draw
-        let container = d3.select(container_id);
-        let container_width = widget_width;
-        let container_height = widget_height;
-        // container.selectAll("*").remove();
-        let x = d3.scaleBand().rangeRound([container_width*0.1, container_width*0.9], .05).paddingInner(0.05).domain(d3.range(certainty_cnt));
-        let y = d3.scaleLinear().range([container_height*0.85, container_height*0.05]).domain([0, 1]);
-
-        //draw bar chart
-        if(container.select("#current-uncertainty-rects").size() === 0){
-            container.append("g")
-                .attr("id", "current-uncertainty-rects");
-        }
-        let rects = container.select("#current-uncertainty-rects").selectAll("rect").data(certainty_distribution);
-        rects
-            .enter()
-            .append("rect")
-            .attr("class", "widget-bar-chart")
-            .style("fill", "rgb(127, 127, 127)")
-            .attr("x", function(d, i) { return x(i); })
-            .attr("width", x.bandwidth())
-            .attr("y", function(d, i) { return y(d.length/max_len); })
-            .attr("height", function(d) {
-                return container_height*0.85 - y(d.length/max_len);
-            })
-            .attr("opacity", 1);
-        rects.transition()
-            .duration(AnimationDuration)
-            .attr("y", function(d, i) { return y(d.length/max_len); })
-            .attr("height", function(d) {
-                return container_height*0.85 - y(d.length/max_len);
-            });
-        // draw x-axis
-        if(container.select("#current-uncertainty-axis").size() === 0){
-            container.append("g")
-                .attr("id","current-uncertainty-axis")
-                .append("line")
-                .attr("x1", container_width*0.1)
-                .attr("y1", container_height*0.85)
-                .attr("x2", container_width*0.9)
-                .attr("y2", container_height*0.85)
-                .attr("stroke", "black")
-                .attr("stroke-width", 1);
-        }
-
-        //draw dragble
-        let draggable_item_path = "M0 -6 L6 6 L-6 6 Z";
-        if(container.select(".start-drag").size() === 0){
-            let start_drag = container.append("path")
-                .attr("class", "start-drag")
-                .attr("d", draggable_item_path)
-                .attr("fill", "rgb(127, 127, 127)")
-                .attr("transform", "translate("+(container_width*0.1)+","+(container_height*0.9)+")");
-            let end_drag = container.append("path")
-                .attr("class", "end-drag")
-                .attr("d", draggable_item_path)
-                .attr("fill", "rgb(127, 127, 127)")
-                .attr("transform", "translate("+(container_width*0.9)+","+(container_height*0.9)+")");
-            start_drag.call(d3.drag()
-                    .on("drag", function () {
-                        let x = d3.event.x;
-                        let drag_btn = d3.select(this);
-                        let min_x = container_width*0.09;
-                        let max_x = -1;
-                        let end_pos = end_drag.attr("transform").slice(end_drag.attr("transform").indexOf("(")+1, end_drag.attr("transform").indexOf(","));
-                        max_x = parseFloat(end_pos);
-                        if((x<=min_x)||(x>=max_x)) return;
-                        drag_btn.attr("transform", "translate("+(x)+","+(container_height*0.9)+")");
-                        let change = false;
-                        container.selectAll("rect").attr("opacity", function (d) {
-                            let rect = d3.select(this);
-                            let rect_x = parseFloat(rect.attr("x"));
-                            let rect_width = parseFloat(rect.attr("width"));
-                            if((rect_x>=x)&&(rect_x+rect_width<=max_x)){
-                                // in control
-                                if(rect.attr("opacity")!=1)change = true;
-                                for(let id of d){
-                                    uncertain_items[id] = true;
-                                }
-                                if(change) that.update_widget_showing_items(d);
-                                return 1
-                            }
-                            if(rect.attr("opacity")!=0.5)change = true;
-                            for(let id of d){
-                                    uncertain_items[id] = false;
-                            }
-                            if(change) that.update_widget_showing_items(d);
-                            return 0.5
-                        })
-                    }));
-            end_drag.call(d3.drag()
-                    .on("drag", function () {
-                        let x = d3.event.x;
-                        let drag_btn = d3.select(this);
-                        let max_x = container_width*0.91;
-                        let min_x = -1;
-                        let end_pos = start_drag.attr("transform").slice(end_drag.attr("transform").indexOf("(")+1, end_drag.attr("transform").indexOf(","));
-                        min_x = parseFloat(end_pos);
-                        if((x<=min_x)||(x>=max_x)) return;
-                        drag_btn.attr("transform", "translate("+(x)+","+(container_height*0.9)+")");
-                        let change = false;
-                        container.selectAll("rect").attr("opacity", function (d) {
-                            let rect = d3.select(this);
-                            let rect_x = parseFloat(rect.attr("x"));
-                            let rect_width = parseFloat(rect.attr("width"));
-                            if((rect_x>=min_x)&&(rect_x+rect_width<=x)){
-                                // in control
-                                if(rect.attr("opacity")!=1)change = true;
-                                for(let id of d){
-                                    uncertain_items[id] = true;
-                                }
-                                if(change) that.update_widget_showing_items(d);
-                                return 1
-                            }
-                            if(rect.attr("opacity")!=0.5)change = true;
-                            for(let id of d){
-                                    uncertain_items[id] = false;
-                            }
-                            if(change) that.update_widget_showing_items(d);
-                            return 0.5
-                        })
-                    }))
-        }
-
-    };
-
-    that.label_scented_widget = function(points_id, container_id) {
-        // label interval
-        let min_label_id = -1;
-        let max_label_id = 9;
-        let label_cnt = max_label_id-min_label_id+1;
-        function interval_idx(label_id){
-            return label_id;
-        }
-
-
-        // label distribution
-        let label_distribution = [];
-        let max_len = 0;
-        for(let i=0; i<label_cnt; i++) label_distribution.push([]);
-        for(let node_id of points_id){
-            if(graph_data.nodes[node_id] === undefined){
-                console.log("no node:", node_id);
-                continue
-            }
-            let predict_label = graph_data.nodes[node_id].label[iter];
-            let distribution_box = label_distribution[interval_idx(predict_label)+1];
-            distribution_box.push(node_id);
-            if(distribution_box.length > max_len){
-                max_len = distribution_box.length;
-            }
-        }
-
-        // draw
-        label_rect = {};
-        let container = d3.select(container_id);
-        let container_width = widget_width;
-        let container_height = widget_height;
-        // container.selectAll("*").remove();
-        let x = d3.scaleBand().rangeRound([container_width*0.1, container_width*0.9], .05).paddingInner(0.05).domain(d3.range(label_cnt));
-        let y = d3.scaleLinear().range([container_height*0.85, container_height*0.05]).domain([0, 1]);
-        // draw rect
-
-        if(container.select("#current-label-rects").size() === 0){
-            container.append("g")
-                .attr("id", "current-label-rects");
-        }
-        let rects = container.select("#current-label-rects").selectAll("rect").data(label_distribution);
-        rects
-            .enter()
-            .append("rect")
-            .attr("class", "widget-bar-chart")
-            .style("fill", (d, i) => i===0?color_unlabel:color_label[i-1])
-            .attr("x", function(d, i) { return x(i); })
-            .attr("width", x.bandwidth())
-            .attr("y", function(d, i) { return y(d.length/max_len); })
-            .attr("height", function(d) {
-              return container_height*0.85 - y(d.length/max_len);
-          })
-            .attr("opacity", 1)
-            .on("mouseover", function (d, i) {
-                let rect = label_rect[i].rect;
-                let checkbox = label_rect[i].checkbox;
-                if(rect.attr("opacity") == 1){
-                    rect.attr("opacity", 0.5);
-                }
-            })
-            .on("mouseout", function (d, i) {
-                let rect = label_rect[i].rect;
-                let checkbox = label_rect[i].checkbox;
-                if(rect.attr("opacity") == 0.5){
-                    rect.attr("opacity", 1);
-                }
-            })
-            .on("click", function (d, i) {
-                let rect = label_rect[i].rect;
-                let checkbox = label_rect[i].checkbox;
-                if(rect.attr("opacity") != 0.2){
-                    // no select
-                    rect.attr("opacity", 0.2);
-                    checkbox.attr("xlink:href", "#check-no-select");
-                    for(let id of label_rect[i].data){
-                        label_items[id] = false;
-                    }
-                    that.update_widget_showing_items(label_rect[i].data);
-                }
-                else {
-                    rect.attr("opacity", 0.5);
-                    checkbox.attr("xlink:href", "#check-select");
-                    for(let id of label_rect[i].data){
-                        label_items[id] = true;
-                    }
-                    that.update_widget_showing_items(label_rect[i].data);
-                }
-            })
-            .each(function (d, i) {
-                let rect = d3.select(this);
-                label_rect[i] = {
-                    label:i,
-                    rect:rect,
-                    data:d
-                }
-            });
-        rects
-            .each(function (d, i) {
-                let rect = d3.select(this);
-                label_rect[i] = {
-                    label:i,
-                    rect:rect,
-                    data:d
-                }
-            });
-        rects.each(function (d) {
-           let rect = d3.select(this);
-           if(rect.attr("opacity")==0.2){
-               for(let id of d){
-                   label_items[id] = false;
-               }
-           }
-           else {
-               for(let id of d){
-                   label_items[id] = true;
-               }
-           }
-        });
-        rects.transition()
-            .duration(AnimationDuration)
-            .attr("y", function(d, i) { return y(d.length/max_len); })
-            .attr("height", function(d) {
-                  return container_height*0.85 - y(d.length/max_len);
-              });
-        // draw axis
-        if(container.select("#current-label-axis").size() === 0){
-            container.append("g")
-            .attr("id", "current-label-axis")
-            .append("line")
-            .attr("x1", container_width*0.1)
-            .attr("y1", container_height*0.85)
-            .attr("x2", container_width*0.9)
-            .attr("y2", container_height*0.85)
-            .attr("stroke", "black")
-            .attr("stroke-width", 1);
-        }
-        // draw checkbox
-        if(container.select("#current-label-checkbox").size() === 0){
-            let bandwidth = x.bandwidth()*0.7;
-            let offset = x.bandwidth()*0.15;
-            container.append("g")
-                .attr("id", "current-label-checkbox-hover")
-                .selectAll("rect")
-                .data(Object.values(label_rect))
-                .enter()
-                .append("rect")
-                .attr("x", (d, i) => x(label_rect[i].label)+offset)
-                .attr("y", container_height*0.85+offset)
-                .attr("width", bandwidth)
-                .attr("height", bandwidth)
-                .attr("opacity", 0)
-                .on("mouseover", function (d, i) {
-                    let rect = label_rect[i].rect;
-                    let checkbox = label_rect[i].checkbox;
-                    if(rect.attr("opacity") == 1){
-                        rect.attr("opacity", 0.5);
-                    }
-                })
-                .on("mouseout", function (d, i) {
-                    let rect = label_rect[i].rect;
-                    let checkbox = label_rect[i].checkbox;
-                    if(rect.attr("opacity") == 0.5){
-                        rect.attr("opacity", 1);
-                    }
-                })
-                .on("click", function (d, i) {
-                    let rect = label_rect[i].rect;
-                    let checkbox = label_rect[i].checkbox;
-                    if(rect.attr("opacity") != 0.2){
-                        // no select
-                        rect.attr("opacity", 0.2);
-                        checkbox.attr("xlink:href", "#check-no-select");
-                        for(let id of label_rect[i].data){
-                            label_items[id] = false;
-                        }
-                        that.update_widget_showing_items(label_rect[i].data);
-                    }
-                    else {
-                        rect.attr("opacity", 0.5);
-                        checkbox.attr("xlink:href", "#check-select");
-                        for(let id of label_rect[i].data){
-                            label_items[id] = true;
-                        }
-                        that.update_widget_showing_items(label_rect[i].data);
-                    }
-                });
-            container.append("g")
-                .attr("id", "current-label-checkbox")
-                .selectAll("use")
-                .data(Object.values(label_rect))
-                .enter()
-                .append("use")
-                .attr("xlink:href", "#check-select")
-                .attr("x", (d, i) => x(label_rect[i].label)+offset)
-                .attr("y", container_height*0.85+offset)
-                .attr("width", bandwidth)
-                .attr("height", bandwidth)
-                .each(function (d, i) {
-                    let checkbox = d3.select(this);
-                    label_rect[i].checkbox = checkbox;
-                })
-        }
-        else {
-            container.select("#current-label-checkbox-hover")
-                .selectAll("rect")
-                .data(Object.values(label_rect));
-            container.select("#current-label-checkbox")
-                .selectAll("use")
-                .data(Object.values(label_rect))
-                .each(function (d, i) {
-                    let checkbox = d3.select(this);
-                    label_rect[i].checkbox = checkbox;
-                });
-        }
-    };
-
-    that.in_degree_scented_widget = function(points_id, container_id) {
-        // in degree interval
-        let min_degree = 0;
-        let max_degree = 20;
-        let degree_cnt = max_degree-min_degree;
-        function interval_idx(in_degree){
-            return in_degree>=max_degree?max_degree-1:in_degree;
-        }
-
-
-        // degree distribution
-        let degree_distribution = [];
-        let max_len = 0;
-        for(let i=0; i<degree_cnt; i++) degree_distribution.push([]);
-        for(let node_id of points_id){
-            if(graph_data.nodes[node_id] === undefined){
-                console.log("no node:", node_id);
-                continue
-            }
-            let in_degree = graph_data.nodes[node_id].in_degree;
-            let distribution_box = degree_distribution[interval_idx(in_degree)];
-            distribution_box.push(node_id);
-            if(distribution_box.length > max_len){
-                max_len = distribution_box.length;
-            }
-        }
-
-        // draw
-        let container = d3.select(container_id);
-        let container_width = widget_width;
-        let container_height = widget_height;
-        // container.selectAll("*").remove();
-        let x = d3.scaleBand().rangeRound([container_width*0.1, container_width*0.9], .05).paddingInner(0.05).domain(d3.range(degree_cnt));
-        let y = d3.scaleLinear().range([container_height*0.85, container_height*0.05]).domain([0, 1]);
-        if(container.select("#current-indegree-rects").size() === 0){
-            container.append("g")
-                .attr("id", "current-indegree-rects");
-        }
-        let rects = container.select("#current-indegree-rects").selectAll("rect").data(degree_distribution);
-        rects
-            .enter()
-            .append("rect")
-            .attr("class", "widget-bar-chart")
-            .style("fill", "rgb(127, 127, 127)")
-          .attr("x", function(d, i) { return x(i); })
-          .attr("width", x.bandwidth())
-          .attr("y", function(d, i) { return y(d.length/max_len); })
-          .attr("height", function(d) {
-              return container_height*0.85 - y(d.length/max_len);
-          })
-            .attr("opacity", 1);
-        rects.transition()
-            .duration(AnimationDuration)
-            .attr("y", function(d, i) { return y(d.length/max_len); })
-            .attr("height", function(d) {
-                return container_height*0.85 - y(d.length/max_len);
-            });
-        if(container.select("#current-indegree-axis").size() === 0){
-            container.append("g")
-                .attr("id","current-indegree-axis")
-                .append("line")
-                .attr("x1", container_width*0.1)
-                .attr("y1", container_height*0.85)
-                .attr("x2", container_width*0.9)
-                .attr("y2", container_height*0.85)
-                .attr("stroke", "black")
-                .attr("stroke-width", 1);
-        }
-
-        //draw dragble
-        let draggable_item_path = "M0 -6 L6 6 L-6 6 Z";
-        if(container.select(".start-drag").size() === 0){
-            let start_drag = container.append("path")
-                .attr("class", "start-drag")
-                .attr("d", draggable_item_path)
-                .attr("fill", "rgb(127, 127, 127)")
-                .attr("transform", "translate("+(container_width*0.1)+","+(container_height*0.9)+")");
-            let end_drag = container.append("path")
-                .attr("class", "end-drag")
-                .attr("d", draggable_item_path)
-                .attr("fill", "rgb(127, 127, 127)")
-                .attr("transform", "translate("+(container_width*0.9)+","+(container_height*0.9)+")");
-
-            start_drag.call(d3.drag()
-                    .on("drag", function () {
-                        let x = d3.event.x;
-                        let drag_btn = d3.select(this);
-                        let min_x = container_width*0.09;
-                        let max_x = -1;
-                        let end_pos = end_drag.attr("transform").slice(end_drag.attr("transform").indexOf("(")+1, end_drag.attr("transform").indexOf(","));
-                        max_x = parseFloat(end_pos);
-                        if((x<=min_x)||(x>=max_x)) return;
-                        drag_btn.attr("transform", "translate("+(x)+","+(container_height*0.9)+")");
-                        let change = false;
-                        container.selectAll("rect").attr("opacity", function (d) {
-                            let rect = d3.select(this);
-                            let rect_x = parseFloat(rect.attr("x"));
-                            let rect_width = parseFloat(rect.attr("width"));
-                            if((rect_x>=x)&&(rect_x+rect_width<=max_x)){
-                                // in control
-                                if(rect.attr("opacity")!=1)change = true;
-                                for(let id of d){
-                                    outdegree_items[id] = true;
-                                }
-                                if(change) that.update_widget_showing_items(d);
-                                return 1
-                            }
-                            if(rect.attr("opacity")!=0.5)change = true;
-                            for(let id of d){
-                                    outdegree_items[id] = false;
-                            }
-                            if(change) that.update_widget_showing_items(d);
-                            return 0.5
-                        })
-                    }));
-            end_drag.call(d3.drag()
-                    .on("drag", function () {
-                        let x = d3.event.x;
-                        let drag_btn = d3.select(this);
-                        let max_x = container_width*0.91;
-                        let min_x = -1;
-                        let end_pos = start_drag.attr("transform").slice(end_drag.attr("transform").indexOf("(")+1, end_drag.attr("transform").indexOf(","));
-                        min_x = parseFloat(end_pos);
-                        if((x<=min_x)||(x>=max_x)) return;
-                        drag_btn.attr("transform", "translate("+(x)+","+(container_height*0.9)+")");
-                        let change = false;
-                        container.selectAll("rect").attr("opacity", function (d) {
-                            let rect = d3.select(this);
-                            let rect_x = parseFloat(rect.attr("x"));
-                            let rect_width = parseFloat(rect.attr("width"));
-                            if((rect_x>=min_x)&&(rect_x+rect_width<=x)){
-                                // in control
-                                if(rect.attr("opacity")!=1)change = true;
-                                for(let id of d){
-                                    indegree_items[id] = true;
-                                }
-                                if(change) that.update_widget_showing_items();
-                                return 1
-                            }
-                            if(rect.attr("opacity")!=0.5)change = true;
-                            for(let id of d){
-                                    indegree_items[id] = false;
-                            }
-                            if(change) that.update_widget_showing_items();
-                            return 0.5
-                        })
-                    }))
-        }
-
-    };
-
-    that.out_degree_scented_widget = function(points_id, container_id) {
-        // out degree interval
-        let min_degree = 0;
-        let max_degree = 20;
-        let degree_cnt = max_degree-min_degree;
-        function interval_idx(out_degree){
-            return out_degree>=max_degree?max_degree-1:out_degree;
-        }
-
-
-        // degree distribution
-        let degree_distribution = [];
-        let max_len = 0;
-        for(let i=0; i<degree_cnt; i++) degree_distribution.push([]);
-        for(let node_id of points_id){
-            if(graph_data.nodes[node_id] === undefined){
-                console.log("no node:", node_id);
-                continue
-            }
-            let out_degree = graph_data.nodes[node_id].out_degree;
-            let distribution_box = degree_distribution[interval_idx(out_degree)];
-            distribution_box.push(node_id);
-            if(distribution_box.length > max_len){
-                max_len = distribution_box.length;
-            }
-        }
-
-        // draw
-        let container = d3.select(container_id);
-        let container_width = widget_width;
-        let container_height = widget_height;
-        // container.selectAll("*").remove();
-        let x = d3.scaleBand().rangeRound([container_width*0.1, container_width*0.9], .05).paddingInner(0.05).domain(d3.range(degree_cnt));
-        let y = d3.scaleLinear().range([container_height*0.85, container_height*0.05]).domain([0, 1]);
-        if(container.select("#current-outdegree-rects").size() === 0){
-            container.append("g")
-                .attr("id", "current-outdegree-rects");
-        }
-        let rects = container.select("#current-outdegree-rects").selectAll("rect").data(degree_distribution);
-        rects
-            .enter()
-            .append("rect")
-            .attr("class", "widget-bar-chart")
-            .style("fill", "rgb(127, 127, 127)")
-            .attr("x", function(d, i) { return x(i); })
-              .attr("width", x.bandwidth())
-              .attr("y", function(d, i) { return y(d.length/max_len); })
-              .attr("height", function(d) {
-                  return container_height*0.85 - y(d.length/max_len);
-              })
-            .attr("opacity", 1);
-        rects.transition()
-            .duration(AnimationDuration)
-            .attr("y", function(d, i) { return y(d.length/max_len); })
-            .attr("height", function(d) {
-                return container_height*0.85 - y(d.length/max_len);
-            });
-
-        if(container.select("#current-outdegree-axis").size() === 0){
-            container.append("g")
-                .attr("id","current-outdegree-axis")
-                .append("line")
-                .attr("x1", container_width*0.1)
-                .attr("y1", container_height*0.85)
-                .attr("x2", container_width*0.9)
-                .attr("y2", container_height*0.85)
-                .attr("stroke", "black")
-                .attr("stroke-width", 1);
-        }
-        //draw dragble
-        let draggable_item_path = "M0 -6 L6 6 L-6 6 Z";
-        if(container.select(".start-drag").size() === 0){
-            let start_drag = container.append("path")
-                .attr("class", "start-drag")
-                .attr("d", draggable_item_path)
-                .attr("fill", "rgb(127, 127, 127)")
-                .attr("transform", "translate("+(container_width*0.1)+","+(container_height*0.9)+")");
-            let end_drag = container.append("path")
-                .attr("class", "end-drag")
-                .attr("d", draggable_item_path)
-                .attr("fill", "rgb(127, 127, 127)")
-                .attr("transform", "translate("+(container_width*0.9)+","+(container_height*0.9)+")");
-            start_drag.call(d3.drag()
-                    .on("drag", function () {
-                        let x = d3.event.x;
-                        let drag_btn = d3.select(this);
-                        let min_x = container_width*0.09;
-                        let max_x = -1;
-                        let end_pos = end_drag.attr("transform").slice(end_drag.attr("transform").indexOf("(")+1, end_drag.attr("transform").indexOf(","));
-                        max_x = parseFloat(end_pos);
-                        if((x<=min_x)||(x>=max_x)) return;
-                        drag_btn.attr("transform", "translate("+(x)+","+(container_height*0.9)+")");
-                        let change = false;
-                        container.selectAll("rect").attr("opacity", function (d) {
-                            let rect = d3.select(this);
-                            let rect_x = parseFloat(rect.attr("x"));
-                            let rect_width = parseFloat(rect.attr("width"));
-                            if((rect_x>=x)&&(rect_x+rect_width<=max_x)){
-                                // in control
-                                if(rect.attr("opacity")!=1)change = true;
-                                for(let id of d){
-                                    outdegree_items[id] = true;
-                                }
-                                if(change) that.update_widget_showing_items(d);
-                                return 1
-                            }
-                            if(rect.attr("opacity")!=0.5)change = true;
-                            for(let id of d){
-                                    outdegree_items[id] = false;
-                            }
-                            if(change) that.update_widget_showing_items(d);
-                            return 0.5
-                        })
-                    }));
-            end_drag.call(d3.drag()
-                    .on("drag", function () {
-                        let x = d3.event.x;
-                        let drag_btn = d3.select(this);
-                        let max_x = container_width*0.91;
-                        let min_x = -1;
-                        let end_pos = start_drag.attr("transform").slice(end_drag.attr("transform").indexOf("(")+1, end_drag.attr("transform").indexOf(","));
-                        min_x = parseFloat(end_pos);
-                        if((x<=min_x)||(x>=max_x)) return;
-                        drag_btn.attr("transform", "translate("+(x)+","+(container_height*0.9)+")");
-                        let change = false;
-                        container.selectAll("rect").attr("opacity", function (d) {
-                            let rect = d3.select(this);
-                            let rect_x = parseFloat(rect.attr("x"));
-                            let rect_width = parseFloat(rect.attr("width"));
-                            if((rect_x>=min_x)&&(rect_x+rect_width<=x)){
-                                // in control
-                                if(rect.attr("opacity")!=1)change = true;
-                                for(let id of d){
-                                    outdegree_items[id] = true;
-                                }
-                                if(change) that.update_widget_showing_items(d);
-                                return 1
-                            }
-                            if(rect.attr("opacity")!=0.5)change = true;
-                            if(change) that.update_widget_showing_items(d);
-                            for(let id of d){
-                                    outdegree_items[id] = false;
-                                }
-                            return 0.5
-                        })
-                    }));
-        }
-
     };
 
     that.lasso_start = function () {
@@ -1489,9 +790,11 @@ let GraphLayout = function (container) {
         if(state.fisheye !== "path"){
             that.init_widget_items();
             //draw current area info
-            that.draw_scented_widget(Object.keys(graph_data.nodes).map(d => parseInt(d)), "current");
+            // that.draw_scented_widget(Object.keys(graph_data.nodes).map(d => parseInt(d)), "current");
             data_manager.get_dist_view(Object.keys(graph_data.nodes).map(d => parseInt(d)));
         }
+
+        that.update_scented_widget();
 
         await that._update_view(rescale, state);
 
@@ -2494,5 +1797,108 @@ let GraphLayout = function (container) {
             }
         }
     };
+
+    // scented widget
+    that.update_scented_widget = function () {
+        // uncertainty
+        let certainty_distribution = [];
+        let min_certainty = 0;
+        let max_certainty = 1;
+        let certainty_cnt = 20;
+        for(let i=0; i<certainty_cnt; i++) certainty_distribution.push([]);
+        function uncertainty_interval_idx(certainty){
+            if(certainty === max_certainty){
+                return certainty_cnt-1;
+            }
+            return Math.floor(certainty/((max_certainty-min_certainty)/certainty_cnt));
+        }
+        for(let node_id of Object.keys(graph_data.nodes).map(d => parseInt(d))){
+            if(graph_data.nodes[node_id] === undefined){
+                console.log("no node:", node_id);
+                continue
+            }
+            let scores = graph_data.nodes[node_id].score[iter];
+            let sort_score = JSON.parse(JSON.stringify(scores));
+            sort_score.sort(function(a,b){return parseFloat(a)-parseFloat(b)});
+            let uncertainty = sort_score[sort_score.length-1]-sort_score[sort_score.length-2];
+            // change certainty to uncertainty
+            uncertainty = 1-uncertainty;
+            let distribution_box = certainty_distribution[uncertainty_interval_idx(uncertainty)];
+            distribution_box.push(node_id);
+        }
+
+        // label interval
+        let min_label_id = -1;
+        let max_label_id = 9;
+        let labels = [];
+        let label_cnt = max_label_id-min_label_id+1;
+        for(let i=0; i<label_cnt; i++){
+            labels.push(i)
+        }
+        function label_interval_idx(label_id){
+            return label_id;
+        }
+        let label_distribution = [];
+        for(let i=0; i<label_cnt; i++) label_distribution.push([]);
+        for(let node_id of Object.keys(graph_data.nodes).map(d => parseInt(d))){
+            if(graph_data.nodes[node_id] === undefined){
+                console.log("no node:", node_id);
+                continue
+            }
+            let predict_label = graph_data.nodes[node_id].label[iter];
+            let distribution_box = label_distribution[label_interval_idx(predict_label)+1];
+            distribution_box.push(node_id);
+        }
+
+        // indegree interval
+        let min_in_degree = 0;
+        let max_in_degree = 20;
+        let indegree_cnt = max_in_degree-min_in_degree;
+        function indegree_interval_idx(in_degree){
+            return in_degree>=max_in_degree?max_in_degree-1:in_degree;
+        }
+        let indegree_distribution = [];
+        for(let i=0; i<indegree_cnt; i++) indegree_distribution.push([]);
+        for(let node_id of Object.keys(graph_data.nodes).map(d => parseInt(d))){
+            if(graph_data.nodes[node_id] === undefined){
+                console.log("no node:", node_id);
+                continue
+            }
+            let in_degree = graph_data.nodes[node_id].in_degree;
+            let distribution_box = indegree_distribution[indegree_interval_idx(in_degree)];
+            distribution_box.push(node_id);
+        }
+
+        // indegree interval
+        let min_out_degree = 0;
+        let max_out_degree = 20;
+        let outdegree_cnt = max_out_degree-min_out_degree;
+        function outdegree_interval_idx(out_degree){
+            return out_degree>=max_out_degree?max_out_degree-1:out_degree;
+        }
+        let outdegree_distribution = [];
+        for(let i=0; i<outdegree_cnt; i++) outdegree_distribution.push([]);
+        for(let node_id of Object.keys(graph_data.nodes).map(d => parseInt(d))){
+            if(graph_data.nodes[node_id] === undefined){
+                console.log("no node:", node_id);
+                continue
+            }
+            let in_degree = graph_data.nodes[node_id].out_degree;
+            let distribution_box = outdegree_distribution[outdegree_interval_idx(in_degree)];
+            distribution_box.push(node_id);
+        }
+
+        let state = {
+            "uncertainty_widget_data": certainty_distribution,
+            "uncertainty_widget_range": [0, certainty_cnt-1],
+            "label_widget_data": label_distribution,
+            "label_widget_range": labels,
+            "indegree_widget_data": indegree_distribution,
+            "indegree_widget_range": [0, indegree_cnt-1],
+            "outdegree_widget_data": outdegree_distribution,
+            "outdegree_widget_range": [0, outdegree_cnt-1]
+        };
+        data_manager.get_filter_view(state);
+    }
 };
 
