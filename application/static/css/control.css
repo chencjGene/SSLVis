@@ -224,7 +224,7 @@ label.field.focused .psuedo_select ul {
   line-height: 20px;
   text-align: center;
   border-radius: 50%;
-  background: #880e4f;
+  background: rgb(127,127,127);
   padding: 10px 10px;
   margin-left: 28px;
   margin-top: 6px;

@@ -647,12 +647,12 @@ let GraphLayout = function (container) {
             let start_drag = container.append("path")
                 .attr("class", "start-drag")
                 .attr("d", draggable_item_path)
-                .attr("fill", "#880e4f")
+                .attr("fill", "rgb(127, 127, 127)")
                 .attr("transform", "translate("+(container_width*0.1)+","+(container_height*0.9)+")");
             let end_drag = container.append("path")
                 .attr("class", "end-drag")
                 .attr("d", draggable_item_path)
-                .attr("fill", "#880e4f")
+                .attr("fill", "rgb(127, 127, 127)")
                 .attr("transform", "translate("+(container_width*0.9)+","+(container_height*0.9)+")");
             start_drag.call(d3.drag()
                     .on("drag", function () {
@@ -1014,12 +1014,12 @@ let GraphLayout = function (container) {
             let start_drag = container.append("path")
                 .attr("class", "start-drag")
                 .attr("d", draggable_item_path)
-                .attr("fill", "#880e4f")
+                .attr("fill", "rgb(127, 127, 127)")
                 .attr("transform", "translate("+(container_width*0.1)+","+(container_height*0.9)+")");
             let end_drag = container.append("path")
                 .attr("class", "end-drag")
                 .attr("d", draggable_item_path)
-                .attr("fill", "#880e4f")
+                .attr("fill", "rgb(127, 127, 127)")
                 .attr("transform", "translate("+(container_width*0.9)+","+(container_height*0.9)+")");
 
             start_drag.call(d3.drag()
@@ -1165,12 +1165,12 @@ let GraphLayout = function (container) {
             let start_drag = container.append("path")
                 .attr("class", "start-drag")
                 .attr("d", draggable_item_path)
-                .attr("fill", "#880e4f")
+                .attr("fill", "rgb(127, 127, 127)")
                 .attr("transform", "translate("+(container_width*0.1)+","+(container_height*0.9)+")");
             let end_drag = container.append("path")
                 .attr("class", "end-drag")
                 .attr("d", draggable_item_path)
-                .attr("fill", "#880e4f")
+                .attr("fill", "rgb(127, 127, 127)")
                 .attr("transform", "translate("+(container_width*0.9)+","+(container_height*0.9)+")");
             start_drag.call(d3.drag()
                     .on("drag", function () {

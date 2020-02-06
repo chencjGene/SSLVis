@@ -78,7 +78,7 @@ let HistoryLayout = function (container) {
         let row_offset = 10;
         let svg_height = row_height*row_cnt+row_offset;
         svg.attr("height", svg_height);
-
+        svg.selectAll("*").remove();
         // draw row
         let node_offset_x = 20;
         let node_offset_y = 40;
@@ -94,7 +94,7 @@ let HistoryLayout = function (container) {
                 .attr("r", 5)
                 .attr("fill", node_color);
             //draw rect
-            let x = d3.scaleBand().rangeRound([width*0.2, width*0.6], .05).paddingInner(0.05).domain(d3.range(4));
+            let x = d3.scaleBand().rangeRound([width*0.2, width*0.6], .1).paddingInner(0.2).domain(d3.range(4));
             let y = d3.scaleLinear().range([row_height*(row_idx+0)+row_offset, row_height*(row_idx+0.6)+row_offset]).domain([0, 10]);
             let rect_data = [
                 row_data.add_edges_cnt,
@@ -148,13 +148,15 @@ let HistoryLayout = function (container) {
                     let end_idx = d[1];
                     let begin = [node_offset_x, row_height*(begin_idx+0.5)+row_offset];
                     let end = [node_offset_x, row_height*(end_idx+0.5)+row_offset];
-                    // let mid = [(begin[0]+end[0])/2, (begin[1]+end[1])/2];
-                    let mid1 = [node_offset_x+20, row_height*(begin_idx+0.5)+row_offset+20];
-                    let mid2 = [node_offset_x+20, row_height*(end_idx+0.5)+row_offset-20];
                     if(end_idx === begin_idx + 1){
                         return lineGenerator([begin, end]);
                     }
-                    return lineGenerator([begin,mid1, mid2, end]);
+                    // let mid = [(begin[0]+end[0])/2, (begin[1]+end[1])/2];
+                    let mid1 = [node_offset_x, row_height*(begin_idx+0.5)+row_offset+1];
+                    let mid11 = [node_offset_x+20, row_height*(begin_idx+0.5)+row_offset+20];
+                    let mid2 = [node_offset_x+20, row_height*(end_idx+0.5)+row_offset-20];
+                    let mid22 = [node_offset_x, row_height*(end_idx+0.5)+row_offset-1];
+                    return lineGenerator([begin,mid1, mid11, mid2,mid22, end]);
                 })
     };
 
