@@ -364,4 +364,4 @@ class SSLModel(object):
 
     def retrain(self):
         self._training()
-        return {"test": 1}
+        return self.data.return_state()

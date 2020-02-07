@@ -155,7 +155,7 @@ DataLoaderClass.prototype.retrain_handler = function(callback) {
     let that = this;
 
     function _retrain_handler(data){
-
+        that.state.history_data = data;
         if (callback) callback();
     }
     return _retrain_handler;

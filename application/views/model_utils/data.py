@@ -291,9 +291,13 @@ class GraphData(Data):
             history.append({
                 "dist": dist,
                 "margin": margin,
-                "children": children_idx
+                "children": children_idx,
+                "id": i
             })
-        return history
+        return {
+            "history": history,
+            "current_id": int(self.current_state.name)
+        }
 
     def change_state(self, id):
         state = self.state_data[id]["state"]

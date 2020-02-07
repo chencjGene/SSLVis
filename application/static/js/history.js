@@ -46,7 +46,7 @@ let HistoryLayout = function (container) {
         that._update_view();
     };
 
-    that._update_data = function(new_history_data) {
+    that._update_data = function(data) {
         // // DEBUG
         // new_history_data = [
         //     {
@@ -75,7 +75,8 @@ let HistoryLayout = function (container) {
         //     }
         // ]
 
-        that.history_data = new_history_data.reverse();
+        that.history_data = data.history.reverse();
+        that.focus_id = data.current_id;
         that.line_data = [];
         let cnt = that.history_data.length
         for(let row_idx = 0; row_idx < cnt; row_idx++){
@@ -123,7 +124,13 @@ let HistoryLayout = function (container) {
             // .attr("cy", cell_height * 0.5)
             .attr("cy", cell_height)
             .attr("r", 10)
-            .style("fill", "rgb(222, 222, 222)");
+            .style("fill", d => d.id === that.focus_id ? 
+                "rgb(127, 127, 127)" : "rgb(222, 222, 222)")
+            .on("click", function(d){
+                that.focus_id = d.id;
+                data_manager.set_history(that.focus_id);
+                that._update();
+            })
         that.cells.append("text")
             .attr("class", "action-id")
             .attr("text-anchor", "middle")
@@ -179,6 +186,9 @@ let HistoryLayout = function (container) {
         that.cells = cell_group.selectAll("g.cell")
             .data(that.history_data, d => d.id)
             .attr("transform", (_,i) => "translate(" + 0 + ", " + i * cell_height + ")");
+        that.cells.select("circle")
+            .style("fill", d => d.id === that.focus_id ?
+                "rgb(127, 127, 127)" : "rgb(222, 222, 222)");
         
     };
 

@@ -247,7 +247,7 @@ DataLoaderClass = function (dataset) {
     that.retrain = function(){ 
         let params = "?dataset=" + that.dataset;
         that.retrain_node = new request_node(that.retrain_url + params,
-            that.retrain_handler(), "json", "POST");
+            that.retrain_handler(that.update_history_view), "json", "POST");
         that.retrain_node.notify();
     };
 

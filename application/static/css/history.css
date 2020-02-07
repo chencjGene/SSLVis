@@ -32,3 +32,11 @@
     padding-left: 15%;
     padding-right: 4%;
 }
+
+.action-circle {
+    cursor: pointer;
+}
+
+.action-id {
+    pointer-events: none;
+}
