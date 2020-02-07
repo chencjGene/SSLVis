@@ -42,15 +42,15 @@ DataLoaderClass.prototype.get_graph_handler = function (callback) {
     return _graph_handler;
 };
 
-DataLoaderClass.prototype.update_graph_handler = function (callback) {
+DataLoaderClass.prototype.zoom_graph_handler = function (callback) {
     let that = this;
 
     function _update_graph_handler(data) {
-        console.log(that.update_graph_url);
+        console.log(that.zoom_graph_url);
         console.log("update_graph_handler");
         console.log(data);
-        that.state.graph_data = data;
-        if (callback) callback(false);
+        that.state.nodes = data.nodes;
+        if (callback) callback();
     }
 
     return _update_graph_handler;

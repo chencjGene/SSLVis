@@ -15,7 +15,7 @@ DataLoaderClass = function (dataset) {
     that.ent_url = "/graph/GetEnt";
     that.local_update_k_url = "/graph/LocalUpdateK";
     that.set_influence_filter_url = "/graph/SetInfluenceFilter";
-    that.update_graph_url = "/graph/update";
+    that.zoom_graph_url = "/graph/update";
     that.fisheye_graph_url = "/graph/fisheye";
     that.update_delete_and_change_label_url = "/graph/update_delete_and_change_label";
     that.flows_urls = "/dist/GetFlows";
@@ -102,15 +102,6 @@ DataLoaderClass = function (dataset) {
 
     that.init_notify = function () {
         that.manifest_node.notify();
-    };
-
-    that.update_graph_notify = function (area, target_level) {
-
-        that.update_graph_node.set_data({
-            'area': area,
-            'level': target_level
-        });
-        that.update_graph_node.notify();
     };
 
     that.update_delete_and_change_label_notify = function (delete_node_list, change_list, delete_edge) {
@@ -279,7 +270,7 @@ DataLoaderClass = function (dataset) {
         });
     };
 
-    that.init_scented_widget = function (nodes) {
+    that.set_filter_data = function (nodes) {
         let iter = Object.values(nodes)[0].label.length-1;
         // uncertainty
         let certainty_distribution = [];
@@ -369,17 +360,17 @@ DataLoaderClass = function (dataset) {
             distribution_box.push(node_id);
         }
 
-        let state = {
-            "uncertainty_widget_data": certainty_distribution,
-            "uncertainty_widget_range": [0, certainty_cnt-1],
-            "label_widget_data": label_distribution,
-            "label_widget_range": labels,
-            "indegree_widget_data": indegree_distribution,
-            "indegree_widget_range": [0, indegree_cnt-1],
-            "outdegree_widget_data": outdegree_distribution,
-            "outdegree_widget_range": [0, outdegree_cnt-1]
-        };
-        that.get_filter_view(state);
+        that.state.uncertainty_widget_data = certainty_distribution;
+        that.state.label_widget_data = label_distribution;
+        that.state.indegree_widget_data = indegree_distribution;
+        that.state.outdegree_widget_data = outdegree_distribution;
+    };
+
+    that.set_filter_range = function (uncertainty_range, label_range, indegree_range, outdegree_range){
+        that.state.uncertainty_widget_range = uncertainty_range;
+        that.state.label_widget_range = label_range;
+        that.state.indegree_widget_range = indegree_range;
+        that.state.outdegree_widget_range = outdegree_range;
     };
 
     //graph view:
@@ -393,7 +384,17 @@ DataLoaderClass = function (dataset) {
         for(let node_id in  Object.keys(that.state.nodes).map(d => parseInt(d))){
             that.state.visible_items[node_id] = true;
         }
-        that.init_scented_widget(that.state.nodes);
+
+        // update filter
+        that.set_filter_data(that.state.nodes);
+        let label_range = [];
+        for(let i=0; i<11; i++){
+            label_range.push(i);
+        }
+        that.set_filter_range([0, 19], label_range, [0, 19], [0,19]);
+        that.update_filter_view();
+
+        //update view
         that.update_graph_view();
     };
 
@@ -415,8 +416,31 @@ DataLoaderClass = function (dataset) {
         })
     };
 
+    that.zoom_graph_view = function() {
+        that.set_filter_data(that.state.nodes);
+        let ranges = that.filter_view.get_ranges();
+        that.set_filter_range(ranges[0], ranges[1], ranges[2], ranges[3]);
+        that.update_filter_view();
+        that.state.visible_items = that.filter_view.get_visible_items();
+        that.update_graph_view();
+    };
+
+    that.zoom_graph_view_notify = function (area, target_level) {
+        let params = "?dataset=" + that.dataset;
+        let update_graph_node = new request_node(that.zoom_graph_url + params,
+            that.zoom_graph_handler(that.zoom_graph_view), "json", "POST");
+        that.state.area = area;
+        that.state.rescale = false;
+        update_graph_node.set_data({
+            'area': area,
+            'level': target_level
+        });
+        update_graph_node.notify();
+    };
+
     that.change_visible_items = function(visible_items) {
         that.state.visible_items = visible_items;
+        that.state.rescale = false;
         that.update_graph_view();
     };
 

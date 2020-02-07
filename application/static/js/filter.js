@@ -415,7 +415,7 @@ let FilterLayout = function (container) {
             .attr("height", function(d) {
                 return container_height*0.85 - y(d.length/max_len);
             })
-            .attr("opacity", (d, i) => (i>=range[0]&&i<=range[1])?1:0.2);
+            .attr("opacity", (d, i) => (i>=range[0]&&i<=range[1])?1:0.5);
         //update
         rects.transition()
             .duration(AnimationDuration)
@@ -425,7 +425,7 @@ let FilterLayout = function (container) {
             .attr("height", function(d) {
                 return container_height*0.85 - y(d.length/max_len);
             })
-            .attr("opacity", (d, i) => (i>=range[0]&&i<=range[1])?1:0.2);
+            .attr("opacity", (d, i) => (i>=range[0]&&i<=range[1])?1:0.5);
         //remove
         rects.exit()
             .transition()
@@ -472,8 +472,8 @@ let FilterLayout = function (container) {
                         max_x = parseFloat(end_pos);
                         if((x<=min_x)||(x>=max_x)) return;
                         drag_btn.attr("transform", "translate("+(x)+","+(container_height*0.9)+")");
-                        let change = false;
-                        container.selectAll("rect").attr("opacity", function (d) {
+                        container.selectAll("rect").attr("opacity", function (d, i) {
+                            let change = false;
                             let rect = d3.select(this);
                             let rect_x = parseFloat(rect.attr("x"));
                             let rect_width = parseFloat(rect.attr("width"));
@@ -483,14 +483,20 @@ let FilterLayout = function (container) {
                                 for(let id of d){
                                     visible_items[id] = true;
                                 }
-                                if(change) that.update_widget_showing_items(d);
+                                if(change) {
+                                    that.update_widget_showing_items(d);
+                                    range[0] = i;
+                                }
                                 return 1
                             }
                             if(rect.attr("opacity")!=0.5)change = true;
                             for(let id of d){
                                     visible_items[id] = false;
                             }
-                            if(change) that.update_widget_showing_items(d);
+                            if(change) {
+                                that.update_widget_showing_items(d);
+                                range[0] = i+1;
+                            }
                             return 0.5
                         })
                     }));
@@ -504,8 +510,9 @@ let FilterLayout = function (container) {
                         min_x = parseFloat(end_pos);
                         if((x<=min_x)||(x>=max_x)) return;
                         drag_btn.attr("transform", "translate("+(x)+","+(container_height*0.9)+")");
-                        let change = false;
-                        container.selectAll("rect").attr("opacity", function (d) {
+
+                        container.selectAll("rect").attr("opacity", function (d, i) {
+                            let change = false;
                             let rect = d3.select(this);
                             let rect_x = parseFloat(rect.attr("x"));
                             let rect_width = parseFloat(rect.attr("width"));
@@ -515,14 +522,20 @@ let FilterLayout = function (container) {
                                 for(let id of d){
                                     visible_items[id] = true;
                                 }
-                                if(change) that.update_widget_showing_items(d);
+                                if(change) {
+                                    that.update_widget_showing_items(d);
+                                    range[1] = i;
+                                }
                                 return 1
                             }
                             if(rect.attr("opacity")!=0.5)change = true;
                             for(let id of d){
                                     visible_items[id] = false;
                             }
-                            if(change) that.update_widget_showing_items(d);
+                            if(change) {
+                                that.update_widget_showing_items(d);
+                                range[1] = i-1;
+                            }
                             return 0.5
                         })
                     }))
@@ -538,6 +551,14 @@ let FilterLayout = function (container) {
                 .attr("transform", "translate("+(container_width*0.1+(range[1]+1)*drag_interval)+","+(container_height*0.9)+")");
 
         }
+    };
+
+    that.get_visible_items = function() {
+        return control_items;
+    };
+
+    that.get_ranges = function() {
+        return [uncertainty_widget_range, label_widget_range, indegree_widget_range, outdegree_widget_range]
     };
 
     that.init = function () {

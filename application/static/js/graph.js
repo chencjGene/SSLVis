@@ -7,14 +7,15 @@ let GraphLayout = function (container) {
     that.container = container;
 
     // data loader
-    let data_manager = null;
+    that.data_manager = null;
 
     // container const
     let bbox = that.container.node().getBoundingClientRect();
-    let width = bbox.width;
-    let height = bbox.height;
-    let layout_width = width - 20;
-    let layout_height = height - 20;
+    that.width = bbox.width;
+    that.height = bbox.height;
+    let layout_width = that.width - 20;
+    let layout_height = that.height - 20;
+    let zoom_scale = 1;
 
     // other consts
     let color_unlabel = UnlabeledColor;
@@ -24,8 +25,6 @@ let GraphLayout = function (container) {
     let pathGenerator = d3.line().curve(d3.curveCardinal.tension(0.5));
 
     // draw containter
-    let svg = null;
-    let main_group = null;
     let path_group = null;
     let nodes_group = null;
     let golds_group = null;
@@ -47,31 +46,44 @@ let GraphLayout = function (container) {
     let iter = -1;
     let visible_items = {};
 
-    // from area to main_group
-    let center_scale_x = null;
-    let center_scale_y = null;
-    let center_scale_x_reverse = null;
-    let center_scale_y_reverse = null;
+    // from area to main group
+    that.center_scale_x = null;
+    that.center_scale_y = null;
+    that.center_scale_x_reverse = null;
+    that.center_scale_y_reverse = null;
+
+    that.svg = null;
+    that.main_group = null;
+
+    // plugin
+    let transform = null;
 
     that._init = function () {
         // container init
-        svg = container.selectAll('#graph-view-svg')
-            .attr("width", width)
-            .attr("height", height);
-        main_group = svg.append('g').attr('id', 'main_group');
-        path_group = main_group.append("g").attr("id", "graph-path-g");
-        nodes_group = main_group.append("g").attr("id", "graph-tsne-point-g");
-        golds_group = main_group.append("g").attr("id", "graph-gold-g");
-        glyph_group = main_group.append("g").attr("id", "graph-glyph-g");
-        width = $('#graph-view-svg').width();
-        height = $('#graph-view-svg').height();
+        that.svg = container.selectAll('#graph-view-svg')
+            .attr("width", that.width)
+            .attr("height", that.height);
+        that.main_group = that.svg.append('g').attr('id', 'main_group');
+        path_group = that.main_group.append("g").attr("id", "graph-path-g");
+        nodes_group = that.main_group.append("g").attr("id", "graph-tsne-point-g");
+        golds_group = that.main_group.append("g").attr("id", "graph-gold-g");
+        glyph_group = that.main_group.append("g").attr("id", "graph-glyph-g");
+        that.width = $('#graph-view-svg').width();
+        that.height = $('#graph-view-svg').height();
 
         // add marker to svg
         that._add_marker();
+
+        //add plugin
+        transform = new GraphTransform(that);
+
+
+        // init zoom
+        transform.init_zoom();
     };
 
     that.set_data_manager = function(new_data_manager) {
-        data_manager = new_data_manager;
+        that.data_manager = new_data_manager;
     };
 
     that.component_update = async function(state) {
@@ -110,7 +122,7 @@ let GraphLayout = function (container) {
     that._update_view = function() {
         return new Promise(async function (resolve, reject) {
             // rescale
-            if(rescale) that._center_tsne();
+            if(rescale) that._center_tsne(nodes);
             //
             let nodes_ary = Object.values(nodes);
             let golds_ary = nodes_ary.filter(d => d.label[0] > -1);
@@ -134,13 +146,18 @@ let GraphLayout = function (container) {
             await that._update();
             console.log("create");
             await that._create();
+
+            nodes_in_group = nodes_group.selectAll("circle");
+            golds_in_group = golds_group.selectAll("path");
+            glyph_in_group = glyph_group.selectAll(".pie-chart");
+            path_in_group = path_group.selectAll("path");
             resolve();
         })
     };
 
     that._add_marker = function () {
         if ($("#markers marker").length !== 0) return;
-        svg.select("#markers").append("marker")
+        that.svg.select("#markers").append("marker")
                 .attr("id", "arrow-gray")
                 .attr("refX", 2)
                 .attr("refY", 2)
@@ -154,36 +171,6 @@ let GraphLayout = function (container) {
                 .attr("fill", "transparent")
                 .attr("opacity", 1)
                 .attr("stroke-width", 1);
-    };
-
-    that._center_tsne = function() {
-        let nodes_ary = Object.values(nodes);
-        let xRange = d3.extent(nodes_ary, function (d) {
-                return d.x
-            });
-        var yRange = d3.extent(nodes_ary, function (d) {
-                return d.y
-            });
-        if (xRange[0] == xRange[1]) {
-                xRange[0] -= 10;
-                xRange[1] += 10;
-            }
-        if (yRange[0] == yRange[1]) {
-                yRange[0] -= 10;
-                yRange[1] += 10;
-            }
-        let width = $('#graph-view-svg').width();
-        let height = $('#graph-view-svg').height();
-
-        let scale = Math.min(width / (xRange[1] - xRange[0]),
-                height / (yRange[1] - yRange[0]));
-        scale *= 0.85;
-        let x_width = (xRange[1] - xRange[0]) * scale;
-        let y_height = (yRange[1] - yRange[0]) * scale;
-        center_scale_x = d3.scaleLinear().domain(xRange).range([(width - x_width) / 2, (width + x_width) / 2]);
-        center_scale_y = d3.scaleLinear().domain(yRange).range([(height - y_height) / 2, (height + y_height) / 2]);
-        center_scale_x_reverse = d3.scaleLinear().domain([(width - x_width) / 2, (width + x_width) / 2]).range(xRange);
-        center_scale_y_reverse = d3.scaleLinear().domain([(height - y_height) / 2, (height + y_height) / 2]).range(yRange);
     };
 
     that._remove = function () {
@@ -235,8 +222,8 @@ let GraphLayout = function (container) {
                 })
                 .attr("opacity", d => that.opacity(d.id))
                 .attr("r", d => that.r(d.id))
-                .attr("cx", d => center_scale_x(d.x))
-                .attr("cy", d => center_scale_y(d.y))
+                .attr("cx", d => that.center_scale_x(d.x))
+                .attr("cy", d => that.center_scale_y(d.y))
                 .on("end", resolve);
 
             golds_in_group
@@ -246,15 +233,15 @@ let GraphLayout = function (container) {
                     return color_label[d.label[iter]];
                 })
                 .attr("opacity", d => that.opacity(d.id))
-                .attr("d", d => star_path(10 * that.zoom_scale, 4 * that.zoom_scale, center_scale_x(d.x), center_scale_y(d.y)))
+                .attr("d", d => star_path(10 * zoom_scale, 4 * zoom_scale, that.center_scale_x(d.x), that.center_scale_y(d.y)))
                 .on("end", resolve);
 
             let pie = d3.pie().value(d => d);
-            let arc = d3.arc().outerRadius(11 * that.zoom_scale).innerRadius(7 * that.zoom_scale);
+            let arc = d3.arc().outerRadius(11 * zoom_scale).innerRadius(7 * zoom_scale);
             glyph_in_group
                 .transition()
                 .duration(AnimationDuration)
-                .attr("transform", d =>"translate("+center_scale_x(d.x)+","+center_scale_y(d.y)+")")
+                .attr("transform", d =>"translate("+that.center_scale_x(d.x)+","+that.center_scale_y(d.y)+")")
                 .attr("opacity", d => that.opacity(d.id))
                 .on("end", resolve);
             glyph_in_group.selectAll("path")
@@ -264,15 +251,15 @@ let GraphLayout = function (container) {
                 .attr("fill", (d,i) => color_label[i]);
 
             path_in_group
-                .attr("stroke-width", 2.0 * that.zoom_scale)
+                .attr("stroke-width", 2.0 * zoom_scale)
                 .attr("stroke", edge_color)
                 .attr("marker-mid", d => "url(#arrow-gray)")
                 .attr("fill", "none")
                 .transition()
                 .duration(AnimationDuration)
                 .attr("d", function (d) {
-                    let begin = [center_scale_x(d[0].datum().x), center_scale_y(d[0].datum().y)];
-                    let end = [center_scale_x(d[1].datum().x), center_scale_y(d[1].datum().y)];
+                    let begin = [that.center_scale_x(d[0].datum().x), that.center_scale_y(d[0].datum().y)];
+                    let end = [that.center_scale_x(d[1].datum().x), that.center_scale_y(d[1].datum().y)];
                     let mid = curve_mid(begin, end);
                     return pathGenerator([begin,mid, end]);
                 })
@@ -294,8 +281,8 @@ let GraphLayout = function (container) {
                 .append("circle")
                 .attr("id", d => "id-" + d.id)
                 .attr("class", "node-dot")
-                .attr("cx", d => center_scale_x(d.x))
-                .attr("cy", d => center_scale_y(d.y))
+                .attr("cx", d => that.center_scale_x(d.x))
+                .attr("cy", d => that.center_scale_y(d.y))
                 .attr("r", d => that.r(d.id))
                 .attr("opacity", 0)
                 .attr("fill", function (d) {
@@ -340,12 +327,12 @@ let GraphLayout = function (container) {
             golds_in_group.enter()
                 .append("path")
                 .attr("id", d => "gold-" + d.id)
-                .attr("d", d => star_path(10 * that.zoom_scale, 4 * that.zoom_scale, center_scale_x(d.x), center_scale_y(d.y)))
+                .attr("d", d => star_path(10 * zoom_scale, 4 * zoom_scale, that.center_scale_x(d.x), that.center_scale_y(d.y)))
                 .attr("fill", function (d) {
                     return color_label[d.label[iter]];
                 })
                 .attr("stroke", "white")
-                .attr("stroke-width", 1.5*that.zoom_scale)
+                .attr("stroke-width", 1.5*zoom_scale)
                 .attr("opacity", 0)
                 .on("mouseover", function (d) {
                     // check if hided
@@ -357,7 +344,7 @@ let GraphLayout = function (container) {
                     if(visible_items[d.id] === false) return;
                     let eid = d.id;
                     let nodes = d3.select(this);
-                    data_manager.update_image_view(nodes);
+                    that.data_manager.update_image_view(nodes);
                 })
                 .transition()
                 .duration(AnimationDuration)
@@ -365,7 +352,7 @@ let GraphLayout = function (container) {
                 .on("end", resolve);
 
             let pie = d3.pie().value(d => d);
-            let arc = d3.arc().outerRadius(11 * that.zoom_scale).innerRadius(7 * that.zoom_scale);
+            let arc = d3.arc().outerRadius(11 * zoom_scale).innerRadius(7 * zoom_scale);
             glyph_in_group.enter()
                 .append("g")
                 .attr("class", "pie-chart")
@@ -373,7 +360,7 @@ let GraphLayout = function (container) {
                     let node = d3.select(this);
                     d.piechart = node;
                 })
-                .attr("transform", d =>"translate("+center_scale_x(d.x)+","+center_scale_y(d.y)+")")
+                .attr("transform", d =>"translate("+that.center_scale_x(d.x)+","+that.center_scale_y(d.y)+")")
                 .attr("opacity", 0)
                 .selectAll("path")
                 .data(d => pie(d.score[iter]))
@@ -390,14 +377,14 @@ let GraphLayout = function (container) {
 
             path_in_group.enter()
                 .append("path")
-                .attr("stroke-width", 2.0 * that.zoom_scale)
+                .attr("stroke-width", 2.0 * zoom_scale)
                 .attr("stroke", edge_color)
                 .attr("opacity", 0)
                 .attr("marker-mid", d => "url(#arrow-gray)")
                 .attr("fill", "none")
                 .attr("d", function (d) {
-                    let begin = [center_scale_x(d[0].datum().x), center_scale_y(d[0].datum().y)];
-                    let end = [center_scale_x(d[1].datum().x), center_scale_y(d[1].datum().y)];
+                    let begin = [that.center_scale_x(d[0].datum().x), that.center_scale_y(d[0].datum().y)];
+                    let end = [that.center_scale_x(d[1].datum().x), that.center_scale_y(d[1].datum().y)];
                     let mid = curve_mid(begin, end);
                     return pathGenerator([begin,mid, end]);
                 })
@@ -434,15 +421,15 @@ let GraphLayout = function (container) {
     that.r = function(id) {
         if(is_show_path){
             if(path_nodes[id] !== undefined){
-                return 5*that.zoom_scale;
+                return 5*zoom_scale;
             }
-            return 3.5*that.zoom_scale
+            return 3.5*zoom_scale
         }
         else {
             if( highlights.indexOf(id) > -1){
-                return 5*that.zoom_scale;
+                return 5*zoom_scale;
             }
-            return 3.5*that.zoom_scale
+            return 3.5*zoom_scale
         }
     };
 
@@ -471,6 +458,58 @@ let GraphLayout = function (container) {
         else{
             return 0;
         }
+    };
+
+    that._center_tsne = function(nodes) {
+        let nodes_ary = Object.values(nodes);
+        let xRange = d3.extent(nodes_ary, function (d) {
+                    return d.x
+                });
+        var yRange = d3.extent(nodes_ary, function (d) {
+                    return d.y
+                });
+        if (xRange[0] == xRange[1]) {
+                    xRange[0] -= 10;
+                    xRange[1] += 10;
+                }
+        if (yRange[0] == yRange[1]) {
+                    yRange[0] -= 10;
+                    yRange[1] += 10;
+                }
+        let width = $('#graph-view-svg').width();
+        let height = $('#graph-view-svg').height();
+
+        let scale = Math.min(width / (xRange[1] - xRange[0]),
+                    height / (yRange[1] - yRange[0]));
+        scale *= 0.85;
+        let x_width = (xRange[1] - xRange[0]) * scale;
+        let y_height = (yRange[1] - yRange[0]) * scale;
+        that.center_scale_x = d3.scaleLinear().domain(xRange).range([(width - x_width) / 2, (width + x_width) / 2]);
+        that.center_scale_y = d3.scaleLinear().domain(yRange).range([(height - y_height) / 2, (height + y_height) / 2]);
+        that.center_scale_x_reverse = d3.scaleLinear().domain([(width - x_width) / 2, (width + x_width) / 2]).range(xRange);
+        that.center_scale_y_reverse = d3.scaleLinear().domain([(height - y_height) / 2, (height + y_height) / 2]).range(yRange);
+};
+
+    that.update_zoom_scale = function(new_zoom_scale) {
+        zoom_scale = new_zoom_scale;
+    };
+
+    that.maintain_size = function (transform_event) {
+        zoom_scale = 1.0 / transform_event.k;
+        nodes_in_group.attr("r", d => that.r(d.id));
+        golds_in_group.attr("d", d => star_path(10 * zoom_scale, 4 * zoom_scale, that.center_scale_x(d.x), that.center_scale_y(d.y)))
+            .attr("stroke-width", 1.5*zoom_scale);
+        path_in_group.attr("d", function (d) {
+            let begin = [that.center_scale_x(d[0].datum().x), that.center_scale_y(d[0].datum().y)];
+            let end = [that.center_scale_x(d[1].datum().x), that.center_scale_y(d[1].datum().y)];
+            let mid = curve_mid(begin, end);
+            return pathGenerator([begin,mid, end]);
+        });
+        // edges_group.selectAll("line").style('stroke-width', zoom_scale);
+        // that.main_group.select("#group-propagation").selectAll("path").style('stroke-width', 2.0 * zoom_scale);
+        // main_group.select("#single-propagate").selectAll("polyline").style('stroke-width', 2.0 * zoom_scale);
+        let arc = d3.arc().outerRadius(11 * zoom_scale).innerRadius(7 * zoom_scale);
+        glyph_in_group.selectAll("path").attr("d", arc);
     };
 
     that.init = function () {
