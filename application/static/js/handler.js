@@ -28,16 +28,15 @@ DataLoaderClass.prototype.get_graph_handler = function (callback) {
 
     function _graph_handler(data) {
         console.log(that.manifest_url);
-        console.log("graph_handler");
-        console.log(data);
-        that.state.graph_data = data;
+        that.state.nodes = data.nodes;
+        that.state.area = data.area;
         let selected_idxs = [];
         // TODO: move this part to callback
-        for(let i in that.state.graph_data.nodes){
+        for(let i in that.state.nodes){
             selected_idxs.push(i);
         }
         that.get_dist_view(selected_idxs);
-        if (callback) callback(true);
+        if (callback) callback();
     }
 
     return _graph_handler;

@@ -210,7 +210,18 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, p
         with open(current_pos_path, "wb+") as f:
             pickle.dump(save, f)
 
-
+    # area
+    x_min = float(np.min(samples_x_tsne[:,0]))
+    x_max = float(np.max(samples_x_tsne[:,0]))
+    y_min = float(np.min(samples_x_tsne[:, 1]))
+    y_max = float(np.max(samples_x_tsne[:, 1]))
+    area = {
+        "x":x_min,
+        "y":y_min,
+        "width":x_max-x_min,
+        "height":y_max-y_min
+    }
+    # data
     samples_x_tsne = samples_x_tsne.tolist()
     samples_y = samples_y.tolist()
     samples_truth = samples_truth.tolist()
@@ -249,7 +260,7 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, p
 
     graph = {
         "nodes": samples_nodes,
-        # "edges": edges
+        "area": area
     }
     return graph
 

@@ -377,6 +377,7 @@ let FilterLayout = function (container) {
         if(remove_nodes.length >0 || add_nodes.length>0){
             console.log(remove_nodes, add_nodes);
             // TODO
+            data_manager.change_visible_items(control_items);
         }
 
     };

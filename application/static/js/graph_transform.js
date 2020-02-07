@@ -1,0 +1,1 @@
+GraphLayout.prototype.zoom_scale = 1;
