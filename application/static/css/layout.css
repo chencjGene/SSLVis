@@ -47,6 +47,9 @@ body {
     border-left: 1px solid #c1c1c1;
     display: flex;
     flex-direction: column;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 13px;
+    font-weight: 700;
 }
 
 .self-row{

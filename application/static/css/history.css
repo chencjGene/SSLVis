@@ -5,3 +5,11 @@
 #history-row {
     overflow-y: auto;
 }
+
+#history-view{
+    overflow-y: auto;
+}
+
+#content-title {
+    display: flex;
+}

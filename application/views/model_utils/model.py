@@ -98,7 +98,7 @@ class SSLModel(object):
         logger.info("model accuracy: {}, iter: {}".format(acc, iter))
         logger.info("model entropy: {}".format(entropy(pred_dist.T + 1e-20).mean()))
         
-        self.adaptive_evaluation()
+        # self.adaptive_evaluation()
 
         # record_state
         self.data.record_state(self.pred_dist)
