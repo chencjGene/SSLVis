@@ -17,8 +17,8 @@ def app_get_history():
 
 @history.route("/history/SetHistory", methods=["POST", "GET"])
 def app_set_history():
-    # TODO: set according to frontend
-    id = 1
+    data = json.loads(request.data)
+    id = data["id"]
     return set_history(id)
 
 @history.route("/history/Retrain", methods=["POST", "GET"])

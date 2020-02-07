@@ -251,6 +251,15 @@ DataLoaderClass = function (dataset) {
         that.retrain_node.notify();
     };
 
+    that.set_history = function(id){
+        let params = "?dataset=" + that.dataset;
+        that.set_history_node = new request_node(that.set_history_url + params,
+            function(){}, "json", "POST");
+        let data = {"id": id};
+        that.set_history_node.set_data(data);
+        that.set_history_node.notify();
+    }
+
     that.change_dist_mode = function(){
         that.state.dist_mode = !that.state.dist_mode;
         that.update_dist_view();

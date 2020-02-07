@@ -267,7 +267,7 @@ class GraphData(Data):
         self.state_data[self.current_state.name] = {
             "affinity_matrix": self.affinity_matrix.copy(),
             "train_y": self.get_train_label(),
-            "node": self.current_state, 
+            "state": self.current_state, 
             "pred": pred
         }
         self.print_state()
@@ -277,6 +277,7 @@ class GraphData(Data):
         dict_exporter = DictExporter()
         tree = dict_exporter.export(self.state)
         print(tree)
+        print("current state:", self.current_state.name)
     
     def return_state(self):
         # TODO: add data
@@ -285,7 +286,7 @@ class GraphData(Data):
             data = self.state_data[i]
             margin = 0.1
             dist = np.random.rand(4).tolist()
-            children = data["node"].children
+            children = data["state"].children
             children_idx = [int(i.name) for i in children]
             history.append({
                 "dist": dist,
@@ -294,9 +295,11 @@ class GraphData(Data):
             })
         return history
 
-
     def change_state(self, id):
-        None
+        state = self.state_data[id]["state"]
+        self.current_state = state
+        self.print_state()
+        return self.return_state()
                 
 
     def add_edge(self, added_edges):

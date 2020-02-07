@@ -198,7 +198,8 @@ class ExchangePortClass(object):
         return jsonify(history_data)
     
     def set_history(self, id):
-        return self.model.set_history(id)
+        history_data = self.model.set_history(id)
+        return jsonify(history_data)
 
     def retrain(self):
         res = self.model.retrain()

@@ -69,3 +69,4 @@ def set_history(id):
 
 def retrain():
     return exchange_port.retrain()
+    
