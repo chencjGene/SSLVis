@@ -100,6 +100,9 @@ class SSLModel(object):
         
         self.adaptive_evaluation()
 
+        # record_state
+        self.data.record_state(self.pred_dist)
+
         influence_matrix_path = os.path.join(self.selected_dir,
                                              "{}_{}_influence_matrix.pkl"
                                              .format(self.alpha, self.n_neighbor))
@@ -358,3 +361,7 @@ class SSLModel(object):
     
     def set_history(self, id):
         return self.data.change_state(id)
+
+    def retrain(self):
+        self._training()
+        return {"test": 1}

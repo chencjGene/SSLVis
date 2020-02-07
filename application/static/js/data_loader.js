@@ -23,6 +23,7 @@ DataLoaderClass = function (dataset) {
     that.image_url = "/info/image";
     that.get_history_url = "/history/GetHistory";
     that.set_history_url = "/history/SetHistory";
+    that.retrain_url = "/history/Retrain";
 
     // Request nodes
     that.manifest_node = null;
@@ -37,6 +38,7 @@ DataLoaderClass = function (dataset) {
     that.local_update_k_node = null;
     that.get_history_node = null;
     that.set_history_node = null;
+    that.retrain_node = null;
 
     // views
     that.graph_view = null;
@@ -240,6 +242,13 @@ DataLoaderClass = function (dataset) {
             "label_names": that.state.label_names,
             "dist_mode": that.state.dist_mode
         });
+    };
+
+    that.retrain = function(){ 
+        let params = "?dataset=" + that.dataset;
+        that.retrain_node = new request_node(that.retrain_url + params,
+            that.retrain_handler(), "json", "POST");
+        that.retrain_node.notify();
     };
 
     that.change_dist_mode = function(){

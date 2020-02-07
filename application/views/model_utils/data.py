@@ -248,14 +248,8 @@ class GraphData(Data):
         self.affinity_matrix = affinity_matrix
 
         # init action trail
-        self.state = Node(str(self.state_idx))
-        self.state_idx = self.state_idx + 1
+        self.state = Node("root")
         self.current_state = self.state
-        self.state_data[self.current_state.name] = {
-            "affinity_matrix": self.affinity_matrix.copy(),
-            "train_y": self.get_train_label(),
-            "node": self.current_state
-        }
 
         return affinity_matrix
 
@@ -266,36 +260,40 @@ class GraphData(Data):
         neighbors_model = pickle_load_data(neighbors_model_path)
         return neighbors_model
 
-    def record_state(self):
+    def record_state(self, pred):
         new_state = Node(self.state_idx, parent=self.current_state)
         self.state_idx = self.state_idx + 1
         self.current_state = new_state 
         self.state_data[self.current_state.name] = {
             "affinity_matrix": self.affinity_matrix.copy(),
             "train_y": self.get_train_label(),
-            "node": self.current_state
+            "node": self.current_state, 
+            "pred": pred
         }
-    
-    def return_state(self):
-        # root = {"id": self.state.name}
-        # visiting_state = [self.state]
-        # visiting_node = [root]
-        # while len(visiting_node):
-        #     state = visiting_state[0]
-        #     visiting_state = visiting_state[1:]
-        #     node = visiting_node[0]
-        #     visiting_node = visiting_node[1:]
-        #     node["entropy"] = 1
-        #     node["children"] = []
-        #     children = state.children 
-        #     for c in children:
-        #         node[children].append({
-        #             "id": c.name
-        #         })
-        # TODO: add data
+        self.print_state()
+
+    # this function is for DEBUG
+    def print_state(self):
         dict_exporter = DictExporter()
         tree = dict_exporter.export(self.state)
-        return tree
+        print(tree)
+    
+    def return_state(self):
+        # TODO: add data
+        history = []
+        for i in range(self.state_idx):
+            data = self.state_data[i]
+            margin = 0.1
+            dist = np.random.rand(4).tolist()
+            children = data["node"].children
+            children_idx = [int(i.name) for i in children]
+            history.append({
+                "dist": dist,
+                "margin": margin,
+                "children": children_idx
+            })
+        return history
+
 
     def change_state(self, id):
         None

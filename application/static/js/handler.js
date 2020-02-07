@@ -137,7 +137,7 @@ DataLoaderClass.prototype.local_update_k_handler = function(callback){
         if(callback) callback();
     }
     return _local_update_k_handler;
-}
+};
 
 DataLoaderClass.prototype.update_history_handler = function(callback){
     let that = this;
@@ -149,4 +149,14 @@ DataLoaderClass.prototype.update_history_handler = function(callback){
         if (callback) callback();
     }
     return _update_history_handler;
-}
+};
+
+DataLoaderClass.prototype.retrain_handler = function(callback) {
+    let that = this;
+
+    function _retrain_handler(data){
+
+        if (callback) callback();
+    }
+    return _retrain_handler;
+};

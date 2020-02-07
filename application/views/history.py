@@ -20,3 +20,8 @@ def app_set_history():
     # TODO: set according to frontend
     id = 1
     return set_history(id)
+
+@history.route("/history/Retrain", methods=["POST", "GET"])
+def app_retrain():
+    data = json.loads(request.data)
+    return retrain()

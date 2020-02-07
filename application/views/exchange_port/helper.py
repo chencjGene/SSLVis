@@ -66,3 +66,6 @@ def get_history():
 
 def set_history(id):
     return exchange_port.set_history(id)
+
+def retrain():
+    return exchange_port.retrain()
