@@ -28,11 +28,11 @@ let HistoryLayout = function (container) {
 
     that._init = function () {
         container.select("#history-view")
-            .style("height", (height-35)+"px");
+            .style("height", (height * 0.80)+"px");
         svg.attr("width", layout_width)
             .attr("height", layout_height);
-        line_group.attr("transform", "translate(" + margin_horizontal + ", " + title_height + ")");
-        cell_group.attr("transform", "translate(" + margin_horizontal + ", " + title_height + ")");
+        line_group.attr("transform", "translate(" + margin_horizontal + ", " + 0 + ")");
+        cell_group.attr("transform", "translate(" + margin_horizontal + ", " + 0 + ")");
         title_group.attr("transform", "translate(" + margin_horizontal + ", " + 0 + ")");
 
         // title_data = [
@@ -72,6 +72,42 @@ let HistoryLayout = function (container) {
     that._update_data = function(new_history_data) {
         // DEBUG
         new_history_data = [
+            {
+                dist: [0.83, 0.58, 0.39, 0.41], 
+                margin: 0.0,
+                children: [1],
+                id: 0,
+            },
+            {
+                dist: [0.83, 0.58, 0.39, 0.41], 
+                margin: 0.1,
+                children: [2],
+                id: 1,
+            },    
+            {
+                dist: [0.83, 0.58, 0.39, 0.41], 
+                margin: 0.2,
+                children: [],
+                id: 2,
+            },
+            {
+                dist: [0.83, 0.58, 0.39, 0.41], 
+                margin: 0.0,
+                children: [1],
+                id: 0,
+            },
+            {
+                dist: [0.83, 0.58, 0.39, 0.41], 
+                margin: 0.1,
+                children: [2],
+                id: 1,
+            },    
+            {
+                dist: [0.83, 0.58, 0.39, 0.41], 
+                margin: 0.2,
+                children: [],
+                id: 2,
+            },
             {
                 dist: [0.83, 0.58, 0.39, 0.41], 
                 margin: 0.0,
