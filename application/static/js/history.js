@@ -6,56 +6,32 @@ let HistoryLayout = function (container) {
     let bbox = that.container.node().getBoundingClientRect();
     let width = bbox.width;
     let height = bbox.height;
-    let layout_width = width - 20;
-    let layout_height = height - 20;
-    let history_data = [
-        {
-            add_edges_cnt:Math.floor((Math.random()-0.5)*5+5),
-            delete_edges_cnt:Math.floor((Math.random()-0.5)*5+5),
-            label_change_cnt:Math.floor((Math.random()-0.5)*5+5),
-            node_delete_cnt:Math.floor((Math.random()-0.5)*5+5),
-            margin:0.1,
-            children:[1]
-        },
-        {
-            add_edges_cnt:Math.floor((Math.random()-0.5)*5+5),
-            delete_edges_cnt:Math.floor((Math.random()-0.5)*5+5),
-            label_change_cnt:Math.floor((Math.random()-0.5)*5+5),
-            node_delete_cnt:Math.floor((Math.random()-0.5)*5+5),
-            margin:0.1,
-            children:[2,3]
-        },
-        {
-            add_edges_cnt:Math.floor((Math.random()-0.5)*5+5),
-            delete_edges_cnt:Math.floor((Math.random()-0.5)*5+5),
-            label_change_cnt:Math.floor((Math.random()-0.5)*5+5),
-            node_delete_cnt:Math.floor((Math.random()-0.5)*5+5),
-            margin:0.1,
-            children:[]
-        },
-        {
-            add_edges_cnt:Math.floor((Math.random()-0.5)*5+5),
-            delete_edges_cnt:Math.floor((Math.random()-0.5)*5+5),
-            label_change_cnt:Math.floor((Math.random()-0.5)*5+5),
-            node_delete_cnt:Math.floor((Math.random()-0.5)*5+5),
-            margin:0.1,
-            children:[4]
-        },
-        {
-            add_edges_cnt:Math.floor((Math.random()-0.5)*5+5),
-            delete_edges_cnt:Math.floor((Math.random()-0.5)*5+5),
-            label_change_cnt:Math.floor((Math.random()-0.5)*5+5),
-            node_delete_cnt:Math.floor((Math.random()-0.5)*5+5),
-            margin:0.1,
-            children:[]
-        }
-    ];
+    let margin_horizontal = 10;
+    let layout_width = width - margin_horizontal * 2;
+    let layout_height = height * 0.8;
+    let title_height = 30;
+    let action_id_center = layout_width * 0.15;
+    let cell_center = layout_width * 0.5;
+    let text_center = layout_width * 0.85;
+    let cell_height = 60;
+    let cell_width = layout_width;
+    let dist_start = cell_center - layout_width * 0.2;
+    let dist_width = layout_width * 0.1;
     let data_manager = null;
-    let svg = null;
+
+    that.svg = container.select("#history-view").append("svg");
+    that.line_group = that.svg.append("g").attr("id", "line");
+    that.cell_group = that.svg.append("g").attr("id", "cell");
+
     let node_color = "rgb(127,127,127)";
 
     that._init = function () {
-        svg = container.select("#history-view");
+        container.select("#history-view")
+            .style("height", (height * 0.80)+"px");
+        that.svg.attr("width", width)
+            .attr("height", layout_height);
+        that.line_group.attr("transform", "translate(" + margin_horizontal + ", " + 0 + ")");
+        that.cell_group.attr("transform", "translate(" + margin_horizontal + ", " + 0 + ")");
     };
 
     that.set_data_manager = function(new_data_manager) {
@@ -67,97 +43,172 @@ let HistoryLayout = function (container) {
         that._update_view();
     };
 
-    that._update_data = function(new_history_data) {
-        history_data = new_history_data;
+    that._update_data = function(data) {
+        that.history_data = data.history.reverse();
+        that.focus_id = data.current_id;
+        that.line_data = [];
+        let cnt = that.history_data.length
+        for(let row_idx = 0; row_idx < cnt; row_idx++){
+            let row_data = that.history_data[row_idx];
+            let end_idx = row_data.id;
+            let end_point = {
+                x: action_id_center,
+                y: (cnt - end_idx - 0.5) * cell_height 
+            };
+            for(let start_idx of row_data.children){
+                let start_point = {
+                    x: action_id_center,
+                    y: (cnt - start_idx - 0.5) * cell_height
+                };
+                let d = null;
+                if ((start_idx - end_idx) == 1){
+                    d = change_straight(start_point, end_point);
+                }
+                else{
+                    d = change_path(start_point, end_point, 30, 40);
+                }
+                that.line_data.push({
+                    "path": d,
+                    "id": start_idx + "-" + end_idx
+                });
+            }
+        }
+
+        if (cnt * cell_height > layout_height){
+            that.svg.attr("height", cnt * cell_height);
+        }
     };
 
     that._update_view = function() {
-        // set svg size
-        let row_cnt = history_data.length;
-        let row_height = 100;
-        let row_offset = 10;
-        let svg_height = row_height*row_cnt+row_offset;
-        svg.attr("height", svg_height);
-        svg.selectAll("*").remove();
-        // draw row
-        let node_offset_x = 20;
-        let node_offset_y = 40;
-        for(let row_idx=0; row_idx<row_cnt; row_idx++){
-            let row_data = history_data[row_idx];
-            //draw group
-            let group = svg.append("g")
-                .attr("id", "history-"+row_idx);
-            //draw node
-            let node = group.append("circle")
-                .attr("cx", node_offset_x)
-                .attr("cy", row_height*(row_idx+0.5)+row_offset)
-                .attr("r", 5)
-                .attr("fill", node_color);
-            //draw rect
-            let x = d3.scaleBand().rangeRound([width*0.2, width*0.6], .1).paddingInner(0.2).domain(d3.range(4));
-            let y = d3.scaleLinear().range([row_height*(row_idx+0)+row_offset, row_height*(row_idx+0.6)+row_offset]).domain([0, 10]);
-            let rect_data = [
-                row_data.add_edges_cnt,
-                row_data.delete_edges_cnt,
-                row_data.label_change_cnt,
-                row_data.node_delete_cnt
-            ];
-            let rects = group.append("g").attr("id","group-bar-chart-"+row_idx).selectAll("rect").data(rect_data);
-            rects
-                .enter()
-                .append("rect")
-                .attr("class", "widget-bar-chart")
-                .style("fill", "rgb(127, 127, 127)")
-                .attr("x", function(d, i) { return x(i); })
-                .attr("width", x.bandwidth())
-                .attr("y", function(d, i) { return y(d); })
-                .attr("height", function(d) {
-                    return row_height*(row_idx+0.8)+row_offset - y(d);
-                })
-                .attr("opacity", 1);
-            // draw margin
-            let margin = group.append("text")
-                .attr("font-family", '"Helvetica Neue", Helvetica, Arial, sans-serif')
-                .attr("font-size", "13px")
-                .attr("font-weight", 700)
-                .attr("fill", "#333333")
-                .attr("x", width*0.65)
-                .attr("y", row_height*(row_idx+0.5)+row_offset)
-                .attr("text-anchor", "start")
-                .text("Entropy:"+row_data.margin)
-        }
+        that._create();
+        that._update();
+        that._remove();
+    };
 
-        //draw line
-        let lines = [];
-        for(let row_idx=0; row_idx<row_cnt; row_idx++){
-            let row_data = history_data[row_idx];
-            for(let child of row_data.children){
-                lines.push([row_idx, child]);
-            }
-        }
-        let lineGenerator = d3.line().curve(d3.curveCardinal.tension(0));
-        svg.selectAll("path")
-                .data(lines)
-                .enter()
-                .append("path")
-                .attr("stroke-width", 2.0)
-                .attr("stroke", node_color)
-                .attr("fill-opacity", 0)
-                .attr("d", function (d) {
-                    let begin_idx = d[0];
-                    let end_idx = d[1];
-                    let begin = [node_offset_x, row_height*(begin_idx+0.5)+row_offset];
-                    let end = [node_offset_x, row_height*(end_idx+0.5)+row_offset];
-                    if(end_idx === begin_idx + 1){
-                        return lineGenerator([begin, end]);
-                    }
-                    // let mid = [(begin[0]+end[0])/2, (begin[1]+end[1])/2];
-                    let mid1 = [node_offset_x, row_height*(begin_idx+0.5)+row_offset+1];
-                    let mid11 = [node_offset_x+20, row_height*(begin_idx+0.5)+row_offset+20];
-                    let mid2 = [node_offset_x+20, row_height*(end_idx+0.5)+row_offset-20];
-                    let mid22 = [node_offset_x, row_height*(end_idx+0.5)+row_offset-1];
-                    return lineGenerator([begin,mid1, mid11, mid2,mid22, end]);
-                })
+    that._create = function(){
+        // create cells
+        console.log("history_data", that.history_data);
+        that.cells = that.cell_group.selectAll("g.cell")
+            .data(that.history_data, d => d.id)
+            .enter()
+            .append("g")
+            .attr("class", "cell")
+            .attr("id", d => "id-" + d.id)
+            .attr("transform", 
+                (_,i) => "translate(" + 0 + ", " + i * cell_height + ")")
+            .on("mouseover", that.highlight)
+            .on("mouseout", that.delighlight);
+        that.cells.append("rect")
+            .attr("class", "background")
+            .attr("x", 0)
+            .attr("y", 1)
+            .attr("width", cell_width)
+            .attr("height", cell_height - 1)
+            .style("fill", "white")
+            .style("fill-opacity", 0);
+        that.cells.append("circle")
+            .attr("class", "action-circle")
+            .attr("cx", action_id_center)
+            .attr("cy", cell_height * 0.5)
+            .attr("r", 10)
+            .style("fill", d => d.id === that.focus_id ? 
+                "rgb(127, 127, 127)" : "rgb(222, 222, 222)")
+            .on("click", function(d){
+                that.focus_id = d.id;
+                data_manager.set_history(that.focus_id);
+                that._update();
+            })
+        that.cells.append("text")
+            .attr("class", "action-id")
+            .attr("text-anchor", "middle")
+            .attr("x", action_id_center)
+            .attr("y", cell_height * 0.5 + 4.5)
+            .text(d => d.id);
+        that.cells.append("rect")
+            .attr("class", ".bottom-line")
+            .attr("x", action_id_center + margin_horizontal)
+            .attr("y", cell_height)
+            .attr("width", cell_width - action_id_center - margin_horizontal)
+            .attr("height", 1)
+            .style("fill", "rgb(222,222,222)");
+        that.cells.selectAll("rect.change")
+            .data(d=>d.dist)
+            .enter()
+            .append("rect")
+            .attr("class", "change")
+            .attr("x", (_,i) => dist_start + i * dist_width)
+            .attr("y", d => cell_height - d * cell_height)
+            .attr("width", dist_width * 0.95)
+            .attr("height", d => d * cell_height)
+            .style("fill", node_color);
+        that.cells.append("text")
+            .attr("font-family", '"Helvetica Neue", Helvetica, Arial, sans-serif')
+            .attr("font-size", "13px")
+            .attr("font-weight", 700)
+            .attr("fill", "#333333")
+            .attr("text-anchor", "middle")
+            .attr("x", text_center)
+            .attr("y", cell_height * 0.5 + 4.5)
+            .attr("text-anchor", "start")
+            .text(d => d.margin);
+
+
+        // //draw line
+        that.line_group.selectAll("path")
+            .data(that.line_data, d => d.id)
+            .enter()
+            .append("path")
+            .attr("stroke-width", 2.0)
+            .attr("fill-opacity", 0)
+            .attr("stroke", node_color)
+            .style("stroke", "rgb(222, 222, 222)")
+            .attr("d", d => d.path)
+    };
+
+    that._update =  function() {
+        // update cells
+        that.cells = that.cell_group.selectAll("g.cell")
+            .data(that.history_data, d => d.id)
+            .attr("transform", (_,i) => "translate(" + 0 + ", " + i * cell_height + ")");
+        that.cells.select("circle")
+            .style("fill", d => d.id === that.focus_id ?
+                "rgb(127, 127, 127)" : "rgb(222, 222, 222)");
+
+        // update lines
+        that.line_group.selectAll("path")
+            .data(that.line_data, d => d.id)
+            .attr("d",d => d.path)
+        
+    };
+
+    that._remove = function() {
+        // remove cells
+        that.cells = that.cell_group.selectAll("g.cell")
+            .data(that.history_data, d => d.id)
+            .exit()
+            .remove();
+
+        // remove lines
+        that.line_group.selectAll("path")
+        .data(that.line_data, d => d.id)
+        .exit()
+        .remove();
+
+    };
+
+    that.highlight = function(d){
+        console.log("highlight in History view");
+        that.cell_group.select("#id-" + d.id)
+            .select("rect.background")
+            .style("fill-opacity", 0.1)
+            .style("fill", "gray");
+    };
+
+    that.delighlight = function(){
+        console.log("dehighlight in History view");
+        that.svg.selectAll("g.cell")
+            .select("rect.background")
+            .style("fill-opacity", 0);
     };
 
     that.init = function () {

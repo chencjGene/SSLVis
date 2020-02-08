@@ -21,25 +21,13 @@ from ..utils.helper_utils import check_exist, \
     pickle_load_data, pickle_save_data, flow_statistic
 from ..utils.embedder_utils import Embedder
 
-from .data import Data
+from .data import Data, GraphData
 from .LSLabelSpreading import LSLabelSpreading
 from .model_helper import propagation, approximated_influence, exact_influence
 from .model_update import local_search_k
+from .model_helper import build_laplacian_graph
 
 DEBUG = False
-
-
-def build_laplacian_graph(affinity_matrix):
-    instance_num = affinity_matrix.shape[0]
-    laplacian = csgraph.laplacian(affinity_matrix, normed=True)
-    laplacian = -laplacian
-    if sparse.isspmatrix(laplacian):
-        diag_mask = (laplacian.row == laplacian.col)
-        laplacian.data[diag_mask] = 0.0
-    else:
-        laplacian.flat[::instance_num + 1] = 0.0  # set diag to 0.0
-    return laplacian
-
 
 class SSLModel(object):
     def __init__(self, dataname, labeled_num=None, total_num=None, seed=123):
@@ -49,13 +37,12 @@ class SSLModel(object):
         self.model = None
         self.embed_X = None
         self.n_neighbor = None
-        self.max_neighbors = 1000
         # signal is used to indicate that all data should be updated
         self.signal_state = False
         self._propagation = propagation
         self.alpha = 0.2
 
-        self.data = Data(self.dataname, labeled_num, total_num)
+        self.data = GraphData(self.dataname, labeled_num, total_num)
         # self.data.case_set_rest_idxs()
         self.selected_dir = self.data.selected_dir
         self.n_neighbor = 5
@@ -74,106 +61,12 @@ class SSLModel(object):
         logger.info("n_neighbor and filter_threshold has been updated: {} {}".format(
             self.n_neighbor, self.filter_threshold
         ))
-        self._preprocess_neighbors()
-        self._construct_graph()
         self._training()
-        # self._projection()
-
-    def _get_signal_state(self):
-        signal_filepath = os.path.join(self.selected_dir, config.signal_filename)
-        if check_exist(signal_filepath):
-            self.signal_state = True
-            logger.info("signal file exists, set signal_state")
-        # delete signal file
-        if check_exist(signal_filepath):
-            os.remove(signal_filepath)
-        return
-
-    def _preprocess_neighbors(self):
-        neighbors_path = os.path.join(self.selected_dir, "neighbors.npy")
-        neighbors_weight_path = os.path.join(self.selected_dir,
-                                             "neighbors_weight.npy")
-        if os.path.exists(neighbors_path) and \
-                os.path.exists(neighbors_weight_path):
-            logger.info("neighbors and neighbor_weight exist!!!")
-            return
-        logger.info("neighbors and neighbor_weight "
-                    "do not exist, preprocessing!")
-        train_X = self.data.get_train_X()
-        train_y = self.data.get_train_label()
-        train_y = np.array(train_y)
-        self.max_neighbors = min(len(train_y), self.max_neighbors)
-        logger.info("data shape: {}, labeled_num: {}"
-                    .format(str(train_X.shape), sum(train_y != -1)))
-        nn_fit = NearestNeighbors(self.n_neighbor, n_jobs=-4).fit(train_X)
-        logger.info("nn construction finished!")
-        neighbor_result = nn_fit.kneighbors_graph(nn_fit._fit_X,
-                                                  self.max_neighbors,
-                                                  # 2,
-                                                  mode="distance")
-        logger.info("neighbor_result got!")
-        neighbors = np.zeros((train_X.shape[0],
-                              self.max_neighbors)).astype(int)
-        neighbors_weight = np.zeros((train_X.shape[0], self.max_neighbors))
-        for i in range(train_X.shape[0]):
-            start = neighbor_result.indptr[i]
-            end = neighbor_result.indptr[i + 1]
-            j_in_this_row = neighbor_result.indices[start:end]
-            data_in_this_row = neighbor_result.data[start:end]
-            sorted_idx = data_in_this_row.argsort()
-            assert (len(sorted_idx) == self.max_neighbors)
-            j_in_this_row = j_in_this_row[sorted_idx]
-            data_in_this_row = data_in_this_row[sorted_idx]
-            neighbors[i, :] = j_in_this_row
-            neighbors_weight[i, :] = data_in_this_row
-
-        logger.info("preprocessed neighbors got!")
-
-        # save neighbors information
-        np.save(neighbors_path, neighbors)
-        np.save(neighbors_weight_path, neighbors_weight)
-
-    def _construct_graph(self):
-        # load neighbors information
-        neighbors_path = os.path.join(self.selected_dir, "neighbors.npy")
-        neighbors_weight_path = os.path.join(self.selected_dir,
-                                             "neighbors_weight.npy")
-        neighbors = np.load(neighbors_path)
-        neighbors_weight = np.load(neighbors_weight_path)
-        # rest_idxs = self.data.get_rest_idxs()
-        # neighbors = neighbors[rest_idxs, :][:, rest_idxs]
-        # neighbors_weight = neighbors_weight[rest_idxs, :][:, rest_idxs]
-        self.neighbors = neighbors
-        instance_num = neighbors.shape[0]
-        train_y = self.data.get_train_label()
-        train_y = np.array(train_y)
-        self.train_y = train_y
-
-        # get knn graph in a csr form
-        indptr = [i * self.n_neighbor for i in range(instance_num + 1)]
-        logger.info("get indptr")
-        indices = neighbors[:, :self.n_neighbor].reshape(-1).tolist()
-        logger.info("get indices")
-        data = neighbors_weight[:, :self.n_neighbor].reshape(-1)
-        logger.info("get data")
-        data = (data * 0 + 1.0).tolist()
-        logger.info("get data in connectivity")
-        affinity_matrix = sparse.csr_matrix((data, indices, indptr),
-                                            shape=(instance_num, instance_num))
-        affinity_matrix = affinity_matrix + affinity_matrix.T
-        affinity_matrix = sparse.csr_matrix((np.ones(len(affinity_matrix.data)).tolist(),
-                                             affinity_matrix.indices, affinity_matrix.indptr),
-                                            shape=(instance_num, instance_num))
-        logger.info("affinity_matrix construction finished!!")
-        laplacian = build_laplacian_graph(affinity_matrix)
-        self.affinity_matrix = affinity_matrix
-        self.laplacian = laplacian
-
 
     def _training(self):
-        affinity_matrix = self.affinity_matrix
-        laplacian = self.laplacian
-        train_y = self.train_y
+        affinity_matrix = self.data.get_graph(self.n_neighbor)
+        laplacian = build_laplacian_graph(affinity_matrix)
+        train_y = self.data.get_train_label()
         train_gt = self.data.get_train_ground_truth()
         train_gt = np.array(train_gt)
         pred_dist, loss, ent, process_data, unnorm_dist = \
@@ -205,7 +98,10 @@ class SSLModel(object):
         logger.info("model accuracy: {}, iter: {}".format(acc, iter))
         logger.info("model entropy: {}".format(entropy(pred_dist.T + 1e-20).mean()))
         
-        self.adaptive_evaluation()
+        # self.adaptive_evaluation()
+
+        # record_state
+        self.data.record_state(self.pred_dist)
 
         influence_matrix_path = os.path.join(self.selected_dir,
                                              "{}_{}_influence_matrix.pkl"
@@ -242,7 +138,8 @@ class SSLModel(object):
 
     def simplify_influence_matrix(self, threshold=0.7):
         logger.info("begin simplify influence matrix")
-        laplacian = self.laplacian.tocsr()
+        affinity_matrix = self.data.get_graph()
+        laplacian = build_laplacian_graph(affinity_matrix).tocsr()
         unnorm_dist = self.unnorm_dist
         n_samples, n_classes = unnorm_dist.shape
         y = np.asarray(self.data.get_train_label())
@@ -340,20 +237,10 @@ class SSLModel(object):
 
     def evaluate(self):
         train_X = self.data.get_train_X()
-        train_idx = self.data.get_train_idx()
         test_X = self.data.get_test_X()
         test_y = self.data.get_test_ground_truth()
         pred = self.pred_dist
-        label = pred.argmax(axis=1)
-        logger.info("train_X.shape: {}".format(str(train_X.shape)))
-        logger.info("test_X.shape: {}".format(str(test_X.shape)))
-        mat = {
-            "X": train_idx,
-            "y": label,
-        }
-        import scipy.io as sio
-        sio.savemat("train.mat", mat)
-        nn_fit = NearestNeighbors(self.n_neighbor, n_jobs=-4).fit(train_X)
+        nn_fit = self.data.get_neighbors_model()
         weight_matrices = nn_fit.kneighbors(test_X, return_distance=False)
         probabilities = np.array([
                 np.sum(pred[weight_matrix], axis=0)
@@ -365,16 +252,15 @@ class SSLModel(object):
 
     def adaptive_evaluation(self):
         train_X = self.data.get_train_X()
-        affinity_matrix = self.affinity_matrix
+        affinity_matrix = self.data.get_graph()
         pred = self.pred_dist
         test_X = self.data.get_test_X()
         test_y = self.data.get_test_ground_truth()
-        nn_fit = NearestNeighbors(self.n_neighbor, n_jobs=-4).fit(train_X)
+        nn_fit = self.data.get_neighbors_model()
         logger.info("nn construction finished!")
         neighbor_result = nn_fit.kneighbors_graph(test_X,
-                                                  self.max_neighbors,
-                                                  # 2,
-                                                  mode="distance")
+                                            100,
+                                            mode="distance")
         logger.info("neighbor_result got!")
         estimate_k = 5
         s = 0
@@ -385,7 +271,7 @@ class SSLModel(object):
             j_in_this_row = neighbor_result.indices[start:end]
             data_in_this_row = neighbor_result.data[start:end]
             sorted_idx = data_in_this_row.argsort()
-            assert (len(sorted_idx) == self.max_neighbors)
+            assert (len(sorted_idx) == 100)
             j_in_this_row = j_in_this_row[sorted_idx]
             estimated_idxs = j_in_this_row[:estimate_k]
             adaptive_k = affinity_matrix[estimated_idxs, :].sum() / estimate_k
@@ -397,10 +283,6 @@ class SSLModel(object):
         acc = accuracy_score(test_y, labels)
         logger.info("test accuracy: {}".format(acc))
         print(s/test_X.shape[0])
-
-            # data_in_this_row = data_in_this_row[sorted_idx]
-            # neighbors[i, :] = j_in_this_row
-            # neighbors_weight[i, :] = data_in_this_row
 
 
     def get_in_out_degree(self, influence_matrix):
@@ -473,3 +355,13 @@ class SSLModel(object):
         train_X = self.data.get_train_X()
         train_y = self.data.get_train_label()
         return train_X, train_y
+
+    def get_history(self):
+        return self.data.return_state()
+    
+    def set_history(self, id):
+        return self.data.change_state(id)
+
+    def retrain(self):
+        self._training()
+        return self.data.return_state()

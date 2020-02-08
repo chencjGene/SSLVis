@@ -22,12 +22,10 @@ function set_up(dataset) {
     DataLoader.set_image_view(ImageView);
     DataLoader.set_history_view(HistoryView);
     DataLoader.set_filter_view(FilterView);
-    //debug
-    HistoryView._update_view();
 }
 
 function clean_dom() {
-
+    
 }
 
 

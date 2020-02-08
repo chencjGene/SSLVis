@@ -5,3 +5,38 @@
 #history-row {
     overflow-y: auto;
 }
+
+#history-view{
+    overflow-y: auto;
+}
+
+#content-title {
+    display: flex;
+    border-bottom: 1px solid #DEDEDE;
+    margin-top: 3%;
+    margin-left: 3%;
+    margin-right: 3%;
+}
+
+.title-1{
+    padding-left: 5%;
+    padding-right: 10%;
+}
+
+.title-2{
+    padding-left: 7%;
+    padding-right: 7%;
+}
+
+.title-3{
+    padding-left: 15%;
+    padding-right: 4%;
+}
+
+.action-circle {
+    cursor: pointer;
+}
+
+.action-id {
+    pointer-events: none;
+}

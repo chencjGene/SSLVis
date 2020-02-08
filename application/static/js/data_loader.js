@@ -21,6 +21,9 @@ DataLoaderClass = function (dataset) {
     that.flows_urls = "/dist/GetFlows";
     that.selected_flows_urls = "/dist/GetSelectedFlows";
     that.image_url = "/info/image";
+    that.get_history_url = "/history/GetHistory";
+    that.set_history_url = "/history/SetHistory";
+    that.retrain_url = "/history/Retrain";
 
     // Request nodes
     that.manifest_node = null;
@@ -33,6 +36,9 @@ DataLoaderClass = function (dataset) {
     that.selected_flows_node = null;
     that.influence_filter_node = null;
     that.local_update_k_node = null;
+    that.get_history_node = null;
+    that.set_history_node = null;
+    that.retrain_node = null;
 
     // views
     that.graph_view = null;
@@ -70,6 +76,7 @@ DataLoaderClass = function (dataset) {
         area: null,
         rescale: false,
         visible_items:{},
+        history_data: null
     };
 
     // Define topological structure of data retrieval
@@ -90,6 +97,10 @@ DataLoaderClass = function (dataset) {
 
         // that.fisheye_graph_node = new request_node(that.fisheye_graph_url + params,
         //     that.update_fisheye_graph_handler(that.update_fisheye_view), "json", "POST");
+
+        that.get_history_node = new request_node(that.get_history_url + params,
+            that.update_history_handler(that.update_history_view), "json", "GET");
+        that.get_history_node.depend_on(that.graph_node);
 
         // that.loss_node = new request_node(that.loss_url + params,
         //     that.get_loss_handler(that.update_loss_view), "json", "GET");
@@ -180,6 +191,13 @@ DataLoaderClass = function (dataset) {
     // };
     //
 
+    that.update_history_view = function(){
+        console.log("update history view");
+        that.history_view.component_update({
+            "history_data": that.state.history_data
+        });
+    }
+
     that.get_dist_view = function(selected_idxs){
         let params = "?dataset=" + that.dataset;
         that.flows_node = new request_node(that.flows_urls + params,
@@ -200,6 +218,22 @@ DataLoaderClass = function (dataset) {
             "dist_mode": that.state.dist_mode
         });
     };
+
+    that.retrain = function(){ 
+        let params = "?dataset=" + that.dataset;
+        that.retrain_node = new request_node(that.retrain_url + params,
+            that.retrain_handler(that.update_history_view), "json", "POST");
+        that.retrain_node.notify();
+    };
+
+    that.set_history = function(id){
+        let params = "?dataset=" + that.dataset;
+        that.set_history_node = new request_node(that.set_history_url + params,
+            function(){}, "json", "POST");
+        let data = {"id": id};
+        that.set_history_node.set_data(data);
+        that.set_history_node.notify();
+    }
 
     that.change_dist_mode = function(){
         that.state.dist_mode = !that.state.dist_mode;

@@ -6,6 +6,7 @@ from .views.admin import admin
 from .views.graph import graph
 from .views.info import info
 from .views.dist import dist
+from .views.history import history
 
 def create_app():
     app = Flask(__name__)
@@ -20,7 +21,7 @@ def create_app():
     app.register_blueprint(graph)
     app.register_blueprint(info)
     app.register_blueprint(dist)
-
+    app.register_blueprint(history)
     # # this manner is somewhere wrong
     # app.config.update(
     #     DEBUG=True,

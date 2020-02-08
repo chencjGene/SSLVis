@@ -1,15 +1,25 @@
 import numpy as np
 import os
 import abc
+from scipy import sparse
+from anytree import Node
+from anytree.exporter import DictExporter
+from scipy.stats import entropy
 
+from sklearn.neighbors.unsupervised import NearestNeighbors
 
 from application.views.utils.config_utils import config
 from application.views.utils.helper_utils import pickle_save_data, json_load_data,\
     pickle_load_data, json_save_data, check_dir
 from application.views.utils.log_utils import logger
 
+from .model_helper import build_laplacian_graph
 
 class Data(object):
+    '''
+    1. read data from buffer
+    2. manage history state
+    '''
     def __init__(self, dataname, labeled_num=None, total_num=None, seed=123):
         self.dataname = dataname
         self.data_root = os.path.join(config.data_root, self.dataname)
@@ -135,28 +145,199 @@ class Data(object):
     def get_test_ground_truth(self):
         return self.y[np.array(self.test_idx)].copy().astype(int)
 
-    # def get_graph_data(self):
-    #     X, label, ground_truth = read_data(self.data_root, "train")
-    #     idx = np.array(range(X.shape[0]))
-    #     np.random.shuffle(idx)
-    #     idx = idx[:500]
-    #     X = X[idx]
-    #     label = label[idx]
-    #     ground_truth = ground_truth[idx]
-    #     print("X.shape", X.shape)
-    #     A = kneighbors_graph(X, 10, mode="connectivity", include_self=True)
-    #     connect = A.toarray()
-    #
-    #     node = [{"id":i, "c":int(label[i]), "p":int(ground_truth[i])} for i in range(500)]
-    #     link = []
-    #     for i in range(500):
-    #         for j in range(500):
-    #             if connect[i][j] > 0:
-    #                 link.append([i,j, float(np.dot(X[i], X[j]))])
-    #
-    #     graph = {
-    #         "node": node,
-    #         "link": link
-    #     }
-    #
-    #     return graph
+    def remove_instance(self, idxs):
+        self.rest_idxs = [i for i in self.rest_idxs if i not in idxs]
+        logger.info("rest data: {}".format(len(self.rest_idxs)))
+
+    def label_instance(self, idxs, labels):
+        for i in range(len(idxs)):
+            idx = idxs[i]
+            label = labels[i]
+            self.train_y[idx] = label
+        labeled_num = sum(self.train_y != -1)
+        logger.info("labeled data num: {}".format(labeled_num))
+
+class GraphData(Data):
+    def __init__(self, dataname, labeled_num=None, total_num=None, seed=123):
+        super(GraphData, self).__init__(dataname, labeled_num, total_num, seed)
+        
+        self.max_neighbors = 1000
+        self.affinity_matrix = None
+        self.state_idx = 0
+        self.state = {}
+        self.state_data = {}
+        self.current_state = None
+
+    def _preprocess_neighbors(self):
+        neighbors_model_path = os.path.join(self.selected_dir, "neighbors_model.pkl")
+        neighbors_path = os.path.join(self.selected_dir, "neighbors.npy")
+        neighbors_weight_path = os.path.join(self.selected_dir,
+                                             "neighbors_weight.npy")
+        if os.path.exists(neighbors_model_path) and \
+            os.path.exists(neighbors_path) and \
+            os.path.exists(neighbors_weight_path):
+            logger.info("neighbors and neighbor_weight exist!!!")
+            return
+        logger.info("neighbors and neighbor_weight "
+                    "do not exist, preprocessing!")
+        train_X = self.get_train_X()
+        train_y = self.get_train_label()
+        train_y = np.array(train_y)
+        self.max_neighbors = min(len(train_y), self.max_neighbors)
+        logger.info("data shape: {}, labeled_num: {}"
+                    .format(str(train_X.shape), sum(train_y != -1)))
+        nn_fit = NearestNeighbors(7, n_jobs=-4).fit(train_X)
+        logger.info("nn construction finished!")
+        neighbor_result = nn_fit.kneighbors_graph(nn_fit._fit_X,
+                                                  self.max_neighbors,
+                                                  # 2,
+                                                  mode="distance")
+        logger.info("neighbor_result got!")
+        neighbors = np.zeros((train_X.shape[0],
+                              self.max_neighbors)).astype(int)
+        neighbors_weight = np.zeros((train_X.shape[0], self.max_neighbors))
+        for i in range(train_X.shape[0]):
+            start = neighbor_result.indptr[i]
+            end = neighbor_result.indptr[i + 1]
+            j_in_this_row = neighbor_result.indices[start:end]
+            data_in_this_row = neighbor_result.data[start:end]
+            sorted_idx = data_in_this_row.argsort()
+            assert (len(sorted_idx) == self.max_neighbors)
+            j_in_this_row = j_in_this_row[sorted_idx]
+            data_in_this_row = data_in_this_row[sorted_idx]
+            neighbors[i, :] = j_in_this_row
+            neighbors_weight[i, :] = data_in_this_row
+
+        logger.info("preprocessed neighbors got!")
+
+        # save neighbors information
+        pickle_save_data(neighbors_model_path, nn_fit)
+        np.save(neighbors_path, neighbors)
+        np.save(neighbors_weight_path, neighbors_weight)
+
+    def get_graph(self, n_neighbor=None):
+        if self.affinity_matrix is None:
+            self._construct_graph(n_neighbor)
+        return self.affinity_matrix.copy()
+
+    def _construct_graph(self, n_neighbor=None):
+        # create neighbors buffer
+        self._preprocess_neighbors()
+
+        # load neighbors information
+        neighbors_path = os.path.join(self.selected_dir, "neighbors.npy")
+        neighbors_weight_path = os.path.join(self.selected_dir,
+                                             "neighbors_weight.npy")
+        neighbors = np.load(neighbors_path)
+        neighbors_weight = np.load(neighbors_weight_path)
+        self.neighbors = neighbors
+        instance_num = neighbors.shape[0]
+        train_y = self.get_train_label()
+        train_y = np.array(train_y)
+        self.train_y = train_y
+
+        # get knn graph in a csr form
+        indptr = [i * n_neighbor for i in range(instance_num + 1)]
+        logger.info("get indptr")
+        indices = neighbors[:, :n_neighbor].reshape(-1).tolist()
+        logger.info("get indices")
+        data = neighbors_weight[:, :n_neighbor].reshape(-1)
+        logger.info("get data")
+        data = (data * 0 + 1.0).tolist()
+        logger.info("get data in connectivity")
+        affinity_matrix = sparse.csr_matrix((data, indices, indptr),
+                                            shape=(instance_num, instance_num))
+        affinity_matrix = affinity_matrix + affinity_matrix.T
+        affinity_matrix = sparse.csr_matrix((np.ones(len(affinity_matrix.data)).tolist(),
+                                             affinity_matrix.indices, affinity_matrix.indptr),
+                                            shape=(instance_num, instance_num))
+        logger.info("affinity_matrix construction finished!!")
+        self.affinity_matrix = affinity_matrix
+
+        # init action trail
+        self.state = Node("root")
+        self.current_state = self.state
+
+        return affinity_matrix
+
+    def get_neighbors_model(self):
+        neighbors_model_path = os.path.join(self.selected_dir, "neighbors_model.pkl")
+        if os.path.exists(neighbors_model_path):
+            self._preprocess_neighbors()
+        neighbors_model = pickle_load_data(neighbors_model_path)
+        return neighbors_model
+
+    def record_state(self, pred):
+        new_state = Node(self.state_idx, parent=self.current_state)
+        self.state_idx = self.state_idx + 1
+        self.current_state = new_state 
+        self.state_data[self.current_state.name] = {
+            "affinity_matrix": self.affinity_matrix.copy(),
+            "train_idx": self.get_train_idx(),
+            "train_y": self.get_train_label(),
+            "state": self.current_state, 
+            "pred": pred
+        }
+        self.print_state()
+
+    # this function is for DEBUG
+    def print_state(self):
+        dict_exporter = DictExporter()
+        tree = dict_exporter.export(self.state)
+        print(tree)
+        print("current state:", self.current_state.name)
+    
+    def return_state(self):
+        # TODO: add data
+        history = []
+        for i in range(self.state_idx):
+            data = self.state_data[i]
+            margin = entropy(data["pred"].T + 1e-20).mean()
+            margin = round(margin, 3)
+            # get changes
+            dist = [0, 0, 0, 0]
+            pre_data_state = data["state"].parent
+            if pre_data_state.name != "root":
+                pre_data = self.state_data[pre_data_state.name]
+                now_affinity = data["affinity_matrix"]
+                pre_affinity = pre_data["affinity_matrix"]
+                # added edges
+                dist[0] = (now_affinity[pre_affinity == 0] == 1).sum()
+                # removed edges
+                dist[1] = (now_affinity[pre_affinity == 1] == 0).sum()
+                # removed instances
+                dist[2] = len(pre_data["train_idx"]) - len(data["train_idx"])
+                # label changes
+                pre_label = pre_data["pred"].argmax(axis=1)
+                pre_label[pre_data["pred"].max(axis=1) < 1e-8] = -1
+                label = data["pred"].argmax(axis=1)
+                label[data["pred"].argmax(axis=1)<1e-8] = -1
+                dist[3] = sum(label != pre_label)
+            dist = [int(k) for k in dist]
+            children = data["state"].children
+            children_idx = [int(i.name) for i in children]
+            history.append({
+                "dist": dist,
+                "margin": margin,
+                "children": children_idx,
+                "id": i
+            })
+        return {
+            "history": history,
+            "current_id": int(self.current_state.name)
+        }
+
+    def change_state(self, id):
+        state = self.state_data[id]["state"]
+        self.current_state = state
+        self.print_state()
+        return self.return_state()
+                
+
+    def add_edge(self, added_edges):
+        None
+    
+    def remove_edge(self, added_edges):
+        None
+    
+    

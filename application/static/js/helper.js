@@ -171,3 +171,51 @@ function deepCopy(obj) {
     }
     return _obj
   }
+
+String.prototype.format = String.prototype.f = function () {
+    var s = this,
+        i = arguments.length;
+
+    while (i--) {
+        s = s.replace(new RegExp('\\{' + i + '\\}', 'gm'), arguments[i]);
+    }
+    return s;
+};
+
+function change_path(sp, ep, hspace, vspace){
+    let c1 = {
+        x: sp.x,
+        y: sp.y + vspace
+    };
+    let c2 = {
+        x: sp.x - hspace,
+        y: sp.y
+    };
+    let c3 = {
+        x: ep.x - hspace,
+        y: ep.y 
+    };
+    let c4 = {
+        x: ep.x,
+        y: ep.y - vspace
+    };
+    let m1 = {
+        x: sp.x - hspace,
+        y: sp.y + vspace
+    };
+    let m2 = {
+        x: ep.x - hspace,
+        y: ep.y - vspace
+    };
+    return "M {0}, {1} C {2}, {3} {4}, {5} {6}, {7} L {8} {9} C {10}, {11} {12}, {13} {14}, {15}".format(
+        sp.x, sp.y, c1.x, c1.y, c2.x,
+        c2.y, m1.x, m1.y, m2.x, m2.y, 
+        c3.x, c3.y, c4.x, c4.y, ep.x, ep.y
+    )
+}
+
+function change_straight(sp, ep){
+    return "M {0}, {1} L {2}, {3}".format(
+        sp.x, sp.y, ep.x, ep.y
+    )
+}
