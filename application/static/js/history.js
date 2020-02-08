@@ -21,7 +21,8 @@ let HistoryLayout = function (container) {
 
     that.svg = container.select("#history-view").append("svg");
     that.line_group = that.svg.append("g").attr("id", "line");
-    that.cell_group = that.svg.append("g").attr("id", "cell");
+    that.cell_group = that.svg.append("g").attr("id", "cell");;
+    that.legend_group = that.svg.append("g").attr("id", "legend");
 
     let node_color = "rgb(127,127,127)";
 
@@ -32,6 +33,24 @@ let HistoryLayout = function (container) {
             .attr("height", layout_height);
         that.line_group.attr("transform", "translate(" + margin_horizontal + ", " + 0 + ")");
         that.cell_group.attr("transform", "translate(" + margin_horizontal + ", " + 0 + ")");
+        that.legend_group.attr("transform", "translate(" + margin_horizontal + ", " + 0 + ")");
+
+        let legend = ["# added edges", "# removed edges", "# removed instances", "# label changes"];
+        that.legend_group.selectAll("text.legend")
+            .data(legend)
+            .enter()
+            .append("text")
+            .attr("class", "legend")
+            .attr("text-anchor", "start")
+            .attr("font-size", "11px")
+            .attr("x", 0)
+            .attr("y", 0)
+            .attr("transform", function(d, i){
+                return "translate(" + (dist_start + (i + 0.5) * dist_width) 
+                    + ", " + 8 + ") rotate(30)";
+            })
+            .style("opacity", 0)
+            .text(d => d);
     };
 
     that.set_data_manager = function(new_data_manager) {
@@ -44,8 +63,21 @@ let HistoryLayout = function (container) {
     };
 
     that._update_data = function(data) {
+        // history data
         that.history_data = data.history.reverse();
+        for (let i = 0; i < that.history_data.length; i++){
+            let hdata = that.history_data[i];
+            hdata.height = [];
+            for (let j = 0; j < hdata.dist.length; j++){
+                let rect_height = hdata.dist[j] * cell_height * 0.8;
+                hdata.height.push(rect_height === 0 ? 1 : rect_height);
+            }
+        }
+        // focus data
         that.focus_id = data.current_id;
+        // legend height
+        that.legend_height = that.history_data.length * cell_height;
+        // line data
         that.line_data = [];
         let cnt = that.history_data.length
         for(let row_idx = 0; row_idx < cnt; row_idx++){
@@ -132,15 +164,25 @@ let HistoryLayout = function (container) {
             .attr("height", 1)
             .style("fill", "rgb(222,222,222)");
         that.cells.selectAll("rect.change")
-            .data(d=>d.dist)
+            .data(d=>d.height)
             .enter()
             .append("rect")
             .attr("class", "change")
             .attr("x", (_,i) => dist_start + i * dist_width)
-            .attr("y", d => cell_height - d * cell_height)
+            .attr("y", d => cell_height - d)
             .attr("width", dist_width * 0.95)
-            .attr("height", d => d * cell_height)
+            .attr("height", d => d)
             .style("fill", node_color);
+        that.cells.selectAll("text.text-change")
+            .data(d => zip([d.unnorm_dist, d.height]))
+            .enter()
+            .append("text")
+            .attr("class", "text-change")
+            .attr("text-anchor", "middle")
+            .attr("x", (_,i) => dist_start + (i + 0.5) * dist_width)
+            .attr("y", d => cell_height - d[1] - 3)
+            .attr("font-size", "11px")
+            .text(d => d[0]);
         that.cells.append("text")
             .attr("font-family", '"Helvetica Neue", Helvetica, Arial, sans-serif')
             .attr("font-size", "13px")
@@ -178,6 +220,13 @@ let HistoryLayout = function (container) {
         that.line_group.selectAll("path")
             .data(that.line_data, d => d.id)
             .attr("d",d => d.path)
+
+        that.legend_group.selectAll("text.legend")
+            .attr("transform", function(d, i){
+                return "translate(" + (dist_start + (i + 0.5) * dist_width )
+                    + ", " + (that.legend_height + 8) + ") rotate(30)";
+            })
+            .style("opacity", 1);
         
     };
 

@@ -288,7 +288,7 @@ class GraphData(Data):
         print("current state:", self.current_state.name)
     
     def return_state(self):
-        # TODO: add data
+        max_count = 1
         history = []
         for i in range(self.state_idx):
             data = self.state_data[i]
@@ -314,6 +314,9 @@ class GraphData(Data):
                 label[data["pred"].argmax(axis=1)<1e-8] = -1
                 dist[3] = sum(label != pre_label)
             dist = [int(k) for k in dist]
+            # update max_count
+            if max(dist) > max_count:
+                max_count = max(dist)
             children = data["state"].children
             children_idx = [int(i.name) for i in children]
             history.append({
@@ -322,6 +325,13 @@ class GraphData(Data):
                 "children": children_idx,
                 "id": i
             })
+
+        # update dist
+        for i in range(self.state_idx):
+            state = history[i]
+            unnorm_dist = state["dist"].copy()
+            state["dist"] = [i/max_count for i in unnorm_dist]
+            state["unnorm_dist"] = unnorm_dist
         return {
             "history": history,
             "current_id": int(self.current_state.name)

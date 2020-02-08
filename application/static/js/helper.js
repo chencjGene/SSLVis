@@ -219,3 +219,7 @@ function change_straight(sp, ep){
         sp.x, sp.y, ep.x, ep.y
     )
 }
+
+function zip(rows){
+    return rows[0].map((_,c)=>rows.map(row=>row[c]));
+}
