@@ -34,8 +34,6 @@ let GraphLayout = function (container) {
     let nodes_in_group = null;
     let golds_in_group = null;
     let glyph_in_group = null;
-    let lasso_btn_path = null;
-    let fisheye_btn_path = null;
 
     // meta data
     let nodes = {};
@@ -75,8 +73,6 @@ let GraphLayout = function (container) {
         glyph_group = that.main_group.append("g").attr("id", "graph-glyph-g");
         that.width = $('#graph-view-svg').width();
         that.height = $('#graph-view-svg').height();
-        lasso_btn_path = d3.select("#lasso-btn").select("path");
-        fisheye_btn_path = d3.select("#fisheye-btn").select("path");
 
         // add marker to svg
         that._add_marker();
@@ -87,70 +83,6 @@ let GraphLayout = function (container) {
 
         // init zoom
         transform_plg.set_zoom();
-
-        // init btn
-        $("#lasso-btn").click(function () {
-            that._change_lasso_mode();
-        }).on("mouseover", function () {
-            if (d3.select("#lasso-btn").style("background-color") === "rgba(0, 0, 0, 0)"
-                || d3.select("#lasso-btn").style("background-color") === "white"
-                || d3.select("#lasso-btn").style("background-color") === "rgb(255, 255, 255)") {
-                d3.select("#lasso-btn").style("background", "gray");
-                lasso_btn_path.attr("stroke", "white").attr("fill", "white");
-            }
-        }).on("mousemove", function () {
-            if (d3.select("#lasso-btn").style("background-color") === "rgba(0, 0, 0, 0)"
-                || d3.select("#lasso-btn").style("background-color") === "white"
-                || d3.select("#lasso-btn").style("background-color") === "rgb(255, 255, 255)") {
-                d3.select("#lasso-btn").style("background", "gray");
-                lasso_btn_path.attr("stroke", "white").attr("fill", "white");
-            }
-        }).on("mouseout", function () {
-            if (d3.select("#lasso-btn").style("background-color") === "gray") {
-                d3.select("#lasso-btn").style("background", "white");
-                lasso_btn_path.attr("stroke", "black").attr("fill", "black");
-            }
-        });
-        $("#fisheye-btn")
-            .click(function () {
-                if(is_show_path){
-                    is_show_path = false;
-                    highlight_plg.hide_selection_nodes_path();
-                    $("#fisheye-btn").css("background-color", "gray");
-                    fisheye_btn_path.attr("stroke", "white").attr("fill", "white");
-                }
-                else {
-                    is_show_path = true;
-                    if(if_lasso){
-                        that._change_lasso_mode();
-                    }
-                    highlight_plg.show_selection_nodes_path();
-                    $("#fisheye-btn").css("background-color", btn_select_color);
-                    fisheye_btn_path.attr("stroke", "white").attr("fill", "white");
-                }
-            })
-            .on("mouseover", function () {
-            if (d3.select("#fisheye-btn").style("background-color") === "rgba(0, 0, 0, 0)"
-                || d3.select("#fisheye-btn").style("background-color") === "white"
-                || d3.select("#fisheye-btn").style("background-color") === "rgb(255, 255, 255)") {
-                d3.select("#fisheye-btn").style("background", "gray");
-                fisheye_btn_path.attr("stroke", "white").attr("fill", "white");
-            }
-        })
-            .on("mousemove", function () {
-            if (d3.select("#fisheye-btn").style("background-color") === "rgba(0, 0, 0, 0)"
-                || d3.select("#fisheye-btn").style("background-color") === "white"
-                || d3.select("#fisheye-btn").style("background-color") === "rgb(255, 255, 255)") {
-                d3.select("#fisheye-btn").style("background", "gray");
-                fisheye_btn_path.attr("stroke", "white").attr("fill", "white");
-            }
-        })
-            .on("mouseout", function () {
-            if (d3.select("#fisheye-btn").style("background-color") === "gray") {
-                d3.select("#fisheye-btn").style("background", "white");
-                fisheye_btn_path.attr("stroke", "black").attr("fill", "black");
-            }
-        });
     };
 
     that.set_data_manager = function(new_data_manager) {
@@ -619,22 +551,12 @@ let GraphLayout = function (container) {
         highlight_plg.highlight(nodes, ids);
     };
 
-    that._change_lasso_mode = function () {
-        if (if_lasso) {
-            if_lasso = false;
-            $("#lasso-btn").css("background-color", "gray");
-            lasso_btn_path.attr("stroke", "white").attr("fill", "white");
-            that.lasso_or_zoom("zoom")
-        } else {
-            if_lasso = true;
-            $("#lasso-btn").css("background-color", btn_select_color);
-            lasso_btn_path.attr("stroke", "white").attr("fill", "white");
-            that.lasso_or_zoom("lasso");
-        }
-    };
-
     that.get_highlights = function() {
         return highlights;
+    };
+
+    that.get_is_show_path = function() {
+        return is_show_path;
     };
 
     that.init = function () {

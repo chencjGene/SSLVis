@@ -5,12 +5,86 @@ let GraphHighlight = function (parent) {
     let view = null;
 
     let lasso = null;
+    let if_lasso = false;
+    let lasso_btn_path = null;
+    let fisheye_btn_path = null;
+    let btn_select_color = "#560731";
 
     that._init = function () {
         that.set_view(parent);
         lasso = d3.lasso()
-        .closePathSelect(true)
-        .closePathDistance(100);
+            .closePathSelect(true)
+            .closePathDistance(100);
+        lasso_btn_path = d3.select("#lasso-btn").select("path");
+        fisheye_btn_path = d3.select("#fisheye-btn").select("path");
+
+        $("#lasso-btn")
+            .click(function () {
+            that._change_lasso_mode();
+        })
+            .on("mouseover", function () {
+            if (d3.select("#lasso-btn").style("background-color") === "rgba(0, 0, 0, 0)"
+                || d3.select("#lasso-btn").style("background-color") === "white"
+                || d3.select("#lasso-btn").style("background-color") === "rgb(255, 255, 255)") {
+                d3.select("#lasso-btn").style("background", "gray");
+                lasso_btn_path.attr("stroke", "white").attr("fill", "white");
+            }
+        })
+            .on("mousemove", function () {
+            if (d3.select("#lasso-btn").style("background-color") === "rgba(0, 0, 0, 0)"
+                || d3.select("#lasso-btn").style("background-color") === "white"
+                || d3.select("#lasso-btn").style("background-color") === "rgb(255, 255, 255)") {
+                d3.select("#lasso-btn").style("background", "gray");
+                lasso_btn_path.attr("stroke", "white").attr("fill", "white");
+            }
+        })
+            .on("mouseout", function () {
+            if (d3.select("#lasso-btn").style("background-color") === "gray") {
+                d3.select("#lasso-btn").style("background", "white");
+                lasso_btn_path.attr("stroke", "black").attr("fill", "black");
+            }
+        });
+
+        $("#fisheye-btn")
+            .click(function () {
+                let is_show_path = view.get_is_show_path();
+                if(is_show_path){
+                    that.hide_selection_nodes_path();
+                    $("#fisheye-btn").css("background-color", "gray");
+                    fisheye_btn_path.attr("stroke", "white").attr("fill", "white");
+                }
+                else {
+                    is_show_path = true;
+                    if(if_lasso){
+                        that._change_lasso_mode();
+                    }
+                    that.show_selection_nodes_path();
+                    $("#fisheye-btn").css("background-color", btn_select_color);
+                    fisheye_btn_path.attr("stroke", "white").attr("fill", "white");
+                }
+            })
+            .on("mouseover", function () {
+            if (d3.select("#fisheye-btn").style("background-color") === "rgba(0, 0, 0, 0)"
+                || d3.select("#fisheye-btn").style("background-color") === "white"
+                || d3.select("#fisheye-btn").style("background-color") === "rgb(255, 255, 255)") {
+                d3.select("#fisheye-btn").style("background", "gray");
+                fisheye_btn_path.attr("stroke", "white").attr("fill", "white");
+            }
+        })
+            .on("mousemove", function () {
+            if (d3.select("#fisheye-btn").style("background-color") === "rgba(0, 0, 0, 0)"
+                || d3.select("#fisheye-btn").style("background-color") === "white"
+                || d3.select("#fisheye-btn").style("background-color") === "rgb(255, 255, 255)") {
+                d3.select("#fisheye-btn").style("background", "gray");
+                fisheye_btn_path.attr("stroke", "white").attr("fill", "white");
+            }
+        })
+            .on("mouseout", function () {
+            if (d3.select("#fisheye-btn").style("background-color") === "gray") {
+                d3.select("#fisheye-btn").style("background", "white");
+                fisheye_btn_path.attr("stroke", "black").attr("fill", "black");
+            }
+        });
     };
 
     that.set_view = function (new_parent) {
@@ -156,6 +230,20 @@ let GraphHighlight = function (parent) {
 
     that.hide_selection_nodes_path = function() {
         view.data_manager.show_path_node([]);
+    };
+
+    that._change_lasso_mode = function () {
+        if (if_lasso) {
+            if_lasso = false;
+            $("#lasso-btn").css("background-color", "gray");
+            lasso_btn_path.attr("stroke", "white").attr("fill", "white");
+            view.lasso_or_zoom("zoom")
+        } else {
+            if_lasso = true;
+            $("#lasso-btn").css("background-color", btn_select_color);
+            lasso_btn_path.attr("stroke", "white").attr("fill", "white");
+            view.lasso_or_zoom("lasso");
+        }
     };
 
     that.init = function () {
