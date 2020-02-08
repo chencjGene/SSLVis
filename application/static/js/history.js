@@ -19,22 +19,19 @@ let HistoryLayout = function (container) {
     let dist_width = layout_width * 0.1;
     let data_manager = null;
 
-    let svg = container.select("#history-view").append("svg");
-    let title_group = svg.append("g").attr("id", "title");
-    let line_group = svg.append("g").attr("id", "line");
-    let cell_group = svg.append("g").attr("id", "cell");
+    that.svg = container.select("#history-view").append("svg");
+    that.line_group = that.svg.append("g").attr("id", "line");
+    that.cell_group = that.svg.append("g").attr("id", "cell");
 
     let node_color = "rgb(127,127,127)";
 
     that._init = function () {
         container.select("#history-view")
             .style("height", (height * 0.80)+"px");
-        svg.attr("width", width)
+        that.svg.attr("width", width)
             .attr("height", layout_height);
-        line_group.attr("transform", "translate(" + margin_horizontal + ", " + 0 + ")");
-        cell_group.attr("transform", "translate(" + margin_horizontal + ", " + 0 + ")");
-        title_group.attr("transform", "translate(" + margin_horizontal + ", " + 0 + ")");
-
+        that.line_group.attr("transform", "translate(" + margin_horizontal + ", " + 0 + ")");
+        that.cell_group.attr("transform", "translate(" + margin_horizontal + ", " + 0 + ")");
     };
 
     that.set_data_manager = function(new_data_manager) {
@@ -47,59 +44,38 @@ let HistoryLayout = function (container) {
     };
 
     that._update_data = function(data) {
-        // // DEBUG
-        // new_history_data = [
-        //     {
-        //         dist: [0.83, 0.58, 0.39, 0.41], 
-        //         margin: 0.0,
-        //         children: [1,3],
-        //         id: 0,
-        //     },
-        //     {
-        //         dist: [0.83, 0.58, 0.39, 0.41], 
-        //         margin: 0.1,
-        //         children: [2],
-        //         id: 1,
-        //     },    
-        //     {
-        //         dist: [0.83, 0.58, 0.39, 0.41], 
-        //         margin: 0.2,
-        //         children: [],
-        //         id: 2,
-        //     },
-        //     {
-        //         dist: [0.83, 0.58, 0.39, 0.41], 
-        //         margin: 0.0,
-        //         children: [],
-        //         id: 3,
-        //     }
-        // ]
-
         that.history_data = data.history.reverse();
         that.focus_id = data.current_id;
         that.line_data = [];
         let cnt = that.history_data.length
         for(let row_idx = 0; row_idx < cnt; row_idx++){
             let row_data = that.history_data[row_idx];
-            let start_idx = row_data.id;
+            let end_idx = row_data.id;
             let end_point = {
                 x: action_id_center,
-                y: (cnt - start_idx) * cell_height 
+                y: (cnt - end_idx - 0.5) * cell_height 
             };
-            for(let child of row_data.children){
+            for(let start_idx of row_data.children){
                 let start_point = {
                     x: action_id_center,
-                    y: (cnt - child) * cell_height 
+                    y: (cnt - start_idx - 0.5) * cell_height
                 };
                 let d = null;
-                if ((child - start_idx) == 1){
+                if ((start_idx - end_idx) == 1){
                     d = change_straight(start_point, end_point);
                 }
                 else{
                     d = change_path(start_point, end_point, 30, 40);
                 }
-                that.line_data.push(d);
+                that.line_data.push({
+                    "path": d,
+                    "id": start_idx + "-" + end_idx
+                });
             }
+        }
+
+        if (cnt * cell_height > layout_height){
+            that.svg.attr("height", cnt * cell_height);
         }
     };
 
@@ -112,17 +88,28 @@ let HistoryLayout = function (container) {
     that._create = function(){
         // create cells
         console.log("history_data", that.history_data);
-        that.cells = cell_group.selectAll("g.cell")
+        that.cells = that.cell_group.selectAll("g.cell")
             .data(that.history_data, d => d.id)
             .enter()
             .append("g")
             .attr("class", "cell")
-            .attr("transform", (_,i) => "translate(" + 0 + ", " + i * cell_height + ")");
+            .attr("id", d => "id-" + d.id)
+            .attr("transform", 
+                (_,i) => "translate(" + 0 + ", " + i * cell_height + ")")
+            .on("mouseover", that.highlight)
+            .on("mouseout", that.delighlight);
+        that.cells.append("rect")
+            .attr("class", "background")
+            .attr("x", 0)
+            .attr("y", 1)
+            .attr("width", cell_width)
+            .attr("height", cell_height - 1)
+            .style("fill", "white")
+            .style("fill-opacity", 0);
         that.cells.append("circle")
             .attr("class", "action-circle")
             .attr("cx", action_id_center)
-            // .attr("cy", cell_height * 0.5)
-            .attr("cy", cell_height)
+            .attr("cy", cell_height * 0.5)
             .attr("r", 10)
             .style("fill", d => d.id === that.focus_id ? 
                 "rgb(127, 127, 127)" : "rgb(222, 222, 222)")
@@ -135,8 +122,7 @@ let HistoryLayout = function (container) {
             .attr("class", "action-id")
             .attr("text-anchor", "middle")
             .attr("x", action_id_center)
-            .attr("y", cell_height + 4.5)
-            // .attr("y", cell_height * 0.5 + 4.5)
+            .attr("y", cell_height * 0.5 + 4.5)
             .text(d => d.id);
         that.cells.append("rect")
             .attr("class", ".bottom-line")
@@ -168,36 +154,61 @@ let HistoryLayout = function (container) {
 
 
         // //draw line
-        line_group.selectAll("path")
-            .data(that.line_data)
+        that.line_group.selectAll("path")
+            .data(that.line_data, d => d.id)
             .enter()
             .append("path")
             .attr("stroke-width", 2.0)
             .attr("fill-opacity", 0)
             .attr("stroke", node_color)
             .style("stroke", "rgb(222, 222, 222)")
-            .attr("d", function (d) {
-                return d;
-            })
+            .attr("d", d => d.path)
     };
 
     that._update =  function() {
         // update cells
-        that.cells = cell_group.selectAll("g.cell")
+        that.cells = that.cell_group.selectAll("g.cell")
             .data(that.history_data, d => d.id)
             .attr("transform", (_,i) => "translate(" + 0 + ", " + i * cell_height + ")");
         that.cells.select("circle")
             .style("fill", d => d.id === that.focus_id ?
                 "rgb(127, 127, 127)" : "rgb(222, 222, 222)");
+
+        // update lines
+        that.line_group.selectAll("path")
+            .data(that.line_data, d => d.id)
+            .attr("d",d => d.path)
         
     };
 
     that._remove = function() {
-        // update cells
-        that.cells = cell_group.selectAll("g.cell")
+        // remove cells
+        that.cells = that.cell_group.selectAll("g.cell")
             .data(that.history_data, d => d.id)
             .exit()
             .remove();
+
+        // remove lines
+        that.line_group.selectAll("path")
+        .data(that.line_data, d => d.id)
+        .exit()
+        .remove();
+
+    };
+
+    that.highlight = function(d){
+        console.log("highlight in History view");
+        that.cell_group.select("#id-" + d.id)
+            .select("rect.background")
+            .style("fill-opacity", 0.1)
+            .style("fill", "gray");
+    };
+
+    that.delighlight = function(){
+        console.log("dehighlight in History view");
+        that.svg.selectAll("g.cell")
+            .select("rect.background")
+            .style("fill-opacity", 0);
     };
 
     that.init = function () {
