@@ -219,6 +219,7 @@ let FilterLayout = function (container) {
                         label_items[id] = false;
                     }
                     that.update_widget_showing_items(label_rect[i].data);
+                    label_widget_range.splice(label_widget_range.indexOf(i), 1);
                 }
                 else {
                     rect.attr("opacity", 0.5);
@@ -227,6 +228,7 @@ let FilterLayout = function (container) {
                         label_items[id] = true;
                     }
                     that.update_widget_showing_items(label_rect[i].data);
+                    label_widget_range.push(i);
                 }
             })
             .each(function (d, i) {
@@ -318,6 +320,7 @@ let FilterLayout = function (container) {
                             label_items[id] = false;
                         }
                         that.update_widget_showing_items(label_rect[i].data);
+                        label_widget_range.splice(label_widget_range.indexOf(i), 1);
                     }
                     else {
                         rect.attr("opacity", 0.5);
@@ -326,6 +329,7 @@ let FilterLayout = function (container) {
                             label_items[id] = true;
                         }
                         that.update_widget_showing_items(label_rect[i].data);
+                        label_widget_range.push(i);
                     }
                 });
             container.append("g")
@@ -462,7 +466,18 @@ let FilterLayout = function (container) {
                 .attr("d", draggable_item_path)
                 .attr("fill", "rgb(127, 127, 127)")
                 .attr("transform", "translate("+(container_width*0.1+(range[1]+1)*drag_interval)+","+(container_height*0.9)+")");
-            start_drag.call(d3.drag()
+        }
+        else {
+            start_drag = container.select(".start-drag");
+            end_drag = container.select(".end-drag");
+            start_drag.transition()
+                .duration(AnimationDuration)
+                .attr("transform", "translate("+(container_width*0.1+range[0]*drag_interval)+","+(container_height*0.9)+")");
+            end_drag.transition()
+                .duration(AnimationDuration)
+                .attr("transform", "translate("+(container_width*0.1+(range[1]+1)*drag_interval)+","+(container_height*0.9)+")");
+        }
+        start_drag.call(d3.drag()
                     .on("drag", function () {
                         let x = d3.event.x;
                         let drag_btn = d3.select(this);
@@ -539,18 +554,6 @@ let FilterLayout = function (container) {
                             return 0.5
                         })
                     }))
-        }
-        else {
-            start_drag = container.select(".start-drag");
-            end_drag = container.select(".end-drag");
-            start_drag.transition()
-                .duration(AnimationDuration)
-                .attr("transform", "translate("+(container_width*0.1+range[0]*drag_interval)+","+(container_height*0.9)+")");
-            end_drag.transition()
-                .duration(AnimationDuration)
-                .attr("transform", "translate("+(container_width*0.1+(range[1]+1)*drag_interval)+","+(container_height*0.9)+")");
-
-        }
     };
 
     that.get_visible_items = function() {

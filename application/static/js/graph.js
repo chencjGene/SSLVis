@@ -218,7 +218,7 @@ let GraphLayout = function (container) {
                 .transition()
                 .duration(AnimationDuration)
                 .attr("fill", function (d) {
-                    return color_label[d.label[iter]];
+                    return d.label[iter]===-1?color_unlabel:color_label[d.label[iter]];
                 })
                 .attr("opacity", d => that.opacity(d.id))
                 .attr("r", d => that.r(d.id))
@@ -230,7 +230,7 @@ let GraphLayout = function (container) {
                 .transition()
                 .duration(AnimationDuration)
                 .attr("fill", function (d) {
-                    return color_label[d.label[iter]];
+                    return d.label[iter]===-1?color_unlabel:color_label[d.label[iter]];
                 })
                 .attr("opacity", d => that.opacity(d.id))
                 .attr("d", d => star_path(10 * zoom_scale, 4 * zoom_scale, that.center_scale_x(d.x), that.center_scale_y(d.y)))
@@ -245,7 +245,6 @@ let GraphLayout = function (container) {
                 .attr("opacity", d => that.opacity(d.id))
                 .on("end", resolve);
             glyph_in_group.selectAll("path")
-                .data(d => pie(d.score[iter]))
                 .append("path")
                 .attr("d", arc)
                 .attr("fill", (d,i) => color_label[i]);
@@ -286,7 +285,7 @@ let GraphLayout = function (container) {
                 .attr("r", d => that.r(d.id))
                 .attr("opacity", 0)
                 .attr("fill", function (d) {
-                    return color_label[d.label[iter]];
+                    return d.label[iter]===-1?color_unlabel:color_label[d.label[iter]];
                 })
                 .on("mouseover", function (d) {
                     // check if hided
@@ -329,7 +328,7 @@ let GraphLayout = function (container) {
                 .attr("id", d => "gold-" + d.id)
                 .attr("d", d => star_path(10 * zoom_scale, 4 * zoom_scale, that.center_scale_x(d.x), that.center_scale_y(d.y)))
                 .attr("fill", function (d) {
-                    return color_label[d.label[iter]];
+                    return d.label[iter]===-1?color_unlabel:color_label[d.label[iter]];
                 })
                 .attr("stroke", "white")
                 .attr("stroke-width", 1.5*zoom_scale)
@@ -366,7 +365,6 @@ let GraphLayout = function (container) {
                 .data(d => pie(d.score[iter]))
                 .enter()
                 .append("path")
-                .attr("id", d => "score-pie-"+d.id)
                 .attr("d", arc)
                 .attr("fill", (d,i) => color_label[i]);
             glyph_in_group.enter()
