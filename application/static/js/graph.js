@@ -15,9 +15,10 @@ let GraphLayout = function (container) {
     that.height = bbox.height;
     let layout_width = that.width - 20;
     let layout_height = that.height - 20;
-    let zoom_scale = 1;
+    that.zoom_scale = 1;
 
     // other consts
+    let btn_select_color = "#560731";
     let color_unlabel = UnlabeledColor;
     let color_label = CategoryColor;
     let edge_color = UnlabeledColor;
@@ -33,6 +34,8 @@ let GraphLayout = function (container) {
     let nodes_in_group = null;
     let golds_in_group = null;
     let glyph_in_group = null;
+    let lasso_btn_path = null;
+    let fisheye_btn_path = null;
 
     // meta data
     let nodes = {};
@@ -56,7 +59,9 @@ let GraphLayout = function (container) {
     that.main_group = null;
 
     // plugin
-    let transform = null;
+    let transform_plg = null;
+    let highlight_plg = null;
+    let if_lasso = false;
 
     that._init = function () {
         // container init
@@ -70,16 +75,82 @@ let GraphLayout = function (container) {
         glyph_group = that.main_group.append("g").attr("id", "graph-glyph-g");
         that.width = $('#graph-view-svg').width();
         that.height = $('#graph-view-svg').height();
+        lasso_btn_path = d3.select("#lasso-btn").select("path");
+        fisheye_btn_path = d3.select("#fisheye-btn").select("path");
 
         // add marker to svg
         that._add_marker();
 
         //add plugin
-        transform = new GraphTransform(that);
-
+        transform_plg = new GraphTransform(that);
+        highlight_plg = new GraphHighlight(that);
 
         // init zoom
-        transform.init_zoom();
+        transform_plg.set_zoom();
+
+        // init btn
+        $("#lasso-btn").click(function () {
+            that._change_lasso_mode();
+        }).on("mouseover", function () {
+            if (d3.select("#lasso-btn").style("background-color") === "rgba(0, 0, 0, 0)"
+                || d3.select("#lasso-btn").style("background-color") === "white"
+                || d3.select("#lasso-btn").style("background-color") === "rgb(255, 255, 255)") {
+                d3.select("#lasso-btn").style("background", "gray");
+                lasso_btn_path.attr("stroke", "white").attr("fill", "white");
+            }
+        }).on("mousemove", function () {
+            if (d3.select("#lasso-btn").style("background-color") === "rgba(0, 0, 0, 0)"
+                || d3.select("#lasso-btn").style("background-color") === "white"
+                || d3.select("#lasso-btn").style("background-color") === "rgb(255, 255, 255)") {
+                d3.select("#lasso-btn").style("background", "gray");
+                lasso_btn_path.attr("stroke", "white").attr("fill", "white");
+            }
+        }).on("mouseout", function () {
+            if (d3.select("#lasso-btn").style("background-color") === "gray") {
+                d3.select("#lasso-btn").style("background", "white");
+                lasso_btn_path.attr("stroke", "black").attr("fill", "black");
+            }
+        });
+        $("#fisheye-btn")
+            .click(function () {
+                if(is_show_path){
+                    is_show_path = false;
+                    highlight_plg.hide_selection_nodes_path();
+                    $("#fisheye-btn").css("background-color", "gray");
+                    fisheye_btn_path.attr("stroke", "white").attr("fill", "white");
+                }
+                else {
+                    is_show_path = true;
+                    if(if_lasso){
+                        that._change_lasso_mode();
+                    }
+                    highlight_plg.show_selection_nodes_path();
+                    $("#fisheye-btn").css("background-color", btn_select_color);
+                    fisheye_btn_path.attr("stroke", "white").attr("fill", "white");
+                }
+            })
+            .on("mouseover", function () {
+            if (d3.select("#fisheye-btn").style("background-color") === "rgba(0, 0, 0, 0)"
+                || d3.select("#fisheye-btn").style("background-color") === "white"
+                || d3.select("#fisheye-btn").style("background-color") === "rgb(255, 255, 255)") {
+                d3.select("#fisheye-btn").style("background", "gray");
+                fisheye_btn_path.attr("stroke", "white").attr("fill", "white");
+            }
+        })
+            .on("mousemove", function () {
+            if (d3.select("#fisheye-btn").style("background-color") === "rgba(0, 0, 0, 0)"
+                || d3.select("#fisheye-btn").style("background-color") === "white"
+                || d3.select("#fisheye-btn").style("background-color") === "rgb(255, 255, 255)") {
+                d3.select("#fisheye-btn").style("background", "gray");
+                fisheye_btn_path.attr("stroke", "white").attr("fill", "white");
+            }
+        })
+            .on("mouseout", function () {
+            if (d3.select("#fisheye-btn").style("background-color") === "gray") {
+                d3.select("#fisheye-btn").style("background", "white");
+                fisheye_btn_path.attr("stroke", "black").attr("fill", "black");
+            }
+        });
     };
 
     that.set_data_manager = function(new_data_manager) {
@@ -104,7 +175,7 @@ let GraphLayout = function (container) {
         path_nodes = {};
         let path_keys = [];//remove duplicates
         for(let target_id of state.path){
-            for(let source_id of nodes[target_id]){
+            for(let source_id of nodes[target_id].path){
                 let key = source_id+","+target_id;
                 if(path_keys.indexOf(key) > -1) continue;
                 path.push([nodes[source_id], nodes[target_id]]);
@@ -115,6 +186,9 @@ let GraphLayout = function (container) {
         }
         // glyphs
         glyphs = that.get_top_k_uncertainty(nodes, 20);
+        for(let node_id of Object.keys(path_nodes).map(d => parseInt(d))){
+            if(glyphs.indexOf(node_id) === -1) glyphs.push(node_id);
+        }
         //iter
         iter = Object.values(nodes)[0].label.length-1;
     };
@@ -137,11 +211,11 @@ let GraphLayout = function (container) {
                 .data(glyphs_ary, d => d.id);
             path_in_group = path_group.selectAll("path")
                 .data(path_ary, d => d[0].id+","+d[1].id);
-
             //
             console.log("remove");
             await that._remove();
-            //TODO transform
+            console.log("transform");
+            await transform_plg._update_transform(area);
             console.log("update");
             await that._update();
             console.log("create");
@@ -233,11 +307,11 @@ let GraphLayout = function (container) {
                     return d.label[iter]===-1?color_unlabel:color_label[d.label[iter]];
                 })
                 .attr("opacity", d => that.opacity(d.id))
-                .attr("d", d => star_path(10 * zoom_scale, 4 * zoom_scale, that.center_scale_x(d.x), that.center_scale_y(d.y)))
+                .attr("d", d => star_path(10 * that.zoom_scale, 4 * that.zoom_scale, that.center_scale_x(d.x), that.center_scale_y(d.y)))
                 .on("end", resolve);
 
             let pie = d3.pie().value(d => d);
-            let arc = d3.arc().outerRadius(11 * zoom_scale).innerRadius(7 * zoom_scale);
+            let arc = d3.arc().outerRadius(11 * that.zoom_scale).innerRadius(7 * that.zoom_scale);
             glyph_in_group
                 .transition()
                 .duration(AnimationDuration)
@@ -250,15 +324,15 @@ let GraphLayout = function (container) {
                 .attr("fill", (d,i) => color_label[i]);
 
             path_in_group
-                .attr("stroke-width", 2.0 * zoom_scale)
+                .attr("stroke-width", 2.0 * that.zoom_scale)
                 .attr("stroke", edge_color)
                 .attr("marker-mid", d => "url(#arrow-gray)")
                 .attr("fill", "none")
                 .transition()
                 .duration(AnimationDuration)
                 .attr("d", function (d) {
-                    let begin = [that.center_scale_x(d[0].datum().x), that.center_scale_y(d[0].datum().y)];
-                    let end = [that.center_scale_x(d[1].datum().x), that.center_scale_y(d[1].datum().y)];
+                    let begin = [that.center_scale_x(d[0].x), that.center_scale_y(d[0].y)];
+                    let end = [that.center_scale_x(d[1].x), that.center_scale_y(d[1].y)];
                     let mid = curve_mid(begin, end);
                     return pathGenerator([begin,mid, end]);
                 })
@@ -295,7 +369,7 @@ let GraphLayout = function (container) {
                         return
                     }
                     let node = d3.select(this);
-                    node.attr("r", 5 * that.zoom_scale);
+                    node.attr("r", 5 * that.that.zoom_scale);
                     // that._update_click_menu();
                     if (focus_node_change_switch) {
                         focus_node_id = d.id;
@@ -326,12 +400,12 @@ let GraphLayout = function (container) {
             golds_in_group.enter()
                 .append("path")
                 .attr("id", d => "gold-" + d.id)
-                .attr("d", d => star_path(10 * zoom_scale, 4 * zoom_scale, that.center_scale_x(d.x), that.center_scale_y(d.y)))
+                .attr("d", d => star_path(10 * that.zoom_scale, 4 * that.zoom_scale, that.center_scale_x(d.x), that.center_scale_y(d.y)))
                 .attr("fill", function (d) {
                     return d.label[iter]===-1?color_unlabel:color_label[d.label[iter]];
                 })
                 .attr("stroke", "white")
-                .attr("stroke-width", 1.5*zoom_scale)
+                .attr("stroke-width", 1.5*that.zoom_scale)
                 .attr("opacity", 0)
                 .on("mouseover", function (d) {
                     // check if hided
@@ -351,7 +425,7 @@ let GraphLayout = function (container) {
                 .on("end", resolve);
 
             let pie = d3.pie().value(d => d);
-            let arc = d3.arc().outerRadius(11 * zoom_scale).innerRadius(7 * zoom_scale);
+            let arc = d3.arc().outerRadius(11 * that.zoom_scale).innerRadius(7 * that.zoom_scale);
             glyph_in_group.enter()
                 .append("g")
                 .attr("class", "pie-chart")
@@ -375,20 +449,20 @@ let GraphLayout = function (container) {
 
             path_in_group.enter()
                 .append("path")
-                .attr("stroke-width", 2.0 * zoom_scale)
+                .attr("stroke-width", 2.0 * that.zoom_scale)
                 .attr("stroke", edge_color)
                 .attr("opacity", 0)
                 .attr("marker-mid", d => "url(#arrow-gray)")
                 .attr("fill", "none")
                 .attr("d", function (d) {
-                    let begin = [that.center_scale_x(d[0].datum().x), that.center_scale_y(d[0].datum().y)];
-                    let end = [that.center_scale_x(d[1].datum().x), that.center_scale_y(d[1].datum().y)];
+                    let begin = [that.center_scale_x(d[0].x), that.center_scale_y(d[0].y)];
+                    let end = [that.center_scale_x(d[1].x), that.center_scale_y(d[1].y)];
                     let mid = curve_mid(begin, end);
                     return pathGenerator([begin,mid, end]);
                 })
                 .on("mouseover", function (d) {
                             console.log(d);
-                            d3.select(this).style("stroke-width", 4.0 * that.zoom_scale);
+                            d3.select(this).style("stroke-width", 4.0 * that.that.zoom_scale);
                             focus_edge_id = d;
                             console.log("focus_edge_id = " + focus_edge_id);
                             focus_edge_node = this;
@@ -399,7 +473,7 @@ let GraphLayout = function (container) {
                             focus_edge_id = null;
                             console.log("focus_edge_id = null");
                             focus_edge_node = null;
-                            d3.select(this).style("stroke-width", 2.0 * that.zoom_scale);
+                            d3.select(this).style("stroke-width", 2.0 * that.that.zoom_scale);
                         }
                     })
                 .transition()
@@ -419,15 +493,15 @@ let GraphLayout = function (container) {
     that.r = function(id) {
         if(is_show_path){
             if(path_nodes[id] !== undefined){
-                return 5*zoom_scale;
+                return 5*that.zoom_scale;
             }
-            return 3.5*zoom_scale
+            return 3.5*that.zoom_scale
         }
         else {
             if( highlights.indexOf(id) > -1){
-                return 5*zoom_scale;
+                return 5*that.zoom_scale;
             }
-            return 3.5*zoom_scale
+            return 3.5*that.zoom_scale
         }
     };
 
@@ -489,25 +563,78 @@ let GraphLayout = function (container) {
 };
 
     that.update_zoom_scale = function(new_zoom_scale) {
-        zoom_scale = new_zoom_scale;
+        that.zoom_scale = new_zoom_scale;
     };
 
     that.maintain_size = function (transform_event) {
-        zoom_scale = 1.0 / transform_event.k;
+        that.zoom_scale = 1.0 / transform_event.k;
         nodes_in_group.attr("r", d => that.r(d.id));
-        golds_in_group.attr("d", d => star_path(10 * zoom_scale, 4 * zoom_scale, that.center_scale_x(d.x), that.center_scale_y(d.y)))
-            .attr("stroke-width", 1.5*zoom_scale);
+        golds_in_group.attr("d", d => star_path(10 * that.zoom_scale, 4 * that.zoom_scale, that.center_scale_x(d.x), that.center_scale_y(d.y)))
+            .attr("stroke-width", 1.5*that.zoom_scale);
         path_in_group.attr("d", function (d) {
             let begin = [that.center_scale_x(d[0].datum().x), that.center_scale_y(d[0].datum().y)];
             let end = [that.center_scale_x(d[1].datum().x), that.center_scale_y(d[1].datum().y)];
             let mid = curve_mid(begin, end);
             return pathGenerator([begin,mid, end]);
         });
-        // edges_group.selectAll("line").style('stroke-width', zoom_scale);
-        // that.main_group.select("#group-propagation").selectAll("path").style('stroke-width', 2.0 * zoom_scale);
-        // main_group.select("#single-propagate").selectAll("polyline").style('stroke-width', 2.0 * zoom_scale);
-        let arc = d3.arc().outerRadius(11 * zoom_scale).innerRadius(7 * zoom_scale);
+        // edges_group.selectAll("line").style('stroke-width', that.zoom_scale);
+        // that.main_group.select("#group-propagation").selectAll("path").style('stroke-width', 2.0 * that.zoom_scale);
+        // main_group.select("#single-propagate").selectAll("polyline").style('stroke-width', 2.0 * that.zoom_scale);
+        let arc = d3.arc().outerRadius(11 * that.zoom_scale).innerRadius(7 * that.zoom_scale);
         glyph_in_group.selectAll("path").attr("d", arc);
+    };
+
+    that.get_visible_items = function() {
+        return visible_items;
+    };
+
+    that.get_nodes = function() {
+        return nodes;
+    };
+
+    that.get_nodes_in_group = function() {
+        return nodes_in_group;
+    };
+
+    that.lasso_or_zoom = function(mode) {
+        if(mode === "lasso"){
+            transform_plg.remove_zoom();
+            highlight_plg.set_lasso();
+        }
+        else if(mode === "zoom"){
+            highlight_plg.remove_lasso();
+            transform_plg.set_zoom();
+        }
+    };
+
+    that.get_area = function(){
+        return area;
+    };
+
+    that.fetch_points = function (select_ids, new_nodes, type = "highlight", data) {
+        transform_plg.fetch_points(select_ids, new_nodes, type, data);
+    };
+
+    that.highlight = function(ids){
+        highlight_plg.highlight(nodes, ids);
+    };
+
+    that._change_lasso_mode = function () {
+        if (if_lasso) {
+            if_lasso = false;
+            $("#lasso-btn").css("background-color", "gray");
+            lasso_btn_path.attr("stroke", "white").attr("fill", "white");
+            that.lasso_or_zoom("zoom")
+        } else {
+            if_lasso = true;
+            $("#lasso-btn").css("background-color", btn_select_color);
+            lasso_btn_path.attr("stroke", "white").attr("fill", "white");
+            that.lasso_or_zoom("lasso");
+        }
+    };
+
+    that.get_highlights = function() {
+        return highlights;
     };
 
     that.init = function () {

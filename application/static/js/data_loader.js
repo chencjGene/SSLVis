@@ -113,17 +113,6 @@ DataLoaderClass = function (dataset) {
         that.update_delete_and_change_label_node.notify();
     };
 
-    that.update_fisheye_graph_node = function(must_show_nodes, area, level, wh, fisheye_mode) {
-        that.fisheye_graph_node.set_data({
-            'must_show_nodes':must_show_nodes,
-            'area':area,
-            'level':level,
-            'wh':wh
-        });
-        that.state.fisheyemode = fisheye_mode;
-        that.fisheye_graph_node.notify();
-    };
-
     that.update_k = function(k){
         // TODO: clean views
         that.state.k = k;
@@ -190,15 +179,6 @@ DataLoaderClass = function (dataset) {
     //     }, rescale);
     // };
     //
-    // that.update_fisheye_view = function(rescale){
-    //     console.log("update graph view");
-    //     that.graph_view.component_update({
-    //         "graph_data": that.state.graph_data,
-    //         "area": that.state.area,
-    //         "fisheye":that.state.fisheyemode,
-    //         "label_names": that.state.label_names
-    //     }, rescale);
-    // };
 
     that.get_dist_view = function(selected_idxs){
         let params = "?dataset=" + that.dataset;
@@ -381,7 +361,7 @@ DataLoaderClass = function (dataset) {
         that.state.path = [];
         that.is_show_path = false;
         that.state.visible_items = {};
-        for(let node_id in  Object.keys(that.state.nodes).map(d => parseInt(d))){
+        for(let node_id of  Object.keys(that.state.nodes).map(d => parseInt(d))){
             that.state.visible_items[node_id] = true;
         }
 
@@ -442,6 +422,54 @@ DataLoaderClass = function (dataset) {
         that.state.visible_items = visible_items;
         that.state.rescale = false;
         that.update_graph_view();
+    };
+
+    that.fetch_graph_node = function(must_show_nodes, area, level, wh, mode, data) {
+         let params = "?dataset=" + that.dataset;
+        let fetch_graph = new request_node(that.fisheye_graph_url + params,
+            that.fetch_graph_handler(that.zoom_graph_view), "json", "POST");
+        that.state.area = area;
+        that.state.rescale = false;
+        if(mode === "showpath"){
+            that.state.is_show_path = true;
+            that.state.path = data;
+        }
+        else if(mode === "highlight"){
+            that.state.is_show_path = false;
+            that.state.highlights = data;
+        }
+        fetch_graph.set_data({
+            'must_show_nodes':must_show_nodes,
+            'area':area,
+            'level':level,
+            'wh':wh
+        });
+        fetch_graph.notify();
+    };
+
+    that.show_highlight_node = function(highlight_nodes) {
+        that.state.highlights = highlight_nodes;
+        that.state.is_show_path = false;
+        that.state.rescale = false;
+        that.update_graph_view();
+    };
+
+    that.show_path_node = function(path) {
+        if(path.length > 0){
+            that.state.path = path;
+            that.state.is_show_path = true;
+        }
+        else {
+            that.state.path = [];
+            that.state.is_show_path = false;
+        }
+        that.state.rescale = false;
+        that.update_graph_view();
+    };
+
+    // highlight nodes:
+    that.highlight_nodes = function(nodes_id){
+        that.graph_view.highlight(nodes_id);
     };
 
     that.init = function () {

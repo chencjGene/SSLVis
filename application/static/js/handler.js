@@ -56,19 +56,16 @@ DataLoaderClass.prototype.zoom_graph_handler = function (callback) {
     return _update_graph_handler;
 };
 
-DataLoaderClass.prototype.update_fisheye_graph_handler = function (callback) {
+DataLoaderClass.prototype.fetch_graph_handler = function (callback) {
     let that = this;
 
-    function _update_fisheye_graph_handler(data) {
-        console.log(that.fisheye_graph_url);
-        console.log("fisheye_graph_handler");
+    function _fetch_graph_handler(data) {
         console.log(data);
-        that.state.graph_data = data[0];
-        that.state.area = data[1];
+        that.state.nodes = data;
         if (callback) callback(false);
     }
 
-    return _update_fisheye_graph_handler;
+    return _fetch_graph_handler;
 };
 
 DataLoaderClass.prototype.get_loss_handler = function (callback) {

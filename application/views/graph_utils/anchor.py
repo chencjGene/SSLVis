@@ -573,4 +573,4 @@ def fisheyeAnchors(must_show_nodes, area, level, wh, train_x, train_y, raw_graph
     graph = {
         "nodes": samples_nodes,
     }
-    return [graph, area]
+    return samples_nodes

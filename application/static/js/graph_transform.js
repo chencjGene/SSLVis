@@ -11,7 +11,7 @@ let GraphTransform = function (parent) {
     let current_level = 0;
     let send_zoom_cnt = 0;
     let send_zoom_request = [];
-
+    let AnimationDuration = 1000;
 
     that._init = function () {
         that.set_view(parent);
@@ -44,6 +44,7 @@ let GraphTransform = function (parent) {
         //     transform = d3.event.transform;
         // }
         d3.selectAll(".iw-contextMenu").style("display", "none");
+        console.log("zoomed", d3.event.transform.x, d3.event.transform.y,d3.event.transform.k);
     };
 
     that.zoom_end = function() {
@@ -99,10 +100,10 @@ let GraphTransform = function (parent) {
         // else {
             transform = d3.event.transform;
         // }
-
+    console.log("zoom end", d3.event.transform.x, d3.event.transform.y,d3.event.transform.k)
     };
 
-    that.init_zoom = function () {
+    that.set_zoom = function () {
         zoom = d3.zoom()
             .scaleExtent([0.6, 128])
             .on('start', function () {
@@ -112,12 +113,142 @@ let GraphTransform = function (parent) {
             })
             .on("zoom", that.zoomed)
             .on("end", that.zoom_end);
+        view.svg.on(".drag", null);
+            view.svg.on(".dragend", null);
         view.svg.call(zoom);
+    };
+
+    that.remove_zoom = function() {
+        view.svg.on('.zoom', null);
     };
 
     that.update_zoom_scale = function (new_zoom_scale){
         zoom_scale = new_zoom_scale;
         view.update_zoom_scale(zoom_scale);
+    };
+
+    that.fetch_points = function (select_ids, new_nodes, type = "highlight", tdata){
+        // first, figure out whether all selection nodes are in current area
+        $.post("/graph/getArea", {
+                    "must_show_nodes":JSON.stringify(select_ids),
+                    "width":view.width,
+                    "height":view.height
+                }, function (data) {
+                let now_area = view.get_area();
+                let selection_area = data.area;
+                if((selection_area.x>=now_area.x)
+                    &&((selection_area.width+selection_area.x)<=(now_area.x+now_area.width))
+                    &&(selection_area.y>=now_area.y)
+                    &&((selection_area.height+selection_area.y)<=(now_area.y+now_area.height))){
+                    // all selection nodes in now area
+                    console.log("in area");
+                    let must_show_nodes = Object.keys(view.get_nodes()).map(d => parseInt(d));
+                    console.log("now area", now_area);
+                    view.data_manager.fetch_graph_node(must_show_nodes.concat(new_nodes), now_area,
+                        current_level, view.width/view.height, type, tdata);
+                }
+                else {
+                    // some selection nodes not in now area,need to zoom in to that area
+                    console.log("out of area");
+                    // merge area
+                    // get k and level
+                    view.width = $("#graph-view-svg").width();
+                    view.height = $("#graph-view-svg").height();
+                    let new_area = that._merge_rect(now_area, data.area, view.width/view.height);
+                    new_area.x -= 1;
+                    new_area.y -= 1;
+                    new_area.width += 2;
+                    new_area.height += 2;
+                    let main_group_min_x = view.center_scale_x(new_area.x);
+                    let main_group_min_y = view.center_scale_y(new_area.y);
+                    let main_group_max_x = view.center_scale_x(new_area.x+new_area.width);
+                    let main_group_max_y = view.center_scale_y(new_area.y+new_area.height);
+                    let maingroup_k = Math.min(view.width/(main_group_max_x-main_group_min_x), view.height/(main_group_max_y-main_group_min_y));
+                    let target_level = current_level;
+                    let current_level_scale = Math.pow(2, target_level);
+                    while (maingroup_k > 2 * current_level_scale) {
+                            current_level_scale *= 2;
+                            target_level += 1;
+                    }
+                    while (maingroup_k < current_level_scale / 1.5 && target_level > 0) {
+                            current_level_scale /= 2;
+                            target_level -= 1;
+                    }
+                    current_level = target_level;
+                    zoom_scale = 1.0 / maingroup_k;
+                    console.log("current level", current_level, "current area", new_area);
+                    view.data_manager.fetch_graph_node(select_ids, new_area, current_level,
+                        view.width/view.height, type, tdata);
+                }
+            });
+    };
+
+    that._merge_rect = function(a, b, wh = 0) {
+        let x_min = Math.min(a.x, b.x);
+        let x_max = Math.max(a.x+a.width, b.x+b.width);
+        let y_min = Math.min(a.y, b.y);
+        let y_max = Math.max(a.y+a.height, b.y+b.height);
+        let new_rect = {
+            x:x_min,
+            y:y_min,
+            width:x_max-x_min,
+            height:y_max-y_min
+        };
+        if(wh !== 0){
+            let new_wh = new_rect.width/new_rect.height;
+            if(wh > new_wh){
+                    x_min -= (new_rect["height"] * wh - new_rect["width"]) / 2;
+                    x_max += (new_rect["height"] * wh - new_rect["width"]) / 2;
+                    new_rect["x"] = x_min;
+                    new_rect["width"] = x_max - x_min;
+            }
+            else if(wh < new_wh){
+                    y_min -= (new_rect["width"] / wh - new_rect["height"]) / 2;
+                    y_max += (new_rect["width"] / wh - new_rect["height"]) / 2;
+                    new_rect["y"] = y_min;
+                    new_rect["height"] = y_max - y_min;
+            }
+        }
+        return new_rect
+    };
+
+    that._update_transform = function(new_area) {
+        return new Promise(function (resolve, reject) {
+            view.width = $("#graph-view-svg").width();
+            view.height = $("#graph-view-svg").height();
+            let main_group_min_x = view.center_scale_x(new_area.x);
+            let main_group_min_y = view.center_scale_y(new_area.y);
+            let main_group_max_x = view.center_scale_x(new_area.x + new_area.width);
+            let main_group_max_y = view.center_scale_y(new_area.y + new_area.height);
+            let maingroup_k = Math.min(view.width/(main_group_max_x-main_group_min_x), view.height/(main_group_max_y-main_group_min_y));
+            console.log("old transform", transform);
+            if(transform === null){
+                transform = {
+                    toString: function () {
+                        let self = this;
+                        return 'translate(' + self.x + "," + self.y + ") scale(" + self.k + ")";
+                    }
+                };
+            }
+            transform.k = maingroup_k;
+            transform.x = view.width/2-(main_group_min_x+main_group_max_x)/2*maingroup_k;
+            transform.y = view.height/2-(main_group_min_y+main_group_max_y)/2*maingroup_k;
+            console.log(AnimationDuration, transform);
+            view.maintain_size(transform);
+            // view.svg
+            //     .transition()
+            //     .duration(AnimationDuration)
+            //     .call(zoom.transform, d3.zoomIdentity.translate(transform.x, transform.y).scale(transform.k))
+            //     .on("end", resolve);
+            view.main_group.transition()
+                .duration(AnimationDuration)
+                .attr("transform", transform)
+                .on("end", function () {
+                    view.svg.call(zoom.transform, d3.zoomIdentity.translate(transform.x, transform.y).scale(transform.k));
+                    resolve();
+                });
+
+        });
     };
 
     that.init = function () {
