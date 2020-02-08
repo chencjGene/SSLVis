@@ -296,33 +296,22 @@ let GraphLayout = function (container) {
                 .on("mouseover", function (d) {
                     // check if hided
                     if(visible_items[d.id] === false) return;
-                    console.log(d)
                     if((path_nodes[d.id]!==undefined)){
                         return
                     }
                     let node = d3.select(this);
-                    node.attr("r", 5 * that.that.zoom_scale);
-                    // that._update_click_menu();
-                    if (focus_node_change_switch) {
-                        focus_node_id = d.id;
-                        console.log("focus_node_id:" + focus_node_id);
-                    }
+                    node.attr("r", 5 * that.zoom_scale);
                 })
                 .on("mouseout", function (d) {
                     // check if hided
                     if(visible_items[d.id] === false) return;
                     let node = d3.select(this);
                     node.attr("r", d => that.r(d.id));
-
-                    if (focus_node_change_switch) {
-                        focus_node_id = null;
-                        console.log("focus_node_id = null");
-                    }
                 })
                 .on("click", function (d) {
                     // check if hided
                     if(visible_items[d.id] === false) return;
-                     that.update_selection_nodes([d.id]);
+                     that.highlight([d.id]);
                 })
                 .transition()
                 .duration(AnimationDuration)
@@ -395,18 +384,9 @@ let GraphLayout = function (container) {
                 .on("mouseover", function (d) {
                             console.log(d);
                             d3.select(this).style("stroke-width", 4.0 * that.that.zoom_scale);
-                            focus_edge_id = d;
-                            console.log("focus_edge_id = " + focus_edge_id);
-                            focus_edge_node = this;
-
                         })
                 .on("mouseout", function (d) {
-                        if (focus_edge_change_switch) {
-                            focus_edge_id = null;
-                            console.log("focus_edge_id = null");
-                            focus_edge_node = null;
-                            d3.select(this).style("stroke-width", 2.0 * that.that.zoom_scale);
-                        }
+                        d3.select(this).style("stroke-width", 2.0 * that.that.zoom_scale);
                     })
                 .transition()
                 .duration(AnimationDuration)
