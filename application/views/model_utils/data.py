@@ -4,6 +4,7 @@ import abc
 from scipy import sparse
 from anytree import Node
 from anytree.exporter import DictExporter
+from scipy.stats import entropy
 
 from sklearn.neighbors.unsupervised import NearestNeighbors
 
@@ -145,10 +146,16 @@ class Data(object):
         return self.y[np.array(self.test_idx)].copy().astype(int)
 
     def remove_instance(self, idxs):
-        None
+        self.rest_idxs = [i for i in self.rest_idxs if i not in idxs]
+        logger.info("rest data: {}".format(len(self.rest_idxs)))
 
     def label_instance(self, idxs, labels):
-        None
+        for i in range(len(idxs)):
+            idx = idxs[i]
+            label = labels[i]
+            self.train_y[idx] = label
+        labeled_num = sum(self.train_y != -1)
+        logger.info("labeled data num: {}".format(labeled_num))
 
 class GraphData(Data):
     def __init__(self, dataname, labeled_num=None, total_num=None, seed=123):
@@ -266,6 +273,7 @@ class GraphData(Data):
         self.current_state = new_state 
         self.state_data[self.current_state.name] = {
             "affinity_matrix": self.affinity_matrix.copy(),
+            "train_idx": self.get_train_idx(),
             "train_y": self.get_train_label(),
             "state": self.current_state, 
             "pred": pred
@@ -284,8 +292,27 @@ class GraphData(Data):
         history = []
         for i in range(self.state_idx):
             data = self.state_data[i]
-            margin = 0.1
-            dist = np.random.rand(4).tolist()
+            margin = entropy(data["pred"].T + 1e-20).mean()
+            margin = round(margin, 3)
+            # get changes
+            dist = [0, 0, 0, 0]
+            pre_data_state = data["state"].parent
+            if pre_data_state.name != "root":
+                pre_data = self.state_data[pre_data_state.name]
+                now_affinity = data["affinity"]
+                pre_affinity = pre_data["affinity"]
+                # added edges
+                dist[0] = sum(now_affinity[pre_affinity == 0] == 1)
+                # removed edges
+                dist[1] = sum(now_affinity[pre_affinity == 1] == 0)
+                # removed instances
+                dist[2] = len(pre_data["train_idx"]) - len(data["train_idx"])
+                # label changes
+                pre_label = pre_data["pred"].argmax(axis=1)
+                pre_label = pre_label[pre_data["pred"].argmax(axis=1) < 1e-8] = -1
+                label = data["pred"].argmax(axis=1)
+                label = label[data["pred"].argmax(axis=1)<1e-8] = -1
+                dist[3] = sum(label != pre_label)
             children = data["state"].children
             children_idx = [int(i.name) for i in children]
             history.append({
