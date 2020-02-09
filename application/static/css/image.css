@@ -3,7 +3,7 @@
 }
 
 #info-div {
-    overflow-y: auto;
     background-color: #fafafa;
-    /*height: 800px;*/
+    overflow-y: auto;
+    height: 95%;
 }

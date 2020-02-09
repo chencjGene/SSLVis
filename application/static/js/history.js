@@ -18,10 +18,11 @@ let HistoryLayout = function (container) {
     let dist_start = cell_center - layout_width * 0.2;
     let dist_width = layout_width * 0.1;
     let data_manager = null;
+    let legend_height = 70;
 
-    that.svg = container.select("#history-view").append("svg");
+    that.svg = container.select("#history-view").select("svg");
     that.line_group = that.svg.append("g").attr("id", "line");
-    that.cell_group = that.svg.append("g").attr("id", "cell");;
+    that.cell_group = that.svg.append("g").attr("id", "cell");
     that.legend_group = that.svg.append("g").attr("id", "legend");
 
     let node_color = "rgb(127,127,127)";
@@ -106,8 +107,8 @@ let HistoryLayout = function (container) {
             }
         }
 
-        if (cnt * cell_height > layout_height){
-            that.svg.attr("height", cnt * cell_height);
+        if (cnt * cell_height + legend_height > layout_height){
+            that.svg.attr("height", cnt * cell_height + legend_height);
         }
     };
 
