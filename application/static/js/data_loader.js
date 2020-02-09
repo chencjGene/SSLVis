@@ -45,6 +45,8 @@ DataLoaderClass = function (dataset) {
     that.dist_view = null;
     that.history_view = null;
     that.filter_view = null;
+    that.menu_view = null;
+    that.image_view = null;
 
     // Data storage
     that.state = {
@@ -153,20 +155,40 @@ DataLoaderClass = function (dataset) {
         that.influence_filter_node.notify();
     };
 
-    that.set_dist_view = function(v){
-        that.dist_view = v;
+    that.set_view = function(v, name){
+        that[name + "_view"] = v;
         v.set_data_manager(that);
-    };
+    }
 
-    that.set_history_view = function(v){
-        that.history_view = v;
-        v.set_data_manager(that);
-    };
+    // that.set_dist_view = function(v){
+    //     that.dist_view = v;
+    //     v.set_data_manager(that);
+    // };
 
-    that.set_image_view = function(v){
-        that.image_view = v;
-        v.set_data_manager();
-    };
+    // that.set_history_view = function(v){
+    //     that.history_view = v;
+    //     v.set_data_manager(that);
+    // };
+
+    // that.set_image_view = function(v){
+    //     that.image_view = v;
+    //     v.set_data_manager();
+    // };
+
+    // that.set_menu_view = function(v){
+    //     that.menu_view = v;
+    //     v.set_data_manager();
+    // }
+
+    // that.set_graph_view = function (v) {
+    //     that.graph_view = v;
+    //     v.set_data_manager(that);
+    // };
+
+    // that.set_filter_view = function(v){
+    //     that.filter_view = v;
+    //     v.set_data_manager(that);
+    // };
 
     // update img_url in states and update ImageView
     that.update_image_view = function(nodes){
@@ -252,11 +274,6 @@ DataLoaderClass = function (dataset) {
         $("#unlabeled-num").text(that.state.unlabeled_num + " Unlabeled data");
     };
 
-    //filter view:
-    that.set_filter_view = function(v){
-        that.filter_view = v;
-        v.set_data_manager(that);
-    };
 
     that.get_filter_view = function(state) {
         that.state.uncertainty_widget_data = state.uncertainty_widget_data;
@@ -410,11 +427,6 @@ DataLoaderClass = function (dataset) {
 
         //update view
         that.update_graph_view();
-    };
-
-    that.set_graph_view = function (v) {
-        that.graph_view = v;
-        v.set_data_manager(that);
     };
 
     that.update_graph_view = function() {
