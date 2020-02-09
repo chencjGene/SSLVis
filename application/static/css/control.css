@@ -244,6 +244,14 @@ label.field.focused .psuedo_select ul {
 .range-slider__range::-moz-focus-outer {
   border: 0;
 }
+
+.range-slider__update {
+  margin: 8px 0 0 10px;
+}
+@keyframes rotating{
+    from{transform:rotate(0)}
+    to{transform:rotate(360deg)}
+}
 .control-subtitle-font {
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-size: 13px;
@@ -302,9 +310,6 @@ label.field.focused .psuedo_select ul {
   flex-direction: column-reverse;
   justify-content: center;
   margin-left: 10px;
-
-  font-size: large;
-  font-weight: 700;
 }
 
 .widget-info-svg {
@@ -320,4 +325,11 @@ label.field.focused .psuedo_select ul {
 
 #current-label-widget {
   height: 90px;
+}
+
+.plain-text {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: #333333;
 }

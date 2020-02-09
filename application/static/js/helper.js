@@ -223,3 +223,10 @@ function change_straight(sp, ep){
 function zip(rows){
     return rows[0].map((_,c)=>rows.map(row=>row[c]));
 }
+
+function set_font(selection) {
+    selection.attr("font-family", '"Helvetica Neue", Helvetica, Arial, sans-serif')
+        .attr("font-size", "14px")
+        .attr("font-weight", 700)
+        .attr("color", "#333333")
+}

@@ -4,6 +4,7 @@ let SettingLayout = function () {
     let dataset_selection_util = null;
     let form = null;
     let pulldown_id = "#pulldown";
+    let update_k_btn = null;
     let now_dataset = null;
     let rangeSlider = null;
     let slider = null;
@@ -13,6 +14,7 @@ let SettingLayout = function () {
     let send_setk_request = {};
     let send_setk_cnt = 0;
     let k = 0;
+    let AnimationDuration = 1000;
 
     that._init = function () {
 		dataset_selection_util = {
@@ -245,18 +247,20 @@ f: {
     range.on('input', function(){
       $(this).next(value).html(this.value);
       k=parseInt(this.value);
-		if(now_dataset === null) return;
-      let send_setk_idx = send_setk_cnt++;
-      send_setk_request[send_setk_idx] = true;
-      setTimeout(function () {
-                    if(send_setk_request[send_setk_idx+1] === undefined){
-						DataLoader.update_k(k);
-                    }}, 1000);
+		if(update_k_btn.attr("opacity") == 0){
+			update_k_btn.attr("cursor", "pointer");
+			update_k_btn
+				.transition()
+				.duration(AnimationDuration)
+				.attr("opacity", 1);
+		}
     });
   });
 };
 
 		rangeSlider();
+
+		that.update_k_btn_init();
 
     };
 
@@ -272,6 +276,25 @@ f: {
     that.setk_ui = function(k) {
     	range.val(k);
 		value.html(k);
+	};
+
+    that.update_k_btn_init = function(){
+    	update_k_btn = d3.select(".range-slider__update");
+    	update_k_btn.select("rect").on("click", function () {
+			if(update_k_btn.attr("opacity") != 1)return;
+				update_k_btn.attr("cursor", "default");
+				update_k_btn
+					.transition()
+					.duration(AnimationDuration)
+					.attr("opacity", "0");
+				DataLoader.update_k(k);
+		})
+			.on("mouseover", function () {
+				update_k_btn.selectAll("path").attr("opacity", 1);
+			})
+			.on("mouseout", function () {
+				update_k_btn.selectAll("path").attr("opacity", 0.7);
+			})
 	};
 
     that.init = function () {

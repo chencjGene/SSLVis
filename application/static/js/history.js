@@ -51,7 +51,11 @@ let HistoryLayout = function (container) {
                     + ", " + 8 + ") rotate(30)";
             })
             .style("opacity", 0)
-            .text(d => d);
+            .text(d => d)
+            .each(function () {
+                let legend = d3.select(this);
+                set_font(legend);
+            });
     };
 
     that.set_data_manager = function(new_data_manager) {
@@ -183,7 +187,11 @@ let HistoryLayout = function (container) {
             .attr("x", (_,i) => dist_start + (i + 0.5) * dist_width)
             .attr("y", d => cell_height - d[1] - 3)
             .attr("font-size", "11px")
-            .text(d => d[0]);
+            .text(d => d[0])
+            .each(function () {
+                let text = d3.select(this);
+                set_font(text);
+            });
         that.cells.append("text")
             .attr("font-family", '"Helvetica Neue", Helvetica, Arial, sans-serif')
             .attr("font-size", "13px")
