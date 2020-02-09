@@ -73,7 +73,6 @@ class SSLModel(object):
             self.n_neighbor = k
 
     def _training(self):
-
         affinity_matrix = self.data.get_graph(self.n_neighbor)
         laplacian = build_laplacian_graph(affinity_matrix)
         train_y = self.data.get_train_label()
