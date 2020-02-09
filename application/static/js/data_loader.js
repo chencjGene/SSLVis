@@ -140,6 +140,7 @@ DataLoaderClass = function () {
         let graph_params = "?dataset=" + that.dataset + "&k=" +
             that.state.k + "&filter_threshold=" + that.state.filter_threshold;
         that.graph_node.set_url(that.graph_url + graph_params);
+        that.get_history_node.set_pending();
         that.graph_node.notify();
     };
 
