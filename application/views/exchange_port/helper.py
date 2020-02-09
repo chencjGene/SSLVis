@@ -10,6 +10,8 @@ def set_dataname(dataname):
 def set_model(dataname, labeled_num=None, total_num=None):
     exchange_port.reset_model(dataname, labeled_num, total_num)
 
+def setK(k):
+    exchange_port.setK(k)
 
 def init_model(k, filter_threshold):
     exchange_port.init_model(k=k, filter_threshold=filter_threshold)

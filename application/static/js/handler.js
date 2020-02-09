@@ -2,6 +2,17 @@
 * added by Changjian Chen, 20191015
 * */
 
+DataLoaderClass.prototype.get_k_handler = function (callback) {
+    let that = this;
+
+    function _k_handler(data) {
+        that.state.k = data.k;
+        if (callback) callback();
+    }
+
+    return _k_handler;
+};
+
 DataLoaderClass.prototype.get_manifest_handler = function (callback) {
     let that = this;
 

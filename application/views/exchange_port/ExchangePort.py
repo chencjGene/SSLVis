@@ -41,6 +41,9 @@ class ExchangePortClass(object):
     def init_model(self, k, filter_threshold):
         self.model.init(k=k, filter_threshold=filter_threshold)
 
+    def setK(self, k):
+        self.model.setK(k=k)
+
     def get_manifest(self):
         manifest = {
             "k": self.model.n_neighbor,

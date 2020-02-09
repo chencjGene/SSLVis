@@ -29,7 +29,9 @@ def app_get_manifest():
 
 @graph.route("/graph/SetK", methods=["GET", "POST"])
 def app_set_k():
-    return 1
+    k = int(request.form["k"])
+    setK(k)
+    return jsonify({"k":k})
 
 
 @graph.route("/graph/SetInfluenceFilter", methods=["GET", "POST"])

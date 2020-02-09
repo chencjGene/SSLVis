@@ -107,6 +107,8 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, p
             #     plt.text(train_x_tsne[labeled_id][0], train_x_tsne[labeled_id][1], str(int(ground_truth[labeled_id])))
             # plt.show()
             # train_x_tsne = TSNE(n_components=2, verbose=True, method='exact', early_exaggeration=1).fit_transform(train_x)
+            np.save("train_x.npy", train_x)
+            np.save("train_y_final.npy", train_y_final)
             train_x_tsne = IncrementalTSNE(n_components=2, verbose=True, init="random",
                                            early_exaggeration=1).fit_transform(train_x, labels=train_y_final,
                                                                                label_alpha=0.3)

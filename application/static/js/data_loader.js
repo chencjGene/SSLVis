@@ -3,10 +3,10 @@
 * */
 
 
-DataLoaderClass = function (dataset) {
+DataLoaderClass = function () {
     let that = this;
 
-    that.dataset = dataset;
+    that.dataset = null;
 
     // URL information
     that.manifest_url = "/graph/GetManifest";
@@ -24,8 +24,10 @@ DataLoaderClass = function (dataset) {
     that.get_history_url = "/history/GetHistory";
     that.set_history_url = "/history/SetHistory";
     that.retrain_url = "/history/Retrain";
+    that.set_k_url = "/graph/SetK";
 
     // Request nodes
+    that.k_node = null;
     that.manifest_node = null;
     that.graph_node = null;
     that.update_graph_node = null;
@@ -81,6 +83,12 @@ DataLoaderClass = function (dataset) {
 
     // Define topological structure of data retrieval
     that._init = function () {
+
+    };
+
+    that.set_dataset = function(dataset) {
+        that.dataset = dataset;
+        that.graph_view.remove_all();
         let params = "?dataset=" + that.dataset;
         that.manifest_node = new request_node(that.manifest_url + params,
             that.get_manifest_handler(that.update_control_info), "json", "GET");
@@ -109,7 +117,7 @@ DataLoaderClass = function (dataset) {
         // that.ent_node = new request_node(that.ent_url + params,
         //     that.get_ent_handler(that.update_ent_view), "json", "GET");
         // that.ent_node.depend_on(that.graph_node);
-    };
+    }
 
     that.init_notify = function () {
         that.manifest_node.notify();
@@ -125,13 +133,11 @@ DataLoaderClass = function (dataset) {
     };
 
     that.update_k = function(k){
-        // TODO: clean views
+        that.graph_view.remove_all();
         that.state.k = k;
         let graph_params = "?dataset=" + that.dataset + "&k=" +
             that.state.k + "&filter_threshold=" + that.state.filter_threshold;
         that.graph_node.set_url(that.graph_url + graph_params);
-        that.loss_node.set_pending();
-        that.ent_node.set_pending();
         that.graph_node.notify();
     };
 
@@ -250,6 +256,7 @@ DataLoaderClass = function (dataset) {
     that.update_control_info = function() {
         $("#labeled-num").text(that.state.labeled_num + " Labeled data");
         $("#unlabeled-num").text(that.state.unlabeled_num + " Unlabeled data");
+        SettingView.setk_ui(that.state.k);
     };
 
     //filter view:
