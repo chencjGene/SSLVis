@@ -59,6 +59,7 @@ DataLoaderClass = function () {
         loss_data: null,
         img_url: null,
         ent_data: null,
+        // label change info:
         label_sums: null,
         flows: null,
         dist_mode: true,
@@ -80,6 +81,7 @@ DataLoaderClass = function () {
         area: null,
         rescale: false,
         visible_items:{},
+        // history info:
         history_data: null
     };
 
@@ -93,7 +95,10 @@ DataLoaderClass = function () {
         that.graph_view.remove_all();
         let params = "?dataset=" + that.dataset;
         that.manifest_node = new request_node(that.manifest_url + params,
-            that.get_manifest_handler(that.update_control_info), "json", "GET");
+            that.get_manifest_handler(function(){
+                that.update_control_info();
+                that.update_menu_info();
+            }), "json", "GET");
 
         that.graph_node = new request_node(that.graph_url + params,
             that.get_graph_handler(that.get_graph_view), "json", "GET");
@@ -111,18 +116,16 @@ DataLoaderClass = function () {
         that.get_history_node = new request_node(that.get_history_url + params,
             that.update_history_handler(that.update_history_view), "json", "GET");
         that.get_history_node.depend_on(that.graph_node);
-
-        // that.loss_node = new request_node(that.loss_url + params,
-        //     that.get_loss_handler(that.update_loss_view), "json", "GET");
-        // that.loss_node.depend_on(that.graph_node);
-        //
-        // that.ent_node = new request_node(that.ent_url + params,
-        //     that.get_ent_handler(that.update_ent_view), "json", "GET");
-        // that.ent_node.depend_on(that.graph_node);
     }
 
     that.init_notify = function () {
         that.manifest_node.notify();
+    };
+
+    that.update_menu_info = function(){
+        that.menu_view.update_info({
+            label_names: that.state.label_names
+        });
     };
 
     that.update_delete_and_change_label_notify = function (delete_node_list, change_list, delete_edge) {
@@ -165,36 +168,6 @@ DataLoaderClass = function () {
         that[name + "_view"] = v;
         v.set_data_manager(that);
     }
-
-    // that.set_dist_view = function(v){
-    //     that.dist_view = v;
-    //     v.set_data_manager(that);
-    // };
-
-    // that.set_history_view = function(v){
-    //     that.history_view = v;
-    //     v.set_data_manager(that);
-    // };
-
-    // that.set_image_view = function(v){
-    //     that.image_view = v;
-    //     v.set_data_manager();
-    // };
-
-    // that.set_menu_view = function(v){
-    //     that.menu_view = v;
-    //     v.set_data_manager();
-    // }
-
-    // that.set_graph_view = function (v) {
-    //     that.graph_view = v;
-    //     v.set_data_manager(that);
-    // };
-
-    // that.set_filter_view = function(v){
-    //     that.filter_view = v;
-    //     v.set_data_manager(that);
-    // };
 
     // update img_url in states and update ImageView
     that.update_image_view = function(nodes){

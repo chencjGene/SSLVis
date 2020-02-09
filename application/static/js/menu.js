@@ -5,7 +5,8 @@
 let MenuLayout = function(){
     let that = this;
 
-    let label_names = ["test1", "test2"];
+    let label_names = null;
+    let label_colors = CategoryColor;
 
     let click_menu_settings = {
         'mouseClick': 'right',
@@ -20,26 +21,32 @@ let MenuLayout = function(){
     };
 
     that._init = function(){
-        that.update_click_menu($('#main_group'), 1);
+
     };
 
-    // that.component_update = function(state){
-    //     console.log("get menu state:", state);
-    //     that._update_data(state);
-    //     that._update_view();
-    // };
+    that.update_info = function(state){
+        console.log("get menu state:", state);
+        label_names = state.label_names;
+        
+        that.clean_click_menu();
+        that.update_click_menu($('#main_group'), 1);
+        that.update_click_menu($('#grid-group'), 1);
+    };
+
+    that.clean_click_menu = function(){
+        d3.selectAll(".iw-curMenu").remove();
+    }
 
     that.update_click_menu = function(container, d){
-        d3.selectAll(".iw-curMenu").remove();
         let menu = [];
         label_names.forEach(function(d, i){
             let sm = {
                     title:d,
                     name:d,
-                    color: "black",
+                    color: label_colors[i],
                     className: "iw-mnotSelected label-menu-item",
                     fun:function(){
-                        console.log("click menu");
+                        console.log("click menu", d);
                     }
                 };
                 menu.push(sm);
@@ -50,7 +57,7 @@ let MenuLayout = function(){
             color: '',
             className: "iw-mnotSelected delete-menu-item",
             fun: function () {
-                console.log("delete");
+                console.log("delete", d);
             }
         });
 
