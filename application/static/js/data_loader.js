@@ -438,6 +438,13 @@ DataLoaderClass = function () {
 
     that.update_graph_view = function() {
         console.log("update graph view");
+        let show_ids = [];
+        for(let node_id of Object.keys(that.state.nodes).map(d => parseInt(d))){
+            if(that.state.visible_items[node_id] === true){
+                show_ids.push(node_id);
+            }
+        }
+        that.get_dist_view(show_ids);
         that.graph_view.component_update({
             "nodes":that.state.nodes,
             "path":that.state.path,
