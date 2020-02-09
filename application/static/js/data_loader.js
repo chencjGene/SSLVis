@@ -138,7 +138,13 @@ DataLoaderClass = function () {
 
     that.update_delete_and_change_label = function (edit_state) {
         that.state.edit_state = edit_state;
-        that.update_delete_and_change_label_node.set_data(that.state.edit_state);
+        let data = JSON.parse(JSON.stringify(edit_state));
+        let level = that.graph_view.get_level();
+        let area = that.state.area;
+        data["area"] = area;
+        data["level"] = level;
+        data["wh"] = that.graph_view.get_wh();
+        that.update_delete_and_change_label_node.set_data(data);
         that.update_delete_and_change_label_node.notify();
     };
 

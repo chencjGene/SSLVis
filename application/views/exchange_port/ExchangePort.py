@@ -173,7 +173,7 @@ class ExchangePortClass(object):
 
     def update_delete_and_change_label(self, data):
         self.model.data.editing_data(data)
-        return self.get_graph()
+        return self.fisheye([], data["area"], data["level"], data["wh"])
 
     def fisheye(self,must_show_nodes, area, level, wh):
         # get meta data

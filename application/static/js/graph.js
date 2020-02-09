@@ -555,6 +555,18 @@ let GraphLayout = function (container) {
             await that._remove();
     };
 
+    that.get_level = function(){
+        return transform_plg.get_level();
+    };
+
+    that.get_wh = function(){
+        return that.width / that.height;
+    }
+
+    // that.get_area = function(){
+    //     return transform_plg.get_area();
+    // };
+
     that.init = function () {
         that._init();
     }.call();
