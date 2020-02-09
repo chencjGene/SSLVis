@@ -216,7 +216,7 @@ class GraphData(Data):
         np.save(neighbors_weight_path, neighbors_weight)
 
     def get_graph(self, n_neighbor=None):
-        if self.affinity_matrix is None:
+        if self.affinity_matrix is None or n_neighbor is not None:
             self._construct_graph(n_neighbor)
         return self.affinity_matrix.copy()
 

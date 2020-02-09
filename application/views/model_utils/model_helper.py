@@ -91,7 +91,8 @@ def propagation(graph_matrix, affinity_matrix, train_y, alpha=0.2, max_iter=30,
     # loss = loss[0,0] + alpha / (1 - alpha) * paired_distances(label_distributions_[labeled],
     #                                                      y_static_labeled[labeled]).sum()
     # all_loss.append(loss)
-
+    print("graph_matrix.shape:", graph_matrix.shape)
+    print("label_distributions_.shape:", label_distributions_.shape)
     for _ in range(max_iter):
         if np.abs(label_distributions_ - l_previous).sum() < tol:
             break
