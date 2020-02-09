@@ -114,8 +114,9 @@ DataLoaderClass = function () {
         // that.update_graph_node = new request_node(that.update_graph_url + params,
         //     that.update_graph_handler(that.update_graph_view), "json", "POST");
 
+        // TODO:
         that.update_delete_and_change_label_node = new request_node(that.update_delete_and_change_label_url + params,
-            null, "json", "POST");
+            function(){}, "json", "POST");
 
         // that.fisheye_graph_node = new request_node(that.fisheye_graph_url + params,
         //     that.update_fisheye_graph_handler(that.update_fisheye_view), "json", "POST");
@@ -145,6 +146,11 @@ DataLoaderClass = function () {
         console.log("update_edit_state", data, mode);
         that.edit_view.update_focus(data, mode);
     };
+
+    that.delete_idxs = function(selected_idxs){
+        that.edit_view.update_focus(selected_idxs, "instance");
+        that.edit_view.editing(-1);
+    }
 
     that.update_k = function(k){
         that.graph_view.remove_all();

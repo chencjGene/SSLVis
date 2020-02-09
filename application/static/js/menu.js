@@ -123,7 +123,13 @@ let EditLayout = function(){
         console.log("editing", {label, focus_data, focus_mode});
         if (focus_mode === "instance"){
             if (label === -1){
-                edit_state.deleted_idxs.push(focus_data);
+                if (Array.isArray(focus_data)){
+                    edit_state.deleted_idxs = 
+                        edit_state.deleted_idxs.concat(focus_data);
+                }
+                else{ 
+                    edit_state.deleted_idxs.push(focus_data);
+                }
                 console.log("deleted data", label, focus_data, focus_mode);
             }
             else{
