@@ -539,6 +539,18 @@ let GraphLayout = function (container) {
         return is_show_path;
     };
 
+    that.remove_all = async function() {
+        nodes_in_group = nodes_group.selectAll("circle")
+                .data([], d => d.id);
+            golds_in_group = golds_group.selectAll("path")
+                .data([], d => d.id);
+            glyph_in_group = glyph_group.selectAll(".pie-chart")
+                .data([], d => d.id);
+            path_in_group = path_group.selectAll("path")
+                .data([], d => d[0].id+","+d[1].id);
+            await that._remove();
+    };
+
     that.init = function () {
         that._init();
     }.call();

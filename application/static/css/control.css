@@ -144,7 +144,7 @@ label.field.focused .psuedo_select ul {
   border: 0px solid #000000;
 }
 .range-slider__range[type=range]::-webkit-slider-thumb {
-  border: 2px solid rgba(136,14,79,0.3);
+  border: 2px solid rgba(127,127,127,0.3);
   height: 28px;
   width: 13px;
   border-radius: 7px;
@@ -154,7 +154,7 @@ label.field.focused .psuedo_select ul {
   margin-top: -13px;
 }
 .range-slider__range[type=range]::-webkit-slider-thumb:hover {
-  border: 2px solid #880e4f;
+  border: 2px solid rgb(127,127,127);
 }
 .range-slider__range[type=range]:focus::-webkit-slider-runnable-track {
   background: #737373;
@@ -171,7 +171,7 @@ label.field.focused .psuedo_select ul {
 }
 .range-slider__range[type=range]::-moz-range-thumb {
   opacity: 0.3;
-  border: 2px solid rgba(136,14,79,0.3);
+  border: 2px solid rgb(127,127,127);
   height: 28px;
   width: 13px;
   border-radius: 7px;
@@ -200,7 +200,7 @@ label.field.focused .psuedo_select ul {
 .range-slider__range[type=range]::-ms-thumb {
   margin-top: 1px;
   opacity: 0.3;
-  border: 2px solid #880e4f;
+  border: 2px solid rgb(127,127,127);
   height: 28px;
   width: 13px;
   border-radius: 7px;

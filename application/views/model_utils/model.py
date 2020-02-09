@@ -61,9 +61,19 @@ class SSLModel(object):
         logger.info("n_neighbor and filter_threshold has been updated: {} {}".format(
             self.n_neighbor, self.filter_threshold
         ))
+        print("n_neighbor and filter_threshold has been updated: {} {}".format(
+            self.n_neighbor, self.filter_threshold
+        ))
+        self.propagation_path = None
+        self.simplified_affinity_matrix = None
         self._training()
 
+    def setK(self, k=None):
+        if k is not None:
+            self.n_neighbor = k
+
     def _training(self):
+
         affinity_matrix = self.data.get_graph(self.n_neighbor)
         laplacian = build_laplacian_graph(affinity_matrix)
         train_y = self.data.get_train_label()

@@ -8,8 +8,8 @@ function load_data() {
     DataLoader.init_notify();
 }
 
-function set_up(dataset) {
-    DataLoader = new DataLoaderClass(dataset);
+function set_up() {
+    DataLoader = new DataLoaderClass();
     GraphView = new GraphLayout(d3.select("#my-graph-all"));
     LossView = new DistLayout(d3.select("#dist-view"));
     ImageView = new ImageLayout(d3.select("#image-row"));
@@ -30,15 +30,17 @@ function clean_dom() {
     
 }
 
+// called by SettingView
+function choose(dataset){
+    DatasetName = dataset;
+    DataLoader.set_dataset(dataset);
+    load_data();
+}
+
 
 // main (entry of the application)
 $(document).ready(function () {
-    // DatasetName = "cifar10";
-    // DatasetName = "OCT";
-    // DatasetName = "stl";
-    DatasetName = "stl-20-2000";
-    // DatasetName = "Country_from_siemens";
-
-    set_up(DatasetName);
-    load_data();
+    set_up();
+    SettingView = new SettingLayout();
+    SettingView.choose("stl-20-2000");
 });

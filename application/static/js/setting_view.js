@@ -1,11 +1,28 @@
-var util = {
+let SettingLayout = function () {
+    let that = this;
+    // ui
+    let dataset_selection_util = null;
+    let form = null;
+    let pulldown_id = "#pulldown";
+    let now_dataset = null;
+    let rangeSlider = null;
+    let slider = null;
+    let range = null;
+    let value = null;
+
+    let send_setk_request = {};
+    let send_setk_cnt = 0;
+    let k = 0;
+
+    that._init = function () {
+		dataset_selection_util = {
 	f: {
 		addStyle: function (elem, prop, val, vendors) {
 			var i, ii, property, value
-			if (!util.f.isElem(elem)) {
+			if (!dataset_selection_util.f.isElem(elem)) {
 				elem = document.getElementById(elem)
 			}
-			if (!util.f.isArray(prop)) {
+			if (!dataset_selection_util.f.isArray(prop)) {
 				prop = [prop]
 				val = [val]
 			}
@@ -13,7 +30,7 @@ var util = {
 				var thisProp = String(prop[i]),
 					thisVal = String(val[i])
 				if (typeof vendors !== "undefined") {
-					if (!util.f.isArray(vendors)) {
+					if (!dataset_selection_util.f.isArray(vendors)) {
 						vendors.toLowerCase() == "all" ? vendors = ["webkit", "moz", "ms", "o"] : vendors = [vendors]
 					}
 					for (ii = 0; ii < vendors.length; ii += 1) {
@@ -25,13 +42,13 @@ var util = {
 			}
 		},
 		cssLoaded: function (event) {
-			var child = util.f.getTrg(event)
+			var child = dataset_selection_util.f.getTrg(event)
 			child.setAttribute("media", "all")
 		},
 		events: {
 			cancel: function (event) {
-				util.f.events.prevent(event)
-				util.f.events.stop(event)
+				dataset_selection_util.f.events.prevent(event)
+				dataset_selection_util.f.events.stop(event)
 			},
 			prevent: function (event) {
 				event = event || window.event
@@ -54,7 +71,7 @@ var util = {
 			}
 		},
 		isElem: function (elem) {
-			return (util.f.isNode(elem) && elem.nodeType == 1)
+			return (dataset_selection_util.f.isNode(elem) && elem.nodeType == 1)
 		},
 		isArray: function(v) {
 			return (v.constructor === Array)
@@ -69,16 +86,16 @@ var util = {
 			return str.substr(0, index) + char + str.substr(index + char.length);
 		}
 	}
-},
+};
 
-form = {
+		form = {
 f: {
 	init: {
 		register: function () {
 			var child, children = document.getElementsByClassName("field"), i
 			for (i = 0; i < children.length; i += 1) {
 				child = children[i]
-				util.f.addStyle(child, "Opacity", 1)
+				dataset_selection_util.f.addStyle(child, "Opacity", 1)
 			}
 			children = document.getElementsByClassName("psuedo_select")
 			for (i = 0; i < children.length; i += 1) {
@@ -97,24 +114,24 @@ f: {
 			var child, children = field.childNodes, i, ii, nested_child, nested_children
 			for (i = 0; i < children.length; i += 1) {
 				child = children[i]
-				if (util.f.isElem(child)) {
+				if (dataset_selection_util.f.isElem(child)) {
 					if (child.classList.contains("deselect")) {
 						child.parentNode.removeChild(child)
 					} else if (child.tagName == "SPAN") {
 						if (!field.dataset.value) {
-							util.f.addStyle(child, ["FontSize", "Top"], ["16px", "32px"])
+							dataset_selection_util.f.addStyle(child, ["FontSize", "Top"], ["16px", "32px"])
 						}
 					} else if (child.classList.contains("psuedo_select")) {
 						nested_children = child.childNodes
 						for (ii = 0; ii < nested_children.length; ii += 1) {
 							nested_child = nested_children[ii]
-							if (util.f.isElem(nested_child)) {
+							if (dataset_selection_util.f.isElem(nested_child)) {
 								if (nested_child.tagName == "SPAN") {
 									if (!field.dataset.value) {
-										util.f.addStyle(nested_child, ["Opacity", "Transform"], [0, "translateY(24px)"])
+										dataset_selection_util.f.addStyle(nested_child, ["Opacity", "Transform"], [0, "translateY(24px)"])
 									}
 								} else if (nested_child.tagName == "UL") {
-										util.f.addStyle(nested_child, ["Height", "Opacity"], [0, 0])
+										dataset_selection_util.f.addStyle(nested_child, ["Height", "Opacity"], [0, 0])
 								}
 							}
 						}
@@ -127,7 +144,7 @@ f: {
 			var bool = false, child, children = field.childNodes, i, ii, iii, nested_child, nested_children, nested_nested_child, nested_nested_children, size = 0
 			for (i = 0; i < children.length; i += 1) {
 				child = children[i]
-				util.f.isElem(child) && child.classList.contains("deselect") ? bool = true : null
+				dataset_selection_util.f.isElem(child) && child.classList.contains("deselect") ? bool = true : null
 			}
 			if (!bool) {
 				child = document.createElement("div")
@@ -137,21 +154,20 @@ f: {
 			}
 			for (i = 0; i < children.length; i += 1) {
 				child = children[i]
-				if (util.f.isElem(child) && child.classList.contains("psuedo_select")) {
+				if (dataset_selection_util.f.isElem(child) && child.classList.contains("psuedo_select")) {
 					nested_children = child.childNodes
 					for (ii = 0; ii < nested_children.length; ii += 1) {
 						nested_child = nested_children[ii]
-						if (util.f.isElem(nested_child) && nested_child.tagName == "UL") {
+						if (dataset_selection_util.f.isElem(nested_child) && nested_child.tagName == "UL") {
 							size = 0
 							nested_nested_children = nested_child.childNodes
 							for (iii = 0; iii < nested_nested_children.length; iii += 1) {
 								nested_nested_child = nested_nested_children[iii]
-								if (util.f.isElem(nested_nested_child) && nested_nested_child.tagName == "LI") {
-									size += util.f.getSize(nested_nested_child, "height")
-									console.log("size: " + size)
+								if (dataset_selection_util.f.isElem(nested_nested_child) && nested_nested_child.tagName == "LI") {
+									size += dataset_selection_util.f.getSize(nested_nested_child, "height")
 								}
 							}
-							util.f.addStyle(nested_child, ["Height", "Opacity"], [size + "px", 1])
+							dataset_selection_util.f.addStyle(nested_child, ["Height", "Opacity"], [size + "px", 1])
 						}
 					}
 				}
@@ -159,38 +175,41 @@ f: {
 		},
 		selection: function (child, parent) {
 			var children = parent.childNodes, i, ii, nested_child, nested_children, time = 0, value
-			if (util.f.isElem(child) && util.f.isElem(parent)) {
+			if (dataset_selection_util.f.isElem(child) && dataset_selection_util.f.isElem(parent)) {
 				parent.dataset.value = child.dataset.value
 				value = child.innerHTML
 			}
 			for (i = 0; i < children.length; i += 1) {
 				child = children[i]
-				if (util.f.isElem(child)) {
+				if (dataset_selection_util.f.isElem(child)) {
 					if (child.classList.contains("psuedo_select")) {
 						nested_children = child.childNodes
 						for (ii = 0; ii < nested_children.length; ii += 1) {
 							nested_child = nested_children[ii]
-							if (util.f.isElem(nested_child) && nested_child.classList.contains("selected")) {
+							if (dataset_selection_util.f.isElem(nested_child) && nested_child.classList.contains("selected")) {
 								if (nested_child.innerHTML)  {
 									time = 1E2
-									util.f.addStyle(nested_child, ["Opacity", "Transform"], [0, "translateY(24px)"], "all")
+									dataset_selection_util.f.addStyle(nested_child, ["Opacity", "Transform"], [0, "translateY(24px)"], "all")
 								}
 								setTimeout(function (c, v) {
 									c.innerHTML = v
-									util.f.addStyle(c, ["Opacity", "Transform", "TransitionDuration"], [1, "translateY(0px)", ".1s"], "all")
+									dataset_selection_util.f.addStyle(c, ["Opacity", "Transform", "TransitionDuration"], [1, "translateY(0px)", ".1s"], "all")
 								}, time, nested_child, value)
 							}
 						}
 					} else if (child.tagName == "SPAN" && child.className !== "pulldown-icon") {
 						console.log(child.tagName);
-						util.f.addStyle(child, ["FontSize", "Top"], ["12px", "8px"])
+						dataset_selection_util.f.addStyle(child, ["FontSize", "Top"], ["12px", "8px"])
 				   }
 			   }
 			}
 		},
 		toggle: function (event) {
-			util.f.events.stop(event)
-			var child = util.f.getTrg(event), children, i, parent
+			dataset_selection_util.f.events.stop(event)
+			var child = dataset_selection_util.f.getTrg(event), children, i, parent
+			if($(child).attr("class") === "option"){
+				that.choose($(child).attr("id"));
+			}
 			switch (true) {
 				case (child.classList.contains("psuedo_select")):
 				case (child.classList.contains("deselect")):
@@ -209,9 +228,11 @@ f: {
 	}
 }};
 
-var rangeSlider = function(){
-  var slider = $('.range-slider'),
-      range = $('.range-slider__range'),
+		form.f.init.register();
+
+		rangeSlider = function(){
+  	 slider = $('.range-slider');
+      range = $('.range-slider__range');
       value = $('.range-slider__value');
 
   slider.each(function(){
@@ -223,10 +244,37 @@ var rangeSlider = function(){
 
     range.on('input', function(){
       $(this).next(value).html(this.value);
+      k=parseInt(this.value);
+		if(now_dataset === null) return;
+      let send_setk_idx = send_setk_cnt++;
+      send_setk_request[send_setk_idx] = true;
+      setTimeout(function () {
+                    if(send_setk_request[send_setk_idx+1] === undefined){
+						DataLoader.update_k(k);
+                    }}, 1000);
     });
   });
 };
 
-rangeSlider();
+		rangeSlider();
 
-window.onload = form.f.init.register;
+    };
+
+    that.choose = function (dataset){
+    	if(dataset === now_dataset) return;
+    	now_dataset = dataset;
+    	$(".pulldown-dataset").click();
+    	$("#"+dataset).click();
+    	choose(dataset);
+	};
+
+
+    that.setk_ui = function(k) {
+    	range.val(k);
+		value.html(k);
+	};
+
+    that.init = function () {
+        that._init();
+    }.call();
+};
