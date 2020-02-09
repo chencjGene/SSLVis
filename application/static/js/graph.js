@@ -308,6 +308,10 @@ let GraphLayout = function (container) {
                     let node = d3.select(this);
                     node.attr("r", d => that.r(d.id));
                 })
+                .on("mousedown", function(d){
+                    console.log("mousedown", d.id);
+                    that.data_manager.update_edit_state(d.id, "instance");
+                })
                 .on("click", function (d) {
                     // check if hided
                     if(visible_items[d.id] === false) return;

@@ -104,10 +104,9 @@ def app_update_delete_and_change_label():
     start = time.time()
     dataset = request.args['dataset']
     data = json.loads(request.data)
-    delete_node_list = data['delete_node_list']
-    change_list = data['change_list']
-    delete_edge = data['delete_edge']
-    graph = update_delete_and_change_label(delete_node_list, change_list, delete_edge)
+    print(data)
+    graph = {"test": 1} 
+    graph = update_delete_and_change_label(data)
     end = time.time()
     print("all process time:", end-start)
     return graph

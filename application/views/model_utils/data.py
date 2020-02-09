@@ -350,4 +350,8 @@ class GraphData(Data):
     def remove_edge(self, added_edges):
         None
     
+    def editing_data(self, data):
+        self.remove_instance(data["deleted_idxs"])
+        self.label_instance(data["labeled_idxs"], data["labels"])
+        self.remove_edge(data["deleted_edges"])
     

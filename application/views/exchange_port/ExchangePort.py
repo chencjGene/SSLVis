@@ -171,10 +171,9 @@ class ExchangePortClass(object):
 
         return jsonify(get_area(must_show_nodes, width, height, train_x, train_y, raw_graph, process_data, influence_matrix, propagation_path, ground_truth, buf_path))
 
-    def update_delete_and_change_label(self, delete_node_list, change_list, delete_edge):
-        print(delete_node_list, change_list, delete_edge)
-        pass
-        # TODO rerun the model and return the graph
+    def update_delete_and_change_label(self, data):
+        self.model.data.editing_data(data)
+        return self.get_graph()
 
     def fisheye(self,must_show_nodes, area, level, wh):
         # get meta data

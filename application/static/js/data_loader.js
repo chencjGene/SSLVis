@@ -47,7 +47,7 @@ DataLoaderClass = function () {
     that.dist_view = null;
     that.history_view = null;
     that.filter_view = null;
-    that.menu_view = null;
+    that.edit_view = null;
     that.image_view = null;
 
     // Data storage
@@ -82,7 +82,14 @@ DataLoaderClass = function () {
         rescale: false,
         visible_items:{},
         // history info:
-        history_data: null
+        history_data: null,
+        // edit info:
+        edit_state: {
+            deleted_idxs: [],
+            labeled_idxs: [],
+            labels: [],
+            deleted_edges: []
+        }
     };
 
     // Define topological structure of data retrieval
@@ -97,7 +104,7 @@ DataLoaderClass = function () {
         that.manifest_node = new request_node(that.manifest_url + params,
             that.get_manifest_handler(function(){
                 that.update_control_info();
-                that.update_menu_info();
+                that.update_edit_info();
             }), "json", "GET");
 
         that.graph_node = new request_node(that.graph_url + params,
@@ -107,8 +114,8 @@ DataLoaderClass = function () {
         // that.update_graph_node = new request_node(that.update_graph_url + params,
         //     that.update_graph_handler(that.update_graph_view), "json", "POST");
 
-        // that.update_delete_and_change_label_node = new request_node(that.update_delete_and_change_label_url + params,
-        //     that.update_graph_handler(that.update_graph_view), "json", "POST");
+        that.update_delete_and_change_label_node = new request_node(that.update_delete_and_change_label_url + params,
+            null, "json", "POST");
 
         // that.fisheye_graph_node = new request_node(that.fisheye_graph_url + params,
         //     that.update_fisheye_graph_handler(that.update_fisheye_view), "json", "POST");
@@ -122,19 +129,21 @@ DataLoaderClass = function () {
         that.manifest_node.notify();
     };
 
-    that.update_menu_info = function(){
-        that.menu_view.update_info({
+    that.update_edit_info = function(){
+        that.edit_view.update_info({
             label_names: that.state.label_names
         });
     };
 
-    that.update_delete_and_change_label_notify = function (delete_node_list, change_list, delete_edge) {
-        that.update_delete_and_change_label_node.set_data({
-            'delete_node_list': delete_node_list,
-            'change_list': change_list,
-            'delete_edge': delete_edge
-        });
+    that.update_delete_and_change_label = function (edit_state) {
+        that.state.edit_state = edit_state;
+        that.update_delete_and_change_label_node.set_data(that.state.edit_state);
         that.update_delete_and_change_label_node.notify();
+    };
+
+    that.update_edit_state = function(data, mode){
+        console.log("update_edit_state", data, mode);
+        that.edit_view.update_focus(data, mode);
     };
 
     that.update_k = function(k){
