@@ -15,13 +15,15 @@ function set_up() {
     ImageView = new ImageLayout(d3.select("#image-row"));
     HistoryView = new HistoryLayout(d3.select("#history-row"));
     FilterView = new FilterLayout(d3.select(".current-scented-widget-container"));
+    MenuView = new MenuLayout();
     LossView.controlInstanceView = GraphView;
     LossView.controlInfoView = ImageView;
-    DataLoader.set_graph_view(GraphView);
-    DataLoader.set_dist_view(LossView);
-    DataLoader.set_image_view(ImageView);
-    DataLoader.set_history_view(HistoryView);
-    DataLoader.set_filter_view(FilterView);
+    DataLoader.set_view(GraphView, "graph");
+    DataLoader.set_view(LossView, "dist");
+    DataLoader.set_view(ImageView, "image");
+    DataLoader.set_view(HistoryView, "history");
+    DataLoader.set_view(FilterView, "filter");
+    DataLoader.set_view(MenuView, "menu");
 }
 
 function clean_dom() {
