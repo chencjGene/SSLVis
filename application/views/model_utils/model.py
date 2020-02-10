@@ -4,9 +4,11 @@ from scipy import sparse
 from scipy.sparse import csgraph
 from scipy.stats import entropy
 from time import time
+from time import sleep
 from tqdm import tqdm
 import warnings
 import copy
+
 
 from sklearn.neighbors import kneighbors_graph
 from sklearn.metrics import accuracy_score
@@ -27,7 +29,7 @@ from .model_helper import propagation, approximated_influence, exact_influence
 from .model_update import local_search_k
 from .model_helper import build_laplacian_graph
 
-DEBUG = False
+DEBUG = True
 
 class SSLModel(object):
     def __init__(self, dataname, labeled_num=None, total_num=None, seed=123):
@@ -67,12 +69,18 @@ class SSLModel(object):
         self.propagation_path = None
         self.simplified_affinity_matrix = None
         self._training()
+        logger.info("init finished")
 
     def setK(self, k=None):
         if k is not None:
             self.n_neighbor = k
 
+    def _clean_buffer(self):
+        self.simplified_affinity_matrix = None
+        self.propagation_path = None
+
     def _training(self):
+        self._clean_buffer()
         affinity_matrix = self.data.get_graph(self.n_neighbor)
         laplacian = build_laplacian_graph(affinity_matrix)
         train_y = self.data.get_train_label()
@@ -107,12 +115,23 @@ class SSLModel(object):
         acc = accuracy_score(train_gt, pred_y)
         logger.info("model accuracy: {}, iter: {}".format(acc, iter))
         logger.info("model entropy: {}".format(entropy(pred_dist.T + 1e-20).mean()))
+
+        # get simplififed matrix asynchronously
+        self.simplify_influence_matrix()
         
-        # self.adaptive_evaluation()
+        self.adaptive_evaluation()
 
         # record_state
         self.data.record_state(self.pred_dist)
 
+        logger.info("_training finished")
+
+
+    def _influence_matrix(self):
+        affinity_matrix = self.data.get_graph(self.n_neighbor)
+        laplacian = build_laplacian_graph(affinity_matrix)
+        train_y = self.data.get_train_label()
+        logger.info("begin load influence matrix")
         influence_matrix_path = os.path.join(self.selected_dir,
                                              "{}_{}_influence_matrix.pkl"
                                              .format(self.alpha, self.n_neighbor))
@@ -128,25 +147,9 @@ class SSLModel(object):
         pickle_save_data(influence_matrix_path, self.influence_matrix)
         return
 
-    def local_search_k(self, selected_idxs):
-        k_list = list(range(1,40))
-        train_gt = self.data.get_train_ground_truth()
-        affinity_matrix, pred = local_search_k(k_list, self.n_neighbor, 
-            selected_idxs, self.unnorm_dist, self.affinity_matrix, 
-            self.train_y, self.neighbors, train_gt)
-        logger.info("searched affinity_matrix diff: {}".format(
-            np.abs(self.affinity_matrix - affinity_matrix).sum()
-        ))
-        laplacian_matrix = build_laplacian_graph(affinity_matrix)
-        pred_y = pred.argmax(axis=1)
-        acc = accuracy_score(train_gt, pred_y)
-        logger.info("model accuracy without full update: {}".format(acc))
-        self.affinity_matrix = affinity_matrix
-        self.laplacian = laplacian_matrix
-        self._training()
-        return {"test": "success"}
-
+    @async
     def simplify_influence_matrix(self, threshold=0.7):
+        self._influence_matrix()
         logger.info("begin simplify influence matrix")
         affinity_matrix = self.data.get_graph()
         laplacian = build_laplacian_graph(affinity_matrix).tocsr()
@@ -213,7 +216,36 @@ class SSLModel(object):
         logger.info("now acc: {}".format(accuracy_score(simplified_F.argmax(axis=1), ground_truth)))
         simplified_affinity_matrix.eliminate_zeros()
         propagation_path = self.get_path_to_label(self.process_data, simplified_affinity_matrix)
-        return simplified_affinity_matrix, propagation_path
+        # return simplified_affinity_matrix, propagation_path
+        self.simplified_affinity_matrix = simplified_affinity_matrix
+        self.propagation_path = propagation_path
+        logger.info("end async function")
+
+    def simplification_end(self, sleep_time = 0.2):
+        if self.simplified_affinity_matrix is not None:
+            return True
+        else:
+            logger.info("simplification has not finished. sleep {}s".format(sleep_time))
+            sleep(sleep_time)
+            return False
+
+    def local_search_k(self, selected_idxs):
+        k_list = list(range(1,40))
+        train_gt = self.data.get_train_ground_truth()
+        affinity_matrix, pred = local_search_k(k_list, self.n_neighbor, 
+            selected_idxs, self.unnorm_dist, self.affinity_matrix, 
+            self.train_y, self.neighbors, train_gt)
+        logger.info("searched affinity_matrix diff: {}".format(
+            np.abs(self.affinity_matrix - affinity_matrix).sum()
+        ))
+        laplacian_matrix = build_laplacian_graph(affinity_matrix)
+        pred_y = pred.argmax(axis=1)
+        acc = accuracy_score(train_gt, pred_y)
+        logger.info("model accuracy without full update: {}".format(acc))
+        self.affinity_matrix = affinity_matrix
+        self.laplacian = laplacian_matrix
+        self._training()
+        return {"test": "success"}
 
     def _find_path(self, path_stack, stack_len, edge_indices, edge_indptr, propagation_path, path_stack_flag):
         if stack_len == 0:
@@ -260,6 +292,7 @@ class SSLModel(object):
         acc = accuracy_score(test_y, probabilities.argmax(axis=1))
         logger.info("test accuracy: {}".format(acc))
 
+    @async
     def adaptive_evaluation(self):
         train_X = self.data.get_train_X()
         affinity_matrix = self.data.get_graph()
@@ -315,7 +348,9 @@ class SSLModel(object):
             self.propagation_path = None
             self.simplified_affinity_matrix = None
         if (self.propagation_path == None) or (self.simplified_affinity_matrix == None):
-            self.simplified_affinity_matrix, self.propagation_path = self.simplify_influence_matrix(threshold=self.filter_threshold)
+            # self.simplified_affinity_matrix, self.propagation_path = self.simplify_influence_matrix(threshold=self.filter_threshold)
+            while not self.simplification_end():
+                pass
         return self.graph, self.process_data, self.simplified_affinity_matrix, self.propagation_path, self.get_in_out_degree(self.simplified_affinity_matrix)
 
     def get_loss(self):

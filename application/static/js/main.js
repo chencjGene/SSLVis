@@ -42,5 +42,5 @@ function choose(dataset){
 $(document).ready(function () {
     set_up();
     SettingView = new SettingLayout();
-    SettingView.choose("stl-1000-20000");
+    SettingView.choose("stl-20-2000");
 });
