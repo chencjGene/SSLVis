@@ -168,6 +168,10 @@ class GraphData(Data):
         self.state_data = {}
         self.current_state = None
 
+        # init action trail
+        self.state = Node("root")
+        self.current_state = self.state
+
     def _preprocess_neighbors(self):
         neighbors_model_path = os.path.join(self.selected_dir, "neighbors_model.pkl")
         neighbors_path = os.path.join(self.selected_dir, "neighbors.npy")
@@ -254,9 +258,6 @@ class GraphData(Data):
         logger.info("affinity_matrix construction finished!!")
         self.affinity_matrix = affinity_matrix
 
-        # init action trail
-        self.state = Node("root")
-        self.current_state = self.state
 
         return affinity_matrix
 
