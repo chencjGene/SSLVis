@@ -31,6 +31,7 @@ class Data(object):
         self.test_idx = []
         self.labeled_idx = []
         self.class_name = []
+        self.removed_idxs = []
 
         self.selected_labeled_num = labeled_num
         self.selected_total_num = total_num
@@ -118,6 +119,9 @@ class Data(object):
     def get_rest_idxs(self):
         return self.rest_idxs.copy()
 
+    def get_removed_idxs(self):
+        return self.removed_idxs
+
     def get_train_num(self):
         return len(self.train_idx)
 
@@ -133,6 +137,15 @@ class Data(object):
         y = y[np.array(self.train_idx)]
         return y.astype(int)[self.rest_idxs]
 
+    def get_full_train_X(self):
+        return self.X[np.array(self.train_idx)].copy()
+
+    def get_full_train_label(self):
+        y = np.ones(self.X.shape[0]) * -1
+        y[np.array(self.selected_labeled_idx)] = self.y[np.array(self.selected_labeled_idx)]
+        y = y[np.array(self.train_idx)]
+        return y.astype(int)
+
     def get_train_idx(self):
         return self.train_idx.copy()[self.rest_idxs]
 
@@ -147,6 +160,7 @@ class Data(object):
 
     def remove_instance(self, idxs):
         self.rest_idxs = [i for i in self.rest_idxs if i not in idxs]
+        self.removed_idxs += idxs
         logger.info("rest data: {}".format(len(self.rest_idxs)))
 
     def label_instance(self, idxs, labels):

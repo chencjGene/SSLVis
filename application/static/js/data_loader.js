@@ -116,7 +116,7 @@ DataLoaderClass = function () {
 
         // TODO:
         that.update_delete_and_change_label_node = new request_node(that.update_delete_and_change_label_url + params,
-            function(){}, "json", "POST");
+            that.update_delete_and_change_label_handler(that.update_graph_view), "json", "POST");
 
         // that.fisheye_graph_node = new request_node(that.fisheye_graph_url + params,
         //     that.update_fisheye_graph_handler(that.update_fisheye_view), "json", "POST");
@@ -124,7 +124,7 @@ DataLoaderClass = function () {
         that.get_history_node = new request_node(that.get_history_url + params,
             that.update_history_handler(that.update_history_view), "json", "GET");
         that.get_history_node.depend_on(that.graph_node);
-    }
+    };
 
     that.init_notify = function () {
         that.manifest_node.notify();

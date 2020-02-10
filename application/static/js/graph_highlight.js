@@ -8,6 +8,7 @@ let GraphHighlight = function (parent) {
     let if_lasso = false;
     let lasso_btn_path = null;
     let fisheye_btn_path = null;
+    let edit_btn_path = null;
     let btn_select_color = "#560731";
 
     that._init = function () {
@@ -17,6 +18,7 @@ let GraphHighlight = function (parent) {
             .closePathDistance(100);
         lasso_btn_path = d3.select("#lasso-btn").select("path");
         fisheye_btn_path = d3.select("#fisheye-btn").select("path");
+        edit_btn_path = d3.select("#apply-delete-btn").select("path");
 
         
         d3.select("#apply-delete-btn").on("click", function () {
@@ -25,13 +27,26 @@ let GraphHighlight = function (parent) {
                 view.data_manager.delete_idxs(selected_idxs);
             })
             .on("mouseover", function () {
-
+                if (d3.select("#apply-delete-btn").style("background-color") === "rgba(0, 0, 0, 0)"
+                    || d3.select("#apply-delete-btn").style("background-color") === "white"
+                    || d3.select("#apply-delete-btn").style("background-color") === "rgb(255, 255, 255)") {
+                    d3.select("#apply-delete-btn").style("background", "gray");
+                    edit_btn_path.attr("stroke", "white").attr("fill", "white");
+                }
             })
             .on("mousemove", function () {
-            
+                if (d3.select("#apply-delete-btn").style("background-color") === "rgba(0, 0, 0, 0)"
+                    || d3.select("#apply-delete-btn").style("background-color") === "white"
+                    || d3.select("#apply-delete-btn").style("background-color") === "rgb(255, 255, 255)") {
+                    d3.select("#apply-delete-btn").style("background", "gray");
+                    edit_btn_path.attr("stroke", "white").attr("fill", "white");
+                }
             })
             .on("mouseout", function () {
-            
+                if (d3.select("#apply-delete-btn").style("background-color") === "gray") {
+                    d3.select("#apply-delete-btn").style("background", "white");
+                    edit_btn_path.attr("stroke", "black").attr("fill", "black");
+                }
             });
 
         $("#lasso-btn")
