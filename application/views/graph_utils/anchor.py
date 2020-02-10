@@ -457,7 +457,7 @@ def fisheyeAnchors(must_show_nodes, area, level, wh, train_x, train_y, raw_graph
             for v in must_show_nodes:
                 if u < v:
                     focus_path.append([u, v])
-        print("focus path", focus_path)
+        # print("focus path", focus_path)
         train_x_tsne, level_infos = pickle.load(f)
 
         # get new graph
