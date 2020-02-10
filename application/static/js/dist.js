@@ -543,7 +543,11 @@ let DistLayout = function (container) {
             .attr("text-anchor", "start")
             .attr("font-size", 15)
             .attr("fill", FontColor)
-            .text(d => d);
+            .text(d => d)
+            .each(function () {
+                let text = d3.select(this);
+                set_font(text);
+            });
     };
 
     that._update = function () {
