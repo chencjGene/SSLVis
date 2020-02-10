@@ -189,11 +189,17 @@ def exact_influence(F, affinity_matrix, laplacian_matrix, alpha, train_y):
     return influence_matrix
 
 
-def approximated_influence(F, affinity_matrix, laplacian_matrix, alpha, train_y):
+def approximated_influence(F, affinity_matrix, laplacian_matrix, alpha, train_y, n_iters):
     t0 = time()
-    logger.info("begin calculating approximated influence")
-    inv_K = splinalg.inv(sparse.identity(affinity_matrix.shape[0])
-                         - alpha * laplacian_matrix)
+    logger.info("begin calculating approximated influence. n_iters: {}".format(n_iters))
+    logger.info("begin calculating inverse matrix")
+    # inv_K = splinalg.inv(sparse.identity(affinity_matrix.shape[0])
+    #                      - alpha * laplacian_matrix)
+    alpha_lap = alpha * laplacian_matrix
+    inv_K = alpha_lap.copy()
+    for n_iter in range(n_iters - 1):
+        logger.info("n_iter: {}".format(n_iter))
+        inv_K = safe_sparse_dot(alpha_lap, inv_K)
     logger.info("got inverse matrix")
     tmp = affinity_matrix.copy()
     D = tmp.sum(axis=0).getA1() - tmp.diagonal()

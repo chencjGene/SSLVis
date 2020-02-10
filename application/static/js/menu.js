@@ -2,10 +2,22 @@
 * added by Changjian Chen, 20200209
 * */
 
-let MenuLayout = function(){
+let EditLayout = function(){
     let that = this;
 
-    let label_names = ["test1", "test2"];
+    let label_names = null;
+    let name_2_label_map = null;
+    let label_colors = CategoryColor;
+    let focus_data = null;
+    let edit_mode = null; // TODO: unclear
+    let edit_state = {
+            deleted_idxs: [],
+            labeled_idxs: [],
+            labels: [],
+            deleted_edges: []
+        };
+
+
 
     let click_menu_settings = {
         'mouseClick': 'right',
@@ -20,26 +32,38 @@ let MenuLayout = function(){
     };
 
     that._init = function(){
-        that.update_click_menu($('#main_group'), 1);
+
     };
 
-    // that.component_update = function(state){
-    //     console.log("get menu state:", state);
-    //     that._update_data(state);
-    //     that._update_view();
-    // };
+    that.update_info = function(state){
+        console.log("get menu state:", state);
+        label_names = state.label_names;
+        name_2_label_map = {};
+        for (let i = 0; i < label_names.length; i++){
+            name_2_label_map[label_names[i]] = i;
+        }
+        
+        that.clean_click_menu();
+        that.update_click_menu($('#main_group'), 1);
+        that.update_click_menu($('#grid-group'), 1);
+    };
+
+    that.clean_click_menu = function(){
+        d3.selectAll(".iw-curMenu").remove();
+    }
 
     that.update_click_menu = function(container, d){
-        d3.selectAll(".iw-curMenu").remove();
         let menu = [];
         label_names.forEach(function(d, i){
             let sm = {
                     title:d,
                     name:d,
-                    color: "black",
+                    color: label_colors[i],
                     className: "iw-mnotSelected label-menu-item",
                     fun:function(){
-                        console.log("click menu");
+                        console.log("click menu", d);
+                        let label = name_2_label_map[d];
+                        that.editing(label);
                     }
                 };
                 menu.push(sm);
@@ -50,7 +74,9 @@ let MenuLayout = function(){
             color: '',
             className: "iw-mnotSelected delete-menu-item",
             fun: function () {
-                console.log("delete");
+                console.log("delete", d);
+                let label = -1;
+                that.editing(label);
             }
         });
 
@@ -87,6 +113,42 @@ let MenuLayout = function(){
     that.show_changed_data = function(){
 
     };
+
+    that.update_focus = function(data, mode){
+        focus_data = data;
+        focus_mode = mode;
+    }
+
+    that.editing = function(label){
+        console.log("editing", {label, focus_data, focus_mode});
+        if (focus_mode === "instance"){
+            if (label === -1){
+                if (Array.isArray(focus_data)){
+                    edit_state.deleted_idxs = 
+                        edit_state.deleted_idxs.concat(focus_data);
+                }
+                else{ 
+                    edit_state.deleted_idxs.push(focus_data);
+                }
+                console.log("deleted data", label, focus_data, focus_mode);
+            }
+            else{
+                edit_state.labeled_idxs.push(focus_data);
+                edit_state.labels.push(focus_data);
+            }
+        }
+        else if (focus_mode === "delete edge"){
+
+        }
+        else if (focus_mode === "add edge"){
+
+        }
+        else {
+
+        }
+        that.data_manager.update_delete_and_change_label(edit_state);
+    };
+
 
     that.init = function () {
         that._init();

@@ -19,6 +19,7 @@ class ExchangePortClass(object):
     def __init__(self, dataname=None):
         self.dataname = dataname
         self.running = False
+        self.current_ids = []
         if self.dataname is None:
             self.model = None
         else:
@@ -87,14 +88,17 @@ class ExchangePortClass(object):
     def get_graph(self, filter_threshold=None):
         raw_graph, process_data, influence_matrix, propagation_path, degree \
             = self.model.get_graph_and_process_data(filter_threshold=filter_threshold)
-        train_x, train_y = self.model.get_data()
+        train_x, train_y = self.model.get_full_data()
+        removed_ids = self.model.data.get_removed_idxs()
         buf_path = self.model.data.selected_dir
-        ground_truth = self.model.data.get_train_ground_truth()
+        ground_truth = self.model.data.get_full_train_ground_truth()
 
         graph = getAnchors(train_x, train_y, ground_truth,
                            process_data, influence_matrix, propagation_path, self.dataname,
-                           buf_path, degree)
-
+                           buf_path, degree, removed_ids)
+        self.current_ids = []
+        for id in graph["nodes"]:
+            self.current_ids.append(int(id))
         return jsonify(graph)
 
     def local_update_k(self, selected_idxs):
@@ -143,14 +147,18 @@ class ExchangePortClass(object):
         start = time.time()
         raw_graph, process_data, influence_matrix, propagation_path, degree \
             = self.model.get_graph_and_process_data()
-        train_x, train_y = self.model.get_data()
-        ground_truth = self.model.data.get_train_ground_truth()
+        train_x, train_y = self.model.get_full_data()
+        ground_truth = self.model.data.get_full_train_ground_truth()
+        removed_ids = self.model.data.get_removed_idxs()
         now = time.time()
         all_time["get_meta_data"] += now-start
         start = now
         graph = updateAnchors(train_x, train_y, ground_truth,
                            process_data, influence_matrix, self.dataname, area, level,
-                           self.model.data.selected_dir, propagation_path, degree)
+                           self.model.data.selected_dir, propagation_path, degree, removed_ids)
+        self.current_ids = []
+        for id in graph["nodes"]:
+            self.current_ids.append(int(id))
         now = time.time()
         all_time["update_anchor"] += now - start
         start = now
@@ -171,21 +179,28 @@ class ExchangePortClass(object):
 
         return jsonify(get_area(must_show_nodes, width, height, train_x, train_y, raw_graph, process_data, influence_matrix, propagation_path, ground_truth, buf_path))
 
-    def update_delete_and_change_label(self, delete_node_list, change_list, delete_edge):
-        print(delete_node_list, change_list, delete_edge)
-        pass
-        # TODO rerun the model and return the graph
+    def update_delete_and_change_label(self, data):
+        self.model.data.editing_data(data)
+        remain_ids = []
+        for id in self.current_ids:
+            if id not in data["deleted_idxs"]:
+                remain_ids.append(id)
+        return self.fisheye(remain_ids, data["area"], data["level"], data["wh"])
 
     def fisheye(self,must_show_nodes, area, level, wh):
         # get meta data
         raw_graph, process_data, influence_matrix, propagation_path, degree \
             = self.model.get_graph_and_process_data()
-        train_x, train_y = self.model.get_data()
+        train_x, train_y = self.model.get_full_data()
         buf_path = self.model.data.selected_dir
-        ground_truth = self.model.data.get_train_ground_truth()
+        ground_truth = self.model.data.get_full_train_ground_truth()
+        removed_ids = self.model.data.get_removed_idxs()
 
         graph = fisheyeAnchors(must_show_nodes, area, level, wh, train_x, train_y, raw_graph, process_data,
-                               influence_matrix, propagation_path, ground_truth, buf_path, degree)
+                               influence_matrix, propagation_path, ground_truth, buf_path, degree, removed_ids)
+        self.current_ids = []
+        for id in graph["nodes"]:
+            self.current_ids.append(int(id))
         return jsonify(graph)
 
     def get_feature_distance(self, uid, vid):

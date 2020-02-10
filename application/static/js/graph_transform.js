@@ -251,6 +251,15 @@ let GraphTransform = function (parent) {
         });
     };
 
+    // that.get_area = function(){
+    //     return area;
+    // };
+
+    that.get_level = function(){
+        return current_level;
+    };
+
+
     that.init = function () {
         that._init();
     }.call();

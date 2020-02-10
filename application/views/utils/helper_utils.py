@@ -4,6 +4,16 @@ import os
 import json
 from sklearn.metrics import confusion_matrix, roc_auc_score, \
     precision_recall_curve, auc, roc_curve
+from threading import Thread
+from time import sleep
+
+
+def async(f):
+    def wrapper(*args, **kwargs):
+        thr = Thread(target=f, args=args, kwargs=kwargs)
+        thr.start()
+
+    return wrapper
 
 
 # Pickle loading and saving
