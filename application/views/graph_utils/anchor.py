@@ -28,7 +28,7 @@ def get_train_x_entropy(process_data):
         entropy[i] = sort_res[1]-sort_res[0]
     return entropy
 
-def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, propagation_path, dataname, buf_path, degree):
+def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, propagation_path, dataname, buf_path, degree, removed_ids):
     global top_k_uncertain
 
     anchor_path = os.path.join(buf_path, "anchors" + config.pkl_ext)
@@ -193,6 +193,9 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, p
         train_x_tsne, level_infos = pickle.load(f)
         selection = level_infos[0]['index']
         selection = list(dict.fromkeys(selection.tolist()))
+        for id in removed_ids:
+            if id in selection:
+                selection.remove(id)
         selection = np.array(selection)
         samples_x = train_x[selection]
         init_samples_x_tsne = train_x_tsne[selection]
@@ -263,7 +266,7 @@ def getAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, p
     }
     return graph
 
-def updateAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, dataname, area, level, buf_path, propagation_path, degree):
+def updateAnchors(train_x, train_y, ground_truth, process_data, influence_matrix, dataname, area, level, buf_path, propagation_path, degree, removed_ids):
     global top_k_uncertain
     anchor_path = os.path.join(buf_path, "anchors" + config.pkl_ext)
     current_pos_path = os.path.join(buf_path, "current_anchors" + config.pkl_ext)
@@ -311,6 +314,11 @@ def updateAnchors(train_x, train_y, ground_truth, process_data, influence_matrix
         selection = np.array(selection)
         old_position = np.array(old_position)
         selection = selection[old_selection + new_selection]
+        selection = selection.tolist()
+        for id in removed_ids:
+            if id in selection:
+                selection.remove(id)
+        selection = np.array(selection)
         samples_x = train_x[selection]
         init_samples_x_tsne = train_x_tsne[selection]
         init_samples_x_tsne[:len(old_selection)] = old_position
@@ -430,7 +438,7 @@ def get_area(must_show_nodes, width, height, train_x, train_y, raw_graph, proces
         "area":new_area
     }
 
-def fisheyeAnchors(must_show_nodes, area, level, wh, train_x, train_y, raw_graph, process_data, influence_matrix, propagation_path, ground_truth, buf_path, degree):
+def fisheyeAnchors(must_show_nodes, area, level, wh, train_x, train_y, raw_graph, process_data, influence_matrix, propagation_path, ground_truth, buf_path, degree, removed_ids):
     global top_k_uncertain
     anchor_path = os.path.join(buf_path, "anchors" + config.pkl_ext)
     current_pos_path = os.path.join(buf_path, "current_anchors" + config.pkl_ext)
@@ -445,7 +453,7 @@ def fisheyeAnchors(must_show_nodes, area, level, wh, train_x, train_y, raw_graph
             for v in must_show_nodes:
                 if u < v:
                     focus_path.append([u, v])
-        print("focus path", focus_path)
+        # print("focus path", focus_path)
         train_x_tsne, level_infos = pickle.load(f)
 
         # get new graph
@@ -481,6 +489,9 @@ def fisheyeAnchors(must_show_nodes, area, level, wh, train_x, train_y, raw_graph
         old_cnt = len(selection)
         # add must_have_nodes
         selection = list(dict.fromkeys(selection+new_nodes))
+        for id in removed_ids:
+            if id in selection:
+                selection.remove(id)
 
 
         samples_x = train_x[selection]
@@ -570,4 +581,4 @@ def fisheyeAnchors(must_show_nodes, area, level, wh, train_x, train_y, raw_graph
     graph = {
         "nodes": samples_nodes,
     }
-    return samples_nodes
+    return graph
