@@ -91,7 +91,7 @@ class ExchangePortClass(object):
         train_x, train_y = self.model.get_full_data()
         removed_ids = self.model.data.get_removed_idxs()
         buf_path = self.model.data.selected_dir
-        ground_truth = self.model.data.get_train_ground_truth()
+        ground_truth = self.model.data.get_full_train_ground_truth()
 
         graph = getAnchors(train_x, train_y, ground_truth,
                            process_data, influence_matrix, propagation_path, self.dataname,
@@ -148,7 +148,7 @@ class ExchangePortClass(object):
         raw_graph, process_data, influence_matrix, propagation_path, degree \
             = self.model.get_graph_and_process_data()
         train_x, train_y = self.model.get_full_data()
-        ground_truth = self.model.data.get_train_ground_truth()
+        ground_truth = self.model.data.get_full_train_ground_truth()
         removed_ids = self.model.data.get_removed_idxs()
         now = time.time()
         all_time["get_meta_data"] += now-start
@@ -193,7 +193,7 @@ class ExchangePortClass(object):
             = self.model.get_graph_and_process_data()
         train_x, train_y = self.model.get_full_data()
         buf_path = self.model.data.selected_dir
-        ground_truth = self.model.data.get_train_ground_truth()
+        ground_truth = self.model.data.get_full_train_ground_truth()
         removed_ids = self.model.data.get_removed_idxs()
 
         graph = fisheyeAnchors(must_show_nodes, area, level, wh, train_x, train_y, raw_graph, process_data,
