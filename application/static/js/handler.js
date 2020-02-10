@@ -72,7 +72,7 @@ DataLoaderClass.prototype.fetch_graph_handler = function (callback) {
 
     function _fetch_graph_handler(data) {
         console.log(data);
-        that.state.nodes = data;
+        that.state.nodes = data.nodes;
         if (callback) callback(false);
     }
 
@@ -166,4 +166,14 @@ DataLoaderClass.prototype.retrain_handler = function(callback) {
         if (callback) callback();
     }
     return _retrain_handler;
+};
+
+DataLoaderClass.prototype.update_delete_and_change_label_handler = function(callback) {
+    let that = this;
+
+    function _update_delete_and_change_label_handler(data){
+        that.state.nodes = data.nodes;
+        if (callback) callback();
+    }
+    return _update_delete_and_change_label_handler;
 };

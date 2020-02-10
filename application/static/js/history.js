@@ -43,7 +43,7 @@ let HistoryLayout = function (container) {
             .append("text")
             .attr("class", "legend")
             .attr("text-anchor", "start")
-            .attr("font-size", "11px")
+            .attr("font-size", "12px")
             .attr("x", 0)
             .attr("y", 0)
             .attr("transform", function(d, i){
@@ -52,10 +52,10 @@ let HistoryLayout = function (container) {
             })
             .style("opacity", 0)
             .text(d => d)
-            .each(function () {
-                let legend = d3.select(this);
-                set_font(legend);
-            });
+            // .each(function () {
+            //     let legend = d3.select(this);
+            //     set_font(legend);
+            // });
     };
 
     that.set_data_manager = function(new_data_manager) {
@@ -158,6 +158,7 @@ let HistoryLayout = function (container) {
         that.cells.append("text")
             .attr("class", "action-id")
             .attr("text-anchor", "middle")
+            .attr("font-size", "12px")
             .attr("x", action_id_center)
             .attr("y", cell_height * 0.5 + 4.5)
             .text(d => d.id);
@@ -185,16 +186,16 @@ let HistoryLayout = function (container) {
             .attr("class", "text-change")
             .attr("text-anchor", "middle")
             .attr("x", (_,i) => dist_start + (i + 0.5) * dist_width)
-            .attr("y", d => cell_height - d[1] - 3)
-            .attr("font-size", "11px")
+            .attr("y", d => cell_height - d[1] - 1)
+            .attr("font-size", "12px")
             .text(d => d[0])
-            .each(function () {
-                let text = d3.select(this);
-                set_font(text);
-            });
+            // .each(function () {
+            //     let text = d3.select(this);
+            //     set_font(text);
+            // });
         that.cells.append("text")
             .attr("font-family", '"Helvetica Neue", Helvetica, Arial, sans-serif')
-            .attr("font-size", "13px")
+            .attr("font-size", "12px")
             .attr("font-weight", 700)
             .attr("fill", "#333333")
             .attr("text-anchor", "middle")

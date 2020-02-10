@@ -31,7 +31,7 @@ class DensityBasedSampler(object):
         self.pca_dim = pca_dim
         self.annFileName = annFileName
 
-    def fit_sample(self, data: np.ndarray, label=None, return_others=True, selection=None):
+    def fit_sample(self, data: np.ndarray, label=None, return_others=True, selection=None, mixed_degree = None):
         if type(data) == list:
             data = np.array(data)
 
@@ -54,13 +54,13 @@ class DensityBasedSampler(object):
         if self.N <= self.n_samples:
             return [True] * self.N
         # np.random.seed(42)
-        selection = self._fit_sample(data, label=label, selection=selection)
+        selection = self._fit_sample(data, label=label, selection=selection, mixed_degree = mixed_degree)
         if return_others:
             return selection, self.estimated_density, self.prob
         else:
             return selection
 
-    def _fit_sample(self, data: np.ndarray, label=None, selection=None):
+    def _fit_sample(self, data: np.ndarray, label=None, selection=None, mixed_degree = None):
         if selection is not None and selection.sum() >= self.n_samples:
             return selection
         # self.tree = BallTree(data, leaf_size=2)
@@ -74,10 +74,11 @@ class DensityBasedSampler(object):
         # dist, neighbor = self.tree.query(X, k=knn + 1, return_distance=True)
         neighbor, dist = Knn(X, N, D, knn + 1, 1, 1, int(N))
         # ==================== shouxing 9-15
-        mixed_degree = np.zeros(N, )
-        if label is not None:
-            for i in range(N):
-                mixed_degree[i] = (((label[neighbor][i] - label[i]) != 0).sum()) / (knn + 1)
+        if mixed_degree is None:
+            mixed_degree = np.zeros(N, )
+            if label is not None:
+                for i in range(N):
+                    mixed_degree[i] = (((label[neighbor][i] - label[i]) != 0).sum()) / (knn + 1)
 
         # r = math.sqrt(np.mean(dist[:, -1]))    # 之前的距离没有开方，所以密度采样的计算有误
         # print("r = %f"%(r))
@@ -113,11 +114,4 @@ class DensityBasedSampler(object):
         if selection is None:
             selection = np.zeros(self.N, dtype=bool)
         selected_index = np.random.choice(self.N, self.n_samples, replace=False, p=self.prob)
-        count = selection.sum()
-        for i in range(self.N):
-            if count >= self.n_samples:
-                break
-            if not selection[selected_index[i]]:
-                count += 1
-                selection[selected_index[i]] = True
-        return selection
+        return selected_index

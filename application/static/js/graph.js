@@ -308,6 +308,10 @@ let GraphLayout = function (container) {
                     let node = d3.select(this);
                     node.attr("r", d => that.r(d.id));
                 })
+                .on("mousedown", function(d){
+                    console.log("mousedown", d.id);
+                    that.data_manager.update_edit_state(d.id, "instance");
+                })
                 .on("click", function (d) {
                     // check if hided
                     if(visible_items[d.id] === false) return;
@@ -550,6 +554,18 @@ let GraphLayout = function (container) {
                 .data([], d => d[0].id+","+d[1].id);
             await that._remove();
     };
+
+    that.get_level = function(){
+        return transform_plg.get_level();
+    };
+
+    that.get_wh = function(){
+        return that.width / that.height;
+    }
+
+    // that.get_area = function(){
+    //     return transform_plg.get_area();
+    // };
 
     that.init = function () {
         that._init();
