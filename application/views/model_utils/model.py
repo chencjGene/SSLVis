@@ -29,7 +29,7 @@ from .model_helper import propagation, approximated_influence, exact_influence
 from .model_update import local_search_k
 from .model_helper import build_laplacian_graph
 
-DEBUG = True
+DEBUG = False
 
 class SSLModel(object):
     def __init__(self, dataname, labeled_num=None, total_num=None, seed=123):
@@ -119,7 +119,8 @@ class SSLModel(object):
         # get simplififed matrix asynchronously
         self.simplify_influence_matrix()
         
-        self.adaptive_evaluation()
+        # self.adaptive_evaluation()
+        self.adaptive_evaluation_v2()
 
         # record_state
         self.data.record_state(self.pred_dist)
@@ -375,7 +376,7 @@ class SSLModel(object):
                     d_test += data_in_this_row[i]
                     dis = f_test/d_test-pred[neighbor_id]*degree[neighbor_id]
                     f += np.sqrt(dis.dot(dis))
-
+                f = f / k
                 if f < min_f:
                     min_f = f
                     min_k = k
