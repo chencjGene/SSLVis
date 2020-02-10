@@ -18,7 +18,7 @@ from sklearn.metrics.pairwise import euclidean_distances, paired_distances
 from ..utils.config_utils import config
 from ..utils.log_utils import logger
 from ..utils.helper_utils import check_exist, \
-    pickle_load_data, pickle_save_data, flow_statistic
+    pickle_load_data, pickle_save_data, flow_statistic, async
 from ..utils.embedder_utils import Embedder
 
 from .data import Data, GraphData
@@ -85,6 +85,7 @@ class SSLModel(object):
         # labels = [int(np.argmax(process_data[j][id])) if np.max(process_data[j][id]) > 1e-4 else -1 for j in
         #           range(iter_num)]
         iter = len(loss)
+        self.n_iters = iter
         # get labels and flows
         self.labels = process_data.argmax(axis=2)
         self.unnorm_dist = unnorm_dist
@@ -123,7 +124,7 @@ class SSLModel(object):
                     "do not exist, preprocessing!")
         self.influence_matrix = \
             approximated_influence(self.unnorm_dist, affinity_matrix,
-                                   laplacian, self.alpha, train_y)
+                                   laplacian, self.alpha, train_y, self.n_iters)
         pickle_save_data(influence_matrix_path, self.influence_matrix)
         return
 
