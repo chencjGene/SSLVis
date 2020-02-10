@@ -293,6 +293,66 @@ class SSLModel(object):
         logger.info("test accuracy: {}".format(acc))
         print(s/test_X.shape[0])
 
+    def adaptive_evaluation_v2(self):
+        train_X = self.data.get_train_X()
+        affinity_matrix = self.data.get_graph()
+        pred = self.pred_dist
+        test_X = self.data.get_test_X()
+        label_cnt = pred.shape[1]
+        test_y = self.data.get_test_ground_truth()
+        nn_fit = self.data.get_neighbors_model()
+        logger.info("nn construction finished!")
+        max_k = 30
+        neighbor_result = nn_fit.kneighbors_graph(test_X,
+                                                  max_k,
+                                                  mode="distance")
+        s = 0
+        low_bound = 3
+        degree = self.get_in_out_degree(affinity_matrix)[:,1]
+        degree = np.sqrt(1/degree)
+        labels = []
+        logger.info("begin test")
+        for test_node_id in range(test_X.shape[0]):
+            start = neighbor_result.indptr[test_node_id]
+            end = neighbor_result.indptr[test_node_id + 1]
+            j_in_this_row = neighbor_result.indices[start:end]
+            data_in_this_row = neighbor_result.data[start:end]
+            sorted_idx = data_in_this_row.argsort()
+            assert (len(sorted_idx) == max_k)
+            j_in_this_row = j_in_this_row[sorted_idx]
+            min_f = np.finfo(np.float).max
+            min_k = 0
+            min_f_test = np.zeros((label_cnt))
+            for k in range(low_bound,max_k):
+                estimated_idxs = j_in_this_row[:k]
+                d_test = 0
+                f_test = np.zeros((label_cnt))
+                # get f_test
+                for i in range(k):
+                    neighbor_id = estimated_idxs[i]
+                    f_test += pred[neighbor_id]*degree[neighbor_id]
+                    d_test += data_in_this_row[i]
+                d_test = np.sqrt(d_test)
+                f_test *= d_test/k
+                # get label similarity
+                f = 0
+                for i in range(k):
+                    neighbor_id = estimated_idxs[i]
+                    d_test += data_in_this_row[i]
+                    dis = f_test/d_test-pred[neighbor_id]*degree[neighbor_id]
+                    f += np.sqrt(dis.dot(dis))
+
+                if f < min_f:
+                    min_f = f
+                    min_k = k
+                    min_f_test = f_test
+            s += min_k
+            p = min_f_test
+            labels.append(p.argmax())
+        acc = accuracy_score(test_y, labels)
+        logger.info("test accuracy: {}".format(acc))
+        print(s / test_X.shape[0])
+
 
     def get_in_out_degree(self, influence_matrix):
         edge_indices = influence_matrix.indices
@@ -363,6 +423,11 @@ class SSLModel(object):
     def get_data(self):
         train_X = self.data.get_train_X()
         train_y = self.data.get_train_label()
+        return train_X, train_y
+
+    def get_full_data(self):
+        train_X = self.data.get_full_train_X()
+        train_y = self.data.get_full_train_label()
         return train_X, train_y
 
     def get_history(self):
