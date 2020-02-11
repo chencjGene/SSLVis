@@ -15,6 +15,8 @@ from application.views.utils.log_utils import logger
 
 from .model_helper import build_laplacian_graph
 
+DEBUG = True
+
 class Data(object):
     '''
     1. read data from buffer
@@ -198,7 +200,7 @@ class GraphData(Data):
                                              "neighbors_weight.npy")
         if os.path.exists(neighbors_model_path) and \
             os.path.exists(neighbors_path) and \
-            os.path.exists(neighbors_weight_path):
+            os.path.exists(neighbors_weight_path) and DEBUG == False:
             logger.info("neighbors and neighbor_weight exist!!!")
             return
         logger.info("neighbors and neighbor_weight "
@@ -258,13 +260,14 @@ class GraphData(Data):
         train_y = self.get_train_label()
         train_y = np.array(train_y)
         self.train_y = train_y
+        print("train_y", train_y.shape)
 
         # get knn graph in a csr form
         indptr = [i * n_neighbor for i in range(instance_num + 1)]
         logger.info("get indptr")
         indices = neighbors[:, :n_neighbor].reshape(-1).tolist()
         logger.info("get indices")
-        data = neighbors_weight[:, :n_neighbor].reshape(-1)
+        data = neighbors[:, :n_neighbor].reshape(-1)
         logger.info("get data")
         data = (data * 0 + 1.0).tolist()
         logger.info("get data in connectivity")

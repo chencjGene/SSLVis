@@ -83,9 +83,9 @@ class Anchors:
 
     def tsne_evaluation(self, train_x_tsne):
         logger.info("begin tsne evaluation")
-        self.wait_for_simplify()
+        # self.wait_for_simplify()
         node_num = train_x_tsne.shape[0]
-        influence_matrix = self.model.simplified_affinity_matrix
+        influence_matrix = self.data.get_graph()
         all_distance = 0
         indptr = influence_matrix.indptr
         indices = influence_matrix.indices

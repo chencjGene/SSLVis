@@ -116,10 +116,14 @@ class SSLModel(object):
         logger.info("model accuracy: {}, iter: {}".format(acc, iter))
         logger.info("model entropy: {}".format(entropy(pred_dist.T + 1e-20).mean()))
 
+        self.adaptive_evaluation()
+        self.evaluate()
+
         # get simplififed matrix asynchronously
         self.simplify_influence_matrix()
         
-        self.adaptive_evaluation()
+        # self.evaluate()
+        # self.adaptive_evaluation()
         # self.adaptive_evaluation_v2()
 
         # record_state
@@ -284,7 +288,7 @@ class SSLModel(object):
         test_y = self.data.get_test_ground_truth()
         pred = self.pred_dist
         nn_fit = self.data.get_neighbors_model()
-        weight_matrices = nn_fit.kneighbors(test_X, return_distance=False)
+        weight_matrices = nn_fit.kneighbors(test_X, self.n_neighbor, return_distance=False)
         probabilities = np.array([
                 np.sum(pred[weight_matrix], axis=0)
                 for weight_matrix in weight_matrices])
@@ -293,10 +297,12 @@ class SSLModel(object):
         acc = accuracy_score(test_y, probabilities.argmax(axis=1))
         logger.info("test accuracy: {}".format(acc))
 
-    @async
+
+    # @async
     def adaptive_evaluation(self):
         train_X = self.data.get_train_X()
         affinity_matrix = self.data.get_graph()
+        affinity_matrix.setdiag(0)
         pred = self.pred_dist
         test_X = self.data.get_test_X()
         test_y = self.data.get_test_ground_truth()
