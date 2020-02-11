@@ -414,6 +414,9 @@ class SSLModel(object):
                 pass
         return self.graph, self.process_data, self.simplified_affinity_matrix, self.propagation_path, self.get_in_out_degree(self.simplified_affinity_matrix)
 
+    def get_pred_labels(self):
+        return self.labels[-1].copy()
+
     def get_loss(self):
         return self.loss
 
