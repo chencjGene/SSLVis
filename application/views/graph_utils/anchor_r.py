@@ -144,10 +144,11 @@ class Anchors:
             level_selection = last_selection[tmp_selection]
             logger.info("construct ball tree...")
             tree = BallTree(train_x[level_selection])
-            neighbors_nn = tree.query(train_x[level_infos[level_id+1]['index']], 1, return_distance=False)
+            query = level_infos[level_id+1]['index']
+            neighbors_nn = tree.query(train_x[query], 1, return_distance=False)
             level_next = [[] for next_id in range(level_selection.shape[0])]
             for index_id, index in enumerate(neighbors_nn.reshape(-1)):
-                level_next[index].append(index_id)
+                level_next[index].append(query[index_id])
             level_infos[level_id] = {
                 'index': level_selection,
                 'next': level_next
