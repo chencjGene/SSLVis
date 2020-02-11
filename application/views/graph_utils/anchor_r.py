@@ -10,6 +10,7 @@ import time
 import math
 
 from ..utils.config_utils import config
+from ..utils.log_utils import logger
 from ..graph_utils.IncrementalTSNE import IncrementalTSNE
 from ..graph_utils.ConstraintTSNE import ConstraintTSNE
 from ..graph_utils.DensityBasedSampler import DensityBasedSampler
@@ -71,14 +72,17 @@ class Anchors:
             return self.tsne
 
     def init_train_x_tsne(self):
+        logger.info("begin tsne init")
         train_x = self.data.get_full_train_X()
         train_y_final = self.get_pred_labels()
         self.tsne = IncrementalTSNE(n_components=2, verbose=True, init="random",
                                         early_exaggeration=1).fit_transform(train_x, labels=train_y_final,
                                                                         label_alpha=0.3)
         np.save(self.tsne_path, self.tsne)
+        logger.info("finish tsne init")
 
     def tsne_evaluation(self, train_x_tsne):
+        logger.info("begin tsne evaluation")
         self.wait_for_simplify()
         node_num = train_x_tsne.shape[0]
         influence_matrix = self.model.simplified_affinity_matrix
@@ -90,11 +94,14 @@ class Anchors:
             end = indptr[i + 1]
             for j in indices[begin:end]:
                 all_distance += np.linalg.norm(train_x_tsne[i] - train_x_tsne[j], 2)
+        logger.info("finish tsne evaluation")
         print("Edge length sum:", all_distance)
 
     def wait_for_simplify(self):
+        logger.info("waiting for simplify...")
         while not self.model.simplification_end():
             True
+        logger.info("simplify end")
 
     def get_hierarchical_sampling(self):
         if os.path.exists(self.hierarchy_info_path):
@@ -110,6 +117,7 @@ class Anchors:
         return self.hierarchy_info
 
     def construct_hierarchical_sampling(self, train_x: np.ndarray, entropy: np.ndarray, target_num: int):
+        logger.info("construct hierarchical sampling")
         node_num = train_x.shape[0]
         min_rate = 0.25
 
@@ -123,16 +131,18 @@ class Anchors:
         number_scale_each_level = sampling_scale ** (1.0 / (levels_number - 1))
         sample_number = node_num
         level_selection = np.arange(node_num)
+        logger.info("level num:{}".format(levels_number))
         for level_id in range(levels_number - 2, -1, -1):
             sample_number = round(sample_number / number_scale_each_level)
             if level_id == 0:
                 sample_number = target_num
-            print("Level", level_id, "Sampling number", sample_number)
+            logger.info("Level:{}, Sampling number:{}".format(level_id, sample_number))
             sampler = DensityBasedSampler(n_samples=sample_number)
             last_selection = level_selection
             tmp_selection = sampler.fit_sample(data=train_x[last_selection], return_others=False,
                                                  mixed_degree=entropy[last_selection])
             level_selection = last_selection[tmp_selection]
+            logger.info("construct ball tree...")
             tree = BallTree(train_x[level_selection])
             neighbors_nn = tree.query(train_x[level_infos[level_id+1]['index']], 1, return_distance=False)
             level_next = [[] for next_id in range(level_selection.shape[0])]
@@ -149,9 +159,11 @@ class Anchors:
         iter_num = process_data.shape[0]
         node_num = process_data.shape[1]
         entropy = np.ones((node_num))
+        logger.info("get entropy")
         for i in range(node_num):
             sort_res = process_data[iter_num - 1][i][np.argsort(process_data[iter_num - 1][i])[-2:]]
             entropy[i] = sort_res[1] - sort_res[0]
+        logger.info("finish entropy")
         return entropy
 
     def get_data_area(self, ids = None, train_x_tsne = None):
@@ -173,6 +185,7 @@ class Anchors:
         return area
 
     def get_data_selection(self, area, level, must_have_nodes):
+        logger.info("selecting data...")
         # get level info
         if self.hierarchy_info is None:
             level_infos = self.get_hierarchical_sampling()
@@ -236,6 +249,7 @@ class Anchors:
         return selection, old_cnt
 
     def re_tsne(self, selection, fixed_cnt = 0):
+        logger.info("re tsne")
         # get data
         train_x = self.full_x
         train_x_tsne = self.tsne
@@ -252,6 +266,7 @@ class Anchors:
         samples_x_tsne = IncrementalTSNE(n_components=2, n_jobs=20, init=init_samples_x_tsne, n_iter=250,
                                          exploration_n_iter=0).fit_transform(samples_x,
                                                                              skip_num_points=fixed_cnt)
+        logger.info("tsne done")
         return samples_x_tsne
 
     def get_nodes(self):
@@ -278,6 +293,7 @@ class Anchors:
 
 
     def convert_to_dict(self, selection, tsne):
+        logger.info("convert to dict")
         self.wait_for_simplify()
 
         ground_truth = self.model.data.get_full_train_ground_truth()
@@ -312,4 +328,5 @@ class Anchors:
         graph = {
             "nodes":samples_nodes
         }
+        logger.info("convert done")
         return graph
