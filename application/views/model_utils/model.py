@@ -120,7 +120,7 @@ class SSLModel(object):
         self.simplify_influence_matrix()
         
         # self.adaptive_evaluation()
-        self.adaptive_evaluation_v2()
+        # self.adaptive_evaluation_v2()
 
         # record_state
         self.data.record_state(self.pred_dist)
