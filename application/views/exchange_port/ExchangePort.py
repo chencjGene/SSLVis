@@ -13,6 +13,7 @@ from ..utils.config_utils import config
 from ..graph_utils.anchor import getAnchors, updateAnchors, fisheyeAnchors, get_area
 import pickle
 from ..graph_utils.IncrementalTSNE import IncrementalTSNE
+from ..graph_utils.anchor_r import Anchors
 
 
 class ExchangePortClass(object):
@@ -20,10 +21,12 @@ class ExchangePortClass(object):
         self.dataname = dataname
         self.running = False
         self.current_ids = []
+        self.anchor = Anchors()
         if self.dataname is None:
             self.model = None
         else:
             self.model = SSLModel(self.dataname)
+            self.anchor.link_model(self.model)
 
     def reset_dataname(self, dataname):
         self.dataname = dataname
@@ -31,6 +34,7 @@ class ExchangePortClass(object):
             self.model = None
         else:
             self.model = SSLModel(self.dataname)
+            self.anchor.link_model(self.model)
 
     def reset_model(self, dataname, labeled_num=None, total_num=None):
         self.dataname = dataname
@@ -38,6 +42,7 @@ class ExchangePortClass(object):
             self.model = None
         else:
             self.model = SSLModel(self.dataname, labeled_num, total_num)
+            self.anchor.link_model(self.model)
 
     def init_model(self, k, filter_threshold):
         self.model.init(k=k, filter_threshold=filter_threshold)
@@ -86,17 +91,7 @@ class ExchangePortClass(object):
         return dist
 
     def get_graph(self, filter_threshold=None):
-        raw_graph, process_data, influence_matrix, propagation_path, degree \
-            = self.model.get_graph_and_process_data(filter_threshold=filter_threshold)
-        train_x, train_y = self.model.get_full_data()
-        removed_ids = self.model.data.get_removed_idxs()
-        buf_path = self.model.data.selected_dir
-        ground_truth = self.model.data.get_full_train_ground_truth()
-
-        graph = getAnchors(train_x, train_y, ground_truth,
-                           process_data, influence_matrix, propagation_path, self.dataname,
-                           buf_path, degree, removed_ids)
-        self.current_ids = []
+        graph = self.anchor.get_nodes()
         for id in graph["nodes"]:
             self.current_ids.append(int(id))
         return jsonify(graph)
@@ -145,17 +140,10 @@ class ExchangePortClass(object):
     def update_graph(self, area, level):
         all_time = {"get_meta_data":0, "update_anchor":0, "jsonify":0}
         start = time.time()
-        raw_graph, process_data, influence_matrix, propagation_path, degree \
-            = self.model.get_graph_and_process_data()
-        train_x, train_y = self.model.get_full_data()
-        ground_truth = self.model.data.get_full_train_ground_truth()
-        removed_ids = self.model.data.get_removed_idxs()
         now = time.time()
         all_time["get_meta_data"] += now-start
         start = now
-        graph = updateAnchors(train_x, train_y, ground_truth,
-                           process_data, influence_matrix, self.dataname, area, level,
-                           self.model.data.selected_dir, propagation_path, degree, removed_ids)
+        graph = self.anchor.update_nodes(area,level)
         self.current_ids = []
         for id in graph["nodes"]:
             self.current_ids.append(int(id))
@@ -170,14 +158,10 @@ class ExchangePortClass(object):
         return json_res
 
     def get_area(self, must_show_nodes, width, height):
-        # get meta data
-        raw_graph, process_data, influence_matrix, propagation_path,degree \
-            = self.model.get_graph_and_process_data()
-        train_x, train_y = self.model.get_data()
-        buf_path = os.path.join(self.model.data.selected_dir, "anchors" + config.pkl_ext)
-        ground_truth = self.model.data.get_train_ground_truth()
-
-        return jsonify(get_area(must_show_nodes, width, height, train_x, train_y, raw_graph, process_data, influence_matrix, propagation_path, ground_truth, buf_path))
+        res = {
+            "area":self.anchor.get_data_area(must_show_nodes)
+        }
+        return jsonify(res)
 
     def update_delete_and_change_label(self, data):
         self.model.data.editing_data(data)
@@ -189,15 +173,7 @@ class ExchangePortClass(object):
 
     def fisheye(self,must_show_nodes, area, level, wh):
         # get meta data
-        raw_graph, process_data, influence_matrix, propagation_path, degree \
-            = self.model.get_graph_and_process_data()
-        train_x, train_y = self.model.get_full_data()
-        buf_path = self.model.data.selected_dir
-        ground_truth = self.model.data.get_full_train_ground_truth()
-        removed_ids = self.model.data.get_removed_idxs()
-
-        graph = fisheyeAnchors(must_show_nodes, area, level, wh, train_x, train_y, raw_graph, process_data,
-                               influence_matrix, propagation_path, ground_truth, buf_path, degree, removed_ids)
+        graph = self.anchor.update_nodes(area, level, must_show_nodes)
         self.current_ids = []
         for id in graph["nodes"]:
             self.current_ids.append(int(id))

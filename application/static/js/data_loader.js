@@ -500,7 +500,6 @@ DataLoaderClass = function () {
          let params = "?dataset=" + that.dataset;
         let fetch_graph = new request_node(that.fisheye_graph_url + params,
             that.fetch_graph_handler(that.zoom_graph_view), "json", "POST");
-        that.state.area = area;
         that.state.rescale = false;
         if(mode === "showpath"){
             that.state.is_show_path = true;
