@@ -102,6 +102,7 @@ let GraphLayout = function (container) {
         area = state.area;
         rescale = state.rescale;
         visible_items = state.visible_items;
+        glyphs = state.glyphs || [];
         // path
         path = [];
         path_nodes = {};
@@ -117,7 +118,7 @@ let GraphLayout = function (container) {
             }
         }
         // glyphs
-        glyphs = that.get_top_k_uncertainty(nodes, 20);
+        // glyphs = that.get_top_k_uncertainty(nodes, 20);
         // // removed by Changjian for reducing visual clutter
         // for(let node_id of Object.keys(path_nodes).map(d => parseInt(d))){
         //     if(glyphs.indexOf(node_id) === -1) glyphs.push(node_id);

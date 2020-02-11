@@ -80,6 +80,7 @@ DataLoaderClass = function () {
         highlights: null,
         area: null,
         rescale: false,
+        glyphs: null,
         visible_items:{},
         // history info:
         history_data: null,
@@ -424,7 +425,9 @@ DataLoaderClass = function () {
         for(let i=0; i<11; i++){
             label_range.push(i);
         }
-        that.set_filter_range([0, 19], label_range, [0, 19], [0,19]);
+        // edited by Changjian
+        // that.set_filter_range([0, 19], label_range, [0, 19], [0,19]);
+        that.set_filter_range([18, 19], label_range, [0, 19], [0,19]);
         that.update_filter_view();
 
         //update view
@@ -447,7 +450,8 @@ DataLoaderClass = function () {
             "highlights":that.state.highlights,
             "area":that.state.area,
             "rescale":that.state.rescale,
-            "visible_items":that.state.visible_items
+            "visible_items":that.state.visible_items,
+            "glyphs": that.state.glyphs
         })
     };
 
@@ -478,6 +482,19 @@ DataLoaderClass = function () {
         that.state.rescale = false;
         that.update_graph_view();
     };
+
+    that.change_glyphs = function(visible_items){
+        let glyphs = [];
+        for (let i in visible_items){
+            if (visible_items[i]){
+                glyphs.push(parseInt(i));
+            }
+        }
+        that.state.glyphs = glyphs;
+        that.state.rescale = false;
+        console.log("glyphs: ", glyphs);
+        that.update_graph_view();
+    }
 
     that.fetch_graph_node = function(must_show_nodes, area, level, wh, mode, data) {
          let params = "?dataset=" + that.dataset;
