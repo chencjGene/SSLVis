@@ -118,9 +118,10 @@ let GraphLayout = function (container) {
         }
         // glyphs
         glyphs = that.get_top_k_uncertainty(nodes, 20);
-        for(let node_id of Object.keys(path_nodes).map(d => parseInt(d))){
-            if(glyphs.indexOf(node_id) === -1) glyphs.push(node_id);
-        }
+        // // removed by Changjian for reducing visual clutter
+        // for(let node_id of Object.keys(path_nodes).map(d => parseInt(d))){
+        //     if(glyphs.indexOf(node_id) === -1) glyphs.push(node_id);
+        // }
         //iter
         iter = Object.values(nodes)[0].label.length-1;
     };
@@ -387,10 +388,10 @@ let GraphLayout = function (container) {
                 })
                 .on("mouseover", function (d) {
                             console.log(d);
-                            d3.select(this).style("stroke-width", 4.0 * that.that.zoom_scale);
+                            d3.select(this).style("stroke-width", 4.0 * that.zoom_scale);
                         })
                 .on("mouseout", function (d) {
-                        d3.select(this).style("stroke-width", 2.0 * that.that.zoom_scale);
+                        d3.select(this).style("stroke-width", 2.0 * that.zoom_scale);
                     })
                 .transition()
                 .duration(AnimationDuration)
@@ -429,7 +430,7 @@ let GraphLayout = function (container) {
             else if(visible_items[id] === false){
                 return 0;
             }
-            return 0.2
+            return 0.0
         }
         else {
             if(visible_items[id] === false){
@@ -488,11 +489,12 @@ let GraphLayout = function (container) {
         golds_in_group.attr("d", d => star_path(10 * that.zoom_scale, 4 * that.zoom_scale, that.center_scale_x(d.x), that.center_scale_y(d.y)))
             .attr("stroke-width", 1.5*that.zoom_scale);
         path_in_group.attr("d", function (d) {
-            let begin = [that.center_scale_x(d[0].datum().x), that.center_scale_y(d[0].datum().y)];
-            let end = [that.center_scale_x(d[1].datum().x), that.center_scale_y(d[1].datum().y)];
+            let begin = [that.center_scale_x(d[0].x), that.center_scale_y(d[0].y)];
+            let end = [that.center_scale_x(d[1].x), that.center_scale_y(d[1].y)];
             let mid = curve_mid(begin, end);
             return pathGenerator([begin,mid, end]);
-        });
+            })
+            .attr("stroke-width", 1.7 * that.zoom_scale);
         // edges_group.selectAll("line").style('stroke-width', that.zoom_scale);
         // that.main_group.select("#group-propagation").selectAll("path").style('stroke-width', 2.0 * that.zoom_scale);
         // main_group.select("#single-propagate").selectAll("polyline").style('stroke-width', 2.0 * that.zoom_scale);

@@ -119,7 +119,7 @@ class SSLModel(object):
         # get simplififed matrix asynchronously
         self.simplify_influence_matrix()
         
-        # self.adaptive_evaluation()
+        self.adaptive_evaluation()
         # self.adaptive_evaluation_v2()
 
         # record_state
