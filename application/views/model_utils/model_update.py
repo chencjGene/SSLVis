@@ -96,7 +96,7 @@ def local_search_k(k_list, n_neighbors, selected_idxs, F, initial_affinity_matri
     best_affinity_matrix = None
     min_ent = original_ent
     best_k = None
-    best_affinity_matrix = None
+    best_affinity_matrix = initial_affinity_matrix.copy()
     best_pred = None
     selected_num = len(selected_idxs)
     instance_num = len(train_y)
