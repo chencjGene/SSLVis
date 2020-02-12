@@ -79,9 +79,9 @@ class SSLModel(object):
         self.simplified_affinity_matrix = None
         self.propagation_path = None
 
-    def _training(self):
+    def _training(self, rebuild=True):
         self._clean_buffer()
-        affinity_matrix = self.data.get_graph(self.n_neighbor)
+        affinity_matrix = self.data.get_graph(self.n_neighbor, rebuild=rebuild)
         laplacian = build_laplacian_graph(affinity_matrix)
         train_y = self.data.get_train_label()
         train_gt = self.data.get_train_ground_truth()
@@ -237,19 +237,24 @@ class SSLModel(object):
     def local_search_k(self, selected_idxs):
         k_list = list(range(1,40))
         train_gt = self.data.get_train_ground_truth()
+        train_y = self.data.get_train_label()
+        neighbors = self.data.get_neighbors()
+        affinity_matrix = self.data.get_graph()
+        affinity_matrix.setdiag(0)
         affinity_matrix, pred = local_search_k(k_list, self.n_neighbor, 
-            selected_idxs, self.unnorm_dist, self.affinity_matrix, 
-            self.train_y, self.neighbors, train_gt)
-        logger.info("searched affinity_matrix diff: {}".format(
-            np.abs(self.affinity_matrix - affinity_matrix).sum()
-        ))
+            selected_idxs, self.unnorm_dist, affinity_matrix, 
+            train_y, neighbors, train_gt)
+        # logger.info("searched affinity_matrix diff: {}".format(
+        #     np.abs(self.affinity_matrix - affinity_matrix).sum()
+        # ))
         laplacian_matrix = build_laplacian_graph(affinity_matrix)
         pred_y = pred.argmax(axis=1)
         acc = accuracy_score(train_gt, pred_y)
         logger.info("model accuracy without full update: {}".format(acc))
-        self.affinity_matrix = affinity_matrix
-        self.laplacian = laplacian_matrix
-        self._training()
+        # self.affinity_matrix = affinity_matrix
+        # self.laplacian = laplacian_matrix
+        self.data.affinity_matrix = affinity_matrix
+        self._training(rebuild=False)
         return {"test": "success"}
 
     def _find_path(self, path_stack, stack_len, edge_indices, edge_indptr, propagation_path, path_stack_flag):

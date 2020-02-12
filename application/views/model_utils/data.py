@@ -240,8 +240,8 @@ class GraphData(Data):
         np.save(neighbors_path, neighbors)
         np.save(neighbors_weight_path, neighbors_weight)
 
-    def get_graph(self, n_neighbor=None):
-        if self.affinity_matrix is None or n_neighbor is not None:
+    def get_graph(self, n_neighbor=None, rebuild = False):
+        if self.affinity_matrix is None or rebuild is True:
             self._construct_graph(n_neighbor)
         return self.affinity_matrix.copy()
 
@@ -288,6 +288,9 @@ class GraphData(Data):
             self._preprocess_neighbors()
         neighbors_model = pickle_load_data(neighbors_model_path)
         return neighbors_model
+
+    def get_neighbors(self):
+        return self.neighbors
 
     def record_state(self, pred):
         new_state = Node(self.state_idx, parent=self.current_state)
