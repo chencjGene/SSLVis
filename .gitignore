@@ -19,7 +19,7 @@ venv/
 data_transfer_upload.py
 local_config.py
 scikit-learn/
-playground.py
+playground*
 buffer/
 images/
 .vscode/
