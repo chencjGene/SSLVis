@@ -235,7 +235,7 @@ class SSLModel(object):
             return False
 
     def local_search_k(self, selected_idxs):
-        k_list = list(range(1,40))
+        k_list = list(range(1,10))
         train_gt = self.data.get_train_ground_truth()
         train_y = self.data.get_train_label()
         neighbors = self.data.get_neighbors()

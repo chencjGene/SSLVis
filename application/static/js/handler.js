@@ -141,6 +141,7 @@ DataLoaderClass.prototype.local_update_k_handler = function(callback){
 
     function _local_update_k_handler(data){
         console.log("local_update_k_handler", data);
+        that.state.nodes = data.nodes;
 
         if(callback) callback();
     }
