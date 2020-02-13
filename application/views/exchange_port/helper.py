@@ -74,3 +74,6 @@ def retrain():
 
 def get_home():
     return exchange_port.get_home()
+
+def get_path(ids):
+    return exchange_port.get_path(ids)
