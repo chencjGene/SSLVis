@@ -132,7 +132,7 @@ class ExchangePortClass(object):
         return jsonify(labels)
 
     def get_image_path(self, id):
-        train_idx = self.model.data.get_train_idx()
+        train_idx = self.model.data.get_full_train_idx()
         real_id = train_idx[id]
         img_dir = os.path.join(config.image_root, self.dataname)
         img_path = os.path.join(img_dir, str(real_id) + ".jpg")

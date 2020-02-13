@@ -68,7 +68,7 @@ class SSLModel(object):
         ))
         self.propagation_path = None
         self.simplified_affinity_matrix = None
-        self._training()
+        self._training(evaluate=True)
         logger.info("init finished")
 
     def setK(self, k=None):
@@ -124,6 +124,7 @@ class SSLModel(object):
         if evaluate:
             # self.evaluate()
             self.adaptive_evaluation()
+            # self.adaptive_evaluation_bkp()
             # self.adaptive_evaluation_v2()
 
         # record_state
@@ -303,7 +304,6 @@ class SSLModel(object):
         acc = accuracy_score(test_y, probabilities.argmax(axis=1))
         logger.info("test accuracy: {}".format(acc))
 
-
     @async
     def adaptive_evaluation(self):
         train_X = self.data.get_train_X()
@@ -312,8 +312,40 @@ class SSLModel(object):
         pred = self.pred_dist
         test_X = self.data.get_test_X()
         test_y = self.data.get_test_ground_truth()
+        test_neighbors = self.data.get_test_neighbors()
+        logger.info("neighbor_result got!")
+        estimate_k = 5
+        s = 0
+        labels = []
+        rest_idxs = self.data.get_rest_idxs()
+        m = self.data.get_new_id_map()
+        for i in tqdm(range(test_X.shape[0])):
+            j_in_this_row = test_neighbors[i, :]
+            j_in_this_row = j_in_this_row[j_in_this_row != -1]
+            estimated_idxs = j_in_this_row[:estimate_k]
+            estimated_idxs = [m[i] for i in estimated_idxs]
+            adaptive_k = affinity_matrix[estimated_idxs, :].sum() / estimate_k
+            selected_idxs = j_in_this_row[:int(adaptive_k)]
+            selected_idxs = [m[i] for i in selected_idxs]
+            p = pred[selected_idxs].sum(axis=0)
+            labels.append(p.argmax())
+            s += adaptive_k
+
+        acc = accuracy_score(test_y, labels)
+        logger.info("test accuracy: {}".format(acc))
+        print(s / test_X.shape[0])
+        return
+
+    # @async
+    def adaptive_evaluation_bkp(self):
+        train_X = self.data.get_train_X()
+        affinity_matrix = self.data.get_graph()
+        affinity_matrix.setdiag(0)
+        pred = self.pred_dist
+        test_X = self.data.get_test_X()
+        test_y = self.data.get_test_ground_truth()
         # nn_fit = self.data.get_neighbors_model()
-        nn_fit = NearestNeighbors().fit(train_X)
+        nn_fit = NearestNeighbors(n_jobs=-4).fit(train_X)
         logger.info("nn construction finished!")
         neighbor_result = nn_fit.kneighbors_graph(test_X,
                                             100,
@@ -478,7 +510,7 @@ class SSLModel(object):
 
     def editing_data(self, data):
         self.data.editing_data(data)
-        self.data.update_graph()
+        self.data.update_graph(data["deleted_idxs"])
         self._training(rebuild=False, evaluate=True)
 
     def get_data(self):

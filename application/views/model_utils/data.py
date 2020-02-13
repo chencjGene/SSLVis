@@ -5,6 +5,7 @@ from scipy import sparse
 from anytree import Node
 from anytree.exporter import DictExporter
 from scipy.stats import entropy
+from tqdm import tqdm
 
 from sklearn.neighbors.unsupervised import NearestNeighbors
 
@@ -15,7 +16,7 @@ from application.views.utils.log_utils import logger
 
 from .model_helper import build_laplacian_graph
 
-DEBUG = True
+DEBUG = False
 
 
 class Data(object):
@@ -123,6 +124,12 @@ class Data(object):
     def get_rest_idxs(self):
         return self.rest_idxs.copy()
 
+    def get_new_id_map(self):
+        m = {}
+        for i in range(len(self.rest_idxs)):
+            m[self.rest_idxs[i]] = i
+        return m
+
     def get_removed_idxs(self):
         return self.removed_idxs
 
@@ -149,6 +156,9 @@ class Data(object):
         y[np.array(self.selected_labeled_idx)] = self.y[np.array(self.selected_labeled_idx)]
         y = y[np.array(self.train_idx)]
         return y.astype(int)
+
+    def get_full_train_idx(self):
+        return self.train_idx.copy(0)
 
     def get_train_idx(self):
         return self.train_idx.copy()[self.rest_idxs]
@@ -205,6 +215,8 @@ class GraphData(Data):
                 os.path.exists(neighbors_path) and \
                 os.path.exists(test_neighbors_path) and DEBUG == False:
             logger.info("neighbors and neighbor_weight exist!!!")
+            self.neighbors = np.load(neighbors_path)
+            self.test_neighbors = np.load(test_neighbors_path)
             return
         logger.info("neighbors and neighbor_weight "
                     "do not exist, preprocessing!")
@@ -239,7 +251,7 @@ class GraphData(Data):
         np.save(neighbors_path, self.neighbors)
         np.save(neighbors_weight_path, neighbors_weight)
         np.save(test_neighbors_path, self.test_neighbors)
-        np.save(test_neighbors_path, test_neighbors_weight)
+        np.save(test_neighbors_weight_path, test_neighbors_weight)
 
     def csr_to_impact_matrix(self, neighbor_result, instance_num, max_neighbors):
         neighbors = np.zeros((instance_num, max_neighbors)).astype(int)
@@ -266,13 +278,13 @@ class GraphData(Data):
         # create neighbors buffer
         self._preprocess_neighbors()
 
-        # load neighbors information
-        neighbors_path = os.path.join(self.selected_dir, "neighbors.npy")
-        neighbors_weight_path = os.path.join(self.selected_dir,
-                                             "neighbors_weight.npy")
-        neighbors = np.load(neighbors_path)
-        neighbors_weight = np.load(neighbors_weight_path)
-        self.neighbors = neighbors
+        # # load neighbors information
+        # neighbors_path = os.path.join(self.selected_dir, "neighbors.npy")
+        # neighbors_weight_path = os.path.join(self.selected_dir,
+        #                                      "neighbors_weight.npy")
+        # neighbors = np.load(neighbors_path)
+        # neighbors_weight = np.load(neighbors_weight_path)
+        neighbors = self.neighbors
         instance_num = neighbors.shape[0]
         train_y = self.get_train_label()
         train_y = np.array(train_y)
@@ -385,6 +397,9 @@ class GraphData(Data):
         self.print_state()
         return self.return_state()
 
+    def get_test_neighbors(self):
+        return self.test_neighbors
+
     def add_edge(self, added_edges):
         None
 
@@ -396,8 +411,17 @@ class GraphData(Data):
         self.label_instance(data["labeled_idxs"], data["labels"])
         self.remove_edge(data["deleted_edges"])
 
-    def update_graph(self):
+    def update_graph(self, deleted_idxs):
+        logger.info("begin update graph according to editing info")
         rest_idxs = self.get_rest_idxs()
+        remove_idxs = self.get_removed_idxs()
+        logger.info("total len: {}".format(len(rest_idxs) + len(remove_idxs)))
         self.affinity_matrix = self.affinity_matrix[rest_idxs, :]
         self.affinity_matrix = self.affinity_matrix[:, rest_idxs]
+        # update neighbors info
+        self.neighbors[remove_idxs, :] = -1
+        for idx in tqdm(deleted_idxs):
+            self.neighbors[self.neighbors == idx] = -1
+            self.test_neighbors[self.test_neighbors == idx] = -1
+
         logger.info("affinity_matrix shape after updating: {}".format(str(self.affinity_matrix.shape)))
