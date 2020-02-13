@@ -71,4 +71,6 @@ def set_history(id):
 
 def retrain():
     return exchange_port.retrain()
-    
+
+def get_home():
+    return exchange_port.get_home()

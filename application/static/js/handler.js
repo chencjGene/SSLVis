@@ -67,6 +67,20 @@ DataLoaderClass.prototype.zoom_graph_handler = function (callback) {
     return _update_graph_handler;
 };
 
+DataLoaderClass.prototype.home_graph_handler = function (callback) {
+    let that = this;
+
+    function _home_graph_handler(data) {
+        console.log("home_graph_handler");
+        console.log(data);
+        that.state.nodes = data.nodes;
+        that.state.area = data.area;
+        if (callback) callback();
+    }
+
+    return _home_graph_handler;
+};
+
 DataLoaderClass.prototype.fetch_graph_handler = function (callback) {
     let that = this;
 

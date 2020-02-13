@@ -163,6 +163,10 @@ class ExchangePortClass(object):
         }
         return jsonify(res)
 
+    def get_home(self):
+        res = self.anchor.get_home()
+        return jsonify(res)
+
     def update_delete_and_change_label(self, data):
         self.model.data.editing_data(data)
         remain_ids = []

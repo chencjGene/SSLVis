@@ -25,6 +25,7 @@ DataLoaderClass = function () {
     that.set_history_url = "/history/SetHistory";
     that.retrain_url = "/history/Retrain";
     that.set_k_url = "/graph/SetK";
+    that.home_graph_url = "/graph/home";
 
     // Request nodes
     that.k_node = null;
@@ -453,6 +454,14 @@ DataLoaderClass = function () {
             "visible_items":that.state.visible_items,
             "glyphs": that.state.glyphs
         })
+    };
+
+    that.graph_home = function() {
+        let params = "?dataset=" + that.dataset;
+        let home_node = new request_node(that.home_graph_url + params,
+            that.home_graph_handler(that.update_graph_view), "json", "POST");
+        home_node.set_data({});
+        home_node.notify();
     };
 
     that.zoom_graph_view = function() {

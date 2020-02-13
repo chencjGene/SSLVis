@@ -40,6 +40,7 @@ class Anchors:
         self.hierarchy_info = None
         self.remove_ids = []
         self.data_degree = None
+        self.home = None
 
     # added by Changjian
     # link this class to SSLModel and Data
@@ -281,6 +282,7 @@ class Anchors:
         self.old_nodes_tsne = tsne
         graph = self.convert_to_dict(selection, tsne)
         graph["area"] = self.get_data_area(train_x_tsne=tsne)
+        self.home = graph
         return graph
 
     def update_nodes(self, area, level, must_show_nodes = []):
@@ -292,6 +294,9 @@ class Anchors:
         graph = self.convert_to_dict(selection, tsne)
         graph["area"] = self.get_data_area(train_x_tsne=tsne)
         return graph
+
+    def get_home(self):
+        return self.home
 
 
     def convert_to_dict(self, selection, tsne):

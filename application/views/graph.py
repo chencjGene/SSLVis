@@ -99,6 +99,10 @@ def app_get_area():
     height = float(request.form['height'])
     return get_area(must_show_nodes, width, height)
 
+@graph.route('/graph/home', methods=["POST"])
+def app_get_home():
+    return get_home()
+
 @graph.route('/graph/update_delete_and_change_label', methods=["GET", "POST"])
 def app_update_delete_and_change_label():
     start = time.time()
