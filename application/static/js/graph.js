@@ -484,23 +484,54 @@ let GraphLayout = function (container) {
         that.zoom_scale = new_zoom_scale;
     };
 
-    that.maintain_size = function (transform_event) {
+    that.maintain_size = function (transform_event, animation = false) {
         that.zoom_scale = 1.0 / transform_event.k;
-        nodes_in_group.attr("r", d => that.r(d.id));
-        golds_in_group.attr("d", d => star_path(10 * that.zoom_scale, 4 * that.zoom_scale, that.center_scale_x(d.x), that.center_scale_y(d.y)))
+        if(animation){
+            nodes_in_group
+            .transition()
+            .duration(AnimationDuration)
+            .attr("r", d => that.r(d.id));
+        golds_in_group
+            .transition()
+            .duration(AnimationDuration)
+            .attr("d", d => star_path(10 * that.zoom_scale, 4 * that.zoom_scale, that.center_scale_x(d.x), that.center_scale_y(d.y)))
             .attr("stroke-width", 1.5*that.zoom_scale);
-        path_in_group.attr("d", function (d) {
+        path_in_group
+            .transition()
+            .duration(AnimationDuration)
+            .attr("d", function (d) {
             let begin = [that.center_scale_x(d[0].x), that.center_scale_y(d[0].y)];
             let end = [that.center_scale_x(d[1].x), that.center_scale_y(d[1].y)];
             let mid = curve_mid(begin, end);
             return pathGenerator([begin,mid, end]);
             })
             .attr("stroke-width", 1.7 * that.zoom_scale);
-        // edges_group.selectAll("line").style('stroke-width', that.zoom_scale);
-        // that.main_group.select("#group-propagation").selectAll("path").style('stroke-width', 2.0 * that.zoom_scale);
-        // main_group.select("#single-propagate").selectAll("polyline").style('stroke-width', 2.0 * that.zoom_scale);
         let arc = d3.arc().outerRadius(11 * that.zoom_scale).innerRadius(7 * that.zoom_scale);
-        glyph_in_group.selectAll("path").attr("d", arc);
+        glyph_in_group.selectAll("path")
+            .transition()
+            .duration(AnimationDuration)
+            .attr("d", arc);
+        }
+        else {
+            nodes_in_group
+            .attr("r", d => that.r(d.id));
+        golds_in_group
+            .attr("d", d => star_path(10 * that.zoom_scale, 4 * that.zoom_scale, that.center_scale_x(d.x), that.center_scale_y(d.y)))
+            .attr("stroke-width", 1.5*that.zoom_scale);
+        path_in_group
+
+            .attr("d", function (d) {
+            let begin = [that.center_scale_x(d[0].x), that.center_scale_y(d[0].y)];
+            let end = [that.center_scale_x(d[1].x), that.center_scale_y(d[1].y)];
+            let mid = curve_mid(begin, end);
+            return pathGenerator([begin,mid, end]);
+            })
+            .attr("stroke-width", 1.7 * that.zoom_scale);
+        let arc = d3.arc().outerRadius(11 * that.zoom_scale).innerRadius(7 * that.zoom_scale);
+        glyph_in_group.selectAll("path")
+            .attr("d", arc);
+        }
+
     };
 
     that.get_visible_items = function() {
