@@ -9,7 +9,7 @@ from scipy.stats import entropy
 from sklearn.neighbors.unsupervised import NearestNeighbors
 
 from application.views.utils.config_utils import config
-from application.views.utils.helper_utils import pickle_save_data, json_load_data,\
+from application.views.utils.helper_utils import pickle_save_data, json_load_data, \
     pickle_load_data, json_save_data, check_dir
 from application.views.utils.log_utils import logger
 
@@ -17,11 +17,13 @@ from .model_helper import build_laplacian_graph
 
 DEBUG = False
 
+
 class Data(object):
     '''
     1. read data from buffer
     2. manage history state
     '''
+
     def __init__(self, dataname, labeled_num=None, total_num=None, seed=123):
         self.dataname = dataname
         self.data_root = os.path.join(config.data_root, self.dataname)
@@ -63,9 +65,9 @@ class Data(object):
             self.seed = self.add_info.get("default_seed", 123)
 
         # produce unlabeled data
-        assert(self.selected_labeled_num is not None and self.selected_total_num is not None)
+        assert (self.selected_labeled_num is not None and self.selected_total_num is not None)
         dir_name = "labeled-" + str(self.selected_labeled_num) + \
-            ".total-" + str(self.selected_total_num) + ".seed-" + str(self.seed)
+                   ".total-" + str(self.selected_total_num) + ".seed-" + str(self.seed)
         logger.info(dir_name)
         dir_path = os.path.join(self.data_root, dir_name)
         check_dir(dir_path)
@@ -91,7 +93,7 @@ class Data(object):
         selected_labeled_idx = []
         labeled_y = self.y[self.labeled_idx]
         for i in range(class_num):
-            labeled_idx_in_this_class = self.labeled_idx[labeled_y==i]
+            labeled_idx_in_this_class = self.labeled_idx[labeled_y == i]
             selected_labeled_idx_in_this_class = \
                 np.random.choice(labeled_idx_in_this_class, selected_labeled_num_in_each_class[i], replace=False)
             selected_labeled_idx = selected_labeled_idx + selected_labeled_idx_in_this_class.tolist()
@@ -115,7 +117,7 @@ class Data(object):
 
     def case_set_rest_idxs(self):
         gt = self.get_train_ground_truth()
-        self.rest_idxs = np.array(range(len(gt)))[gt!=-1]
+        self.rest_idxs = np.array(range(len(gt)))[gt != -1]
         print("rest_idxs len: ", len(self.rest_idxs))
 
     def get_rest_idxs(self):
@@ -176,38 +178,42 @@ class Data(object):
         labeled_num = sum(self.train_y != -1)
         logger.info("labeled data num: {}".format(labeled_num))
 
+
 class GraphData(Data):
     def __init__(self, dataname, labeled_num=None, total_num=None, seed=123):
         super(GraphData, self).__init__(dataname, labeled_num, total_num, seed)
-        
-        self.max_neighbors = 1000
+
+        self.max_neighbors = 200
         self.affinity_matrix = None
         self.state_idx = 0
         self.state = {}
         self.state_data = {}
         self.current_state = None
 
-
         # init action trail
         self.state = Node("root")
         self.current_state = self.state
-
 
     def _preprocess_neighbors(self):
         neighbors_model_path = os.path.join(self.selected_dir, "neighbors_model.pkl")
         neighbors_path = os.path.join(self.selected_dir, "neighbors.npy")
         neighbors_weight_path = os.path.join(self.selected_dir,
                                              "neighbors_weight.npy")
+        test_neighbors_path = os.path.join(self.selected_dir, "test_neighbors.npy")
+        test_neighbors_weight_path = os.path.join(self.selected_dir, "test_neighbors_weight.npy")
         if os.path.exists(neighbors_model_path) and \
-            os.path.exists(neighbors_path) and \
-            os.path.exists(neighbors_weight_path) and DEBUG == False:
+                os.path.exists(neighbors_path) and \
+                os.path.exists(test_neighbors_path) and DEBUG == False:
             logger.info("neighbors and neighbor_weight exist!!!")
             return
         logger.info("neighbors and neighbor_weight "
                     "do not exist, preprocessing!")
         train_X = self.get_train_X()
+        train_num = train_X.shape[0]
         train_y = self.get_train_label()
         train_y = np.array(train_y)
+        test_X = self.get_test_X()
+        test_num = test_X.shape[0]
         self.max_neighbors = min(len(train_y), self.max_neighbors)
         logger.info("data shape: {}, labeled_num: {}"
                     .format(str(train_X.shape), sum(train_y != -1)))
@@ -217,11 +223,28 @@ class GraphData(Data):
                                                   self.max_neighbors,
                                                   # 2,
                                                   mode="distance")
+        test_neighbors_result = nn_fit.kneighbors_graph(test_X,
+                                                        self.max_neighbors,
+                                                        mode="distance")
         logger.info("neighbor_result got!")
-        neighbors = np.zeros((train_X.shape[0],
-                              self.max_neighbors)).astype(int)
-        neighbors_weight = np.zeros((train_X.shape[0], self.max_neighbors))
-        for i in range(train_X.shape[0]):
+        self.neighbors, neighbors_weight = self.csr_to_impact_matrix(neighbor_result,
+                                                                     train_num, self.max_neighbors)
+        self.test_neighbors, test_neighbors_weight = self.csr_to_impact_matrix(test_neighbors_result,
+                                                                               test_num, self.max_neighbors)
+
+        logger.info("preprocessed neighbors got!")
+
+        # save neighbors information
+        pickle_save_data(neighbors_model_path, nn_fit)
+        np.save(neighbors_path, self.neighbors)
+        np.save(neighbors_weight_path, neighbors_weight)
+        np.save(test_neighbors_path, self.test_neighbors)
+        np.save(test_neighbors_path, test_neighbors_weight)
+
+    def csr_to_impact_matrix(self, neighbor_result, instance_num, max_neighbors):
+        neighbors = np.zeros((instance_num, max_neighbors)).astype(int)
+        neighbors_weight = np.zeros((instance_num, self.max_neighbors))
+        for i in range(instance_num):
             start = neighbor_result.indptr[i]
             end = neighbor_result.indptr[i + 1]
             j_in_this_row = neighbor_result.indices[start:end]
@@ -232,15 +255,9 @@ class GraphData(Data):
             data_in_this_row = data_in_this_row[sorted_idx]
             neighbors[i, :] = j_in_this_row
             neighbors_weight[i, :] = data_in_this_row
+        return neighbors, neighbors_weight
 
-        logger.info("preprocessed neighbors got!")
-
-        # save neighbors information
-        pickle_save_data(neighbors_model_path, nn_fit)
-        np.save(neighbors_path, neighbors)
-        np.save(neighbors_weight_path, neighbors_weight)
-
-    def get_graph(self, n_neighbor=None, rebuild = False):
+    def get_graph(self, n_neighbor=None, rebuild=False):
         if self.affinity_matrix is None or rebuild is True:
             self._construct_graph(n_neighbor)
         return self.affinity_matrix.copy()
@@ -295,12 +312,12 @@ class GraphData(Data):
     def record_state(self, pred):
         new_state = Node(self.state_idx, parent=self.current_state)
         self.state_idx = self.state_idx + 1
-        self.current_state = new_state 
+        self.current_state = new_state
         self.state_data[self.current_state.name] = {
             "affinity_matrix": self.affinity_matrix.copy(),
             "train_idx": self.get_train_idx(),
             "train_y": self.get_train_label(),
-            "state": self.current_state, 
+            "state": self.current_state,
             "pred": pred
         }
         self.print_state()
@@ -311,7 +328,7 @@ class GraphData(Data):
         tree = dict_exporter.export(self.state)
         print(tree)
         print("current state:", self.current_state.name)
-    
+
     def return_state(self):
         max_count = 1
         history = []
@@ -336,7 +353,7 @@ class GraphData(Data):
                 pre_label = pre_data["pred"].argmax(axis=1)
                 pre_label[pre_data["pred"].max(axis=1) < 1e-8] = -1
                 label = data["pred"].argmax(axis=1)
-                label[data["pred"].argmax(axis=1)<1e-8] = -1
+                label[data["pred"].argmax(axis=1) < 1e-8] = -1
                 dist[3] = sum(label != pre_label)
             dist = [int(k) for k in dist]
             # update max_count
@@ -355,7 +372,7 @@ class GraphData(Data):
         for i in range(self.state_idx):
             state = history[i]
             unnorm_dist = state["dist"].copy()
-            state["dist"] = [i/max_count for i in unnorm_dist]
+            state["dist"] = [i / max_count for i in unnorm_dist]
             state["unnorm_dist"] = unnorm_dist
         return {
             "history": history,
@@ -368,13 +385,12 @@ class GraphData(Data):
         self.print_state()
         return self.return_state()
 
-
     def add_edge(self, added_edges):
         None
-    
+
     def remove_edge(self, added_edges):
         None
-    
+
     def editing_data(self, data):
         self.remove_instance(data["deleted_idxs"])
         self.label_instance(data["labeled_idxs"], data["labels"])
@@ -382,6 +398,6 @@ class GraphData(Data):
 
     def update_graph(self):
         rest_idxs = self.get_rest_idxs()
-        self.affinity_matrix = self.affinity_matrix[rest_idxs,:]
+        self.affinity_matrix = self.affinity_matrix[rest_idxs, :]
         self.affinity_matrix = self.affinity_matrix[:, rest_idxs]
         logger.info("affinity_matrix shape after updating: {}".format(str(self.affinity_matrix.shape)))
