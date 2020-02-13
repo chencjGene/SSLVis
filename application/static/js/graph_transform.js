@@ -234,7 +234,7 @@ let GraphTransform = function (parent) {
             transform.x = view.width/2-(main_group_min_x+main_group_max_x)/2*maingroup_k;
             transform.y = view.height/2-(main_group_min_y+main_group_max_y)/2*maingroup_k;
             console.log(AnimationDuration, transform);
-            view.maintain_size(transform);
+            view.maintain_size(transform, true);
             // view.svg
             //     .transition()
             //     .duration(AnimationDuration)
