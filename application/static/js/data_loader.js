@@ -425,9 +425,9 @@ DataLoaderClass = function () {
         for(let i=0; i<11; i++){
             label_range.push(i);
         }
-        // edited by Changjian
-        // that.set_filter_range([0, 19], label_range, [0, 19], [0,19]);
-        that.set_filter_range([18, 19], label_range, [0, 19], [0,19]);
+        // // edited by Changjian
+        that.set_filter_range([0, 19], label_range, [0, 19], [0,19]);
+        // that.set_filter_range([18, 19], label_range, [0, 19], [0,19]);
         that.update_filter_view();
 
         //update view
