@@ -19,8 +19,8 @@ def init_model(k, filter_threshold):
 def get_graph(filter_threshold=None):
     return exchange_port.get_graph(filter_threshold=filter_threshold)
 
-def local_update_k(selected_idxs):
-    return exchange_port.local_update_k(selected_idxs=selected_idxs)
+def local_update_k(data):
+    return exchange_port.local_update_k(data)
 
 def get_manifest(): 
     return exchange_port.get_manifest()

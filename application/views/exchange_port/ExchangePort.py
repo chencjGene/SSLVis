@@ -96,8 +96,9 @@ class ExchangePortClass(object):
             self.current_ids.append(int(id))
         return jsonify(graph)
 
-    def local_update_k(self, selected_idxs):
-        res = self.model.local_search_k(selected_idxs)
+    def local_update_k(self, data):
+        self.model.local_search_k(data["selected_idxs"])
+        return self.fisheye(self.current_ids, data["area"], data["level"], data["wh"])
         return jsonify(res)
 
     def get_loss(self):
@@ -144,6 +145,7 @@ class ExchangePortClass(object):
         all_time["get_meta_data"] += now-start
         start = now
         graph = self.anchor.update_nodes(area,level)
+        # TODO： current_ids should be maintained in Data class
         self.current_ids = []
         for id in graph["nodes"]:
             self.current_ids.append(int(id))
@@ -168,7 +170,7 @@ class ExchangePortClass(object):
         return jsonify(res)
 
     def update_delete_and_change_label(self, data):
-        self.model.data.editing_data(data)
+        self.model.editing_data(data)
         remain_ids = []
         for id in self.current_ids:
             if id not in data["deleted_idxs"]:

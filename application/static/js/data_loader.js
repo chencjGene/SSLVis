@@ -158,7 +158,7 @@ DataLoaderClass = function () {
     that.delete_idxs = function(selected_idxs){
         that.edit_view.update_focus(selected_idxs, "instance");
         that.edit_view.editing(-1);
-    }
+    };
 
     that.update_k = function(k){
         that.graph_view.remove_all();
@@ -173,8 +173,13 @@ DataLoaderClass = function () {
     that.local_update_k = function(selected_idxs){
         let params = "?dataset=" + that.dataset;
         that.local_update_k_node = new request_node(that.local_update_k_url + params,
-            that.local_update_k_handler(), "json", "POST");
+            that.local_update_k_handler(that.update_graph_view), "json", "POST");
         let data = {selected_idxs};
+        let level = that.graph_view.get_level();
+        let area = that.state.area;
+        data["area"] = area;
+        data["level"] = level;
+        data["wh"] = that.graph_view.get_wh();
         that.local_update_k_node.set_data(data);
         that.local_update_k_node.notify();
     };
@@ -221,7 +226,7 @@ DataLoaderClass = function () {
         that.history_view.component_update({
             "history_data": that.state.history_data
         });
-    }
+    };
 
     that.get_dist_view = function(selected_idxs){
         let params = "?dataset=" + that.dataset;
@@ -231,7 +236,7 @@ DataLoaderClass = function () {
         that.flows_node.notify();
         // that.flows_node.depend_on(that.graph_node);
 
-    }
+    };
 
     that.update_dist_view = function(){
         console.log("update loss view");
