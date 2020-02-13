@@ -66,9 +66,11 @@ class Anchors:
     def get_train_x_tsne(self):
         if os.path.exists(self.tsne_path):
             self.tsne = np.load(self.tsne_path)
+            self.tsne = np.round(self.tsne)
             return self.tsne
         else:
             self.init_train_x_tsne()
+            self.tsne = np.round(self.tsne)
             return self.tsne
 
     def init_train_x_tsne(self):

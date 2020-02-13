@@ -47,7 +47,7 @@ class SSLModel(object):
         self.data = GraphData(self.dataname, labeled_num, total_num)
         # self.data.case_set_rest_idxs()
         self.selected_dir = self.data.selected_dir
-        self.n_neighbor = 5
+        self.n_neighbor = 4
         self.filter_threshold = 0.7
         logger.info("n_neighbor: {}".format(self.n_neighbor))
 
@@ -115,15 +115,14 @@ class SSLModel(object):
         acc = accuracy_score(train_gt, pred_y)
         logger.info("model accuracy: {}, iter: {}".format(acc, iter))
         logger.info("model entropy: {}".format(entropy(pred_dist.T + 1e-20).mean()))
+        # self.evaluate(); exit()
 
-        self.adaptive_evaluation()
-        self.evaluate()
 
         # get simplififed matrix asynchronously
         self.simplify_influence_matrix()
         
         # self.evaluate()
-        # self.adaptive_evaluation()
+        self.adaptive_evaluation()
         # self.adaptive_evaluation_v2()
 
         # record_state
@@ -287,6 +286,7 @@ class SSLModel(object):
                 propagation_path[int(node_id)].append(int(target_id))
         return propagation_path
 
+    @async
     def evaluate(self):
         train_X = self.data.get_train_X()
         test_X = self.data.get_test_X()
@@ -303,7 +303,7 @@ class SSLModel(object):
         logger.info("test accuracy: {}".format(acc))
 
 
-    # @async
+    @async
     def adaptive_evaluation(self):
         train_X = self.data.get_train_X()
         affinity_matrix = self.data.get_graph()
