@@ -367,7 +367,7 @@ class GraphData(Data):
         self.current_state = state
         self.print_state()
         return self.return_state()
-                
+
 
     def add_edge(self, added_edges):
         None
@@ -379,3 +379,9 @@ class GraphData(Data):
         self.remove_instance(data["deleted_idxs"])
         self.label_instance(data["labeled_idxs"], data["labels"])
         self.remove_edge(data["deleted_edges"])
+
+    def update_graph(self):
+        rest_idxs = self.get_rest_idxs()
+        self.affinity_matrix = self.affinity_matrix[rest_idxs,:]
+        self.affinity_matrix = self.affinity_matrix[:, rest_idxs]
+        logger.info("affinity_matrix shape after updating: {}".format(str(self.affinity_matrix.shape)))

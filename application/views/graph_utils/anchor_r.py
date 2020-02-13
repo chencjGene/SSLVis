@@ -305,7 +305,11 @@ class Anchors:
         if self.data_degree is None:
             self.data_degree = self.model.get_in_out_degree(simplified_affinity_matrix)
         degree = self.data_degree
-        labels = self.model.labels
+        selected_labels = self.model.labels
+        labels = np.zeros((selected_labels.shape[0], self.data.get_full_train_X().shape[0]))
+        rest_idxs = self.data.get_rest_idxs()
+        labels[:,rest_idxs] = selected_labels
+        print("labels.shape:", labels.shape)
         process_data = self.model.process_data
 
         samples_x_tsne = tsne.tolist()

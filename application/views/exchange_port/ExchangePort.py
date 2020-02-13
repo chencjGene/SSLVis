@@ -144,6 +144,7 @@ class ExchangePortClass(object):
         all_time["get_meta_data"] += now-start
         start = now
         graph = self.anchor.update_nodes(area,level)
+        # TODO： current_ids should be maintained in Data class
         self.current_ids = []
         for id in graph["nodes"]:
             self.current_ids.append(int(id))
@@ -164,7 +165,7 @@ class ExchangePortClass(object):
         return jsonify(res)
 
     def update_delete_and_change_label(self, data):
-        self.model.data.editing_data(data)
+        self.model.editing_data(data)
         remain_ids = []
         for id in self.current_ids:
             if id not in data["deleted_idxs"]:

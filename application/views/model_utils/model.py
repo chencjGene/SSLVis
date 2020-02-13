@@ -29,7 +29,7 @@ from .model_helper import propagation, approximated_influence, exact_influence
 from .model_update import local_search_k
 from .model_helper import build_laplacian_graph
 
-DEBUG = False
+DEBUG = True
 
 class SSLModel(object):
     def __init__(self, dataname, labeled_num=None, total_num=None, seed=123):
@@ -79,7 +79,7 @@ class SSLModel(object):
         self.simplified_affinity_matrix = None
         self.propagation_path = None
 
-    def _training(self, rebuild=True):
+    def _training(self, rebuild=True, evaluate=False):
         self._clean_buffer()
         affinity_matrix = self.data.get_graph(self.n_neighbor, rebuild=rebuild)
         laplacian = build_laplacian_graph(affinity_matrix)
@@ -120,10 +120,11 @@ class SSLModel(object):
 
         # get simplififed matrix asynchronously
         self.simplify_influence_matrix()
-        
-        # self.evaluate()
-        self.adaptive_evaluation()
-        # self.adaptive_evaluation_v2()
+
+        if evaluate:
+            # self.evaluate()
+            self.adaptive_evaluation()
+            # self.adaptive_evaluation_v2()
 
         # record_state
         self.data.record_state(self.pred_dist)
@@ -311,7 +312,8 @@ class SSLModel(object):
         pred = self.pred_dist
         test_X = self.data.get_test_X()
         test_y = self.data.get_test_ground_truth()
-        nn_fit = self.data.get_neighbors_model()
+        # nn_fit = self.data.get_neighbors_model()
+        nn_fit = NearestNeighbors().fit(train_X)
         logger.info("nn construction finished!")
         neighbor_result = nn_fit.kneighbors_graph(test_X,
                                             100,
@@ -319,8 +321,10 @@ class SSLModel(object):
         logger.info("neighbor_result got!")
         estimate_k = 5
         s = 0
+        rest_idxs = self.data.get_rest_idxs()
+        # removed_idxs = self.remv
         labels = []
-        for i in range(test_X.shape[0]):
+        for i in tqdm(range(test_X.shape[0])):
             start = neighbor_result.indptr[i]
             end = neighbor_result.indptr[i + 1]
             j_in_this_row = neighbor_result.indices[start:end]
@@ -329,6 +333,7 @@ class SSLModel(object):
             assert (len(sorted_idx) == 100)
             j_in_this_row = j_in_this_row[sorted_idx]
             estimated_idxs = j_in_this_row[:estimate_k]
+            estimated_idxs = np.array([i for i in estimated_idxs if i in rest_idxs])
             adaptive_k = affinity_matrix[estimated_idxs, :].sum() / estimate_k
             selected_idxs = j_in_this_row[:int(adaptive_k)]
             p = pred[selected_idxs].sum(axis=0)
@@ -470,7 +475,12 @@ class SSLModel(object):
             selected_flows[i] = flow_statistic(self.labels[i][idxs], \
                 self.labels[i+1][idxs], self.class_list)
         return selected_flows, idxs
-        
+
+    def editing_data(self, data):
+        self.data.editing_data(data)
+        self.data.update_graph()
+        self._training(rebuild=False, evaluate=True)
+
     def get_data(self):
         train_X = self.data.get_train_X()
         train_y = self.data.get_train_label()
