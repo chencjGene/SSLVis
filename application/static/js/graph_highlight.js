@@ -207,40 +207,63 @@ let GraphHighlight = function (parent) {
         let path_nodes = {};
         let new_nodes = [];
         let new_area = null;
-
-        for (let d of focus_node_data) {
-            // if (d.label[iter] === -1 || d.label[0] !== -1) continue;
-            console.log("Node:", d);
-            let predict_label = d.label[d.label.length-1];
-            for (let source_node of d.path) {
-                let s = source_node;
-                    let e = d.id;
-                    let key = s + "," + e;
-                    if (path_keys.indexOf(key) === -1) {
-                        path_keys.push(key);
-                        let keys = key.split(",");
-                        let e = parseInt(keys[0]);
-                        let s = parseInt(keys[1]);
-                        path_nodes[e] = true;
-                        path_nodes[s] = true;
-                        path.push([e, s, predict_label]);
-                    }
+        let load_path = false;
+        for(let d of focus_node_data){
+            if(d.path === -1){
+                load_path = true;
+                break;
             }
         }
-        let must_show_nodes = [];
-        for(let node_id in path_nodes){
-            if(nodes[node_id] === undefined) new_nodes.push(parseInt(node_id));
-            must_show_nodes.push(parseInt(node_id))
-        }
-        // focus_node = JSON.parse(JSON.stringify(path_nodes));
-        if(new_nodes.length === 0){
-            console.log("no new nodes added");
-            view.data_manager.show_path_node(selection_nodes);
+        if(load_path){
+            $.post("/graph/GetPath", {
+                "nodes":JSON.stringify(selection_nodes)
+            }, function (data) {
+                console.log("get path data:", data);
+                for(let id of Object.keys(data)){
+                    nodes[id].path = data[id];
+                }
+                showpath()
+            });
         }
         else {
-            console.log("fetch nodes");
-            view.fetch_points(must_show_nodes, new_nodes, "showpath", selection_nodes);
+            showpath()
         }
+        function showpath() {
+            for (let d of focus_node_data) {
+                // if (d.label[iter] === -1 || d.label[0] !== -1) continue;
+                console.log("Node:", d);
+                let predict_label = d.label[d.label.length-1];
+                for (let source_node of d.path) {
+                    let s = source_node;
+                        let e = d.id;
+                        let key = s + "," + e;
+                        if (path_keys.indexOf(key) === -1) {
+                            path_keys.push(key);
+                            let keys = key.split(",");
+                            let e = parseInt(keys[0]);
+                            let s = parseInt(keys[1]);
+                            path_nodes[e] = true;
+                            path_nodes[s] = true;
+                            path.push([e, s, predict_label]);
+                        }
+                }
+            }
+            let must_show_nodes = [];
+            for(let node_id in path_nodes){
+                if(nodes[node_id] === undefined) new_nodes.push(parseInt(node_id));
+                must_show_nodes.push(parseInt(node_id))
+            }
+            // focus_node = JSON.parse(JSON.stringify(path_nodes));
+            if(new_nodes.length === 0){
+                console.log("no new nodes added");
+                view.data_manager.show_path_node(selection_nodes);
+            }
+            else {
+                console.log("fetch nodes");
+                view.fetch_points(must_show_nodes, new_nodes, "showpath", selection_nodes);
+            }
+        }
+
     };
 
     that.hide_selection_nodes_path = function() {

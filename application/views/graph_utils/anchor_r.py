@@ -301,14 +301,11 @@ class Anchors:
 
     def convert_to_dict(self, selection, tsne):
         logger.info("convert to dict")
-        self.wait_for_simplify()
-
+        propagation_path = self.model.propagation_path
         ground_truth = self.model.data.get_full_train_ground_truth()
         samples_truth = ground_truth[selection]
-        propagation_path = self.model.propagation_path
-        simplified_affinity_matrix = self.model.simplified_affinity_matrix
         if self.data_degree is None:
-            self.data_degree = self.model.get_in_out_degree(simplified_affinity_matrix)
+            self.data_degree = self.model.get_in_out_degree(self.data.get_graph())
         degree = self.data_degree
         selected_labels = self.model.labels
         labels = np.zeros((selected_labels.shape[0], self.data.get_full_train_X().shape[0]))
@@ -332,7 +329,7 @@ class Anchors:
                 "label": labels[:,id].tolist(),
                 "score": scores,
                 "truth": samples_truth[i],
-                "path": propagation_path[id],
+                "path":-1 if propagation_path is None else propagation_path[id],
                 "in_degree": int(degree[id][1]),
                 "out_degree": int(degree[id][0])
             }
@@ -341,3 +338,11 @@ class Anchors:
         }
         logger.info("convert done")
         return graph
+
+    def get_path(self, ids):
+        self.wait_for_simplify()
+        propagation_path = self.model.propagation_path
+        res = {}
+        for id in ids:
+            res[id] = propagation_path[id]
+        return res

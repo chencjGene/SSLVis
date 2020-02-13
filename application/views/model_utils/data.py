@@ -15,7 +15,7 @@ from application.views.utils.log_utils import logger
 
 from .model_helper import build_laplacian_graph
 
-DEBUG = False
+DEBUG = True
 
 class Data(object):
     '''

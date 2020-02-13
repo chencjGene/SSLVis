@@ -114,6 +114,11 @@ def app_update_delete_and_change_label():
     print("all process time:", end-start)
     return graph
 
+@graph.route("/graph/GetPath", methods=["POST"])
+def app_get_path():
+    ids = json.loads(request.form["nodes"])
+    return get_path(ids)
+
 @graph.route('/graph/fisheye', methods=["GET", "POST"])
 def app_fisheye():
     data = json.loads(request.data)

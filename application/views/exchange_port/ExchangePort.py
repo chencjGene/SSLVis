@@ -169,6 +169,9 @@ class ExchangePortClass(object):
         res = self.anchor.get_home()
         return jsonify(res)
 
+    def get_path(self, ids):
+        return jsonify(self.anchor.get_path(ids))
+
     def update_delete_and_change_label(self, data):
         self.model.editing_data(data)
         remain_ids = []
