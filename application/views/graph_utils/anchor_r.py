@@ -222,7 +222,7 @@ class Anchors:
                 if area['x'] <= pos[0] <= area['x'] + area['width'] and area['y'] <= pos[1] <= area['y'] + area[
                     'height']:
                     tmp_cnt+=1
-                    _selection += last_next[i]
+                    _selection += level_infos[level]["index"][last_next[i]].tolist()
             _pos = train_x_tsne[_selection]
 
         selection = []
