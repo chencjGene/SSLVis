@@ -102,7 +102,7 @@ let GraphLayout = function (container) {
         area = state.area;
         rescale = state.rescale;
         visible_items = state.visible_items;
-        glyphs = state.glyphs || [];
+        glyphs = state.glyphs;
         // path
         path = [];
         path_nodes = {};

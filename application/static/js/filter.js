@@ -135,7 +135,7 @@ let FilterLayout = function (container) {
         }
         for(let node_bins of uncertainty_widget_data){
             for(let node_id of node_bins){
-                control_items[node_id] = uncertain_items[node_id]&&label_items[node_id]&&
+                control_items[node_id] = label_items[node_id]&&
                     indegree_items[node_id]&&outdegree_items[node_id];
             }
         }
@@ -367,7 +367,7 @@ let FilterLayout = function (container) {
         let remove_nodes = [];
         let add_nodes = [];
         for(let node_id of ids){
-            let new_flag = label_items[node_id]&&uncertain_items[node_id]&&indegree_items[node_id]&&outdegree_items[node_id];
+            let new_flag = label_items[node_id]&&indegree_items[node_id]&&outdegree_items[node_id];
             if(new_flag === true && control_items[node_id] === false){
                 add_nodes.push(node_id);
                 control_items[node_id] = new_flag;
@@ -381,10 +381,16 @@ let FilterLayout = function (container) {
         if(remove_nodes.length >0 || add_nodes.length>0){
             console.log(remove_nodes, add_nodes);
             // TODO
-            // data_manager.change_visible_items(control_items);
-            data_manager.change_glyphs(control_items);
+            data_manager.change_visible_items(control_items);
+            // data_manager.change_glyphs(control_items);
         }
 
+    };
+
+    that.update_glyph_showing_items = function() {
+        let show_glyphs = Object.keys(uncertain_items).map(d => parseInt(d)).filter(d => uncertain_items[d]===true);
+        console.log("show glyphs:", show_glyphs);
+        data_manager.change_glyphs(show_glyphs);
     };
 
     that._draw_widget = function(distribution, container, type, range, visible_items){
@@ -500,8 +506,14 @@ let FilterLayout = function (container) {
                                     visible_items[id] = true;
                                 }
                                 if(change) {
-                                    that.update_widget_showing_items(d);
-                                    range[0] = i;
+                                    if(type === "uncertainty"){
+                                        that.update_glyph_showing_items();
+                                    }
+                                    else {
+                                        that.update_widget_showing_items(d);
+                                        range[0] = i;
+                                    }
+
                                 }
                                 return 1
                             }
@@ -510,8 +522,14 @@ let FilterLayout = function (container) {
                                     visible_items[id] = false;
                             }
                             if(change) {
-                                that.update_widget_showing_items(d);
-                                range[0] = i+1;
+                                if(type === "uncertainty"){
+                                    that.update_glyph_showing_items();
+                                }
+                                else {
+                                    that.update_widget_showing_items(d);
+                                    range[0] = i+1;
+                                }
+
                             }
                             return 0.5
                         })
@@ -539,8 +557,14 @@ let FilterLayout = function (container) {
                                     visible_items[id] = true;
                                 }
                                 if(change) {
-                                    that.update_widget_showing_items(d);
-                                    range[1] = i;
+                                    if(type === "uncertainty"){
+                                        that.update_glyph_showing_items();
+                                    }
+                                    else {
+                                        that.update_widget_showing_items(d);
+                                        range[1] = i;
+                                    }
+
                                 }
                                 return 1
                             }
@@ -549,8 +573,14 @@ let FilterLayout = function (container) {
                                     visible_items[id] = false;
                             }
                             if(change) {
-                                that.update_widget_showing_items(d);
-                                range[1] = i-1;
+                                if(type === "uncertainty"){
+                                    that.update_glyph_showing_items();
+                                }
+                                else {
+                                    that.update_widget_showing_items(d);
+                                    range[1] = i-1;
+                                }
+
                             }
                             return 0.5
                         })
@@ -559,6 +589,10 @@ let FilterLayout = function (container) {
 
     that.get_visible_items = function() {
         return control_items;
+    };
+
+    that.get_glyph_items = function() {
+        return Object.keys(uncertain_items).map(d => parseInt(d)).filter(d => uncertain_items[d]===true);;
     };
 
     that.get_ranges = function() {
