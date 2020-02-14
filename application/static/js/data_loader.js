@@ -283,7 +283,6 @@ DataLoaderClass = function () {
         SettingView.setk_ui(that.state.k);
     };
 
-
     that.get_filter_view = function(state) {
         that.state.uncertainty_widget_data = state.uncertainty_widget_data;
         that.state.uncertainty_widget_range = state.uncertainty_widget_range;
@@ -461,10 +460,33 @@ DataLoaderClass = function () {
         })
     };
 
+    that.graph_home_callback = function() {
+        that.state.rescale = true;
+        that.state.highlights = [];
+        that.state.path = [];
+        that.is_show_path = false;
+        that.state.visible_items = {};
+        that.state.glyphs = [];
+        for(let node_id of  Object.keys(that.state.nodes).map(d => parseInt(d))){
+            that.state.visible_items[node_id] = true;
+        }
+
+        // update filter
+        that.set_filter_data(that.state.nodes);
+        let label_range = [];
+        for(let i=0; i<11; i++){
+            label_range.push(i);
+        }
+        that.set_filter_range([20, 20], label_range, [0, 19], [0,19]);
+        // that.set_filter_range([18, 19], label_range, [0, 19], [0,19]);
+        that.update_filter_view();
+        that.update_graph_view();
+    };
+
     that.graph_home = function() {
         let params = "?dataset=" + that.dataset;
         let home_node = new request_node(that.home_graph_url + params,
-            that.home_graph_handler(that.update_graph_view), "json", "POST");
+            that.home_graph_handler(that.graph_home_callback), "json", "POST");
         home_node.set_data({});
         home_node.notify();
     };

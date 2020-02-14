@@ -171,11 +171,17 @@ let GraphLayout = function (container) {
             await that._update();
             console.log("create");
             await that._create();
+            console.log("create end");
 
             nodes_in_group = nodes_group.selectAll("circle");
             golds_in_group = golds_group.selectAll("path");
             glyph_in_group = glyph_group.selectAll(".pie-chart");
             path_in_group = path_group.selectAll("path");
+
+            if(highlight_plg.if_lasso()){
+                highlight_plg.set_lasso();
+            }
+
             resolve();
         })
     };
@@ -389,7 +395,8 @@ let GraphLayout = function (container) {
                 .selectAll("g")
                 .transition()
                 .duration(AnimationDuration)
-                .attr("opacity", d => that.opacity(d.id));
+                .attr("opacity", d => that.opacity(d.id))
+                .on("end", resolve);
 
             path_in_group.enter()
                 .append("path")

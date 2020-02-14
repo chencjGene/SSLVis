@@ -511,8 +511,8 @@ let FilterLayout = function (container) {
                                     }
                                     else {
                                         that.update_widget_showing_items(d);
-                                        range[0] = i;
                                     }
+                                    range[0] = i;
 
                                 }
                                 return 1
@@ -527,8 +527,8 @@ let FilterLayout = function (container) {
                                 }
                                 else {
                                     that.update_widget_showing_items(d);
-                                    range[0] = i+1;
                                 }
+                                range[0] = i+1;
 
                             }
                             return 0.5
@@ -562,8 +562,8 @@ let FilterLayout = function (container) {
                                     }
                                     else {
                                         that.update_widget_showing_items(d);
-                                        range[1] = i;
                                     }
+                                    range[1] = i;
 
                                 }
                                 return 1
@@ -578,8 +578,8 @@ let FilterLayout = function (container) {
                                 }
                                 else {
                                     that.update_widget_showing_items(d);
-                                    range[1] = i-1;
                                 }
+                                range[1] = i-1;
 
                             }
                             return 0.5

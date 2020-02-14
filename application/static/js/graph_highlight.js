@@ -179,10 +179,6 @@ let GraphHighlight = function (parent) {
         for(let node_id of new_selection_tmp){
             if(view.get_visible_items()[node_id] === true) new_selection.push(node_id);
         }
-        if(new_selection.length === 0){
-            console.log("lasso size = 0");
-            return
-        }
         that.highlight(view.get_nodes(), new_selection);
     };
 
@@ -313,6 +309,10 @@ let GraphHighlight = function (parent) {
             lasso_btn_path.attr("stroke", "white").attr("fill", "white");
             view.lasso_or_zoom("lasso");
         }
+    };
+
+    that.if_lasso = function() {
+        return if_lasso;
     };
 
     that.init = function () {

@@ -283,6 +283,8 @@ class Anchors:
         graph = self.convert_to_dict(selection, tsne)
         graph["area"] = self.get_data_area(train_x_tsne=tsne)
         self.home = graph
+        self.home_tsne = self.old_nodes_tsne
+        self.home_tsne_ids = self.old_nodes_id
         return graph
 
     def update_nodes(self, area, level, must_show_nodes = []):
@@ -296,6 +298,8 @@ class Anchors:
         return graph
 
     def get_home(self):
+        self.old_nodes_id = self.home_tsne_ids
+        self.old_nodes_tsne = self.home_tsne
         return self.home
 
 
