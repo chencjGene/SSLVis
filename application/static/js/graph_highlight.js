@@ -8,6 +8,8 @@ let GraphHighlight = function (parent) {
     let if_lasso = false;
     let lasso_btn_path = null;
     let fisheye_btn_path = null;
+    let influence_to_btn_path = null;
+    let influence_from_btn_path =null;
     let edit_btn_path = null;
     let btn_select_color = "#560731";
 
@@ -17,7 +19,8 @@ let GraphHighlight = function (parent) {
             .closePathSelect(true)
             .closePathDistance(100);
         lasso_btn_path = d3.select("#lasso-btn").select("path");
-        fisheye_btn_path = d3.select("#fisheye-btn").select("path");
+        influence_from_btn_path = d3.select("#influence-from-btn").select("path");
+        influence_to_btn_path = d3.select("#influence-to-btn").select("path");
         edit_btn_path = d3.select("#apply-delete-btn").select("path");
 
         
@@ -34,24 +37,6 @@ let GraphHighlight = function (parent) {
                 that._change_lasso_mode();
             });
 
-        $("#fisheye-btn")
-            .click(function () {
-                let is_show_path = view.get_is_show_path();
-                if(is_show_path){
-                    that.hide_selection_nodes_path();
-                    $("#fisheye-btn").css("background-color", "gray");
-                    fisheye_btn_path.attr("stroke", "white").attr("fill", "white");
-                }
-                else {
-                    is_show_path = true;
-                    if(if_lasso){
-                        that._change_lasso_mode();
-                    }
-                    that.show_selection_nodes_path();
-                    $("#fisheye-btn").css("background-color", btn_select_color);
-                    fisheye_btn_path.attr("stroke", "white").attr("fill", "white");
-                }
-            });
 
         $("#home-btn")
             .click(function () {
@@ -66,11 +51,49 @@ let GraphHighlight = function (parent) {
                 view.data_manager.local_update_k(selected_idxs);
             });
 
+        $("#influence-from-btn")
+            .click(function () {
+                let is_show_path = view.get_is_show_path();
+                if(is_show_path){
+                    that.hide_selection_nodes_path();
+                    $("#influence-from-btn").css("background-color", "gray");
+                    influence_from_btn_path.attr("stroke", "white").attr("fill", "white");
+                }
+                else {
+                    is_show_path = true;
+                    if(if_lasso){
+                        that._change_lasso_mode();
+                    }
+                    that.show_selection_nodes_path("from");
+                    $("#influence-from-btn").css("background-color", btn_select_color);
+                    influence_from_btn_path.attr("stroke", "white").attr("fill", "white");
+                }
+            });
+
+        $("#influence-to-btn")
+            .click(function () {
+                let is_show_path = view.get_is_show_path();
+                if(is_show_path){
+                    that.hide_selection_nodes_path();
+                    $("#influence-to-btn").css("background-color", "gray");
+                    influence_to_btn_path.attr("stroke", "white").attr("fill", "white");
+                }
+                else {
+                    is_show_path = true;
+                    if(if_lasso){
+                        that._change_lasso_mode();
+                    }
+                    that.show_selection_nodes_path("to");
+                    $("#influence-to-btn").css("background-color", btn_select_color);
+                    influence_to_btn_path.attr("stroke", "white").attr("fill", "white");
+                }
+            });
+
         that.add_btn_style();
     };
 
     that.add_btn_style = function() {
-        let btn_ids = ["apply-delete-btn", "lasso-btn", "fisheye-btn", "home-btn", "refresh-btn"];
+        let btn_ids = ["apply-delete-btn", "lasso-btn", "fisheye-btn", "home-btn", "refresh-btn", "influence-to-btn", "influence-from-btn"];
         for(let btn_id of btn_ids){
             let select_id = "#"+btn_id;
             let path = d3.select(select_id).selectAll("path");
@@ -182,7 +205,7 @@ let GraphHighlight = function (parent) {
         }
     };
 
-    that.show_selection_nodes_path = function () {
+    that.show_selection_nodes_path = function (mode) {
         let focus_node_data = [];
         let selection_nodes = view.get_highlights();
         let nodes = view.get_nodes();
@@ -209,7 +232,7 @@ let GraphHighlight = function (parent) {
         let new_area = null;
         let load_path = false;
         for(let d of focus_node_data){
-            if(d.path === -1){
+            if(d.from === -1 || d.to === -1){
                 load_path = true;
                 break;
             }
@@ -220,7 +243,8 @@ let GraphHighlight = function (parent) {
             }, function (data) {
                 console.log("get path data:", data);
                 for(let id of Object.keys(data)){
-                    nodes[id].path = data[id];
+                    nodes[id].from = data[id].from;
+                    nodes[id].to = data[id].to;
                 }
                 showpath()
             });
@@ -232,10 +256,17 @@ let GraphHighlight = function (parent) {
             for (let d of focus_node_data) {
                 // if (d.label[iter] === -1 || d.label[0] !== -1) continue;
                 console.log("Node:", d);
-                let predict_label = d.label[d.label.length-1];
-                for (let source_node of d.path) {
-                    let s = source_node;
-                        let e = d.id;
+                for (let source_node of d[mode]) {
+                    let s = null;
+                        let e = null;
+                        if(mode === "from"){
+                            s = source_node;
+                            e = d.id;
+                        }
+                        else if(mode === "to"){
+                            s = d.id;
+                            e = source_node
+                        }
                         let key = s + "," + e;
                         if (path_keys.indexOf(key) === -1) {
                             path_keys.push(key);
@@ -244,7 +275,7 @@ let GraphHighlight = function (parent) {
                             let s = parseInt(keys[1]);
                             path_nodes[e] = true;
                             path_nodes[s] = true;
-                            path.push([e, s, predict_label]);
+                            path.push([e, s]);
                         }
                 }
             }
@@ -256,11 +287,11 @@ let GraphHighlight = function (parent) {
             // focus_node = JSON.parse(JSON.stringify(path_nodes));
             if(new_nodes.length === 0){
                 console.log("no new nodes added");
-                view.data_manager.show_path_node(selection_nodes);
+                view.data_manager.show_path_node(selection_nodes, mode);
             }
             else {
                 console.log("fetch nodes");
-                view.fetch_points(must_show_nodes, new_nodes, "showpath", selection_nodes);
+                view.fetch_points(must_show_nodes, new_nodes, "showpath-"+mode, selection_nodes);
             }
         }
 

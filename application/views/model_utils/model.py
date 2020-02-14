@@ -52,7 +52,8 @@ class SSLModel(object):
         logger.info("n_neighbor: {}".format(self.n_neighbor))
 
         self.simplified_affinity_matrix = None
-        self.propagation_path = None
+        self.propagation_path_from = None
+        self.propagation_path_to = None
         # self._get_signal_state()
 
     def init(self, k=None, filter_threshold=None):
@@ -66,7 +67,8 @@ class SSLModel(object):
         print("n_neighbor and filter_threshold has been updated: {} {}".format(
             self.n_neighbor, self.filter_threshold
         ))
-        self.propagation_path = None
+        self.propagation_path_from = None
+        self.propagation_path_to = None
         self.simplified_affinity_matrix = None
         self._training(evaluate=True)
         logger.info("init finished")
@@ -77,7 +79,8 @@ class SSLModel(object):
 
     def _clean_buffer(self):
         self.simplified_affinity_matrix = None
-        self.propagation_path = None
+        self.propagation_path_from = None
+        self.propagation_path_to = None
 
     def _training(self, rebuild=True, evaluate=False):
         self._clean_buffer()
@@ -221,10 +224,11 @@ class SSLModel(object):
                     .format(accuracy_score(self.pred_dist.argmax(axis=1), ground_truth)))
         logger.info("now acc: {}".format(accuracy_score(simplified_F.argmax(axis=1), ground_truth)))
         simplified_affinity_matrix.eliminate_zeros()
-        propagation_path = self.get_path_to_label(self.process_data, simplified_affinity_matrix)
+        propagation_path_from, propagation_path_to = self.get_path_to_label(self.process_data, simplified_affinity_matrix)
         # return simplified_affinity_matrix, propagation_path
         self.simplified_affinity_matrix = simplified_affinity_matrix
-        self.propagation_path = propagation_path
+        self.propagation_path_from = propagation_path_from
+        self.propagation_path_to = propagation_path_to
         logger.info("end async function")
 
     def simplification_end(self, sleep_time = 0.2):
@@ -258,35 +262,20 @@ class SSLModel(object):
         self._training(rebuild=False)
         return {"test": "success"}
 
-    def _find_path(self, path_stack, stack_len, edge_indices, edge_indptr, propagation_path, path_stack_flag):
-        if stack_len == 0:
-            return
-        top_node = path_stack[stack_len-1]
-        propagation_path[top_node].append(copy.copy(path_stack))
-        edge_start_idx = edge_indptr[top_node]
-        edge_end_idx = edge_indptr[top_node+1]
-        for edge_idx in range(edge_start_idx, edge_end_idx):
-            edge_id = int(edge_indices[edge_idx])
-            if path_stack_flag[edge_id]:
-                continue
-            path_stack.append(edge_id)
-            path_stack_flag[edge_id] = True
-            self._find_path(path_stack, stack_len+1, edge_indices, edge_indptr, propagation_path, path_stack_flag)
-        path_stack.pop()
-        path_stack_flag[top_node] = False
-
     def get_path_to_label(self, process_data, influence_matrix):
         iternum = process_data.shape[0]
         nodenum = process_data.shape[1]
-        propagation_path = [[] for i in range(nodenum)]
+        propagation_path_from = [[] for i in range(nodenum)]
+        propagation_path_to = [[] for i in range(nodenum)]
         edge_indices = influence_matrix.indices
         edge_indptr = influence_matrix.indptr
         for node_id in range(nodenum):
             start_idx = edge_indptr[node_id]
             end_idx = edge_indptr[node_id+1]
             for target_id in edge_indices[start_idx:end_idx]:
-                propagation_path[int(node_id)].append(int(target_id))
-        return propagation_path
+                propagation_path_from[int(node_id)].append(int(target_id))
+                propagation_path_to[int(target_id)].append(int(node_id))
+        return propagation_path_from, propagation_path_to
 
     @async
     def evaluate(self):
@@ -454,13 +443,14 @@ class SSLModel(object):
     def get_graph_and_process_data(self, filter_threshold=None):
         if filter_threshold is not None:
             self.filter_threshold = filter_threshold
-            self.propagation_path = None
+            self.propagation_path_from = None
+            self.propagation_path_to = None
             self.simplified_affinity_matrix = None
-        if (self.propagation_path == None) or (self.simplified_affinity_matrix == None):
+        if (self.propagation_path_from == None) or (self.simplified_affinity_matrix == None):
             # self.simplified_affinity_matrix, self.propagation_path = self.simplify_influence_matrix(threshold=self.filter_threshold)
             while not self.simplification_end():
                 pass
-        return self.graph, self.process_data, self.simplified_affinity_matrix, self.propagation_path, self.get_in_out_degree(self.simplified_affinity_matrix)
+        return self.graph, self.process_data, self.simplified_affinity_matrix, self.propagation_path_from, self.propagation_path_to, self.get_in_out_degree(self.simplified_affinity_matrix)
 
     def get_pred_labels(self):
         return self.labels[-1].copy()

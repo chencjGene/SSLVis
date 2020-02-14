@@ -515,9 +515,13 @@ DataLoaderClass = function () {
         let fetch_graph = new request_node(that.fisheye_graph_url + params,
             that.fetch_graph_handler(that.zoom_graph_view), "json", "POST");
         that.state.rescale = false;
-        if(mode === "showpath"){
+        if(mode.startsWith("showpath")){
+            let from_or_to = mode.split("-")[1];
             that.state.is_show_path = true;
-            that.state.path = data;
+            that.state.path = [];
+            for(let apath of data){
+                that.state.path.push([apath, from_or_to]);
+            }
         }
         else if(mode === "highlight"){
             that.state.is_show_path = false;
@@ -539,9 +543,12 @@ DataLoaderClass = function () {
         that.update_graph_view();
     };
 
-    that.show_path_node = function(path) {
+    that.show_path_node = function(path, mode) {
         if(path.length > 0){
-            that.state.path = path;
+            that.state.path = [];
+            for(let apath of path){
+                that.state.path.push([apath, mode]);
+            }
             that.state.is_show_path = true;
         }
         else {

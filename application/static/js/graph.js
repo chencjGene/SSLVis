@@ -107,15 +107,32 @@ let GraphLayout = function (container) {
         path = [];
         path_nodes = {};
         let path_keys = [];//remove duplicates
-        for(let target_id of state.path){
-            for(let source_id of nodes[target_id].path){
-                let key = source_id+","+target_id;
-                if(path_keys.indexOf(key) > -1) continue;
-                path.push([nodes[source_id], nodes[target_id]]);
-                path_keys.push(key);
-                path_nodes[source_id] = true;
-                path_nodes[target_id] = true;
+        for(let apath of state.path){
+            let node_id = apath[0];
+            let mode = apath[1];
+            if(mode === "from"){
+                let target_id = node_id;
+                for(let source_id of nodes[target_id].from){
+                    let key = source_id+","+target_id;
+                    if(path_keys.indexOf(key) > -1) continue;
+                    path.push([nodes[source_id], nodes[target_id]]);
+                    path_keys.push(key);
+                    path_nodes[source_id] = true;
+                    path_nodes[target_id] = true;
+                }
             }
+            else if(mode === "to"){
+                let source_id = node_id;
+                for(let target_id of nodes[source_id].to){
+                    let key = source_id+","+target_id;
+                    if(path_keys.indexOf(key) > -1) continue;
+                    path.push([nodes[source_id], nodes[target_id]]);
+                    path_keys.push(key);
+                    path_nodes[source_id] = true;
+                    path_nodes[target_id] = true;
+                }
+            }
+
         }
         // glyphs
         // glyphs = that.get_top_k_uncertainty(nodes, 20);

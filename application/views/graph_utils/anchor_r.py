@@ -301,14 +301,15 @@ class Anchors:
 
     def convert_to_dict(self, selection, tsne):
         logger.info("convert to dict")
-        propagation_path = self.model.propagation_path
+        propagation_path_from = self.model.propagation_path_from
+        propagation_path_to = self.model.propagation_path_to
         ground_truth = self.model.data.get_full_train_ground_truth()
         samples_truth = ground_truth[selection]
         if self.data_degree is None:
             self.data_degree = self.model.get_in_out_degree(self.data.get_graph())
         degree = self.data_degree
-        m = self.data.get_new_id_map()
-        selection = [m[i] for i in selection]
+        # m = self.data.get_new_id_map()
+        # selection = [m[i] for i in selection]
         labels = self.model.labels
         print("labels.shape:", labels.shape)
         process_data = self.model.process_data
@@ -328,7 +329,8 @@ class Anchors:
                 "label": labels[:,id].tolist(),
                 "score": scores,
                 "truth": samples_truth[i],
-                "path":-1 if propagation_path is None else propagation_path[id],
+                "from":-1 if propagation_path_from is None else propagation_path_from[id],
+                "to": -1 if propagation_path_to is None else propagation_path_to[id],
                 "in_degree": int(degree[id][1]),
                 "out_degree": int(degree[id][0])
             }
@@ -340,8 +342,12 @@ class Anchors:
 
     def get_path(self, ids):
         self.wait_for_simplify()
-        propagation_path = self.model.propagation_path
+        propagation_path_from = self.model.propagation_path_from
+        propagation_path_to = self.model.propagation_path_to
         res = {}
         for id in ids:
-            res[id] = propagation_path[id]
+            res[id] = {
+                "from": propagation_path_from[id],
+                "to": propagation_path_to[id]
+            }
         return res
