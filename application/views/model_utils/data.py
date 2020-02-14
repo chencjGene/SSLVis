@@ -130,6 +130,12 @@ class Data(object):
             m[self.rest_idxs[i]] = i
         return m
 
+    def get_new_map_reverse(self):
+        m = {}
+        for i in range(len(self.rest_idxs)):
+            m[i] = self.rest_idxs[i]
+        return m
+
     def get_removed_idxs(self):
         return self.removed_idxs
 

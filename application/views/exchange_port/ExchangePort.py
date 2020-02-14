@@ -178,6 +178,7 @@ class ExchangePortClass(object):
         for id in self.current_ids:
             if id not in data["deleted_idxs"]:
                 remain_ids.append(id)
+        self.anchor.data_degree = None
         return self.fisheye(remain_ids, data["area"], data["level"], data["wh"])
 
     def fisheye(self,must_show_nodes, area, level, wh):

@@ -1,12 +1,62 @@
 import pickle
 import numpy as np
 import os
+import threading
+import sys
 import json
 from sklearn.metrics import confusion_matrix, roc_auc_score, \
     precision_recall_curve, auc, roc_curve
 from threading import Thread
 from time import sleep
 
+exec_list = {}
+class thread_with_trace(threading.Thread):
+    def __init__(self, *args, **keywords):
+        threading.Thread.__init__(self, *args, **keywords)
+        self.killed = False
+
+    def start(self):
+        self.__run_backup = self.run
+        self.run = self.__run
+        threading.Thread.start(self)
+
+    def __run(self):
+        sys.settrace(self.globaltrace)
+        self.__run_backup()
+        self.run = self.__run_backup
+
+    def globaltrace(self, frame, event, arg):
+        if event == 'call':
+            return self.localtrace
+        else:
+            return None
+
+    def localtrace(self, frame, event, arg):
+        if self.killed:
+            if event == 'line':
+                raise SystemExit()
+        return self.localtrace
+
+    def kill(self):
+        self.killed = True
+
+def async_once(f):
+    def wrapper(*args, **kwargs):
+        global exec_list
+        func_name = f.__name__
+        if func_name not in exec_list:
+            exec_list[func_name] = []
+        old_exec = exec_list[func_name]
+        for exec in old_exec:
+            exec.kill()
+            exec.join()
+            print("shutdown a thread")
+
+        thr = thread_with_trace(target=f, args=args, kwargs=kwargs)
+        old_exec.append(thr)
+        thr.start()
+
+    return wrapper
 
 def async(f):
     def wrapper(*args, **kwargs):

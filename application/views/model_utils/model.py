@@ -20,7 +20,7 @@ from sklearn.metrics.pairwise import euclidean_distances, paired_distances
 from ..utils.config_utils import config
 from ..utils.log_utils import logger
 from ..utils.helper_utils import check_exist, \
-    pickle_load_data, pickle_save_data, flow_statistic, async
+    pickle_load_data, pickle_save_data, flow_statistic, async, async_once
 from ..utils.embedder_utils import Embedder
 
 from .data import Data, GraphData
@@ -156,7 +156,7 @@ class SSLModel(object):
         pickle_save_data(influence_matrix_path, self.influence_matrix)
         return
 
-    @async
+    @async_once
     def simplify_influence_matrix(self, threshold=0.7):
         self._influence_matrix()
         logger.info("begin simplify influence matrix")

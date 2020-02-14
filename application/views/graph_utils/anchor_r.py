@@ -308,8 +308,11 @@ class Anchors:
         if self.data_degree is None:
             self.data_degree = self.model.get_in_out_degree(self.data.get_graph())
         degree = self.data_degree
-        # m = self.data.get_new_id_map()
+        m = self.data.get_new_id_map()
+        m_reverse = self.data.get_new_map_reverse()
         # selection = [m[i] for i in selection]
+        def mapfunc(id):
+            return int(m_reverse[id])
         labels = self.model.labels
         print("labels.shape:", labels.shape)
         process_data = self.model.process_data
@@ -321,18 +324,18 @@ class Anchors:
         for i in range(sample_num):
             id = int(selection[i])
             iter_num = process_data.shape[0]
-            scores = [process_data[j][id].tolist() for j in range(iter_num)]
+            scores = [process_data[j][m[id]].tolist() for j in range(iter_num)]
             samples_nodes[id] = {
                 "id": id,
                 "x": samples_x_tsne[i][0],
                 "y": samples_x_tsne[i][1],
-                "label": labels[:,id].tolist(),
+                "label": labels[:,m[id]].tolist(),
                 "score": scores,
                 "truth": samples_truth[i],
-                "from":-1 if propagation_path_from is None else propagation_path_from[id],
-                "to": -1 if propagation_path_to is None else propagation_path_to[id],
-                "in_degree": int(degree[id][1]),
-                "out_degree": int(degree[id][0])
+                "from":-1 if propagation_path_from is None else list(map(mapfunc, propagation_path_from[m[id]])),
+                "to": -1 if propagation_path_to is None else list(map(mapfunc, propagation_path_to[m[id]])),
+                "in_degree": int(degree[m[id]][1]),
+                "out_degree": int(degree[m[id]][0])
             }
         graph = {
             "nodes":samples_nodes
@@ -345,9 +348,15 @@ class Anchors:
         propagation_path_from = self.model.propagation_path_from
         propagation_path_to = self.model.propagation_path_to
         res = {}
+        m = self.data.get_new_id_map()
+        m_reverse = self.data.get_new_map_reverse()
+
+        # selection = [m[i] for i in selection]
+        def mapfunc(id):
+            return int(m_reverse[id])
         for id in ids:
             res[id] = {
-                "from": propagation_path_from[id],
-                "to": propagation_path_to[id]
+                "from": list(map(mapfunc, propagation_path_from[m[id]])),
+                "to": list(map(mapfunc, propagation_path_to[m[id]]))
             }
         return res
