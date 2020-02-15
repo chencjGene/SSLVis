@@ -271,12 +271,18 @@ class Anchors:
         logger.info("tsne done")
         return samples_x_tsne
 
+    def get_init_tsne(self, selection):
+        return self.tsne[selection]
+
     def get_nodes(self):
         self.remove_ids = self.model.data.get_removed_idxs()
         self.tsne = self.get_train_x_tsne()
         self.hierarchy_info = self.get_hierarchical_sampling()
         selection = np.array(self.hierarchy_info[0]["index"]).tolist()
-        tsne = self.re_tsne(selection)
+        # TODO  2020.2.15 change to init tsne
+        # tsne = self.re_tsne(selection)
+        tsne = self.get_init_tsne(selection)
+
         self.old_nodes_id = selection
         self.old_nodes_tsne = tsne
         graph = self.convert_to_dict(selection, tsne)
@@ -289,7 +295,9 @@ class Anchors:
     def update_nodes(self, area, level, must_show_nodes = []):
         self.remove_ids = self.model.data.get_removed_idxs()
         selection, old_cnt = self.get_data_selection(area, level, must_show_nodes)
-        tsne = self.re_tsne(selection, old_cnt)
+        # TODO  2020.2.15 change to init tsne
+        # tsne = self.re_tsne(selection, old_cnt)
+        tsne = self.get_init_tsne(selection)
         self.old_nodes_id = selection
         self.old_nodes_tsne = tsne
         graph = self.convert_to_dict(selection, tsne)
