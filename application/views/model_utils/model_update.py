@@ -117,7 +117,7 @@ def local_search_k(k_list, n_neighbors, selected_idxs, F, initial_affinity_matri
         affinity_matrix[selected_idxs,:] = selected_affinity_matrix
         affinity_matrix = sparse.csr_matrix(affinity_matrix)        
 
-        affinity_matrix = affinity_matrix + affinity_matrix.T
+        # affinity_matrix = affinity_matrix + affinity_matrix.T
         affinity_matrix = sparse.csr_matrix((np.ones(len(affinity_matrix.data)).tolist(),
                                              affinity_matrix.indices, affinity_matrix.indptr),
                                             shape=(instance_num, instance_num))
@@ -126,9 +126,10 @@ def local_search_k(k_list, n_neighbors, selected_idxs, F, initial_affinity_matri
         print("affinity_matrix diff:", \
             np.abs(affinity_matrix - initial_affinity_matrix).sum())
         laplacian_matrix = build_laplacian_graph(affinity_matrix)
-        pred, iter_num = full_update(selected_idxs, F, laplacian_matrix, affinity_matrix,
+        pred, iter_num = local_update(selected_idxs, F, laplacian_matrix, affinity_matrix,
             train_y, normalized=True)
-        acc = accuracy_score(gt, pred.argmax(axis=1))
+        # acc = accuracy_score(gt, pred.argmax(axis=1))
+        acc = accuracy_score(gt[selected_idxs], pred.argmax(axis=1)[selected_idxs])
         ent = entropy(pred.T + 1e-20).mean()
         print(local_k, acc, ent, min_ent, iter_num)
         if ent < min_ent:
@@ -138,7 +139,7 @@ def local_search_k(k_list, n_neighbors, selected_idxs, F, initial_affinity_matri
             best_affinity_matrix = affinity_matrix
             best_pred = pred
     print("best local k:", best_k, "best_ent", min_ent, "original_ent", original_ent)
-    return best_affinity_matrix, pred
+    return best_affinity_matrix, best_pred
 
 def add_edge():
     None
