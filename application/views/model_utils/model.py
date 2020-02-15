@@ -47,7 +47,7 @@ class SSLModel(object):
         self.data = GraphData(self.dataname, labeled_num, total_num)
         # self.data.case_set_rest_idxs()
         self.selected_dir = self.data.selected_dir
-        self.n_neighbor = 3
+        self.n_neighbor = 5
         self.filter_threshold = 0.7
         logger.info("n_neighbor: {}".format(self.n_neighbor))
 
@@ -381,11 +381,15 @@ class SSLModel(object):
                                                   max_k,
                                                   mode="distance")
         s = 0
-        low_bound = 5
+        low_bound = 13
         degree = self.get_in_out_degree(affinity_matrix)[:,1]
         degree = np.sqrt(1/degree)
         labels = []
         logger.info("begin test")
+        neighbors = []
+        neighbors_pred = []
+        fs = []
+        ks = []
         for test_node_id in range(test_X.shape[0]):
             start = neighbor_result.indptr[test_node_id]
             end = neighbor_result.indptr[test_node_id + 1]
@@ -399,8 +403,6 @@ class SSLModel(object):
             min_f_test = np.zeros((label_cnt))
             for k in range(low_bound,max_k):
                 estimated_idxs = j_in_this_row[:k]
-                d_test = 0
-                f_test = np.zeros((label_cnt))
                 # get f_test
                 neighbor_tmp = pred[estimated_idxs]*degree[estimated_idxs].reshape((k,1))
                 f_test = np.sum(neighbor_tmp, axis=0)
@@ -410,7 +412,6 @@ class SSLModel(object):
                 f = 0
                 f_tmp = f_test / d_test - neighbor_tmp
                 f = np.sum(np.diagonal(np.dot(f_tmp, f_tmp.T)))
-
                 f = f / k
                 if f < min_f:
                     min_f = f
@@ -418,10 +419,15 @@ class SSLModel(object):
                     min_f_test = f_test
             s += min_k
             p = min_f_test
-            labels.append(p.argmax())
+            labels.append(int(p.argmax()))
+            fs.append(min_f)
+            ks.append(min_k)
+            neighbors.append(j_in_this_row.tolist())
+            neighbors_pred.append(np.argmax(pred[j_in_this_row], axis=1).tolist())
         acc = accuracy_score(test_y, labels)
         logger.info("test accuracy: {}".format(acc))
         print(s / test_X.shape[0])
+        return np.array(labels), np.array(fs), np.array(ks), np.array(neighbors), np.array(neighbors_pred)
 
 
     def get_in_out_degree(self, influence_matrix):
