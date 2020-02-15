@@ -328,14 +328,14 @@ class Anchors:
         print("labels.shape:", labels.shape)
         process_data = self.model.process_data
 
-        samples_x_tsne = tsne.tolist()
+        samples_x_tsne = np.round(tsne, 2).tolist()
         samples_truth = samples_truth.tolist()
         samples_nodes = {}
         sample_num = len(selection)
         for i in range(sample_num):
             id = int(selection[i])
             iter_num = process_data.shape[0]
-            scores = [process_data[j][m[id]].tolist() for j in range(iter_num)]
+            scores = [np.round(process_data[j][m[id]], 2).tolist() for j in range(iter_num)]
             samples_nodes[id] = {
                 "id": id,
                 "x": samples_x_tsne[i][0],
