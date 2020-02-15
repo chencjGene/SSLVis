@@ -19,7 +19,6 @@ from sklearn.manifold import TSNE
 from ..graph_utils.RandomSampler import random_sample
 from sklearn.neighbors import BallTree
 
-
 class Anchors:
     def __init__(self):
         # path value

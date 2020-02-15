@@ -135,7 +135,6 @@ class SSLModel(object):
 
         logger.info("_training finished")
 
-
     def _influence_matrix(self):
         affinity_matrix = self.data.get_graph(self.n_neighbor)
         laplacian = build_laplacian_graph(affinity_matrix)
@@ -379,7 +378,7 @@ class SSLModel(object):
                                                   max_k,
                                                   mode="distance")
         s = 0
-        low_bound = 3
+        low_bound = 5
         degree = self.get_in_out_degree(affinity_matrix)[:,1]
         degree = np.sqrt(1/degree)
         labels = []
@@ -400,19 +399,15 @@ class SSLModel(object):
                 d_test = 0
                 f_test = np.zeros((label_cnt))
                 # get f_test
-                for i in range(k):
-                    neighbor_id = estimated_idxs[i]
-                    f_test += pred[neighbor_id]*degree[neighbor_id]
-                    d_test += data_in_this_row[i]
-                d_test = np.sqrt(d_test)
+                neighbor_tmp = pred[estimated_idxs]*degree[estimated_idxs].reshape((k,1))
+                f_test = np.sum(neighbor_tmp, axis=0)
+                d_test = np.sqrt(k)
                 f_test *= d_test/k
                 # get label similarity
                 f = 0
-                for i in range(k):
-                    neighbor_id = estimated_idxs[i]
-                    d_test += data_in_this_row[i]
-                    dis = f_test/d_test-pred[neighbor_id]*degree[neighbor_id]
-                    f += np.sqrt(dis.dot(dis))
+                f_tmp = f_test / d_test - neighbor_tmp
+                f = np.sum(np.diagonal(np.dot(f_tmp, f_tmp.T)))
+
                 f = f / k
                 if f < min_f:
                     min_f = f
