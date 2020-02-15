@@ -101,7 +101,7 @@ class SSLModel(object):
         self.labels = process_data.argmax(axis=2)
         self.unnorm_dist = unnorm_dist
         max_process_data = process_data.max(axis=2)
-        self.labels[max_process_data < 1e-20] = -1
+        self.labels[max_process_data == 0] = -1
         logger.info("unpropagated instance num: {}".format(sum(self.labels[-1]==-1)))
         class_list = np.unique(train_y)
         class_list.sort()
@@ -240,8 +240,9 @@ class SSLModel(object):
             sleep(sleep_time)
             return False
 
-    def local_search_k(self, selected_idxs, simplifying=True):
-        k_list = list(range(1,10))
+    def local_search_k(self, selected_idxs, k_list=None, simplifying=True):
+        if k_list is None:
+            k_list = list(range(1,10))
         train_gt = self.data.get_train_ground_truth()
         train_y = self.data.get_train_label()
         neighbors = self.data.get_neighbors()

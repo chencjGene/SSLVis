@@ -121,6 +121,7 @@ def local_search_k(k_list, n_neighbors, selected_idxs, F, initial_affinity_matri
         affinity_matrix = sparse.csr_matrix((np.ones(len(affinity_matrix.data)).tolist(),
                                              affinity_matrix.indices, affinity_matrix.indptr),
                                             shape=(instance_num, instance_num))
+
         affinity_matrix.setdiag(0)
         print("sum compare", affinity_matrix.sum(), initial_affinity_matrix.sum())
         print("affinity_matrix diff:", \
