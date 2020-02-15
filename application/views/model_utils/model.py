@@ -225,10 +225,10 @@ class SSLModel(object):
         logger.info("now acc: {}".format(accuracy_score(simplified_F.argmax(axis=1), ground_truth)))
         simplified_affinity_matrix.eliminate_zeros()
         # TODO remove paopagation 2020.2.15
-        # propagation_path_from, propagation_path_to = self.get_path_to_label(self.process_data, simplified_affinity_matrix)
+        propagation_path_from, propagation_path_to = self.get_path_to_label(self.process_data, simplified_affinity_matrix)
         self.simplified_affinity_matrix = simplified_affinity_matrix
-        # self.propagation_path_from = propagation_path_from
-        # self.propagation_path_to = propagation_path_to
+        self.propagation_path_from = propagation_path_from
+        self.propagation_path_to = propagation_path_to
         logger.info("end async function")
 
     def simplification_end(self, sleep_time = 0.2):
@@ -379,7 +379,7 @@ class SSLModel(object):
                                                   max_k,
                                                   mode="distance")
         s = 0
-        low_bound = 13
+        low_bound = 5
         degree = self.get_in_out_degree(affinity_matrix)[:,1]
         degree = np.sqrt(1/degree)
         labels = []

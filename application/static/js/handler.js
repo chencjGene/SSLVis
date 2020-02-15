@@ -87,7 +87,8 @@ DataLoaderClass.prototype.fetch_graph_handler = function (callback) {
     function _fetch_graph_handler(data) {
         console.log(data);
         that.state.nodes = data.nodes;
-        that.state.area = data.area;
+        if(that.state.is_zoom)
+            that.state.area = data.area;
         if (callback) callback(false);
     }
 
