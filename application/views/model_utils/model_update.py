@@ -116,8 +116,7 @@ def local_search_k(k_list, n_neighbors, selected_idxs, F, initial_affinity_matri
         affinity_matrix = initial_affinity_matrix.toarray()
         affinity_matrix[selected_idxs,:] = selected_affinity_matrix
         affinity_matrix = sparse.csr_matrix(affinity_matrix)        
-        
-        # TODO: disable it for DEBUG
+
         affinity_matrix = affinity_matrix + affinity_matrix.T
         affinity_matrix = sparse.csr_matrix((np.ones(len(affinity_matrix.data)).tolist(),
                                              affinity_matrix.indices, affinity_matrix.indptr),
