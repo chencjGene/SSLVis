@@ -12,6 +12,8 @@ let GraphTransform = function (parent) {
     let send_zoom_cnt = 0;
     let send_zoom_request = [];
     let AnimationDuration = 1000;
+    let zoom_maintain_status = [];
+
 
     that._init = function () {
         that.set_view(parent);
@@ -27,7 +29,15 @@ let GraphTransform = function (parent) {
 
     that.zoomed = function() {
         that.apply_transform(d3.event.transform);
-        view.maintain_size(d3.event.transform);
+
+        // maintain size
+        let now_time = Date.now();
+        let last_time = zoom_maintain_status.length>0 ? zoom_maintain_status[zoom_maintain_status.length-1] : 0;
+        if(now_time - last_time > 300){
+            console.log("maintain size");
+            zoom_maintain_status.push(now_time);
+            view.maintain_size(d3.event.transform);
+        }
         let target_level = current_level;
         let current_level_scale = Math.pow(2, target_level);
         while (d3.event.transform.k > 2 * current_level_scale) {
@@ -39,10 +49,10 @@ let GraphTransform = function (parent) {
             target_level -= 1;
         }
         current_level = target_level;
-        // console.log(d3.event.transform);
-        // if (transform === null) {
-        //     transform = d3.event.transform;
-        // }
+        console.log(d3.event.transform);
+        if (transform === null) {
+            transform = d3.event.transform;
+        }
         d3.selectAll(".iw-contextMenu").style("display", "none");
         console.log("zoomed", d3.event.transform.x, d3.event.transform.y,d3.event.transform.k);
     };

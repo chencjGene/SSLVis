@@ -53,7 +53,7 @@ def async_once(f):
             print("shutdown a thread")
 
         thr = thread_with_trace(target=f, args=args, kwargs=kwargs)
-        old_exec.append(thr)
+        exec_list[func_name] = [thr]
         thr.start()
 
     return wrapper

@@ -309,7 +309,6 @@ class Anchors:
         self.old_nodes_tsne = self.home_tsne
         return self.home
 
-
     def convert_to_dict(self, selection, tsne):
         logger.info("convert to dict")
         propagation_path_from = self.model.propagation_path_from
