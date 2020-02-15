@@ -293,7 +293,7 @@ class SSLModel(object):
         acc = accuracy_score(test_y, probabilities.argmax(axis=1))
         logger.info("test accuracy: {}".format(acc))
 
-    # @async
+    @async
     def adaptive_evaluation(self):
         train_X = self.data.get_train_X()
         affinity_matrix = self.data.get_graph()
