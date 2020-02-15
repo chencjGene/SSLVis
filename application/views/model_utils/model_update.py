@@ -94,7 +94,7 @@ def local_search_k(k_list, n_neighbors, selected_idxs, F, initial_affinity_matri
     norm_F = F / normalizer
     original_ent = entropy(norm_F.T + 1e-20).mean()
     best_affinity_matrix = None
-    min_ent = original_ent
+    min_ent = original_ent + 2000
     best_k = None
     best_affinity_matrix = initial_affinity_matrix.copy()
     best_pred = None

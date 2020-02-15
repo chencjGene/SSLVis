@@ -47,7 +47,7 @@ class SSLModel(object):
         self.data = GraphData(self.dataname, labeled_num, total_num)
         # self.data.case_set_rest_idxs()
         self.selected_dir = self.data.selected_dir
-        self.n_neighbor = 5
+        self.n_neighbor = 3
         self.filter_threshold = 0.7
         logger.info("n_neighbor: {}".format(self.n_neighbor))
 
@@ -226,10 +226,10 @@ class SSLModel(object):
         logger.info("now acc: {}".format(accuracy_score(simplified_F.argmax(axis=1), ground_truth)))
         simplified_affinity_matrix.eliminate_zeros()
         # TODO remove paopagation 2020.2.15
-        # propagation_path_from, propagation_path_to = self.get_path_to_label(self.process_data, simplified_affinity_matrix)
+        propagation_path_from, propagation_path_to = self.get_path_to_label(self.process_data, simplified_affinity_matrix)
         self.simplified_affinity_matrix = simplified_affinity_matrix
-        # self.propagation_path_from = propagation_path_from
-        # self.propagation_path_to = propagation_path_to
+        self.propagation_path_from = propagation_path_from
+        self.propagation_path_to = propagation_path_to
         logger.info("end async function")
 
     def simplification_end(self, sleep_time = 0.2):
