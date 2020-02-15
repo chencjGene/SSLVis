@@ -47,7 +47,7 @@ class SSLModel(object):
         self.data = GraphData(self.dataname, labeled_num, total_num)
         # self.data.case_set_rest_idxs()
         self.selected_dir = self.data.selected_dir
-        self.n_neighbor = 4
+        self.n_neighbor = 3
         self.filter_threshold = 0.7
         logger.info("n_neighbor: {}".format(self.n_neighbor))
 
@@ -101,7 +101,8 @@ class SSLModel(object):
         self.labels = process_data.argmax(axis=2)
         self.unnorm_dist = unnorm_dist
         max_process_data = process_data.max(axis=2)
-        self.labels[max_process_data <1e-4] = -1
+        self.labels[max_process_data < 1e-20] = -1
+        logger.info("unpropagated instance num: {}".format(sum(self.labels[-1]==-1)))
         class_list = np.unique(train_y)
         class_list.sort()
         self.class_list = class_list
@@ -258,7 +259,7 @@ class SSLModel(object):
         # self.affinity_matrix = affinity_matrix
         # self.laplacian = laplacian_matrix
         self.data.affinity_matrix = affinity_matrix
-        self._training(rebuild=False)
+        self._training(rebuild=False, evaluate=True)
         return {"test": "success"}
 
     def get_path_to_label(self, process_data, influence_matrix):
@@ -292,7 +293,7 @@ class SSLModel(object):
         acc = accuracy_score(test_y, probabilities.argmax(axis=1))
         logger.info("test accuracy: {}".format(acc))
 
-    @async
+    # @async
     def adaptive_evaluation(self):
         train_X = self.data.get_train_X()
         affinity_matrix = self.data.get_graph()
@@ -322,7 +323,7 @@ class SSLModel(object):
         acc = accuracy_score(test_y, labels)
         logger.info("test accuracy: {}".format(acc))
         print(s / test_X.shape[0])
-        return
+        return labels
 
     # @async
     def adaptive_evaluation_bkp(self):

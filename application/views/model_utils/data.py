@@ -46,6 +46,13 @@ class Data(object):
 
         self._load_data()
 
+        # change test data for STL
+        # if self.dataname == config.stl:
+        #     logger.info("using new test")
+        #     self.test_idx = np.load(os.path.join(self.data_root, "test_idxs.npy"))
+        #     test_y = np.load(os.path.join(self.data_root, "test_y.npy"))
+        #     self.y[self.test_idx] = test_y
+
     def _load_data(self):
         processed_data_filename = os.path.join(self.data_root, config.processed_dataname)
         processed_data = pickle_load_data(processed_data_filename)
@@ -278,6 +285,16 @@ class GraphData(Data):
     def get_graph(self, n_neighbor=None, rebuild=False):
         if self.affinity_matrix is None or rebuild is True:
             self._construct_graph(n_neighbor)
+        n_components, labels = sparse.csgraph.connected_components(csgraph=self.affinity_matrix, return_labels=True)
+        logger.info("n_components: {}".format(n_components))
+        train_y = self.get_train_label()
+        unp = []
+        for i in range(n_components):
+            y_in_this_component = train_y[labels==i]
+            if not any(y_in_this_component > -1):
+                idxs = self.get_rest_idxs()[labels==i]
+                unp = unp + idxs.tolist()
+        logger.info("connected components without labeled data - instance num: {}".format(len(unp)))
         return self.affinity_matrix.copy()
 
     def _construct_graph(self, n_neighbor=None):
