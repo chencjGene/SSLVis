@@ -192,11 +192,12 @@ let ImageLayout = function (container){
             .attr("width", grid_size)
             .attr("height", grid_size)
             .on("click", function (d, i) {
-                return color_unlabel;
-                // TODO get label from back-end
-                let node = d.node.datum();
-                if(node.label[iter] === -1) return color_unlabel;
-                    else return color_label[node.label[iter]];
+                that._show_detail(d, i);
+                // return color_unlabel;
+                // // TODO get label from back-end
+                // let node = d.node.datum();
+                // if(node.label[iter] === -1) return color_unlabel;
+                //     else return color_label[node.label[iter]];
             });
 
 
@@ -210,10 +211,10 @@ let ImageLayout = function (container){
         img_grids_g.select("image")
             .attr("xlink:href", d => d.url);
 
-        img_grids_g.select("rect")
-            .attr("stroke", function (d) {
-
-                });
+        // img_grids_g.select("rect")
+        //     .attr("stroke", function (d) {
+        //
+        //         });
 
         img_grids_g
             .transition()

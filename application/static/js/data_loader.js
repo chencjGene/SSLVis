@@ -6,6 +6,7 @@
 DataLoaderClass = function () {
     let that = this;
 
+
     that.dataset = null;
 
     // URL information
@@ -83,6 +84,7 @@ DataLoaderClass = function () {
         rescale: false,
         glyphs: [],
         visible_items:{},
+        is_zoom: true,
         // history info:
         history_data: null,
         // edit info:
@@ -543,6 +545,7 @@ DataLoaderClass = function () {
             that.state.is_show_path = false;
             that.state.highlights = data;
         }
+        that.state.area = area;
         fetch_graph.set_data({
             'must_show_nodes':must_show_nodes,
             'area':area,

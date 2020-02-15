@@ -73,7 +73,7 @@ function number_format (number, decimals, dec_point, thousands_sep) {
     return s.join(dec);
 }
 
-let star_path = function (out_radius, inner_radius, center_x, center_y) {
+let star_path = function(out_radius, inner_radius, center_x, center_y) {
     // added by changjian, 201912251013
     // generating star shape in a path format
     let svgdata='M ' + center_x + ' ' + center_y + '\n';
@@ -138,18 +138,13 @@ let oneD_sum = function(vec){
 
 
 let curve_mid = function (u, v) {
-    let mid = [(u[0]+v[0])/2, (u[1]+v[1])/2];
-    // console.log(Math.sqrt(Math.pow(u[0]-v[0], 2), Math.pow(u[1]-v[1], 2)))
-    // let c = Math.sqrt(Math.pow(u[0]-v[0], 2), Math.pow(u[1]-v[1], 2))*0.3;
-    let c = 40+(Math.random()-0.5)*5;
-    //TODO y2==y1
-    if(u[0] === v[0]){
-        // return [u[0]]
-    }
-    else if(u[1] === v[1]){
-
-    }
-    else {
+        let mid = [(u[0]+v[0])/2, (u[1]+v[1])/2];
+        // console.log(Math.sqrt(Math.pow(u[0]-v[0], 2), Math.pow(u[1]-v[1], 2)))
+        // let c = Math.sqrt(Math.pow(u[0]-v[0], 2), Math.pow(u[1]-v[1], 2))*0.3;
+        let c = 40+(Math.random()-0.5)*5;
+        if(u[1] === v[1]) {
+            u[1] += 0.00005
+        }
         let tmp = Math.sqrt(c/(1+Math.pow((u[0]-v[0])/(u[1]-v[1]), 2)));
         let res_x1 = tmp+(u[0]+v[0])/2;
         let res_x2 = -tmp+(u[0]+v[0])/2;
@@ -161,7 +156,6 @@ let curve_mid = function (u, v) {
         else {
             return [res_x2, res_y2]
         }
-    }
 }
 
 function deepCopy(obj) {

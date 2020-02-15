@@ -224,6 +224,19 @@ class Anchors:
                     tmp_cnt+=1
                     _selection += level_infos[level]["index"][last_next[i]].tolist()
             _pos = train_x_tsne[_selection]
+        tmp_selection = []
+        tmp_cnt = 0
+        for ind in _selection:
+            if int(ind) in old_nodes_ids:
+                idx = old_nodes_ids.index(int(ind))
+                pos = old_nodes_tsne[idx]
+            else:
+                pos = train_x_tsne[ind]
+            if area['x'] <= pos[0] <= area['x'] + area['width'] and area['y'] <= pos[1] <= area['y'] + area[
+                'height']:
+                tmp_cnt += 1
+                tmp_selection.append(ind)
+        _selection = tmp_selection
 
         selection = []
         new_nodes = []

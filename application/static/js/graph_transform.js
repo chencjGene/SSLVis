@@ -152,6 +152,7 @@ let GraphTransform = function (parent) {
                     &&((selection_area.height+selection_area.y)<=(now_area.y+now_area.height))){
                     // all selection nodes in now area
                     console.log("in area");
+                    view.data_manager.state.is_zoom = false;
                     let must_show_nodes = Object.keys(view.get_nodes()).map(d => parseInt(d));
                     console.log("now area", now_area);
                     view.data_manager.fetch_graph_node(must_show_nodes.concat(new_nodes), now_area,
@@ -160,6 +161,7 @@ let GraphTransform = function (parent) {
                 else {
                     // some selection nodes not in now area,need to zoom in to that area
                     console.log("out of area");
+                    view.data_manager.state.is_zoom = true;
                     // merge area
                     // get k and level
                     view.width = $("#graph-view-svg").width();
