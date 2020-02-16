@@ -1,9 +1,3 @@
-{#<div class="my-panel" @*style="display: none" *@>#}
-{#    <div>#}
-{#        <span class="my-panel-heading"> Control </span>#}
-{#    </div>#}
-{#    <hr class="my-panel-seg"/>#}
-{#</div>#}
 <div id="my-graph-left">
         <div id="setting">
             <div id="toolbar-title">SETTING</div>
@@ -24,35 +18,62 @@
                         </ul>
 
                     </div>
-            </label>
+                </label>
                 <div class="container-legend">
                     <span id="labeled-num" class="plain-text"> - Labeled data</span>
                     <span id="unlabeled-num" class="plain-text"> - Unlabeled data</span>
                 </div>
             </div>
             <div class="slider-container">
-                <span class="control-subtitle-font plain-text">Number of NN (k) for kNN graph</span>
-                <div class="range-slider">
-                  <input class="range-slider__range" type="range" value="0" min="0" max="20">
-                  <span class="range-slider__value">0</span>
-                    <svg class="range-slider__update" height="20px" viewBox="0 0 512 512" width="20px" opacity="0"><g>
-                        <rect x="-1000" y="-1000" width="2000" height="2000" opacity="0"></rect>
-                        <path fill="rgb(127,127,127)" opacity="0.7" d="m61.496094 279.609375c-.988282-8.234375-1.496094-16.414063-1.496094-23.609375 0-107.402344 88.597656-196 196-196 50.097656 0 97 20.199219 131.5 51.699219l-17.300781 17.601562c-3.898438 3.898438-5.398438 9.597657-3.898438 15 1.800781 5.097657 6 9 11.398438 10.199219 3.019531.605469 102.214843 32.570312 95.898437 31.300781 8.035156 2.675781 19.917969-5.894531 17.703125-17.699219-.609375-3.023437-22.570312-113.214843-21.300781-106.902343-1.199219-5.398438-5.101562-9.898438-10.5-11.398438-5.097656-1.5-10.800781 0-14.699219 3.898438l-14.699219 14.398437c-45.300781-42.296875-107.503906-68.097656-174.101562-68.097656-140.699219 0-256 115.300781-256 256v.597656c0 8.457032.386719 14.992188.835938 19.992188.597656 6.625 5.480468 12.050781 12.003906 13.359375l30.816406 6.160156c10.03125 2.007813 19.050781-6.402344 17.839844-16.5zm0 0"/>
-                        <path fill="rgb(127,127,127)" opacity="0.7" d="m499.25 222.027344-30.90625-6.296875c-10.042969-2.046875-19.125 6.371093-17.890625 16.515625 1.070313 8.753906 1.546875 17.265625 1.546875 23.753906 0 107.398438-88.597656 196-196 196-50.097656 0-97-20.199219-131.5-52l17.300781-17.300781c3.898438-3.898438 5.398438-9.597657 3.898438-15-1.800781-5.101563-6-9-11.398438-10.199219-3.019531-.609375-102.214843-32.570312-95.898437-31.300781-5.101563-.898438-10.203125.601562-13.5 4.199219-3.601563 3.300781-5.101563 8.699218-4.203125 13.5.609375 3.019531 22.574219 112.210937 21.304687 105.898437 1.195313 5.402344 5.097656 9.902344 10.496094 11.398437 6.261719 1.570313 11.488281-.328124 14.699219-3.898437l14.402343-14.398437c45.296876 42.300781 107.5 69.101562 174.398438 69.101562 140.699219 0 256-115.300781 256-256v-.902344c0-6.648437-.242188-13.175781-.796875-19.664062-.570313-6.628906-5.433594-12.074219-11.953125-13.40625zm0 0"/>
-                    </g></svg>
+                <div>
+                    <div class="control-subtitle-font plain-text">
+                        <span>Number of NN (k) for kNN graph:</span>
+                        <span id="k-value">3</span>
+                    </div>
+                    <div id="global-k-div">
+                        <input id="global-k" type="text"/>
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: center; align-items: center; width: 35%;">
+                    <button type="button" class="btn btn-outline-secondary">Load</button>
+                </div>
+                
+            </div>
+
+            <div id="toolbar-title">UPDATING</div>
+            <div class="plain-text">
+                <div id="update-range" class="update-info-row">
+                    <div  class="plain-text update-info-title">Searching range of k</div>
+                    <div class="update-info-content">
+                        <input id="local-k" type="text"/><br/>
+                    </div>
+                </div>
+                <div id="update-global-local" class="update-info-row">
+                    <div  class="plain-text update-info-title">Global or local</div>
+                    <div class="update-info-content">
+                        <button type="button" class="btn btn-outline-secondary">Global</button>
+                        <button type="button" class="btn btn-outline-secondary">Local</button>
+                    </div>
+                </div>
+                <div id="update-categories" class="update-info-row">
+                    <div class="plain-text update-info-title">Categories</div>
+                    <div class="update-info-content">
+                        <svg id="current-indegree-svg" class="widget-info-svg">
+                        </svg>
+                    </div>
+                </div>
+                <div id="update-button" class="update-info-row">
+                    <div class="update-info-button">
+                        <button type="button" class="btn btn-outline-secondary">Update</button>
+                    </div>
                 </div>
             </div>
-            <!-- <div class="slider-container">
-                <span class="control-subtitle-font">Edge filter</span>
-                <div class="range-slider">
-                  <input class="range-slider__range" type="range" value="90" min="0" max="100">
-                  <span class="range-slider__value">0</span>
-                </div>
-            </div> -->
-            <div id="toolbar-title">FILTER</div>
+
+            
+            <div id="toolbar-title">FILTERING</div>
             <div class="current-scented-widget-container">
                             <div id="current-label-widget" class="widget-info-widget">
-                                <div id="current-label-font" class="plain-text widget-info-font">Label</div>
+                                <div id="current-label-font" class="plain-text widget-info-font">Categories</div>
                                 <svg id="current-label-svg" class="widget-info-svg">
                                     <symbol id="check-select" viewBox="0 0 24 24">
                                         <path d="M10.041 17l-4.5-4.319 1.395-1.435 3.08 2.937 7.021-7.183 1.422 1.409-8.418 8.591zm-5.041-15c-1.654 0-3 1.346-3 3v14c0 1.654 1.346 3 3 3h14c1.654 0 3-1.346 3-3v-14c0-1.654-1.346-3-3-3h-14zm19 3v14c0 2.761-2.238 5-5 5h-14c-2.762 0-5-2.239-5-5v-14c0-2.761 2.238-5 5-5h14c2.762 0 5 2.239 5 5z"/>

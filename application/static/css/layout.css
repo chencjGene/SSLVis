@@ -97,10 +97,6 @@ body {
     border-top: 1px solid #c1c1c1;
 }
 
-.btn {
-    background-color: #26a69a;
-    text-transform: unset;
-}
 
 .modal {
     width: auto;

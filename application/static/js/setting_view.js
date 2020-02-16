@@ -232,33 +232,56 @@ f: {
 
 		form.f.init.register();
 
-		rangeSlider = function(){
-  	 slider = $('.range-slider');
-      range = $('.range-slider__range');
-      value = $('.range-slider__value');
+// 		rangeSlider = function(){
+//   	 slider = $('.range-slider');
+//       range = $('.range-slider__range');
+//       value = $('.range-slider__value');
 
-  slider.each(function(){
+//   slider.each(function(){
 
-    value.each(function(){
-      var value = $(this).prev().attr('value');
-      $(this).html(value);
-    });
+//     value.each(function(){
+//       var value = $(this).prev().attr('value');
+//       $(this).html(value);
+//     });
 
-    range.on('input', function(){
-      $(this).next(value).html(this.value);
-      k=parseInt(this.value);
-		if(update_k_btn.attr("opacity") == 0){
-			update_k_btn.attr("cursor", "pointer");
-			update_k_btn
-				.transition()
-				.duration(AnimationDuration)
-				.attr("opacity", 1);
-		}
-    });
-  });
-};
+//     range.on('input', function(){
+//       $(this).next(value).html(this.value);
+//       k=parseInt(this.value);
+// 		if(update_k_btn.attr("opacity") == 0){
+// 			update_k_btn.attr("cursor", "pointer");
+// 			update_k_btn
+// 				.transition()
+// 				.duration(AnimationDuration)
+// 				.attr("opacity", 1);
+// 		}
+//     });
+//   });
+// };
 
-		rangeSlider();
+// 		rangeSlider();
+
+		// global slider
+		$("#global-k").slider(
+			{ 
+				id: "slider1", 
+				min: 1, 
+				max: 12, 
+				range: false, 
+				value: 3
+			});
+		$("#global-k").on("slide", function(slideEvt) {
+			$("#k-value").text(slideEvt.value);
+		}); 
+
+		// local slider
+		$("#local-k").slider(
+			{ 
+				id: "slider2", 
+				min: 1, 
+				max: 12, 
+				range: true, 
+				value: [3,7]
+			});
 
 		that.update_k_btn_init();
 
@@ -274,8 +297,7 @@ f: {
 
 
     that.setk_ui = function(k) {
-    	range.val(k);
-		value.html(k);
+		
 	};
 
     that.update_k_btn_init = function(){
