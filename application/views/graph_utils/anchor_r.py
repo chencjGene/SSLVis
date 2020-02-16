@@ -40,6 +40,7 @@ class Anchors:
         self.remove_ids = []
         self.data_degree = None
         self.home = None
+        self.last_level = 0
 
     # added by Changjian
     # link this class to SSLModel and Data
@@ -205,10 +206,10 @@ class Anchors:
         # get new graph
         if level >= len(level_infos):
             level = len(level_infos) - 1
+
         if level == 0:
             _selection = level_infos[level]['index']
-            _pos = train_x_tsne[_selection]
-        else:
+        elif level != len(level_infos)-1 or self.last_level != len(level_infos)-1:
             _selection = []
             last_level = level_infos[level-1]['index']
             last_next = level_infos[level-1]['next']
@@ -223,7 +224,9 @@ class Anchors:
                     'height']:
                     tmp_cnt+=1
                     _selection += level_infos[level]["index"][last_next[i]].tolist()
-            _pos = train_x_tsne[_selection]
+        else:
+            _selection = level_infos[level]['index']
+        self.last_level = level
         tmp_selection = []
         tmp_cnt = 0
         for ind in _selection:
@@ -303,6 +306,7 @@ class Anchors:
         self.home = graph
         self.home_tsne = self.old_nodes_tsne
         self.home_tsne_ids = self.old_nodes_id
+        self.last_level = 0
         return graph
 
     def update_nodes(self, area, level, must_show_nodes = []):

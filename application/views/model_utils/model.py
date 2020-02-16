@@ -11,7 +11,7 @@ import copy
 
 
 from sklearn.neighbors import kneighbors_graph
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, confusion_matrix
 from sklearn.utils.extmath import safe_sparse_dot
 from sklearn.neighbors.unsupervised import NearestNeighbors
 from sklearn.exceptions import ConvergenceWarning
@@ -377,7 +377,7 @@ class SSLModel(object):
         test_y = self.data.get_test_ground_truth()
         nn_fit = self.data.get_neighbors_model()
         logger.info("nn construction finished!")
-        max_k = 30
+        max_k = 101
         neighbor_result = nn_fit.kneighbors_graph(test_X,
                                                   max_k,
                                                   mode="distance")
@@ -391,6 +391,7 @@ class SSLModel(object):
         neighbors_pred = []
         fs = []
         ks = []
+        f_tests = []
         for test_node_id in range(test_X.shape[0]):
             start = neighbor_result.indptr[test_node_id]
             end = neighbor_result.indptr[test_node_id + 1]
@@ -402,6 +403,7 @@ class SSLModel(object):
             min_f = np.finfo(np.float).max
             min_k = 0
             min_f_test = np.zeros((label_cnt))
+            sims = []
             for k in range(low_bound,max_k):
                 estimated_idxs = j_in_this_row[:k]
                 # get f_test
@@ -414,6 +416,7 @@ class SSLModel(object):
                 f_tmp = f_test / d_test - neighbor_tmp
                 f = np.sum(np.diagonal(np.dot(f_tmp, f_tmp.T)))
                 f = f / k
+                sims.append(f)
                 if f < min_f:
                     min_f = f
                     min_k = k
@@ -425,10 +428,12 @@ class SSLModel(object):
             ks.append(min_k)
             neighbors.append(j_in_this_row.tolist())
             neighbors_pred.append(np.argmax(pred[j_in_this_row], axis=1).tolist())
+            f_tests.append(f_test)
+        print(confusion_matrix(test_y, labels))
         acc = accuracy_score(test_y, labels)
         logger.info("test accuracy: {}".format(acc))
         print(s / test_X.shape[0])
-        return np.array(labels), np.array(fs), np.array(ks), np.array(neighbors), np.array(neighbors_pred)
+        return np.array(labels), np.array(fs), np.array(ks), np.array(neighbors), np.array(neighbors_pred), f_tests
 
 
     def get_in_out_degree(self, influence_matrix):
