@@ -90,8 +90,8 @@ class ExchangePortClass(object):
         print(res)
         return dist
 
-    def get_graph(self, filter_threshold=None):
-        graph = self.anchor.get_nodes()
+    def get_graph(self, filter_threshold=None, wh = 1):
+        graph = self.anchor.get_nodes(wh)
         for id in graph["nodes"]:
             self.current_ids.append(int(id))
         return jsonify(graph)

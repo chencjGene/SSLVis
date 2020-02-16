@@ -29,7 +29,7 @@ from .model_helper import propagation, approximated_influence, exact_influence
 from .model_update import local_search_k
 from .model_helper import build_laplacian_graph
 
-DEBUG = True
+DEBUG = False
 
 class SSLModel(object):
     def __init__(self, dataname, labeled_num=None, total_num=None, seed=123):
@@ -279,13 +279,13 @@ class SSLModel(object):
                 propagation_path_to[int(target_id)].append(int(node_id))
         return propagation_path_from, propagation_path_to
 
-    def evaluate(self):
+    def evaluate(self, n_neighbor = -1):
         train_X = self.data.get_train_X()
         test_X = self.data.get_test_X()
         test_y = self.data.get_test_ground_truth()
         pred = self.pred_dist
         nn_fit = self.data.get_neighbors_model()
-        weight_matrices = nn_fit.kneighbors(test_X, self.n_neighbor, return_distance=False)
+        weight_matrices = nn_fit.kneighbors(test_X, self.n_neighbor if n_neighbor==-1 else n_neighbor, return_distance=False)
         probabilities = np.array([
                 np.sum(pred[weight_matrix], axis=0)
                 for weight_matrix in weight_matrices])

@@ -16,8 +16,8 @@ def setK(k):
 def init_model(k, filter_threshold):
     exchange_port.init_model(k=k, filter_threshold=filter_threshold)
 
-def get_graph(filter_threshold=None):
-    return exchange_port.get_graph(filter_threshold=filter_threshold)
+def get_graph(filter_threshold=None, wh = 1):
+    return exchange_port.get_graph(filter_threshold=filter_threshold, wh = wh)
 
 def local_update_k(data):
     return exchange_port.local_update_k(data)

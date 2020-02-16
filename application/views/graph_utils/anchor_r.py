@@ -43,6 +43,7 @@ class Anchors:
         self.home = None
         self.last_level = 0
         self.entropy = None
+        self.rotate_matrix = np.array([[1,0],[0,1]])
 
     # added by Changjian
     # link this class to SSLModel and Data
@@ -60,6 +61,7 @@ class Anchors:
         self.tsne = None
         self.hierarchy_info = None
         self.data_degree = None
+        self.wh = 1
 
     def get_pred_labels(self):
         labels = self.model.get_pred_labels()
@@ -300,7 +302,22 @@ class Anchors:
     def get_init_tsne(self, selection):
         return self.tsne[selection]
 
-    def get_nodes(self):
+    def get_rotate_matrix(self, tsne, wh):
+        best_wh = -100
+        for degree in range(360):
+            rad = math.pi*degree/180
+            matrix = np.array([[np.cos(rad), -np.sin(rad)], [np.sin(rad), np.cos(rad)]])
+            pos = np.dot(tsne, matrix)
+            area = self.get_data_area(train_x_tsne=pos)
+            new_wh = area["width"]/area["height"]
+            if np.abs(new_wh-wh)<np.abs(best_wh-wh):
+                best_wh = new_wh
+                self.rotate_matrix = matrix
+        print("finish rotate matrix:{}, wh={}".format(self.rotate_matrix, best_wh))
+
+
+
+    def get_nodes(self, wh):
         self.remove_ids = self.model.data.get_removed_idxs()
         self.tsne = self.get_train_x_tsne()
         self.hierarchy_info = self.get_hierarchical_sampling()
@@ -308,6 +325,9 @@ class Anchors:
         # TODO  2020.2.15 change to init tsne
         # tsne = self.re_tsne(selection)
         tsne = self.get_init_tsne(selection)
+        # reset rotate matrix
+        self.get_rotate_matrix(tsne, wh)
+        tsne = np.dot(tsne, self.rotate_matrix)
 
         self.old_nodes_id = selection
         self.old_nodes_tsne = tsne
@@ -325,6 +345,7 @@ class Anchors:
         # TODO  2020.2.15 change to init tsne
         # tsne = self.re_tsne(selection, old_cnt)
         tsne = self.get_init_tsne(selection)
+        tsne = np.dot(tsne, self.rotate_matrix)
         self.old_nodes_id = selection
         self.old_nodes_tsne = tsne
         graph = self.convert_to_dict(selection, tsne)

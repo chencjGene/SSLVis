@@ -104,6 +104,7 @@ DataLoaderClass = function () {
     that.set_dataset = function(dataset) {
         that.dataset = dataset;
         that.graph_view.remove_all();
+        that.wh = Math.round(that.graph_view.width/that.graph_view.height * 100)/100;
         let params = "?dataset=" + that.dataset;
         that.manifest_node = new request_node(that.manifest_url + params,
             that.get_manifest_handler(function(){
@@ -111,7 +112,7 @@ DataLoaderClass = function () {
                 that.update_edit_info();
             }), "json", "GET");
 
-        that.graph_node = new request_node(that.graph_url + params,
+        that.graph_node = new request_node(that.graph_url + params+"&wh="+that.wh,
             that.get_graph_handler(that.get_graph_view), "json", "GET");
         that.graph_node.depend_on(that.manifest_node);
 
