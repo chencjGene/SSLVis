@@ -19,7 +19,7 @@ def main():
     print("use buffer")
     test_X = d.data.get_test_X()
     print("test_X.shape", test_X.shape)
-    d.init(k=3, evaluate=True, simplifying=False)
+    d.init(k=3, evaluate=True, simplifying=False); exit()
     train_pred = np.load(os.path.join(d.selected_dir, "train_pred.npy"))
     print("initial ent", entropy(train_pred.T + 1e-20).mean())
     train_labels = train_pred.argmax(axis=1)

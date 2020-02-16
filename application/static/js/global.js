@@ -24,6 +24,9 @@ let DataLoader = null;
 let GraphView = null;
 let LossView = null;
 let ImageView = null;
+let HistoryView = null;
+let EditView = null;
+let SettingView = null;
 
 /*
 *  Color
