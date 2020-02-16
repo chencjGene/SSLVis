@@ -47,7 +47,7 @@ class SSLModel(object):
         self.data = GraphData(self.dataname, labeled_num, total_num)
         # self.data.case_set_rest_idxs()
         self.selected_dir = self.data.selected_dir
-        self.n_neighbor = 5
+        self.n_neighbor = 3
         self.filter_threshold = 0.7
         logger.info("n_neighbor: {}".format(self.n_neighbor))
 
@@ -56,7 +56,7 @@ class SSLModel(object):
         self.propagation_path_to = None
         # self._get_signal_state()
 
-    def init(self, k=None, filter_threshold=None):
+    def init(self, k=None, filter_threshold=None, evaluate=True, simplifying=True):
         if k is not None:
             self.n_neighbor = k
         if filter_threshold is not None:
@@ -70,7 +70,7 @@ class SSLModel(object):
         self.propagation_path_from = None
         self.propagation_path_to = None
         self.simplified_affinity_matrix = None
-        self._training(evaluate=True)
+        self._training(evaluate=evaluate, simplifying=simplifying)
         logger.info("init finished")
 
     def setK(self, k=None):
@@ -82,7 +82,7 @@ class SSLModel(object):
         self.propagation_path_from = None
         self.propagation_path_to = None
 
-    def _training(self, rebuild=True, evaluate=False):
+    def _training(self, rebuild=True, evaluate=False, simplifying=True):
         self._clean_buffer()
         affinity_matrix = self.data.get_graph(self.n_neighbor, rebuild=rebuild)
         laplacian = build_laplacian_graph(affinity_matrix)
@@ -101,7 +101,7 @@ class SSLModel(object):
         self.labels = process_data.argmax(axis=2)
         self.unnorm_dist = unnorm_dist
         max_process_data = process_data.max(axis=2)
-        self.labels[max_process_data < 1e-20] = -1
+        self.labels[max_process_data == 0] = -1
         logger.info("unpropagated instance num: {}".format(sum(self.labels[-1]==-1)))
         class_list = np.unique(train_y)
         class_list.sort()
@@ -122,8 +122,9 @@ class SSLModel(object):
         # self.evaluate(); exit()
 
 
-        # get simplififed matrix asynchronously
-        self.simplify_influence_matrix()
+        if simplifying:
+            # get simplififed matrix asynchronously
+            self.simplify_influence_matrix()
 
         if evaluate:
             # self.evaluate()
@@ -239,8 +240,9 @@ class SSLModel(object):
             sleep(sleep_time)
             return False
 
-    def local_search_k(self, selected_idxs):
-        k_list = list(range(1,10))
+    def local_search_k(self, selected_idxs, k_list=None, simplifying=True):
+        if k_list is None:
+            k_list = list(range(1,10))
         train_gt = self.data.get_train_ground_truth()
         train_y = self.data.get_train_label()
         neighbors = self.data.get_neighbors()
@@ -259,8 +261,8 @@ class SSLModel(object):
         # self.affinity_matrix = affinity_matrix
         # self.laplacian = laplacian_matrix
         self.data.affinity_matrix = affinity_matrix
-        self._training(rebuild=False, evaluate=True)
-        return {"test": "success"}
+        self._training(rebuild=False, evaluate=True, simplifying=simplifying)
+        return pred
 
     def get_path_to_label(self, process_data, influence_matrix):
         iternum = process_data.shape[0]
@@ -293,12 +295,13 @@ class SSLModel(object):
         acc = accuracy_score(test_y, probabilities.argmax(axis=1))
         logger.info("test accuracy: {}".format(acc))
 
-    @async
-    def adaptive_evaluation(self):
+    # @async
+    def adaptive_evaluation(self, pred=None):
         train_X = self.data.get_train_X()
         affinity_matrix = self.data.get_graph()
         affinity_matrix.setdiag(0)
-        pred = self.pred_dist
+        if pred is None:
+            pred = self.pred_dist
         test_X = self.data.get_test_X()
         test_y = self.data.get_test_ground_truth()
         test_neighbors = self.data.get_test_neighbors()

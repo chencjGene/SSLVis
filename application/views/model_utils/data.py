@@ -159,6 +159,7 @@ class Data(object):
         y = np.ones(self.X.shape[0]) * -1
         y[np.array(self.selected_labeled_idx)] = self.y[np.array(self.selected_labeled_idx)]
         y = y[np.array(self.train_idx)]
+        # y[5300] = 5
         return y.astype(int)[self.rest_idxs]
 
     def get_full_train_X(self):
