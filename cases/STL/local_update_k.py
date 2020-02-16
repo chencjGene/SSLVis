@@ -25,6 +25,7 @@ def main():
     train_labels = train_pred.argmax(axis=1)
     train_gt = d.data.get_train_ground_truth()
 
+    np.random.seed(seed=123)
     selected_lizard = np.random.choice(lizard, 5, replace=False)
     selected_snake = np.random.choice(snake, 5, replace=False)
     d.data.label_instance(selected_lizard, [10, 10, 10, 10, 10])
