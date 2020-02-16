@@ -26,3 +26,10 @@ function change_dist_mode(){
         d3.select("#switch-label").text("Display changes only");
     }
 }
+
+function reset_spinner(){
+    $('#load-button').html("Load")
+        .attr("disabled", false);
+    $('#update-button').html("Update")
+    .attr("disabled", false);
+}

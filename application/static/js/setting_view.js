@@ -232,34 +232,6 @@ f: {
 
 		form.f.init.register();
 
-// 		rangeSlider = function(){
-//   	 slider = $('.range-slider');
-//       range = $('.range-slider__range');
-//       value = $('.range-slider__value');
-
-//   slider.each(function(){
-
-//     value.each(function(){
-//       var value = $(this).prev().attr('value');
-//       $(this).html(value);
-//     });
-
-//     range.on('input', function(){
-//       $(this).next(value).html(this.value);
-//       k=parseInt(this.value);
-// 		if(update_k_btn.attr("opacity") == 0){
-// 			update_k_btn.attr("cursor", "pointer");
-// 			update_k_btn
-// 				.transition()
-// 				.duration(AnimationDuration)
-// 				.attr("opacity", 1);
-// 		}
-//     });
-//   });
-// };
-
-// 		rangeSlider();
-
 		// global slider
 		$("#global-k").slider(
 			{ 
@@ -283,7 +255,19 @@ f: {
 				value: [3,7]
 			});
 
+		
+		$('#load-button').on('click', function() {
+			var $this = $(this);
+			$this.html('<span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span>Loading...').attr('disabled', true);
+		});
+
+		$('#update-button').on('click', function() {
+			var $this = $(this);
+			$this.html('<span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span>Updating...').attr('disabled', true);
+		});
+
 		that.update_k_btn_init();
+		that.update_categories_choice();
 
     };
 
@@ -299,6 +283,25 @@ f: {
     that.setk_ui = function(k) {
 		
 	};
+
+	that.update_categories_choice = function(){
+		let rect_width = 20; 
+		d3.select("#categories-checkbox")
+			.selectAll("rect").remove();
+		d3.select("#categories-checkbox")
+			.selectAll("rect")
+			.data(CategoryColor)
+			.enter()
+			.append("rect")
+			.attr("x", (d,i)=> rect_width * 1.1 * i)
+			.attr("y", 30 - rect_width / 2)
+			.attr("width", rect_width)
+			.attr("height", rect_width)
+			.attr("rx", rect_width / 4)
+			.attr("ry", rect_width / 4)
+			.attr("fill", d => d)
+			.attr("stroke", d => d)
+	}
 
     that.update_k_btn_init = function(){
     	update_k_btn = d3.select(".range-slider__update");
