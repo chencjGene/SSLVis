@@ -47,7 +47,7 @@ class SSLModel(object):
         self.data = GraphData(self.dataname, labeled_num, total_num)
         # self.data.case_set_rest_idxs()
         self.selected_dir = self.data.selected_dir
-        self.n_neighbor = 3
+        self.n_neighbor = 2
         self.filter_threshold = 0.7
         logger.info("n_neighbor: {}".format(self.n_neighbor))
 
@@ -295,9 +295,8 @@ class SSLModel(object):
         acc = accuracy_score(test_y, probabilities.argmax(axis=1))
         logger.info("test accuracy: {}".format(acc))
 
-    # @async
+    @async
     def adaptive_evaluation(self, pred=None):
-        train_X = self.data.get_train_X()
         affinity_matrix = self.data.get_graph()
         affinity_matrix.setdiag(0)
         if pred is None:

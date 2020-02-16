@@ -80,17 +80,7 @@ def propagation(graph_matrix, affinity_matrix, train_y, alpha=0.2, max_iter=30,
         ent = entropy(label.T + 1e-20)
         all_entropy.append(ent.sum())
 
-    n_iter_ = 0
-    # label_distributions_a = safe_sparse_dot(
-    #     graph_matrix, label_distributions_)
-    # t = ((label_distributions_ / D[:, np.newaxis]) ** 2).sum(axis=1)
-    # loss = safe_sparse_dot(affinity_matrix.sum(axis=1).T, t) * 0.5 + \
-    #        safe_sparse_dot(affinity_matrix.sum(axis=0), t) * 0.5 - \
-    #        np.dot(label_distributions_.reshape(-1),
-    #               label_distributions_a.reshape(-1))
-    # loss = loss[0,0] + alpha / (1 - alpha) * paired_distances(label_distributions_[labeled],
-    #                                                      y_static_labeled[labeled]).sum()
-    # all_loss.append(loss)
+    n_iter_ = 1
     print("graph_matrix.shape:", graph_matrix.shape)
     print("label_distributions_.shape:", label_distributions_.shape)
     for _ in range(max_iter):
@@ -123,18 +113,6 @@ def propagation(graph_matrix, affinity_matrix, train_y, alpha=0.2, max_iter=30,
         # loss[0, 0]: read the only-one value in a numpy.matrix variable
         loss = loss[0, 0] + alpha / (1 - alpha) * paired_distances(label_distributions_[labeled],
                                                                    y_static_labeled[labeled]).sum()
-        # norm_dist = l_previous / D[:, np.newaxis]
-        # mat = np.dot(norm_dist, norm_dist.T)
-        # t = ((l_previous / D[:, np.newaxis]) ** 2).sum(axis=1)
-        # a = (affinity_matrix * t[:, np.newaxis]) * 0.5
-        # b = (affinity_matrix * t) * 0.5
-        # c = mat * affinity_matrix
-        # loss = a.sum() + b.sum() - c.sum()
-        # loss2 = euclidean_distances(norm_dist, norm_dist, squared=True)
-        # # loss2 = (0.5 * affinity_matrix.toarray() * loss2).sum()
-        # loss2 = (0.5 * affinity_matrix * loss2).sum()
-        # loss = loss2 + alpha / (1 - alpha) * paired_distances(label_distributions_[labeled],
-        #                                                      y_static_labeled[labeled]).sum()
         all_loss.append(loss)
 
     else:
@@ -159,6 +137,24 @@ def propagation(graph_matrix, affinity_matrix, train_y, alpha=0.2, max_iter=30,
 
     if process_data is not None:
         process_data = np.array(process_data)
+
+        labels = process_data.argmax(axis=2)
+        max_process_data = process_data.max(axis=2)
+        labels[max_process_data == 0] = -1
+
+        # remove unnecessary iterations
+        assert n_iter_ == len(process_data)
+        new_iter_num = n_iter_ - 1
+        for new_iter_num in range(n_iter_ - 1, 0, -1):
+            if sum(labels[new_iter_num - 1] != labels[n_iter_- 1]) != 0:
+                break
+
+        process_data[new_iter_num] = process_data[n_iter_ - 1]
+        process_data = process_data[:new_iter_num + 1]
+        all_loss[new_iter_num] = all_loss[n_iter_ - 1]
+        all_loss = all_loss[:new_iter_num + 1]
+        all_entropy[new_iter_num] = all_entropy[n_iter_ - 1]
+        all_entropy = all_entropy[:new_iter_num + 1]
 
     return label_distributions_, all_loss, all_entropy, process_data, unnorm_dist
 
