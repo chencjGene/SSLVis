@@ -279,7 +279,6 @@ class SSLModel(object):
                 propagation_path_to[int(target_id)].append(int(node_id))
         return propagation_path_from, propagation_path_to
 
-    @async
     def evaluate(self):
         train_X = self.data.get_train_X()
         test_X = self.data.get_test_X()
@@ -294,6 +293,7 @@ class SSLModel(object):
         probabilities /= normalizer
         acc = accuracy_score(test_y, probabilities.argmax(axis=1))
         logger.info("test accuracy: {}".format(acc))
+        return probabilities.argmax(axis=1)
 
     # @async
     def adaptive_evaluation(self, pred=None):
@@ -382,7 +382,7 @@ class SSLModel(object):
                                                   max_k,
                                                   mode="distance")
         s = 0
-        low_bound = 5
+        low_bound = 3
         degree = self.get_in_out_degree(affinity_matrix)[:,1]
         degree = np.sqrt(1/degree)
         labels = []
@@ -428,7 +428,7 @@ class SSLModel(object):
             ks.append(min_k)
             neighbors.append(j_in_this_row.tolist())
             neighbors_pred.append(np.argmax(pred[j_in_this_row], axis=1).tolist())
-            f_tests.append(f_test)
+            f_tests.append(min_f_test)
         print(confusion_matrix(test_y, labels))
         acc = accuracy_score(test_y, labels)
         logger.info("test accuracy: {}".format(acc))

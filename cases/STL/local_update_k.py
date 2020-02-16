@@ -28,7 +28,7 @@ def main():
     selected_lizard = np.random.choice(lizard, 5, replace=False)
     selected_snake = np.random.choice(snake, 5, replace=False)
     d.data.label_instance(selected_lizard, [10, 10, 10, 10, 10])
-    # d.data.label_instance(selected_snake, [11, 11, 11, 11, 11])
+    d.data.label_instance(selected_snake, [11, 11, 11, 11, 11])
     train_y = d.data.get_train_label()
     print(np.bincount(train_y + 1))
     test_gt = d.data.get_test_ground_truth()

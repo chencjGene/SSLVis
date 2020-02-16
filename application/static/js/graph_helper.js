@@ -1,10 +1,11 @@
 GraphLayout.prototype.get_uncertainty = function(node) {
-    let scores = node.score[node.score.length-1];
-    let sort_score = JSON.parse(JSON.stringify(scores));
-    sort_score.sort(function(a,b){return parseFloat(a)-parseFloat(b)});
-    let uncertainty = sort_score[sort_score.length-1]-sort_score[sort_score.length-2];
-    // change certainty to uncertainty
-    return  1-uncertainty;
+    return node.entropy;
+    // let scores = node.score[node.score.length-1];
+    // let sort_score = JSON.parse(JSON.stringify(scores));
+    // sort_score.sort(function(a,b){return parseFloat(a)-parseFloat(b)});
+    // let uncertainty = sort_score[sort_score.length-1]-sort_score[sort_score.length-2];
+    // // change certainty to uncertainty
+    // return  1-uncertainty;
 };
 
 GraphLayout.prototype.get_top_k_uncertainty = function(nodes, k) {

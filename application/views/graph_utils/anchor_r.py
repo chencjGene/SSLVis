@@ -7,6 +7,7 @@ from scipy.spatial import distance_matrix
 from matplotlib import pyplot as plt
 import math
 import time
+from scipy.stats import entropy
 import math
 
 from ..utils.config_utils import config
@@ -33,7 +34,7 @@ class Anchors:
         # variables
         self.tsne = None
         self.full_x = None
-        self.entropy = None
+        self.margin = None
         self.old_nodes_id = []
         self.old_nodes_tsne = None
         self.hierarchy_info = None
@@ -41,6 +42,7 @@ class Anchors:
         self.data_degree = None
         self.home = None
         self.last_level = 0
+        self.entropy = None
 
     # added by Changjian
     # link this class to SSLModel and Data
@@ -54,6 +56,7 @@ class Anchors:
         self.old_nodes_id = []
         self.old_nodes_tsne = None
         self.entropy = None
+        self.margin = None
         self.tsne = None
         self.hierarchy_info = None
         self.data_degree = None
@@ -111,9 +114,9 @@ class Anchors:
             with open(self.hierarchy_info_path, "rb") as f:
                 self.hierarchy_info = pickle.load(f)
         else:
-            if self.entropy == None:
-                self.entropy = self.get_entropy(self.model.process_data)
-            hierarchical_info = self.construct_hierarchical_sampling(self.full_x, self.entropy, target_num=500)
+            if self.margin == None:
+                self.margin = self.get_margin(self.model.process_data)
+            hierarchical_info = self.construct_hierarchical_sampling(self.full_x, self.margin, target_num=500)
             with open(self.hierarchy_info_path, "wb") as f:
                 pickle.dump(hierarchical_info, f)
             self.hierarchy_info = hierarchical_info
@@ -158,7 +161,7 @@ class Anchors:
 
         return level_infos
 
-    def get_entropy(self, process_data):
+    def get_margin(self, process_data):
         iter_num = process_data.shape[0]
         node_num = process_data.shape[1]
         entropy = np.ones((node_num))
@@ -168,6 +171,13 @@ class Anchors:
             entropy[i] = sort_res[1] - sort_res[0]
         logger.info("finish entropy")
         return entropy
+
+    def get_entropy(self):
+        self.entropy = entropy(self.model.pred_dist.T+1e-20)
+        self.entropy = np.clip(self.entropy, 0, 10000)
+        self.entropy /= np.max(self.entropy)
+        return self.entropy
+
 
     def get_data_area(self, ids = None, train_x_tsne = None):
         assert ids is not None or train_x_tsne is not None
@@ -337,6 +347,8 @@ class Anchors:
         degree = self.data_degree
         m = self.data.get_new_id_map()
         m_reverse = self.data.get_new_map_reverse()
+        if self.entropy is None:
+            self.entropy = self.get_entropy()
         # selection = [m[i] for i in selection]
         def mapfunc(id):
             return int(m_reverse[id])
@@ -362,7 +374,8 @@ class Anchors:
                 "from":-1 if propagation_path_from is None else list(map(mapfunc, propagation_path_from[m[id]])),
                 "to": -1 if propagation_path_to is None else list(map(mapfunc, propagation_path_to[m[id]])),
                 "in_degree": int(degree[m[id]][1]),
-                "out_degree": int(degree[m[id]][0])
+                "out_degree": int(degree[m[id]][0]),
+                "entropy": float(self.entropy[m[id]])
             }
         graph = {
             "nodes":samples_nodes

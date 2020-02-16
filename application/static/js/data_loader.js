@@ -333,9 +333,8 @@ DataLoaderClass = function () {
             let scores = nodes[node_id].score[iter];
             let sort_score = JSON.parse(JSON.stringify(scores));
             sort_score.sort(function(a,b){return parseFloat(a)-parseFloat(b)});
-            let uncertainty = sort_score[sort_score.length-1]-sort_score[sort_score.length-2];
+            let uncertainty = nodes[node_id].entropy;
             // change certainty to uncertainty
-            uncertainty = 1-uncertainty;
             let distribution_box = certainty_distribution[uncertainty_interval_idx(uncertainty)];
             distribution_box.push(node_id);
         }
