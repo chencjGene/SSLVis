@@ -12,7 +12,7 @@ import math
 
 from ..utils.config_utils import config
 from ..utils.log_utils import logger
-from ..graph_utils.IncrementalTSNE import IncrementalTSNE
+from ..graph_utils.IncrementalTSNE2 import IncrementalTSNE
 from ..graph_utils.ConstraintTSNE import ConstraintTSNE
 from ..graph_utils.DensityBasedSampler import DensityBasedSampler
 from ..graph_utils.BlueNoiseSampler import BlueNoiseSampC as BlueNoiseSampler
@@ -336,11 +336,15 @@ class Anchors:
         self.old_nodes_tsne = tsne
         graph = self.convert_to_dict(selection, tsne)
         graph["area"] = self.get_data_area(train_x_tsne=tsne)
+        graph["area"]["x"] -= 6
+        graph["area"]["y"] -= 3
+        graph["area"]["width"] += 12
+        graph["area"]["height"] += 12
         self.home = graph
         self.home_tsne = self.old_nodes_tsne
         self.home_tsne_ids = self.old_nodes_id
         self.last_level = 0
-        self.aggregate.aggregate(self.full_x[self.home_tsne_ids], k=10)
+        self.aggregate.aggregate(self.tsne[self.home_tsne_ids], k=10)
         self.aggregate.reset_labels(self.model.get_pred_labels()[self.home_tsne_ids])
         aggregate = {}
         for i, label in enumerate(self.aggregate.labels.tolist()):
