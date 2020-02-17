@@ -320,14 +320,15 @@ class Anchors:
     def get_nodes(self, wh):
         self.remove_ids = self.model.data.get_removed_idxs()
         self.tsne = self.get_train_x_tsne()
+        # reset rotate matrix
+        self.get_rotate_matrix(self.tsne, wh)
+        self.tsne = np.dot(self.tsne, self.rotate_matrix)
         self.hierarchy_info = self.get_hierarchical_sampling()
         selection = np.array(self.hierarchy_info[0]["index"]).tolist()
         # TODO  2020.2.15 change to init tsne
         # tsne = self.re_tsne(selection)
         tsne = self.get_init_tsne(selection)
-        # reset rotate matrix
-        # self.get_rotate_matrix(tsne, wh)
-        tsne = np.dot(tsne, self.rotate_matrix)
+
 
         self.old_nodes_id = selection
         self.old_nodes_tsne = tsne
@@ -339,13 +340,23 @@ class Anchors:
         self.last_level = 0
         return graph
 
+    def rotate_area(self, area):
+        area_matrix = np.array([[area["x"], area["y"]], [area["x"]+area["width"], area["y"]+area["height"]]])
+        new_area_matrix = np.dot(np.linalg.inv(self.rotate_matrix), area_matrix)
+        return {
+            "x":new_area_matrix[0][0],
+            "y":new_area_matrix[0][1],
+            "width":new_area_matrix[1][0]-new_area_matrix[0][0],
+            "height":new_area_matrix[1][1]-new_area_matrix[0][1]
+        }
+
     def update_nodes(self, area, level, must_show_nodes = []):
+        # area = self.rotate_area(area)
         self.remove_ids = self.model.data.get_removed_idxs()
         selection, old_cnt = self.get_data_selection(area, level, must_show_nodes)
         # TODO  2020.2.15 change to init tsne
         # tsne = self.re_tsne(selection, old_cnt)
         tsne = self.get_init_tsne(selection)
-        tsne = np.dot(tsne, self.rotate_matrix)
         self.old_nodes_id = selection
         self.old_nodes_tsne = tsne
         graph = self.convert_to_dict(selection, tsne)

@@ -110,7 +110,7 @@ let GraphTransform = function (parent) {
         // else {
             transform = d3.event.transform;
         // }
-    console.log("zoom end", d3.event.transform.x, d3.event.transform.y,d3.event.transform.k)
+        console.log("zoom end", d3.event.transform.x, d3.event.transform.y,d3.event.transform.k)
     };
 
     that.set_zoom = function () {

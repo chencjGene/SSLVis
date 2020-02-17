@@ -147,7 +147,7 @@ def playground():
     for k,i in [[2,5]]:
         inds = train_gt == i
         inds[train_pred == i] = False
-        selected_idxs = np.array(range(len(inds)))[inds]
+        gt_selected_idxs = np.array(range(len(inds)))[inds]
         selected_idxs = [14, 15, 29, 110, 163, 194, 243, 281, 311, 323, 343, 352, 427, 471, 500, 534, 535, 554, 572,
                          596, 681, 808, 822, 858, 864, 865, 1025, 1076, 1104, 1121, 1216, 1225, 1288, 1300, 1310, 1347,
                          1355, 1394, 1401, 1524, 1594, 1615, 1814, 1872, 2045, 2067, 2097, 2132, 2177, 2243, 2279, 2325,
