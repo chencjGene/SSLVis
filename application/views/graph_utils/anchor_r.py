@@ -19,6 +19,7 @@ from ..graph_utils.BlueNoiseSampler import BlueNoiseSampC as BlueNoiseSampler
 from sklearn.manifold import TSNE
 from ..graph_utils.RandomSampler import random_sample
 from sklearn.neighbors import BallTree
+from ..graph_utils.aggregation import Aggregation
 
 class Anchors:
     def __init__(self):
@@ -44,6 +45,7 @@ class Anchors:
         self.last_level = 0
         self.entropy = None
         self.rotate_matrix = np.array([[1,0],[0,1]])
+        self.aggregate = Aggregation()
 
     # added by Changjian
     # link this class to SSLModel and Data
@@ -338,6 +340,12 @@ class Anchors:
         self.home_tsne = self.old_nodes_tsne
         self.home_tsne_ids = self.old_nodes_id
         self.last_level = 0
+        self.aggregate.aggregate(self.full_x[self.home_tsne_ids], k=10)
+        self.aggregate.reset_labels(self.model.get_pred_labels()[self.home_tsne_ids])
+        aggregate = {}
+        for i, label in enumerate(self.aggregate.labels.tolist()):
+            aggregate[self.home_tsne_ids[i]] = label
+        graph["aggregate"] = aggregate
         return graph
 
     def rotate_area(self, area):

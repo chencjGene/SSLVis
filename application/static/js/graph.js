@@ -46,6 +46,7 @@ let GraphLayout = function (container) {
     let glyphs = [];
     let iter = -1;
     let visible_items = {};
+    let aggregate = [];
 
     // from area to main group
     that.center_scale_x = null;
@@ -103,6 +104,7 @@ let GraphLayout = function (container) {
         rescale = state.rescale;
         visible_items = state.visible_items;
         glyphs = state.glyphs;
+        aggregate = state.aggregate;
         // path
         path = [];
         path_nodes = {};
@@ -624,7 +626,42 @@ let GraphLayout = function (container) {
 
     that.get_wh = function(){
         return that.width / that.height;
-    }
+    };
+
+    that.draw_aggregate = function(){
+
+        // let clusters = {};
+        // let mnodes = Object.values(nodes);
+        // for(let i=0; i<mnodes.length; i++){
+        //     let node = mnodes[i];
+        //     let cluster_id = aggregate[i];
+        //     if(clusters[cluster_id] === undefined){
+        //         clusters[cluster_id] = [];
+        //     }
+        //     clusters[cluster_id].push(node.id);
+        // }
+        // clusters = Object.values(clusters);
+        nodes_in_group.attr("fill", function (d, j) {
+            return color_label[aggregate[d.id]];
+        })
+        // draw clusters
+        // that.main_group.append("g").selectAll("polygon")
+        //     .data(Object.values(clusters))
+        //     .enter().append("polygon")
+        //     .attr("points",function(d) {
+        //         let convexhull = new ConvexHullGrahamScan();
+        //         for(let node of d){
+        //             convexhull.addPoint(node.x, node.y)
+        //         }
+        //         let hullPoints = convexhull.getHull();
+        //         return hullPoints.map(function(d) {
+        //             return [that.center_scale_x(d.x),that.center_scale_y(d.y)].join(",");
+        //         }).join(" ");
+        //     })
+        //     .attr("fill-opacity", 0)
+        //     .attr("stroke-width", 2)
+        //     .attr("stroke", "rgb(127,127,127)");
+    };
 
     // that.get_area = function(){
     //     return transform_plg.get_area();
