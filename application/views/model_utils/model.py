@@ -47,7 +47,7 @@ class SSLModel(object):
         self.data = GraphData(self.dataname, labeled_num, total_num)
         # self.data.case_set_rest_idxs()
         self.selected_dir = self.data.selected_dir
-        self.n_neighbor = 2
+        self.n_neighbor = 6
         self.filter_threshold = 0.7
         logger.info("n_neighbor: {}".format(self.n_neighbor))
 
@@ -70,6 +70,8 @@ class SSLModel(object):
         self.propagation_path_from = None
         self.propagation_path_to = None
         self.simplified_affinity_matrix = None
+        # # TODO: for debug
+        # self.case_labeling()
         self._training(evaluate=evaluate, simplifying=simplifying)
         logger.info("init finished")
 
@@ -295,7 +297,7 @@ class SSLModel(object):
         logger.info("test accuracy: {}".format(acc))
         return probabilities.argmax(axis=1)
 
-    @async
+    # @async
     def adaptive_evaluation(self, pred=None):
         affinity_matrix = self.data.get_graph()
         affinity_matrix.setdiag(0)
@@ -531,3 +533,29 @@ class SSLModel(object):
     def retrain(self):
         self._training()
         return self.data.return_state()
+
+    def case_labeling(self):
+        lizard = [52, 225, 232, 415, 561, 615, 1009, 1026, 1224, 1246, 1478, 1514, 1657, 1933, 2009, 2065, 2160, 2629,
+                  2920, 2925, 3005, 3112, 3281, 3435, 3717, 3979, 3981, 3997, 4428, 4463, 4505, 4522, 4649, 4720, 4773,
+                  4827, 4914, 5045, 5055, 5142, 5211, 5480, 5491, 5493, 5606, 5631, 6038, 6281, 6594, 6706, 6774, 6819,
+                  6909, 6929, 6942, 7171, 7362, 7503, 7681, 7686, 7897, 7992, 8041, 8067, 8194, 8294, 8405, 8428, 8559,
+                  8579, 8621, 8632, 8948, 9076, 9286, 9346, 9422, 9571, 9783, 9812, 9897, 10124, 10196, 10329, 10432,
+                  10452, 10627, 10814, 10841, 10914, 10989, 11025, 11201, 11248, 11337, 11385, 11515, 11645, 11730,
+                  11844, 11959, 12174, 12298, 12439, 12446, 12559, 12958, 13052, 13158, 13294, 13296, 13436, 13699,
+                  13882, 14089, 14259, 14486, 14643, 14685, 14953, 15010, 15252, 15368, 15417, 15593, 15769, 15779,
+                  15795, 15851, 15879, 15995, 16115, 16125, 16177, 16217, 16500, 16527, 16604, 16721, 16749, 16794,
+                  16955, 16996, 17050, 17253, 17266, 17698, 17754, 17834, 17836, 17989, 18033, 18119, 18158, 18192,
+                  18211, 18407, 18496, 18500, 18535, 18785, 18829, 18980, 19008, 19241, 19306, 19477, 19529, 19798,
+                  19825, 19943]
+        snake = [56, 240, 689, 1032, 1048, 1513, 2043, 2061, 2134, 2302, 2944, 3408, 3568, 3642, 3813, 4434, 4614, 4635,
+                 4799, 4814, 5036, 5109, 5516, 6174, 6243, 6382, 6442, 6451, 6499, 6719, 6729, 6852, 6980, 7274, 7481,
+                 7994, 8076, 8668, 9152, 9787, 9990, 10015, 10071, 10247, 10279, 10529, 10629, 10772, 10788, 10908,
+                 10976, 11410, 11554, 11948, 12002, 12006, 12817, 13020, 13441, 13464, 13532, 13877, 14098, 14316,
+                 14335, 14337, 14428, 14810, 15620, 15662, 15831, 17106, 17225, 17229, 17415, 18360, 18870, 19103,
+                 19244, 19590, 19704]
+        np.random.seed(seed=123)
+        selected_lizard = np.random.choice(lizard, 5, replace=False)
+        selected_snake = np.random.choice(snake, 5, replace=False)
+        self.data.label_instance(selected_lizard, [10, 10, 10, 10, 10])
+        self.data.label_instance(selected_snake, [11, 11, 11, 11, 11])
+        self.data.label_instance([2243, 10489], [5,5])

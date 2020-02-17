@@ -214,8 +214,8 @@ class Data(object):
             # self.train_y[idx] = label
             self.y[self.train_idx[idx]] = label
             self.selected_labeled_idx = np.append(self.selected_labeled_idx, self.train_idx[idx])
-        labeled_num = sum(self.train_y != -1)
-        logger.info("labeled data num: {}".format(labeled_num))
+        # labeled_num = sum(self.train_y != -1)
+        # logger.info("labeled data num: {}".format(labeled_num))
 
 
 class GraphData(Data):

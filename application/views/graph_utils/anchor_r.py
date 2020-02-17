@@ -326,7 +326,7 @@ class Anchors:
         # tsne = self.re_tsne(selection)
         tsne = self.get_init_tsne(selection)
         # reset rotate matrix
-        self.get_rotate_matrix(tsne, wh)
+        # self.get_rotate_matrix(tsne, wh)
         tsne = np.dot(tsne, self.rotate_matrix)
 
         self.old_nodes_id = selection
