@@ -29,7 +29,7 @@ from .model_helper import propagation, approximated_influence, exact_influence
 from .model_update import local_search_k
 from .model_helper import build_laplacian_graph
 
-DEBUG = False
+DEBUG = True
 
 class SSLModel(object):
     def __init__(self, dataname, labeled_num=None, total_num=None, seed=123):
@@ -281,6 +281,7 @@ class SSLModel(object):
                 propagation_path_to[int(target_id)].append(int(node_id))
         return propagation_path_from, propagation_path_to
 
+    @async
     def evaluate(self, n_neighbor = -1):
         train_X = self.data.get_train_X()
         test_X = self.data.get_test_X()
@@ -297,7 +298,7 @@ class SSLModel(object):
         logger.info("test accuracy: {}".format(acc))
         return probabilities.argmax(axis=1)
 
-    # @async
+    @async
     def adaptive_evaluation(self, pred=None):
         affinity_matrix = self.data.get_graph()
         affinity_matrix.setdiag(0)
@@ -307,11 +308,12 @@ class SSLModel(object):
         test_y = self.data.get_test_ground_truth()
         test_neighbors = self.data.get_test_neighbors()
         logger.info("neighbor_result got!")
-        estimate_k = 5
+        estimate_k = 3
         s = 0
         labels = []
         rest_idxs = self.data.get_rest_idxs()
         m = self.data.get_new_id_map()
+        adaptive_ks = []
         for i in tqdm(range(test_X.shape[0])):
             j_in_this_row = test_neighbors[i, :]
             j_in_this_row = j_in_this_row[j_in_this_row != -1]
@@ -323,13 +325,14 @@ class SSLModel(object):
             p = pred[selected_idxs].sum(axis=0)
             labels.append(p.argmax())
             s += adaptive_k
+            adaptive_ks.append(adaptive_k)
 
         acc = accuracy_score(test_y, labels)
         logger.info("test accuracy: {}".format(acc))
         print(s / test_X.shape[0])
-        return labels
+        return labels, np.array(adaptive_ks)
 
-    # @async
+    @async
     def adaptive_evaluation_bkp(self):
         train_X = self.data.get_train_X()
         affinity_matrix = self.data.get_graph()
@@ -378,7 +381,7 @@ class SSLModel(object):
         test_y = self.data.get_test_ground_truth()
         nn_fit = self.data.get_neighbors_model()
         logger.info("nn construction finished!")
-        max_k = 101
+        max_k = 31
         neighbor_result = nn_fit.kneighbors_graph(test_X,
                                                   max_k,
                                                   mode="distance")
