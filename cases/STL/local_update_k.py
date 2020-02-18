@@ -90,7 +90,7 @@ def change_local(selected_idxs, neighbors, affinity_matrix, local_k):
     affinity_matrix[selected_idxs, :] = selected_affinity_matrix
     affinity_matrix = sparse.csr_matrix(affinity_matrix)
 
-    affinity_matrix = affinity_matrix + affinity_matrix.T
+    # affinity_matrix = affinity_matrix + affinity_matrix.T
     affinity_matrix = sparse.csr_matrix((np.ones(len(affinity_matrix.data)).tolist(),
                                          affinity_matrix.indices, affinity_matrix.indptr),
                                         shape=(instance_num, instance_num))
@@ -133,6 +133,7 @@ def playground():
     d = SSLModel(config.stl, labeled_num=50, total_num=20000, seed=123)
     neighbors = np.load(os.path.join(d.selected_dir, "neighbors.npy"))
     d.case_labeling()
+    d.case_labeling2()
     d.init(k=6, evaluate=False, simplifying=False)
     back_up_affinity_matrix = d.data.affinity_matrix.copy()
     # test_pred = d.adaptive_evaluation()
@@ -143,25 +144,24 @@ def playground():
     train_gt = d.data.get_train_ground_truth()
     affinity_matrix = back_up_affinity_matrix.copy()
     # for k,i in [[2,7], [2,6],[2,5]]:
-    # for k,i in [[2,7], [2,6],[2,5]]:
-    for k,i in [[2,5]]:
+    for k,i in [[2,7], [2,6],[2,5]]:
+    # for k,i in [[2,5]]:
         inds = train_gt == i
         inds[train_pred == i] = False
         selected_idxs = np.array(range(len(inds)))[inds]
-        affinity_matrix = change_local(selected_idxs, neighbors, affinity_matrix,
-                                       k)
-    for i in [2,3,5,6]:
-        inds = train_gt == i
-        inds[train_pred == i] = False
-        selected_idxs = np.array(range(len(inds)))[inds]
-        for idx in selected_idxs:
-            nei_idx = affinity_matrix[idx, :].indices
-            for s in nei_idx:
-                if train_gt[s] != i:
-                    affinity_matrix[idx, s] = 0
+        affinity_matrix = change_local(selected_idxs, neighbors, affinity_matrix, k)
+    # for i in [2,3,5,6]:
+    #     inds = train_gt == i
+    #     inds[train_pred == i] = False
+    #     selected_idxs = np.array(range(len(inds)))[inds]
+    #     for idx in selected_idxs:
+    #         nei_idx = affinity_matrix[idx, :].indices
+    #         for s in nei_idx:
+    #             if train_gt[s] != i:
+    #                 affinity_matrix[idx, s] = 0
     d.data.affinity_matrix = affinity_matrix
     d._training(rebuild=False, evaluate=False, simplifying=False)
-    new_test_pred = np.array(d.adaptive_evaluation())
+    new_test_pred, _ = np.array(d.adaptive_evaluation())
     acc = accuracy_score(test_gt, new_test_pred)
     ent = entropy(d.pred_dist.T + 1e-20).mean()
     s = "k: {}, i: {}, acc: {}, ent: {}, edge_sum: {}".format(k, i, acc, ent,
@@ -195,4 +195,4 @@ def remove_edge():
 
 
 if __name__ == '__main__':
-    test_API()
+    playground()

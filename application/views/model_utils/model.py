@@ -560,4 +560,6 @@ class SSLModel(object):
         selected_snake = np.random.choice(snake, 5, replace=False)
         self.data.label_instance(selected_lizard, [10, 10, 10, 10, 10])
         self.data.label_instance(selected_snake, [11, 11, 11, 11, 11])
-        # self.data.label_instance([2243, 10489], [5,5])
+
+    def case_labeling2(self):
+        self.data.label_instance([2243, 10489], [5,5])
