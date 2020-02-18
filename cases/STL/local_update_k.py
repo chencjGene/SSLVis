@@ -195,4 +195,4 @@ def remove_edge():
 
 
 if __name__ == '__main__':
-    playground()
+    test_API()
