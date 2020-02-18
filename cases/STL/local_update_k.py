@@ -19,7 +19,7 @@ def main():
     print("use buffer")
     test_X = d.data.get_test_X()
     print("test_X.shape", test_X.shape)
-    d.init(k=3, evaluate=True, simplifying=False); exit()
+    d.init(k=6, evaluate=True, simplifying=False)
     train_pred = np.load(os.path.join(d.selected_dir, "train_pred.npy"))
     print("initial ent", entropy(train_pred.T + 1e-20).mean())
     train_labels = train_pred.argmax(axis=1)
@@ -71,5 +71,128 @@ def main():
     selected_c3_idxs = selected_idxs[idxs]
     d.local_search_k(selected_c3_idxs, simplifying=False, k_list=list(range(1,3))); exit()
 
+def test_API():
+    d = SSLModel(config.stl, labeled_num=50, total_num=20000, seed=123)
+    d.case_labeling()
+    d.init(k=6, evaluate=True, simplifying=False)
+
+def change_local(selected_idxs, neighbors, affinity_matrix, local_k):
+    from scipy import sparse
+    selected_num = len(selected_idxs)
+    instance_num = neighbors.shape[0]
+    indptr = [i * local_k for i in range(selected_num + 1)]
+    indices = neighbors[selected_idxs][:, :local_k].reshape(-1).tolist()
+    data = neighbors[selected_idxs][:, :local_k].reshape(-1)
+    data = (data * 0 + 1.0).tolist()
+    selected_affinity_matrix = sparse.csr_matrix((data, indices, indptr),
+                                                 shape=(selected_num, instance_num)).toarray()
+    affinity_matrix = affinity_matrix.toarray()
+    affinity_matrix[selected_idxs, :] = selected_affinity_matrix
+    affinity_matrix = sparse.csr_matrix(affinity_matrix)
+
+    affinity_matrix = affinity_matrix + affinity_matrix.T
+    affinity_matrix = sparse.csr_matrix((np.ones(len(affinity_matrix.data)).tolist(),
+                                         affinity_matrix.indices, affinity_matrix.indptr),
+                                        shape=(instance_num, instance_num))
+    return affinity_matrix
+
+def traversal():
+    d = SSLModel(config.stl, labeled_num=50, total_num=20000, seed=123)
+    neighbors = np.load(os.path.join(d.selected_dir, "neighbors.npy"))
+    d.case_labeling()
+    d.init(k=6, evaluate=False, simplifying=False)
+    back_up_affinity_matrix = d.data.affinity_matrix.copy()
+    test_pred = d.adaptive_evaluation()
+    train_pred = d.labels[-1]
+    test_pred = np.array(test_pred)
+    test_pred = test_pred.copy()
+    test_gt = d.data.get_test_ground_truth()
+    train_gt = d.data.get_train_ground_truth()
+    f = open(os.path.join(d.selected_dir, "tra.txt"), "w")
+    for k in [2,3,4,5]:
+    # for k in [2]:
+        for i in range(12):
+            inds = train_gt == i
+            inds[train_pred == i] = False
+            selected_idxs = np.array(range(len(inds)))[inds]
+            affinity_matrix = change_local(selected_idxs, neighbors, back_up_affinity_matrix,
+                                           k)
+            d.data.affinity_matrix = affinity_matrix
+            d._training(rebuild=False, evaluate=False, simplifying=False)
+            new_test_pred = np.array(d.adaptive_evaluation())
+            acc = accuracy_score(test_gt, new_test_pred)
+            ent = entropy(d.pred_dist.T + 1e-20).mean()
+            s = "k: {}, i: {}, acc: {}, ent: {}, edge_sum: {}".format(k,i,acc,ent,
+                                                                      affinity_matrix.toarray().sum())
+            print(s)
+            f.writelines(s + "\n")
+            # exit()
+        # exit()
+
+def playground():
+    d = SSLModel(config.stl, labeled_num=50, total_num=20000, seed=123)
+    neighbors = np.load(os.path.join(d.selected_dir, "neighbors.npy"))
+    d.case_labeling()
+    d.init(k=6, evaluate=False, simplifying=False)
+    back_up_affinity_matrix = d.data.affinity_matrix.copy()
+    # test_pred = d.adaptive_evaluation()
+    # test_pred = np.array(test_pred)
+    # test_pred = test_pred.copy()
+    train_pred = d.labels[-1]
+    test_gt = d.data.get_test_ground_truth()
+    train_gt = d.data.get_train_ground_truth()
+    affinity_matrix = back_up_affinity_matrix.copy()
+    # for k,i in [[2,7], [2,6],[2,5]]:
+    # for k,i in [[2,7], [2,6],[2,5]]:
+    for k,i in [[2,5]]:
+        inds = train_gt == i
+        inds[train_pred == i] = False
+        selected_idxs = np.array(range(len(inds)))[inds]
+        affinity_matrix = change_local(selected_idxs, neighbors, affinity_matrix,
+                                       k)
+    for i in [2,3,5,6]:
+        inds = train_gt == i
+        inds[train_pred == i] = False
+        selected_idxs = np.array(range(len(inds)))[inds]
+        for idx in selected_idxs:
+            nei_idx = affinity_matrix[idx, :].indices
+            for s in nei_idx:
+                if train_gt[s] != i:
+                    affinity_matrix[idx, s] = 0
+    d.data.affinity_matrix = affinity_matrix
+    d._training(rebuild=False, evaluate=False, simplifying=False)
+    new_test_pred = np.array(d.adaptive_evaluation())
+    acc = accuracy_score(test_gt, new_test_pred)
+    ent = entropy(d.pred_dist.T + 1e-20).mean()
+    s = "k: {}, i: {}, acc: {}, ent: {}, edge_sum: {}".format(k, i, acc, ent,
+                                                              affinity_matrix.toarray().sum())
+    print(s)
+def remove_edge():
+    d = SSLModel(config.stl, labeled_num=50, total_num=20000, seed=123)
+    neighbors = np.load(os.path.join(d.selected_dir, "neighbors.npy"))
+    d.case_labeling()
+    d.init(k=6, evaluate=False, simplifying=False)
+    back_up_affinity_matrix = d.data.affinity_matrix.copy()
+    test_pred = d.adaptive_evaluation()
+    train_pred = d.labels[-1]
+    test_pred = np.array(test_pred)
+    test_pred = test_pred.copy()
+    test_gt = d.data.get_test_ground_truth()
+    train_gt = d.data.get_train_ground_truth()
+    for i in [5]:
+        affinity_matrix = back_up_affinity_matrix.copy()
+        inds = train_gt == i
+        inds[train_pred == i] = False
+        selected_idxs = np.array(range(len(inds)))[inds]
+        for idx in selected_idxs:
+            nei_idx = affinity_matrix[idx, :].indices
+            for s in nei_idx:
+                if train_gt[s] != i:
+                    affinity_matrix[idx, s] = 0
+        d.data.affinity_matrix = affinity_matrix
+        d._training(rebuild=False, evaluate=False, simplifying=False)
+        new_test_pred = np.array(d.adaptive_evaluation())
+
+
 if __name__ == '__main__':
-    main()
+    playground()
