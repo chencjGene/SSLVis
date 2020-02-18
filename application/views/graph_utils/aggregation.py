@@ -1,4 +1,5 @@
 from sklearn.cluster import KMeans
+from sklearn.decomposition import PCA
 import numpy as np
 
 
@@ -22,6 +23,8 @@ class Aggregation:
 
     def aggregate(self, x, k):
         self.k = k
+        # pca = PCA(n_components=128)
+        # x = pca.fit_transform(x)
         kmeans = KMeans(n_clusters=k, random_state=1).fit(x)
         self.labels = kmeans.labels_
         self.centers = kmeans.cluster_centers_

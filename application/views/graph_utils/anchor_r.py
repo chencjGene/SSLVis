@@ -182,7 +182,6 @@ class Anchors:
         self.entropy /= np.max(self.entropy)
         return self.entropy
 
-
     def get_data_area(self, ids = None, train_x_tsne = None):
         assert ids is not None or train_x_tsne is not None
         if ids is not None:
@@ -317,8 +316,6 @@ class Anchors:
                 self.rotate_matrix = matrix
         print("finish rotate matrix:{}, wh={}".format(self.rotate_matrix, best_wh))
 
-
-
     def get_nodes(self, wh):
         self.remove_ids = self.model.data.get_removed_idxs()
         self.tsne = self.get_train_x_tsne()
@@ -350,6 +347,7 @@ class Anchors:
         for i, label in enumerate(self.aggregate.labels.tolist()):
             aggregate[self.home_tsne_ids[i]] = label
         graph["aggregate"] = aggregate
+        graph["centers"] = self.aggregate.centers.tolist()
         return graph
 
     def rotate_area(self, area):
