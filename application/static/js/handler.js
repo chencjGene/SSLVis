@@ -41,6 +41,7 @@ DataLoaderClass.prototype.get_graph_handler = function (callback) {
         console.log(that.manifest_url);
         that.state.nodes = data.nodes;
         that.state.area = data.area;
+        that.state.aggregate = data.aggregate;
         let selected_idxs = [];
         // TODO: move this part to callback
         for(let i in that.state.nodes){

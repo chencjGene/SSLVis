@@ -307,11 +307,12 @@ class SSLModel(object):
         test_y = self.data.get_test_ground_truth()
         test_neighbors = self.data.get_test_neighbors()
         logger.info("neighbor_result got!")
-        estimate_k = 5
+        estimate_k = 3
         s = 0
         labels = []
         rest_idxs = self.data.get_rest_idxs()
         m = self.data.get_new_id_map()
+        adaptive_ks = []
         for i in tqdm(range(test_X.shape[0])):
             j_in_this_row = test_neighbors[i, :]
             j_in_this_row = j_in_this_row[j_in_this_row != -1]
@@ -323,11 +324,12 @@ class SSLModel(object):
             p = pred[selected_idxs].sum(axis=0)
             labels.append(p.argmax())
             s += adaptive_k
+            adaptive_ks.append(adaptive_k)
 
         acc = accuracy_score(test_y, labels)
         logger.info("test accuracy: {}".format(acc))
         print(s / test_X.shape[0])
-        return labels
+        return labels, np.array(adaptive_ks)
 
     # @async
     def adaptive_evaluation_bkp(self):
@@ -378,7 +380,7 @@ class SSLModel(object):
         test_y = self.data.get_test_ground_truth()
         nn_fit = self.data.get_neighbors_model()
         logger.info("nn construction finished!")
-        max_k = 101
+        max_k = 31
         neighbor_result = nn_fit.kneighbors_graph(test_X,
                                                   max_k,
                                                   mode="distance")

@@ -84,6 +84,7 @@ DataLoaderClass = function () {
         rescale: false,
         glyphs: [],
         visible_items:{},
+        aggregate:[],
         is_zoom: true,
         // history info:
         history_data: null,
@@ -458,7 +459,8 @@ DataLoaderClass = function () {
             "area":that.state.area,
             "rescale":that.state.rescale,
             "visible_items":that.state.visible_items,
-            "glyphs": that.state.glyphs
+            "glyphs": that.state.glyphs,
+            "aggregate": that.state.aggregate
         })
     };
 
