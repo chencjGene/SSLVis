@@ -16,6 +16,7 @@ function set_up() {
     HistoryView = new HistoryLayout(d3.select("#history-row"));
     FilterView = new FilterLayout(d3.select(".current-scented-widget-container"));
     EditView = new EditLayout();
+    SettingView = new SettingLayout();
     LossView.controlInstanceView = GraphView;
     LossView.controlInfoView = ImageView;
     DataLoader.set_view(GraphView, "graph");
@@ -24,6 +25,7 @@ function set_up() {
     DataLoader.set_view(HistoryView, "history");
     DataLoader.set_view(FilterView, "filter");
     DataLoader.set_view(EditView, "edit");
+    DataLoader.set_view(SettingView, "setting")
 }
 
 function clean_dom() {
@@ -43,8 +45,8 @@ $(document).ready(function () {
 
     set_up();
     SettingView = new SettingLayout();
-    SettingView.choose("stl-50-20000");
-    // SettingView.choose("stl-20-2000");
+    // SettingView.choose("stl-50-20000");
+    SettingView.choose("stl-20-2000");
 
     
 });

@@ -9,12 +9,18 @@ let SettingLayout = function () {
     let rangeSlider = null;
     let slider = null;
     let range = null;
-    let value = null;
+	let value = null;
+	
+	let rect_width = 20; 
 
-    let send_setk_request = {};
-    let send_setk_cnt = 0;
     let k = 0;
-    let AnimationDuration = 1000;
+	let AnimationDuration = 1000;
+	
+	that.check_list = [];
+	that.k = 0;
+	that.local_range = [];
+
+	let svg = d3.select("#categories-checkbox");
 
     that._init = function () {
 		dataset_selection_util = {
@@ -248,13 +254,16 @@ f: {
 		// local slider
 		$("#local-k").slider(
 			{ 
-				id: "slider2", 
-				min: 1, 
-				max: 12, 
+				id: "slider2",
+				min: 1,
+				max: 9,
 				range: true, 
-				value: [3,7]
+				value: [2,3]
 			});
-
+		$("#local-k").on("slide", function(slideEvt){
+			let v = slideEvt.value;
+			$("#k-range").text("[" + v[0] + "," + v[1] + "]");
+		})
 		
 		$('#load-button').on('click', function() {
 			var $this = $(this);
@@ -266,10 +275,71 @@ f: {
 			$this.html('<span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span>Updating...').attr('disabled', true);
 		});
 
-		that.update_k_btn_init();
-		that.update_categories_choice();
+	};
+	
+    that.component_update = async function(state) {
+        console.log("get setting state:", state);
+        that._update_data(state);
+        that._update_view();
+	};
+	
+	that._update_data = function(state){
+		let label_num = state.label_names.length;
+		that.check_list = new Array(label_num).fill(0);
+	};
 
-    };
+	that._update_view = function(){
+		that._create();
+		that._update();
+		that._remove();
+	};
+
+	that._create = function(){
+		let groups = svg.selectAll("g")
+			.data(that.check_list)
+			.enter()
+			.append("g")
+			.attr("transform", (d,i) => "translate("+ (rect_width * 1.1 * i) + 
+				"," + (30 - rect_width / 2) +")")
+			.on("click", function(d, i){
+				that.check_list[i] = !that.check_list[i];
+				d3.select(this)
+					.select("rect")
+					.attr("fill", that.check_list[i] ? CategoryColor[i] : "white");
+			});
+		groups.append("rect")
+			.attr("x", 0)
+			.attr("y", 0)
+			.attr("width", rect_width)
+			.attr("height", rect_width)
+			.attr("rx", rect_width / 4)
+			.attr("ry", rect_width / 4)
+			.attr("fill", (d,i) => that.check_list[i] ? CategoryColor[i] : "white")
+			.attr("stroke", (d,i) => CategoryColor[i]);
+		groups.append("text")
+			.style("stroke", "white")
+			.style("fill", "white")
+			.attr("text-anchor", "middle")
+			.attr("x", rect_width / 2)
+			.attr("y", rect_width / 2 + 6)
+			.text("\u2714");
+	};
+
+	that._update = function(){
+		let groups = svg.selectAll("g")
+			.data(that.check_list)
+			.attr("transform", (d,i) => "translate("+ (rect_width * 1.1 * i) + 
+				"," + (30 - rect_width / 2) +")");
+	};
+
+	that._remove = function(){
+		let groups = svg.selectAll("g")
+			.data(that.check_list)
+			.exit();
+
+		groups.remove();
+	};
+
 
     that.choose = function (dataset){
     	if(dataset === now_dataset) return;
@@ -281,48 +351,14 @@ f: {
 
 
     that.setk_ui = function(k) {
-		
-	};
-
-	that.update_categories_choice = function(){
-		let rect_width = 20; 
-		d3.select("#categories-checkbox")
-			.selectAll("rect").remove();
-		d3.select("#categories-checkbox")
-			.selectAll("rect")
-			.data(CategoryColor)
-			.enter()
-			.append("rect")
-			.attr("x", (d,i)=> rect_width * 1.1 * i)
-			.attr("y", 30 - rect_width / 2)
-			.attr("width", rect_width)
-			.attr("height", rect_width)
-			.attr("rx", rect_width / 4)
-			.attr("ry", rect_width / 4)
-			.attr("fill", d => d)
-			.attr("stroke", d => d)
-	}
-
-    that.update_k_btn_init = function(){
-    	update_k_btn = d3.select(".range-slider__update");
-    	update_k_btn.select("rect").on("click", function () {
-			if(update_k_btn.attr("opacity") != 1)return;
-				update_k_btn.attr("cursor", "default");
-				update_k_btn
-					.transition()
-					.duration(AnimationDuration)
-					.attr("opacity", "0");
-				DataLoader.update_k(k);
-		})
-			.on("mouseover", function () {
-				update_k_btn.selectAll("path").attr("opacity", 1);
-			})
-			.on("mouseout", function () {
-				update_k_btn.selectAll("path").attr("opacity", 0.7);
-			})
+		$("#global-k").slider("setValue", k, true);
 	};
 
     that.init = function () {
         that._init();
-    }.call();
+	}.call();
+	
+	that.set_data_manager = function(new_data_manager){
+        that.data_manager = new_data_manager;
+	}
 };

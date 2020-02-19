@@ -2,7 +2,8 @@
 * added by Changjian Chen, 20200107
 * */
 
-function update_k(k){
+function update_k(){
+    let k = $("#global-k").slider("getValue");
     DataLoader.update_k(k);
 }
 
