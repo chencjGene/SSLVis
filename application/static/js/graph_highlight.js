@@ -45,7 +45,6 @@ let GraphHighlight = function (parent) {
 
         $("#refresh-btn")
             .click(function () {
-                //TODO DG
                 let selected_idxs = view.get_highlights();
                 console.log("click apply-delete-btn", selected_idxs);
                 view.data_manager.local_update_k(selected_idxs);

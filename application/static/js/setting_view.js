@@ -22,6 +22,8 @@ let SettingLayout = function () {
 
 	let svg = d3.select("#categories-checkbox");
 
+	let data_manager = null;
+
     that._init = function () {
 		dataset_selection_util = {
 	f: {
@@ -216,7 +218,8 @@ f: {
 			dataset_selection_util.f.events.stop(event)
 			var child = dataset_selection_util.f.getTrg(event), children, i, parent
 			if($(child).attr("class") === "option"){
-				that.choose($(child).attr("id"));
+				// TODO: removed for debug
+				// that.choose($(child).attr("id"));
 			}
 			switch (true) {
 				case (child.classList.contains("psuedo_select")):
@@ -285,7 +288,8 @@ f: {
 	
 	that._update_data = function(state){
 		let label_num = state.label_names.length;
-		that.check_list = new Array(label_num).fill(0);
+		that.check_list = new Array(label_num).fill(1);
+		console.log("check_list", that.check_list);
 	};
 
 	that._update_view = function(){
@@ -352,6 +356,14 @@ f: {
 
     that.setk_ui = function(k) {
 		$("#global-k").slider("setValue", k, true);
+	};
+
+	that.get_local_update_setting = function(){
+		let range = $("#local-k").slider("getValue");
+		return {
+			range: range,
+			selected_categories: that.check_list
+		}
 	};
 
     that.init = function () {

@@ -7,10 +7,9 @@ function update_k(){
     DataLoader.update_k(k);
 }
 
-function local_update_k(selected_idxs){
-    // TODO: for DEBUG
-    selected_idxs = [1,2,3];
-    DataLoader.local_update_k(selected_idxs);
+function local_update_k(){
+
+    DataLoader.local_update_k();
 }
 
 function update_filter_threshold(threshold){

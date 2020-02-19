@@ -185,7 +185,7 @@ class Data(object):
         return y.astype(int)
 
     def get_full_train_idx(self):
-        return self.train_idx.copy(0)
+        return self.train_idx.copy()
 
     def get_train_idx(self):
         return self.train_idx.copy()[self.rest_idxs]

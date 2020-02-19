@@ -112,7 +112,7 @@ DataLoaderClass = function () {
             that.get_manifest_handler(function(){
                 that.update_control_info();
                 that.update_edit_info();
-                // that.update_setting_view();
+                that.update_setting_view();
             }), "json", "GET");
 
         that.graph_node = new request_node(that.graph_url + params+"&wh="+that.wh,
@@ -176,11 +176,14 @@ DataLoaderClass = function () {
         that.graph_node.notify();
     };
 
-    that.local_update_k = function(selected_idxs){
+    that.local_update_k = function(){
         let params = "?dataset=" + that.dataset;
         that.local_update_k_node = new request_node(that.local_update_k_url + params,
             that.local_update_k_handler(that.update_graph_view), "json", "POST");
-        let data = {selected_idxs};
+        // let data = {selected_idxs};
+        data = that.setting_view.get_local_update_setting();
+        selected_idxs = that.graph_view.get_highlights();
+        data["selected_idx"] = selected_idxs;
         let level = that.graph_view.get_level();
         let area = that.state.area;
         data["area"] = area;
