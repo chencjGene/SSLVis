@@ -281,6 +281,7 @@ class SSLModel(object):
                 propagation_path_to[int(target_id)].append(int(node_id))
         return propagation_path_from, propagation_path_to
 
+    @async_once
     def evaluate(self, n_neighbor = -1):
         train_X = self.data.get_train_X()
         test_X = self.data.get_test_X()
@@ -297,7 +298,7 @@ class SSLModel(object):
         logger.info("test accuracy: {}".format(acc))
         return probabilities.argmax(axis=1)
 
-    # @async
+    @async_once
     def adaptive_evaluation(self, pred=None):
         affinity_matrix = self.data.get_graph()
         affinity_matrix.setdiag(0)
@@ -331,7 +332,7 @@ class SSLModel(object):
         print(s / test_X.shape[0])
         return labels, np.array(adaptive_ks)
 
-    # @async
+    @async_once
     def adaptive_evaluation_bkp(self):
         train_X = self.data.get_train_X()
         affinity_matrix = self.data.get_graph()
@@ -371,6 +372,7 @@ class SSLModel(object):
         logger.info("test accuracy: {}".format(acc))
         print(s/test_X.shape[0])
 
+    @async_once
     def adaptive_evaluation_v2(self):
         train_X = self.data.get_train_X()
         affinity_matrix = self.data.get_graph()

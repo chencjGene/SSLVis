@@ -305,6 +305,7 @@ class Anchors:
         return self.tsne[selection]
 
     def get_rotate_matrix(self, tsne, wh):
+        logger.info("begin rotate matrix")
         best_wh = -100
         for degree in range(360):
             rad = math.pi*degree/180
@@ -315,7 +316,7 @@ class Anchors:
             if np.abs(new_wh-wh)<np.abs(best_wh-wh):
                 best_wh = new_wh
                 self.rotate_matrix = matrix
-        print("finish rotate matrix:{}, wh={}".format(self.rotate_matrix, best_wh))
+        logger.info("finish rotate matrix:{}, wh={}".format(self.rotate_matrix, best_wh))
 
 
 

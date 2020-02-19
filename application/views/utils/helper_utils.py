@@ -47,15 +47,15 @@ def async_once(f):
         if func_name not in exec_list:
             exec_list[func_name] = []
         old_exec = exec_list[func_name]
-        for exec in old_exec:
-            exec.kill()
-            exec.join()
-            print("shutdown a thread")
 
+        for exec in old_exec:
+            if exec.is_alive():
+                exec.kill()
+                exec.join()
+                print("Shutdown a thread")
         thr = thread_with_trace(target=f, args=args, kwargs=kwargs)
         exec_list[func_name] = [thr]
         thr.start()
-
     return wrapper
 
 def async(f):
