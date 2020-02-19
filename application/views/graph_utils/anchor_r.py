@@ -27,6 +27,7 @@ class Anchors:
         self.hierarchy_info_path = None
         # # added by Changjian
         self.tsne_path = None
+        self.matrix_path = None
         
         # model
         self.model = None
@@ -55,6 +56,7 @@ class Anchors:
         self.selected_dir = self.model.data.selected_dir
         self.hierarchy_info_path = os.path.join(self.selected_dir, "hierarchy_info" + config.pkl_ext)
         self.tsne_path = os.path.join(self.selected_dir, "tsne.npy")
+        self.matrix_path = os.path.join(self.selected_dir, "matrix.npy")
         self.full_x = self.data.get_full_train_X()
         self.old_nodes_id = []
         self.old_nodes_tsne = None
@@ -64,6 +66,7 @@ class Anchors:
         self.hierarchy_info = None
         self.data_degree = None
         self.wh = 1
+        self.rotate_matrix = np.array([[1,0],[0,1]])
 
     def get_pred_labels(self):
         labels = self.model.get_pred_labels()
@@ -307,16 +310,22 @@ class Anchors:
     def get_rotate_matrix(self, tsne, wh):
         logger.info("begin rotate matrix")
         best_wh = -100
-        for degree in range(360):
-            rad = math.pi*degree/180
-            matrix = np.array([[np.cos(rad), -np.sin(rad)], [np.sin(rad), np.cos(rad)]])
-            pos = np.dot(tsne, matrix)
-            area = self.get_data_area(train_x_tsne=pos)
-            new_wh = area["width"]/area["height"]
-            if np.abs(new_wh-wh)<np.abs(best_wh-wh):
-                best_wh = new_wh
-                self.rotate_matrix = matrix
-        logger.info("finish rotate matrix:{}, wh={}".format(self.rotate_matrix, best_wh))
+        if os.path.exists(self.matrix_path):
+            logger.info("rotate matrix already exists.")
+            self.rotate_matrix = np.load(self.matrix_path)
+        else:
+            logger.info("rotate matrix not exists. Caculating...")
+            for degree in range(360):
+                rad = math.pi*degree/180
+                matrix = np.array([[np.cos(rad), -np.sin(rad)], [np.sin(rad), np.cos(rad)]])
+                pos = np.dot(tsne, matrix)
+                area = self.get_data_area(train_x_tsne=pos)
+                new_wh = area["width"]/area["height"]
+                if np.abs(new_wh-wh)<np.abs(best_wh-wh):
+                    best_wh = new_wh
+                    self.rotate_matrix = matrix
+            np.save(self.matrix_path, self.rotate_matrix)
+            logger.info("finish rotate matrix:{}, wh={}".format(self.rotate_matrix, best_wh))
 
 
 
