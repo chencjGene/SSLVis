@@ -172,6 +172,7 @@ let GraphLayout = function (container) {
             path_in_group = path_group.selectAll("path")
                 .data(path_ary, d => d[0].id+","+d[1].id);
             //
+            that.show_select_rect();
             console.log("remove");
             await that._remove();
             console.log("transform");
@@ -472,6 +473,54 @@ let GraphLayout = function (container) {
             }
             return 1
         }
+    };
+
+    that.show_select_rect = function () {
+        let min_x = 100000;
+        let max_x = -100000;
+        let min_y = 100000;
+        let max_y = -100000;
+        let rect_id = "path-select-rect";
+        let rect = null;
+        if(is_show_path){
+            for(let node_id of highlights){
+                let node = nodes[node_id];
+                min_x = Math.min(that.center_scale_x(node.x), min_x);
+                min_y = Math.min(that.center_scale_y(node.y), min_y);
+                max_x = Math.max(that.center_scale_x(node.x), max_x);
+                max_y = Math.max(that.center_scale_y(node.y), max_y);
+            }
+            if(that.main_group.select("#"+rect_id).size() === 0){
+                rect = that.main_group.append("rect").attr("id", rect_id);
+            }
+            let margin = 15;
+            min_x-=margin;
+            min_y-=margin;
+            max_x+=margin;
+            max_y+=margin;
+            rect = that.main_group.select("#"+rect_id);
+            rect.attr("x", min_x)
+                .attr("y", min_y)
+                .attr("rx", 5)
+                .attr("ry", 5)
+                .attr("width", max_x-min_x)
+                .attr("height", max_y-min_y)
+                .attr("fill-opacity", 0)
+                .attr("stroke-width", "2px")
+                .attr("stroke", "rgb(127,127,127)")
+                .attr("stroke-dasharray", 10)
+                .attr("opacity", 0)
+                .transition()
+                .duration(AnimationDuration)
+                .attr("opacity", 1);
+        }
+        else {
+            that.main_group.select("#"+rect_id)
+                .transition()
+                .duration(AnimationDuration)
+                .attr("opacity", 0);
+        }
+
     };
 
     that.opacity_path = function(path) {

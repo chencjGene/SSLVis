@@ -418,6 +418,7 @@ class Anchors:
         # TODO  2020.2.15 change to init tsne
         # tsne = self.re_tsne(selection, old_cnt)
         tsne = self.get_init_tsne(selection)
+        tsne = np.dot(tsne, self.rotate_matrix)
         self.old_nodes_id = selection
         self.old_nodes_tsne = tsne
         graph = self.convert_to_dict(selection, tsne)
