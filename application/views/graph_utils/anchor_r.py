@@ -128,7 +128,7 @@ class Anchors:
         else:
             if self.margin == None:
                 self.margin = self.get_margin(self.model.process_data)
-            hierarchical_info = self.construct_hierarchical_sampling(self.full_x, self.margin, target_num=500)
+            hierarchical_info = self.construct_hierarchical_sampling(self.full_x, self.margin, target_num=1000)
             with open(self.hierarchy_info_path, "wb") as f:
                 pickle.dump(hierarchical_info, f)
             self.hierarchy_info = hierarchical_info
@@ -393,7 +393,7 @@ class Anchors:
         self.home_tsne = self.old_nodes_tsne
         self.home_tsne_ids = self.old_nodes_id
         self.last_level = 0
-        self.aggregate.aggregate(self.full_x[self.home_tsne_ids], k=10)
+        self.aggregate.aggregate(self.full_x[self.home_tsne_ids], k=np.unique(self.model.get_pred_labels()[self.home_tsne_ids]).shape[0])
         self.aggregate.reset_labels(self.model.get_pred_labels()[self.home_tsne_ids])
         aggregate = {}
         for i, label in enumerate(self.aggregate.labels.tolist()):

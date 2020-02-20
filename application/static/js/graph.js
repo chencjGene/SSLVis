@@ -16,6 +16,8 @@ let GraphLayout = function (container) {
     let layout_width = that.width - 20;
     let layout_height = that.height - 20;
     that.zoom_scale = 1;
+    let star_inner_r = 6;
+    let star_outer_r = 15;
 
     // other consts
     let btn_select_color = "#560731";
@@ -271,7 +273,7 @@ let GraphLayout = function (container) {
                     return d.label[iter]===-1?color_unlabel:color_label[d.label[iter]];
                 })
                 .attr("opacity", d => that.opacity(d.id))
-                .attr("d", d => star_path(10 * that.zoom_scale, 4 * that.zoom_scale, that.center_scale_x(d.x), that.center_scale_y(d.y)))
+                .attr("d", d => star_path(star_outer_r * that.zoom_scale, star_inner_r * that.zoom_scale, that.center_scale_x(d.x), that.center_scale_y(d.y)))
                 .on("end", resolve);
 
             let pie = d3.pie().value(d => d);
@@ -357,7 +359,7 @@ let GraphLayout = function (container) {
             golds_in_group.enter()
                 .append("path")
                 .attr("id", d => "gold-" + d.id)
-                .attr("d", d => star_path(10 * that.zoom_scale, 4 * that.zoom_scale, that.center_scale_x(d.x), that.center_scale_y(d.y)))
+                .attr("d", d => star_path(star_outer_r * that.zoom_scale, star_inner_r * that.zoom_scale, that.center_scale_x(d.x), that.center_scale_y(d.y)))
                 .attr("fill", function (d) {
                     return d.label[iter]===-1?color_unlabel:color_label[d.label[iter]];
                 })
@@ -525,7 +527,7 @@ let GraphLayout = function (container) {
         golds_in_group
             .transition()
             .duration(AnimationDuration)
-            .attr("d", d => star_path(10 * that.zoom_scale, 4 * that.zoom_scale, that.center_scale_x(d.x), that.center_scale_y(d.y)))
+            .attr("d", d => star_path(star_outer_r * that.zoom_scale, star_inner_r * that.zoom_scale, that.center_scale_x(d.x), that.center_scale_y(d.y)))
             .attr("stroke-width", 1.5*that.zoom_scale);
         path_in_group
             .transition()
@@ -547,7 +549,7 @@ let GraphLayout = function (container) {
             nodes_in_group
             .attr("r", d => that.r(d.id));
         golds_in_group
-            .attr("d", d => star_path(10 * that.zoom_scale, 4 * that.zoom_scale, that.center_scale_x(d.x), that.center_scale_y(d.y)))
+            .attr("d", d => star_path(star_outer_r * that.zoom_scale, star_inner_r * that.zoom_scale, that.center_scale_x(d.x), that.center_scale_y(d.y)))
             .attr("stroke-width", 1.5*that.zoom_scale);
         path_in_group
 
