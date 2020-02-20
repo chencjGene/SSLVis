@@ -148,3 +148,8 @@ def app_get_feature():
     return jsonify({
         "feature":feature
     })
+
+@graph.route("/graph/NewCategories", methods=["GET", "POST"])
+def app_new_categories():
+    data = json.loads(request.data)
+    return add_new_categories(data)

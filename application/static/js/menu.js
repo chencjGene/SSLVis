@@ -69,14 +69,14 @@ let EditLayout = function(){
                 menu.push(sm);
             });
         menu.push({
-            title: 'Delete',
-            name: 'Delete',
+            title: 'Add',
+            name: '\u2295',
             color: '',
-            className: "iw-mnotSelected delete-menu-item",
+            className: "iw-mnotSelected add-menu-item",
             fun: function () {
-                console.log("delete", d);
-                let label = -1;
-                that.editing(label);
+                console.log("add", d);
+                // let label = -1;
+                // that.editing(label);
             }
         });
 
@@ -85,12 +85,13 @@ let EditLayout = function(){
             container.contextMenu(click_node_menu, click_menu_settings);
         }
 
+        // edge 
         menu = [];
         menu.push({
-            title: 'Delete',
-            name: 'Delete',
+            title: 'Add',
+            name: 'Add',
             color: '',
-            className: "iw-mnotSelected delete-menu-item",
+            className: "iw-mnotSelected add-menu-item",
             fun: function () {
                 d3.select(focus_edge_node).style("display", "none");
                 that._apply_delete_and_update_label();
