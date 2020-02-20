@@ -393,7 +393,7 @@ class Anchors:
         self.home_tsne = self.old_nodes_tsne
         self.home_tsne_ids = self.old_nodes_id
         self.last_level = 0
-        self.aggregate.aggregate(self.full_x[self.home_tsne_ids], k=10)
+        self.aggregate.aggregate(self.full_x[self.home_tsne_ids], k=np.unique(self.model.get_pred_labels()[self.home_tsne_ids]).shape[0])
         self.aggregate.reset_labels(self.model.get_pred_labels()[self.home_tsne_ids])
         aggregate = {}
         for i, label in enumerate(self.aggregate.labels.tolist()):
