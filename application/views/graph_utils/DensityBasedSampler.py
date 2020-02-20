@@ -31,7 +31,7 @@ class DensityBasedSampler(object):
         self.pca_dim = pca_dim
         self.annFileName = annFileName
 
-    def fit_sample(self, data: np.ndarray, label=None, return_others=True, selection=None, mixed_degree = None):
+    def fit_sample(self, data: np.ndarray, label=None, return_others=True, selection=None, mixed_degree = None, skip_points = None):
         if type(data) == list:
             data = np.array(data)
 
@@ -54,13 +54,13 @@ class DensityBasedSampler(object):
         if self.N <= self.n_samples:
             return [True] * self.N
         # np.random.seed(42)
-        selection = self._fit_sample(data, label=label, selection=selection, mixed_degree = mixed_degree)
+        selection = self._fit_sample(data, label=label, selection=selection, mixed_degree = mixed_degree, skip_points = skip_points)
         if return_others:
             return selection, self.estimated_density, self.prob
         else:
             return selection
 
-    def _fit_sample(self, data: np.ndarray, label=None, selection=None, mixed_degree = None):
+    def _fit_sample(self, data: np.ndarray, label=None, selection=None, mixed_degree = None, skip_points = None):
         if selection is not None and selection.sum() >= self.n_samples:
             return selection
         # self.tree = BallTree(data, leaf_size=2)
@@ -102,7 +102,8 @@ class DensityBasedSampler(object):
         #     self.estimated_density[i] = self.estimated_density[i]  #采样概率与r成正比
         self.prob = np.ones_like(self.radius_of_k_neighbor) * 0.001
         self.prob = self.radius_of_k_neighbor + self.beta * mixed_degree  # 采样概率与r和类标混杂度成正比
-
+        if skip_points is not None:
+            self.prob[skip_points] = 0
         ## old estimated_de-nsity
         # self.estimated_density = self.tree.query_radius(data, r=r, count_only=True)
         # if self.alpha > 0:
