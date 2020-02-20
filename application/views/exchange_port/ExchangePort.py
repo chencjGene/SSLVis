@@ -99,7 +99,7 @@ class ExchangePortClass(object):
     def local_update_k(self, data):
         self.model.local_search_k(data["selected_idxs"], data["range"], data["selected_categories"])
         return self.fisheye(self.current_ids, data["area"], data["level"], data["wh"])
-        return jsonify(res)
+        # return jsonify(res)
 
     def get_loss(self):
         loss = self.model.get_loss()

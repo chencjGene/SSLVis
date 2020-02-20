@@ -111,6 +111,7 @@ let DistLayout = function (container) {
         console.log("dist_mode", dist_mode);
         // update label names
         label_names = ["unlabeled"].concat(state.label_names);
+        rect_width = legend_width / label_names.length / 1.2;
         rect_margin = (legend_width - label_names.length * rect_width)
             / (label_names.length - 1);
         console.log("rect-margin", rect_margin);
@@ -608,7 +609,24 @@ let DistLayout = function (container) {
     };
 
     that._update_legend = function(){
-
+        legend_group.selectAll("circle.legend")
+            .data(label_names)
+            .attr("cx", (d,i) => (rect_width * i + rect_margin * i))
+            .attr("cy", rect_height / 2)
+            .attr("r", 4)
+            .attr("fill", (d,i) => colors[i]);
+        legend_group.selectAll("text.legend")
+            .data(label_names)
+            .attr("x", (d,i) => (rect_width * i + rect_margin * i + 10))
+            .attr("y", rect_height / 2 + 5)
+            .attr("text-anchor", "start")
+            .attr("font-size", 15)
+            .attr("fill", FontColor)
+            .text(d => d)
+            .each(function () {
+                let text = d3.select(this);
+                set_font(text);
+            });
     };
 
     that._update_selected_flows = function(){
