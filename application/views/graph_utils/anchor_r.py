@@ -128,7 +128,7 @@ class Anchors:
         else:
             if self.margin == None:
                 self.margin = self.get_margin(self.model.process_data)
-            hierarchical_info = self.construct_hierarchical_sampling(self.full_x, self.margin, target_num=500)
+            hierarchical_info = self.construct_hierarchical_sampling(self.full_x, self.margin, target_num=1000)
             with open(self.hierarchy_info_path, "wb") as f:
                 pickle.dump(hierarchical_info, f)
             self.hierarchy_info = hierarchical_info

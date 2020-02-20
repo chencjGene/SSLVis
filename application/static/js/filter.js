@@ -467,22 +467,22 @@ let FilterLayout = function (container) {
                 .attr("class", "start-drag")
                 .attr("d", draggable_item_path)
                 .attr("fill", "rgb(127, 127, 127)")
-                .attr("transform", "translate("+(container_width*0.1+range[0]*drag_interval)+","+(container_height*0.9)+")");
+                .attr("transform", "translate("+(container_width*0.1+range[0]*drag_interval-2)+","+(container_height*0.9)+")");
             end_drag = container.append("path")
                 .attr("class", "end-drag")
                 .attr("d", draggable_item_path)
                 .attr("fill", "rgb(127, 127, 127)")
-                .attr("transform", "translate("+(container_width*0.1+(range[1]+1)*drag_interval)+","+(container_height*0.9)+")");
+                .attr("transform", "translate("+(container_width*0.1+(range[1]+1)*drag_interval+2)+","+(container_height*0.9)+")");
         }
         else {
             start_drag = container.select(".start-drag");
             end_drag = container.select(".end-drag");
             start_drag.transition()
                 .duration(AnimationDuration)
-                .attr("transform", "translate("+(container_width*0.1+range[0]*drag_interval)+","+(container_height*0.9)+")");
+                .attr("transform", "translate("+(container_width*0.1+range[0]*drag_interval-2)+","+(container_height*0.9)+")");
             end_drag.transition()
                 .duration(AnimationDuration)
-                .attr("transform", "translate("+(container_width*0.1+(range[1]+1)*drag_interval)+","+(container_height*0.9)+")");
+                .attr("transform", "translate("+(container_width*0.1+(range[1]+1)*drag_interval+2)+","+(container_height*0.9)+")");
         }
         start_drag.call(d3.drag()
                     .on("drag", function () {
