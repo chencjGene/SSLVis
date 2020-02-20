@@ -27,6 +27,7 @@ DataLoaderClass = function () {
     that.retrain_url = "/history/Retrain";
     that.set_k_url = "/graph/SetK";
     that.home_graph_url = "/graph/home";
+    that.add_new_categories_url = "/graph/NewCategories";
 
     // Request nodes
     that.k_node = null;
@@ -43,6 +44,7 @@ DataLoaderClass = function () {
     that.get_history_node = null;
     that.set_history_node = null;
     that.retrain_node = null;
+    that.add_new_categories_node = null;
 
     // views
     that.graph_view = null;
@@ -154,6 +156,23 @@ DataLoaderClass = function () {
         data["wh"] = that.graph_view.get_wh();
         that.update_delete_and_change_label_node.set_data(data);
         that.update_delete_and_change_label_node.notify();
+    };
+
+    that.add_new_categories = function(name, idxs) {
+        let data = {
+            name: name,
+            idxs: idxs
+        }
+        let level = that.graph_view.get_level();
+        let area = that.state.area;
+        data["area"] = area;
+        data["level"] = level;
+        data["wh"] = that.graph_view.get_wh();
+        let params = "?dataset=" + that.dataset;
+        that.add_new_categories_node = new request_node(that.add_new_categories_url + params,
+            that.add_new_categories_handler(that.update_graph_view), "json", "POST");
+        that.add_new_categories_node.set_data(data);
+        that.add_new_categories_node.notify();
     };
 
     that.update_edit_state = function(data, mode){

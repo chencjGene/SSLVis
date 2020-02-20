@@ -546,6 +546,13 @@ class SSLModel(object):
         self._training()
         return self.data.return_state()
 
+    def add_new_categories(self, name, idxs=None):
+        label = self.data.add_new_categories(name)
+        if idxs is not None:
+            labels = [label for i in idxs]
+            self.data.label_instance(idxs, labels)
+        self._training(rebuild=False, evaluate=True)
+
     def case_labeling(self):
         lizard = [52, 225, 232, 415, 561, 615, 1009, 1026, 1224, 1246, 1478, 1514, 1657, 1933, 2009, 2065, 2160, 2629,
                   2920, 2925, 3005, 3112, 3281, 3435, 3717, 3979, 3981, 3997, 4428, 4463, 4505, 4522, 4649, 4720, 4773,

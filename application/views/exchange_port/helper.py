@@ -54,6 +54,9 @@ def get_area(must_show_nodes, width, height):
 def update_delete_and_change_label(data):
     return exchange_port.update_delete_and_change_label(data)
 
+def add_new_categories(data):
+    return exchange_port.add_new_categories(data)
+
 def fisheye(must_show_nodes, area, level, wh):
     return exchange_port.fisheye(must_show_nodes, area, level, wh)
 

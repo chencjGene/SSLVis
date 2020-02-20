@@ -217,6 +217,9 @@ class Data(object):
         # labeled_num = sum(self.train_y != -1)
         # logger.info("labeled data num: {}".format(labeled_num))
 
+    def add_new_categories(self, name):
+        self.class_names.append(name)
+        return len(self.class_names) - 1
 
 class GraphData(Data):
     def __init__(self, dataname, labeled_num=None, total_num=None, seed=123):

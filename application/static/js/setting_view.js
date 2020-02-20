@@ -218,8 +218,7 @@ f: {
 			dataset_selection_util.f.events.stop(event)
 			var child = dataset_selection_util.f.getTrg(event), children, i, parent
 			if($(child).attr("class") === "option"){
-				// TODO: removed for debug
-				// that.choose($(child).attr("id"));
+				that.choose($(child).attr("id"));
 			}
 			switch (true) {
 				case (child.classList.contains("psuedo_select")):

@@ -195,3 +195,14 @@ DataLoaderClass.prototype.update_delete_and_change_label_handler = function(call
     }
     return _update_delete_and_change_label_handler;
 };
+
+DataLoaderClass.prototype.add_new_categories_handler = function(callback){
+    let that = this;
+
+    function _add_new_categories_handler(data){
+        //TODO: change state
+        that.state.nodes = data.nodes;
+        if (callback) callback();
+    }
+    return _add_new_categories_handler;
+}

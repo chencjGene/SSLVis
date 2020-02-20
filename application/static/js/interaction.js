@@ -33,3 +33,7 @@ function reset_spinner(){
     $('#update-button').html("Update")
     .attr("disabled", false);
 }
+
+function add_new_categories(name, idxs){
+    DataLoader.add_new_categories(name, idxs);
+}
