@@ -71,7 +71,7 @@ class SSLModel(object):
         self.propagation_path_to = None
         self.simplified_affinity_matrix = None
         # # TODO: for debug
-        # self.case_labeling()
+        self.case_labeling()
         self._training(evaluate=evaluate, simplifying=simplifying)
         logger.info("init finished")
 
@@ -577,6 +577,8 @@ class SSLModel(object):
         selected_snake = np.random.choice(snake, 5, replace=False)
         self.data.label_instance(selected_lizard, [10, 10, 10, 10, 10])
         self.data.label_instance(selected_snake, [11, 11, 11, 11, 11])
+        self.data.add_new_categories("lizard")
+        self.data.add_new_categories("snake")
 
     def case_labeling2(self):
         self.data.label_instance([2243, 10489], [5,5])
