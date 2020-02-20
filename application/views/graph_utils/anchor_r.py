@@ -9,6 +9,7 @@ import math
 import time
 from scipy.stats import entropy
 import math
+from sklearn.metrics import pairwise_distances
 
 from ..utils.config_utils import config
 from ..utils.log_utils import logger
@@ -47,6 +48,8 @@ class Anchors:
         self.entropy = None
         self.rotate_matrix = np.array([[1,0],[0,1]])
         self.aggregate = Aggregation()
+        self.labeled_matrix = None
+        self.labeled_idx_map = None
 
     # added by Changjian
     # link this class to SSLModel and Data
@@ -67,6 +70,8 @@ class Anchors:
         self.data_degree = None
         self.wh = 1
         self.rotate_matrix = np.array([[1,0],[0,1]])
+        self.labeled_matrix = None
+        self.labeled_idx_map = None
 
     def get_pred_labels(self):
         labels = self.model.get_pred_labels()
@@ -143,7 +148,15 @@ class Anchors:
 
         number_scale_each_level = sampling_scale ** (1.0 / (levels_number - 1))
         sample_number = node_num
-        level_selection = np.arange(node_num)
+
+        all_labeled_idx = np.where(self.data.get_full_train_label() > -1)[0]
+        level_labeled_selection = np.where(self.data.get_full_train_label() > -1)[0]
+        mat, _ = self.get_labeled_matrix()
+        # get min dis:
+        mat = mat.flatten()
+        mat = mat[mat>1e-4]
+        min_dis = np.min(mat)
+        level_unlabeled_selection = np.array(list(filter(lambda id: id not in all_labeled_idx, np.arange(node_num))))
         logger.info("level num:{}".format(levels_number))
         for level_id in range(levels_number - 2, -1, -1):
             sample_number = round(sample_number / number_scale_each_level)
@@ -151,11 +164,15 @@ class Anchors:
                 sample_number = target_num
             logger.info("Level:{}, Sampling number:{}".format(level_id, sample_number))
             sampler = DensityBasedSampler(n_samples=sample_number)
-            last_selection = level_selection
+            last_selection = level_unlabeled_selection
             tmp_selection = sampler.fit_sample(data=train_x[last_selection], return_others=False,
-                                                 mixed_degree=entropy[last_selection])
-            level_selection = last_selection[tmp_selection]
+                                                 mixed_degree=1-entropy[last_selection])
+            level_unlabeled_selection = last_selection[tmp_selection]
             logger.info("construct ball tree...")
+            min_dis *= 2
+            level_labeled_selection = self.labeled_sampling(level_labeled_selection, min_dis)
+            print("level {}, labeled data selection length:{}".format(level_id, level_labeled_selection.shape[0]))
+            level_selection = np.append(level_labeled_selection, level_unlabeled_selection)
             tree = BallTree(train_x[level_selection])
             neighbors_nn = tree.query(train_x[level_infos[level_id+1]['index']], 1, return_distance=False)
             level_next = [[] for next_id in range(level_selection.shape[0])]
@@ -185,6 +202,32 @@ class Anchors:
         self.entropy /= np.max(self.entropy)
         return self.entropy
 
+    def get_labeled_matrix(self):
+        if self.labeled_matrix is None:
+            labeled_data = np.where(self.data.get_full_train_label() > -1)[0]
+            self.labeled_idx_map = {}
+            for i, id in enumerate(labeled_data):
+                self.labeled_idx_map[id] = i
+            nodes = self.tsne[labeled_data]
+            self.labeled_matrix = np.clip(pairwise_distances(nodes), 1e-4, 1e4)
+        return self.labeled_matrix, self.labeled_idx_map
+
+    def labeled_sampling(self, ids, min_dis):
+        mat, labeled_map = self.get_labeled_matrix()
+        select_ids = []
+        remain_ids = ids
+        train_labels = self.data.get_full_train_label()
+        while remain_ids.shape[0] > 0:
+            select_id = np.random.choice(remain_ids)
+            ok = True
+            for chosen_id in select_ids:
+                if mat[labeled_map[select_id]][labeled_map[chosen_id]] < min_dis and train_labels[select_id] == train_labels[chosen_id]:
+                    ok = False
+                    break
+            if ok:
+                select_ids.append(select_id)
+            remain_ids = remain_ids[remain_ids != select_id]
+        return np.array(select_ids)
 
     def get_data_area(self, ids = None, train_x_tsne = None):
         assert ids is not None or train_x_tsne is not None
