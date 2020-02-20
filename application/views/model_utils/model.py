@@ -242,9 +242,17 @@ class SSLModel(object):
             sleep(sleep_time)
             return False
 
-    def local_search_k(self, selected_idxs, k_list=None, simplifying=True):
+    def local_search_k(self, selected_idxs, k_list=None, selected_categories=None, simplifying=True):
         if k_list is None:
             k_list = list(range(1,10))
+        if selected_categories is not None:
+            old_selected_idxs = selected_idxs.copy() 
+            selected_idxs = []
+            train_pred = self.label[-1]
+            for idx in old_selected_idxs:
+                if selected_categories[train_pred[i]]:
+                    selected_idxs.append(idx)
+            logger.info("bincount info: {}".format(str(np.bincount(train_pred[np.array(selected_idxs)]))))
         train_gt = self.data.get_train_ground_truth()
         train_y = self.data.get_train_label()
         neighbors = self.data.get_neighbors()

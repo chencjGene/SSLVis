@@ -2,14 +2,14 @@
 * added by Changjian Chen, 20200107
 * */
 
-function update_k(k){
+function update_k(){
+    let k = $("#global-k").slider("getValue");
     DataLoader.update_k(k);
 }
 
-function local_update_k(selected_idxs){
-    // TODO: for DEBUG
-    selected_idxs = [1,2,3];
-    DataLoader.local_update_k(selected_idxs);
+function local_update_k(){
+
+    DataLoader.local_update_k();
 }
 
 function update_filter_threshold(threshold){

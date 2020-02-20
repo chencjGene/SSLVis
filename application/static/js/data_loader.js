@@ -51,6 +51,7 @@ DataLoaderClass = function () {
     that.filter_view = null;
     that.edit_view = null;
     that.image_view = null;
+    that.setting_view = null;
 
     // Data storage
     that.state = {
@@ -111,6 +112,7 @@ DataLoaderClass = function () {
             that.get_manifest_handler(function(){
                 that.update_control_info();
                 that.update_edit_info();
+                that.update_setting_view();
             }), "json", "GET");
 
         that.graph_node = new request_node(that.graph_url + params+"&wh="+that.wh,
@@ -174,11 +176,14 @@ DataLoaderClass = function () {
         that.graph_node.notify();
     };
 
-    that.local_update_k = function(selected_idxs){
+    that.local_update_k = function(){
         let params = "?dataset=" + that.dataset;
         that.local_update_k_node = new request_node(that.local_update_k_url + params,
             that.local_update_k_handler(that.update_graph_view), "json", "POST");
-        let data = {selected_idxs};
+        // let data = {selected_idxs};
+        data = that.setting_view.get_local_update_setting();
+        selected_idxs = that.graph_view.get_highlights();
+        data["selected_idx"] = selected_idxs;
         let level = that.graph_view.get_level();
         let area = that.state.area;
         data["area"] = area;
@@ -415,6 +420,13 @@ DataLoaderClass = function () {
         that.state.outdegree_widget_range = outdegree_range;
     };
 
+    // setting view
+    that.update_setting_view = function(){
+        that.setting_view.component_update({
+            label_names: that.state.label_names
+        });
+    };
+
     //graph view:
     // first load graph
     that.get_graph_view = function() {
@@ -461,7 +473,8 @@ DataLoaderClass = function () {
             "visible_items":that.state.visible_items,
             "glyphs": that.state.glyphs,
             "aggregate": that.state.aggregate
-        })
+        });
+        reset_spinner();
     };
 
     that.graph_home_callback = function() {

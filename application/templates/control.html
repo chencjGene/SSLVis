@@ -35,26 +35,29 @@
                     </div>
                 </div>
                 <div style="display: flex; justify-content: center; align-items: center; width: 35%;">
-                    <button id="load-button" type="button" class="btn btn-outline-secondary">Load</button>
+                    <button id="load-button" type="button" class="btn btn-outline-secondary" onclick="update_k()">Load</button>
                 </div>
                 
             </div>
 
-            <div id="toolbar-title">UPDATING</div>
+            <div id="toolbar-title">LOCAL UPDATING</div>
             <div class="plain-text">
                 <div id="update-range" class="update-info-row">
-                    <div  class="plain-text update-info-title">Searching range of k</div>
+                    <div  class="plain-text update-info-title">
+                        <span>Searching range of k: </span>
+                        <span id="k-range">[2,3]</span>
+                    </div>
                     <div class="update-info-content">
                         <input id="local-k" type="text"/><br/>
                     </div>
                 </div>
-                <div id="update-global-local" class="update-info-row">
+                <!-- <div id="update-global-local" class="update-info-row">
                     <div  class="plain-text update-info-title">Global or local</div>
                     <div class="update-info-content">
                         <button type="button" class="btn btn-outline-secondary">Global</button>
                         <button type="button" class="btn btn-outline-secondary">Local</button>
                     </div>
-                </div>
+                </div> -->
                 <div id="update-categories" class="update-info-row">
                     <div class="plain-text update-info-title">Categories</div>
                     <div class="update-info-content">
@@ -64,7 +67,7 @@
                 </div>
                 <div id="update-button-div" class="update-info-row">
                     <div class="update-info-button">
-                        <button id="update-button" type="button" class="btn btn-outline-secondary">Update</button>
+                        <button id="update-button" type="button" class="btn btn-outline-secondary" onclick="local_update_k()">Update</button>
                     </div>
                 </div>
             </div>
