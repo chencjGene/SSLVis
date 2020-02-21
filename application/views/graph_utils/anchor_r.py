@@ -163,7 +163,7 @@ class Anchors:
             if level_id == 0:
                 sample_number = target_num
             logger.info("Level:{}, Sampling number:{}".format(level_id, sample_number))
-            sampler = DensityBasedSampler(n_samples=sample_number)
+            sampler = DensityBasedSampler(n_samples=sample_number, beta=0.25)
             last_selection = level_unlabeled_selection
             tmp_selection = sampler.fit_sample(data=train_x[last_selection], return_others=False,
                                                  mixed_degree=1-entropy[last_selection])
@@ -184,6 +184,23 @@ class Anchors:
             }
 
         return level_infos
+
+    def get_hierarchy_children(self, idxs):
+        hierarchy_info = self.get_hierarchical_sampling()
+        res = list(idxs)
+        max_level = len(hierarchy_info)-1
+        for level in range(max_level):
+            cur_level_nodes_id = list(hierarchy_info[level]["index"])
+            cur_level_nodes_next = hierarchy_info[level]["next"]
+            adds = []
+            for id in res:
+                if id in cur_level_nodes_id:
+                    print([cur_level_nodes_next[cur_level_nodes_id.index(id)]])
+                    adds += hierarchy_info[level+1]["index"][cur_level_nodes_next[cur_level_nodes_id.index(id)]].tolist()
+            res = list(set(res) | set(adds))
+        return np.array(res)
+
+
 
     def get_margin(self, process_data):
         iter_num = process_data.shape[0]
