@@ -148,9 +148,9 @@ let GraphLayout = function (container) {
         iter = Object.values(nodes)[0].label.length-1;
     };
 
-    that.setIter = function (newiter) {
+    that.setIter = async function (newiter) {
         iter = newiter;
-        that._update_view(false);
+        await that._update_view(false);
     };
 
     that._update_view = function() {

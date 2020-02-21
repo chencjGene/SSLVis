@@ -116,9 +116,10 @@ let DistLayout = function (container) {
             / (label_names.length - 1);
         console.log("rect-margin", rect_margin);
         // update node and link data 
-        current_iter = 0;
+
         let label_sums = JSON.parse(JSON.stringify(state.label_sums));
         total_iters = label_sums.length;
+        current_iter =  total_iters-1;
         iter_list = new Array(total_iters).fill().map((_, i) => i);
         let flows = JSON.parse(JSON.stringify(state.flows));
         let original_flows = JSON.parse(JSON.stringify(state.flows));
@@ -599,13 +600,30 @@ let DistLayout = function (container) {
     };
 
     that._update_slider = function(){
+        let xPositionScale = d3
+            .scaleLinear()
+            .domain([- slider_hump_length/slider_delta, total_iters - 1 + slider_hump_length/slider_delta])
+            .range([slider_x_shift - slider_hump_length, slider_x_shift + slider_width + slider_hump_length]);
         slider_group.selectAll("#loss-slider-base-circle")
             .attr("fill", function (d, i) {
                 if(i<=current_iter){
                     return "#808080";
                 }
                 else return "#e4e7ed";
+            })
+            .attr('cx', (d, i) => {
+                return xPositionScale(i)
             });
+
+        slider_group.selectAll("#loss-view-slider-circle")
+            .attr('cx', xPositionScale(current_iter));
+
+        slider_group.selectAll("#loss-slider-left")
+            .attr("x2", xPositionScale(current_iter));
+
+        slider_group.selectAll(".loss-text")
+            .attr("x", (d,i) => xPositionScale(i))
+            .text(d => d);
     };
 
     that._update_legend = function(){
