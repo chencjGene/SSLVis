@@ -232,7 +232,7 @@ class Anchors:
     def get_data_area(self, ids = None, train_x_tsne = None):
         assert ids is not None or train_x_tsne is not None
         if ids is not None:
-            data = self.get_train_x_tsne()[ids]
+            data = self.tsne[ids]
         else:
             data = train_x_tsne
         min_x = float(np.min(data[:,0]))
@@ -418,7 +418,7 @@ class Anchors:
         # TODO  2020.2.15 change to init tsne
         # tsne = self.re_tsne(selection, old_cnt)
         tsne = self.get_init_tsne(selection)
-        tsne = np.dot(tsne, self.rotate_matrix)
+        # tsne = np.dot(tsne, self.rotate_matrix)
         self.old_nodes_id = selection
         self.old_nodes_tsne = tsne
         graph = self.convert_to_dict(selection, tsne)

@@ -151,7 +151,7 @@ let FilterLayout = function (container) {
     that.label_scented_widget = function() {
         // label interval
         let min_label_id = -1;
-        let max_label_id = 9;
+        let max_label_id = 11;
         let label_cnt = max_label_id-min_label_id+1;
         function interval_idx(label_id){
             return label_id;

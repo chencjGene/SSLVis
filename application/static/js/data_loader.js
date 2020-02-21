@@ -367,7 +367,7 @@ DataLoaderClass = function () {
 
         // label interval
         let min_label_id = -1;
-        let max_label_id = 9;
+        let max_label_id = 11;
         let labels = [];
         let label_cnt = max_label_id-min_label_id+1;
         for(let i=0; i<label_cnt; i++){
@@ -461,7 +461,7 @@ DataLoaderClass = function () {
         // update filter
         that.set_filter_data(that.state.nodes);
         let label_range = [];
-        for(let i=0; i<11; i++){
+        for(let i=0; i<13; i++){
             label_range.push(i);
         }
         // // edited by Changjian
@@ -510,7 +510,7 @@ DataLoaderClass = function () {
         // update filter
         that.set_filter_data(that.state.nodes);
         let label_range = [];
-        for(let i=0; i<11; i++){
+        for(let i=0; i<13; i++){
             label_range.push(i);
         }
         that.set_filter_range([20, 19], label_range, [0, 19], [0,19]);
