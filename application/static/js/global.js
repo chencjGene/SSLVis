@@ -44,10 +44,30 @@ let SettingView = null;
 //     "#8c564b"
 // ];
 let CategoryColor = ["#1f77b4",
-    "#ff7f0e", "#2ca02c",
-    "#d62728", "#9467bd",
-    "#8c564b", "#e377c2",
-    "#ffdb45", "#bcbd22", "#17becf"];
+    "#ff7f0e",
+    "#2ca02c",
+    "#d62728",
+    "#9467bd",
+    "#8c564b",
+    "#e377c2",
+    "#ffdb45",
+    "#bcbd22",
+    "#17becf",
+    "#a6cee3",
+    "#b2df8a"];
+
+// let CategoryColor = ["#a6cee3",
+//     "#1f78b4",
+//     "#b2df8a",
+//     "#33a02c",
+//     "#fb9a99",
+//     "#e31a1c",
+//     "#fdbf6f",
+//     "#ff7f00",
+//     "#cab2d6",
+//     "#6a3d9a",
+//     "#ffff99",
+// //     "#b15928"];
 
 let UnlabeledColor = "#A9A9A9";
 

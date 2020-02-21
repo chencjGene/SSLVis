@@ -24,7 +24,7 @@ let GraphLayout = function (container) {
     let color_unlabel = UnlabeledColor;
     let color_label = CategoryColor;
     let edge_color = UnlabeledColor;
-    let AnimationDuration = 1000;
+    let AnimationDuration = 300;
     let pathGenerator = d3.line().curve(d3.curveCardinal.tension(0.5));
 
     // draw containter

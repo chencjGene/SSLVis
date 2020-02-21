@@ -134,7 +134,7 @@ def playground():
     neighbors = np.load(os.path.join(d.selected_dir, "neighbors.npy"))
     d.case_labeling()
     d.case_labeling2()
-    d.init(k=6, evaluate=False, simplifying=False)
+    d.init(k=6, evaluate=True, simplifying=False)
     back_up_affinity_matrix = d.data.affinity_matrix.copy()
     # test_pred = d.adaptive_evaluation()
     # test_pred = np.array(test_pred)

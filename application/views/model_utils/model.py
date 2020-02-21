@@ -72,6 +72,7 @@ class SSLModel(object):
         self.simplified_affinity_matrix = None
         # # TODO: for debug
         self.case_labeling()
+        self.case_labeling2()
         self._training(evaluate=evaluate, simplifying=simplifying)
         logger.info("init finished")
 
@@ -581,4 +582,5 @@ class SSLModel(object):
         self.data.add_new_categories("snake")
 
     def case_labeling2(self):
-        self.data.label_instance([2243, 10489], [5,5])
+        # self.data.label_instance([2243, 10489], [5,5])
+        self.data.label_instance([2243, 7657], [5,5])
