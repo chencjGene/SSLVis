@@ -31,6 +31,26 @@ from .model_helper import build_laplacian_graph
 
 DEBUG = False
 
+def change_local(selected_idxs, neighbors, affinity_matrix, local_k):
+    from scipy import sparse
+    selected_num = len(selected_idxs)
+    instance_num = neighbors.shape[0]
+    indptr = [i * local_k for i in range(selected_num + 1)]
+    indices = neighbors[selected_idxs][:, :local_k].reshape(-1).tolist()
+    data = neighbors[selected_idxs][:, :local_k].reshape(-1)
+    data = (data * 0 + 1.0).tolist()
+    selected_affinity_matrix = sparse.csr_matrix((data, indices, indptr),
+                                                 shape=(selected_num, instance_num)).toarray()
+    affinity_matrix = affinity_matrix.toarray()
+    affinity_matrix[selected_idxs, :] = selected_affinity_matrix
+    affinity_matrix = sparse.csr_matrix(affinity_matrix)
+
+    # affinity_matrix = affinity_matrix + affinity_matrix.T
+    affinity_matrix = sparse.csr_matrix((np.ones(len(affinity_matrix.data)).tolist(),
+                                         affinity_matrix.indices, affinity_matrix.indptr),
+                                        shape=(instance_num, instance_num))
+    return affinity_matrix
+
 class SSLModel(object):
     def __init__(self, dataname, labeled_num=None, total_num=None, seed=123):
         self.dataname = dataname
@@ -70,10 +90,26 @@ class SSLModel(object):
         self.propagation_path_from = None
         self.propagation_path_to = None
         self.simplified_affinity_matrix = None
-        # # TODO: for debug
-        self.case_labeling()
-        self.case_labeling2()
+        # # # TODO: for debug
+        # self.case_labeling()
+        # self.case_labeling2()
         self._training(evaluate=evaluate, simplifying=simplifying)
+
+        # self._training(evaluate=False, simplifying=False)
+        # # # TODO: for debug
+        # train_pred = self.labels[-1]
+        # train_gt = self.data.get_train_ground_truth()
+        # affinity_matrix = self.data.affinity_matrix
+        # for k, i in [[2, 5]]:
+        #     # for k,i in [[2,5]]:
+        #     inds = train_gt == i
+        #     inds[train_pred == i] = False
+        #     selected_idxs = np.array(range(len(inds)))[inds]
+        #     affinity_matrix = change_local(selected_idxs, self.data.get_neighbors(), affinity_matrix, k)
+        # self.data.affinity_matrix = affinity_matrix
+        # self._training(rebuild=False, evaluate=True, simplifying=True)
+
+
         logger.info("init finished")
 
     def setK(self, k=None):
@@ -306,6 +342,39 @@ class SSLModel(object):
         acc = accuracy_score(test_y, probabilities.argmax(axis=1))
         logger.info("test accuracy: {}".format(acc))
         return probabilities.argmax(axis=1)
+
+    def adaptive_evaluation_unasync(self, pred=None):
+        affinity_matrix = self.data.get_graph()
+        affinity_matrix.setdiag(0)
+        if pred is None:
+            pred = self.pred_dist
+        test_X = self.data.get_test_X()
+        test_y = self.data.get_test_ground_truth()
+        test_neighbors = self.data.get_test_neighbors()
+        logger.info("neighbor_result got!")
+        estimate_k = 3
+        s = 0
+        labels = []
+        rest_idxs = self.data.get_rest_idxs()
+        m = self.data.get_new_id_map()
+        adaptive_ks = []
+        for i in tqdm(range(test_X.shape[0])):
+            j_in_this_row = test_neighbors[i, :]
+            j_in_this_row = j_in_this_row[j_in_this_row != -1]
+            estimated_idxs = j_in_this_row[:estimate_k]
+            estimated_idxs = [m[i] for i in estimated_idxs]
+            adaptive_k = affinity_matrix[estimated_idxs, :].sum() / estimate_k
+            selected_idxs = j_in_this_row[:int(adaptive_k)]
+            selected_idxs = [m[i] for i in selected_idxs]
+            p = pred[selected_idxs].sum(axis=0)
+            labels.append(p.argmax())
+            s += adaptive_k
+            adaptive_ks.append(adaptive_k)
+
+        acc = accuracy_score(test_y, labels)
+        logger.info("test accuracy: {}".format(acc))
+        print(s / test_X.shape[0])
+        return labels, np.array(adaptive_ks)
 
     @async_once
     def adaptive_evaluation(self, pred=None):

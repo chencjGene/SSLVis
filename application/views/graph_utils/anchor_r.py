@@ -195,7 +195,7 @@ class Anchors:
             adds = []
             for id in res:
                 if id in cur_level_nodes_id:
-                    print([cur_level_nodes_next[cur_level_nodes_id.index(id)]])
+                    # print([cur_level_nodes_next[cur_level_nodes_id.index(id)]])
                     adds += hierarchy_info[level+1]["index"][cur_level_nodes_next[cur_level_nodes_id.index(id)]].tolist()
             res = list(set(res) | set(adds))
         return np.array(res)
