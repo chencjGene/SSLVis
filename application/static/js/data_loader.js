@@ -276,6 +276,8 @@ DataLoaderClass = function () {
             "label_names": that.state.label_names,
             "dist_mode": that.state.dist_mode
         });
+        //TODO:
+        that.update_setting_view();
     };
 
     that.retrain = function(){ 

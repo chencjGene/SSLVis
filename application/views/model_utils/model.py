@@ -346,9 +346,9 @@ class SSLModel(object):
         if selected_categories is not None:
             old_selected_idxs = selected_idxs.copy() 
             selected_idxs = []
-            train_pred = self.label[-1]
+            train_pred = self.labels[-1]
             for idx in old_selected_idxs:
-                if selected_categories[train_pred[i]]:
+                if selected_categories[train_pred[idx]]:
                     selected_idxs.append(idx)
             logger.info("bincount info: {}".format(str(np.bincount(train_pred[np.array(selected_idxs)]))))
         train_gt = self.data.get_train_ground_truth()

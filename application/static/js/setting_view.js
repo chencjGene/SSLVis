@@ -11,7 +11,7 @@ let SettingLayout = function () {
     let range = null;
 	let value = null;
 	
-	let rect_width = 20; 
+	let rect_width = 18;
 
     let k = 0;
 	let AnimationDuration = 1000;
