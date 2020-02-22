@@ -307,6 +307,7 @@ class SSLModel(object):
                                                      shape=(selected_num, instance_num)).toarray()
         affinity_matrix = affinity_matrix.toarray()
         affinity_matrix[selected_idxs, :] = selected_affinity_matrix
+        affinity_matrix[:, selected_idxs] = selected_affinity_matrix.T
         affinity_matrix = sparse.csr_matrix(affinity_matrix)
 
         n_components, labels = sparse.csgraph.connected_components(csgraph=affinity_matrix,
