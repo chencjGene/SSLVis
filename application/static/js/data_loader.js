@@ -89,6 +89,7 @@ DataLoaderClass = function () {
         visible_items:{},
         aggregate:[],
         is_zoom: true,
+        rect_nodes: [],
         // history info:
         history_data: null,
         // edit info:
@@ -491,7 +492,8 @@ DataLoaderClass = function () {
             "rescale":that.state.rescale,
             "visible_items":that.state.visible_items,
             "glyphs": that.state.glyphs,
-            "aggregate": that.state.aggregate
+            "aggregate": that.state.aggregate,
+            "rect_nodes": that.state.rect_nodes
         });
         reset_spinner();
     };
@@ -570,6 +572,7 @@ DataLoaderClass = function () {
         if(mode.startsWith("showpath")){
             let from_or_to = mode.split("-")[1];
             that.state.is_show_path = true;
+            that.state.rect_nodes = that.state.highlights;
             that.state.path = [];
             for(let apath of data){
                 that.state.path.push([apath, from_or_to]);
@@ -591,7 +594,6 @@ DataLoaderClass = function () {
 
     that.show_highlight_node = function(highlight_nodes) {
         that.state.highlights = highlight_nodes;
-        that.state.is_show_path = false;
         that.state.rescale = false;
         that.update_graph_view();
     };
@@ -603,6 +605,7 @@ DataLoaderClass = function () {
                 that.state.path.push([apath, mode]);
             }
             that.state.is_show_path = true;
+            that.state.rect_nodes = that.state.highlights;
         }
         else {
             that.state.path = [];

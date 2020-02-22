@@ -36,6 +36,7 @@ let GraphLayout = function (container) {
     let nodes_in_group = null;
     let golds_in_group = null;
     let glyph_in_group = null;
+    let legend_group = null;
 
     // meta data
     let nodes = {};
@@ -49,6 +50,7 @@ let GraphLayout = function (container) {
     let iter = -1;
     let visible_items = {};
     let aggregate = [];
+    let rect_nodes = [];
 
     // from area to main group
     that.center_scale_x = null;
@@ -70,6 +72,7 @@ let GraphLayout = function (container) {
             .attr("width", that.width)
             .attr("height", that.height);
         that.main_group = that.svg.append('g').attr('id', 'main_group');
+        legend_group = that.main_group.append("g").attr("id", "legend-group-g");
         path_group = that.main_group.append("g").attr("id", "graph-path-g");
         nodes_group = that.main_group.append("g").attr("id", "graph-tsne-point-g");
         golds_group = that.main_group.append("g").attr("id", "graph-gold-g");
@@ -107,6 +110,7 @@ let GraphLayout = function (container) {
         visible_items = state.visible_items;
         glyphs = state.glyphs;
         aggregate = state.aggregate;
+        rect_nodes = state.rect_nodes;
         // path
         path = [];
         path_nodes = {};
@@ -375,9 +379,7 @@ let GraphLayout = function (container) {
                 .on("click", function (d) {
                     // check if hided
                     if(visible_items[d.id] === false) return;
-                    let eid = d.id;
-                    let nodes = d3.select(this);
-                    that.data_manager.update_image_view(nodes);
+                     that.highlight([d.id]);
                 })
                 .transition()
                 .duration(AnimationDuration)
@@ -483,22 +485,22 @@ let GraphLayout = function (container) {
         let rect_id = "path-select-rect";
         let rect = null;
         if(is_show_path){
-            for(let node_id of highlights){
+            for(let node_id of rect_nodes){
                 let node = nodes[node_id];
                 min_x = Math.min(that.center_scale_x(node.x), min_x);
                 min_y = Math.min(that.center_scale_y(node.y), min_y);
                 max_x = Math.max(that.center_scale_x(node.x), max_x);
                 max_y = Math.max(that.center_scale_y(node.y), max_y);
             }
-            if(that.main_group.select("#"+rect_id).size() === 0){
-                rect = that.main_group.append("rect").attr("id", rect_id);
+            if(legend_group.select("#"+rect_id).size() === 0){
+                rect = legend_group.append("rect").attr("id", rect_id);
             }
-            let margin = 15;
+            let margin = 15 * that.zoom_scale;
             min_x-=margin;
             min_y-=margin;
             max_x+=margin;
             max_y+=margin;
-            rect = that.main_group.select("#"+rect_id);
+            rect = legend_group.select("#"+rect_id);
             rect.attr("x", min_x)
                 .attr("y", min_y)
                 .attr("rx", 5)
@@ -515,7 +517,7 @@ let GraphLayout = function (container) {
                 .attr("opacity", 1);
         }
         else {
-            that.main_group.select("#"+rect_id)
+            legend_group.select("#"+rect_id)
                 .transition()
                 .duration(AnimationDuration)
                 .attr("opacity", 0);
