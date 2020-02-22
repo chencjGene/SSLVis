@@ -671,6 +671,24 @@ let GraphLayout = function (container) {
             await that._remove();
     };
 
+    that.show_iter = function() {
+        nodes_in_group
+                .transition()
+                .duration(AnimationDuration)
+                .attr("fill", function (d) {
+                    return d.label[iter]===-1?color_unlabel:color_label[d.label[iter]];
+                })
+    };
+
+    that.show_ground_truth = function() {
+        nodes_in_group
+                .transition()
+                .duration(AnimationDuration)
+                .attr("fill", function (d) {
+                    return d.truth===-1?color_unlabel:color_label[d.truth];
+                })
+    };
+
     that.get_level = function(){
         return transform_plg.get_level();
     };
