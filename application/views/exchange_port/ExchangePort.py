@@ -97,7 +97,8 @@ class ExchangePortClass(object):
         return jsonify(graph)
 
     def local_update_k(self, data):
-        self.model.local_search_k(data["selected_idxs"], data["range"], data["selected_categories"])
+        self.model.local_update(data["selected_idxs"], local_k=3)
+        # self.model.local_search_k(data["selected_idxs"], data["range"], data["selected_categories"])
         return self.fisheye(self.current_ids, data["area"], data["level"], data["wh"])
         # return jsonify(res)
 

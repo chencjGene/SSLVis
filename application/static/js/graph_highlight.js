@@ -182,7 +182,8 @@ let GraphHighlight = function (parent) {
     };
 
     that.highlight = function(nodes, select_ids) {
-        view.data_manager.update_image_view(select_ids);
+        if(select_ids.length<20)
+            view.data_manager.update_image_view(select_ids);
         //first check if all select_id are in nodes
         let all_load = true;
         let new_ids = [];
