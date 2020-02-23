@@ -62,9 +62,15 @@ class Data(object):
             # np.save(os.path.join(self.data_root, "snake.npy"), snake)
             lizard = np.load(os.path.join(os.path.join(self.data_root, "lizard.npy")))
             snake = np.load(os.path.join(os.path.join(self.data_root, "snake.npy")))
-            self.test_idx = np.concatenate((self.test_idx, lizard, snake))
-            self.y[lizard] = 10
-            self.y[snake] = 11
+            test_labels = pickle_load_data(os.path.join(self.data_root, "new_test.npy"))
+            self.test_idx = []
+            for i, test_idx in enumerate(test_labels):
+                self.test_idx += test_idx
+                self.y[test_idx] = i
+            self.test_idx = np.array(self.test_idx)
+            # self.test_idx = np.concatenate((self.test_idx, lizard, snake))
+            # self.y[lizard] = 10
+            # self.y[snake] = 11
 
     def _load_data(self):
         processed_data_filename = os.path.join(self.data_root, config.processed_dataname)
@@ -77,7 +83,7 @@ class Data(object):
         self.test_idx = processed_data[config.test_idx_name]
         self.labeled_idx = processed_data[config.labeled_idx_name]
         self.unlabeled_idx = processed_data[config.unlabeled_idx_name]
-        self.class_names = processed_data[config.class_name]
+        self.class_names = processed_data[config.class_name]+["lizard", "snake"]
         self.add_info = processed_data[config.add_info_name]
 
         if self.selected_labeled_num is None and self.selected_total_num is None:

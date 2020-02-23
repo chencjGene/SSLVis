@@ -144,11 +144,13 @@ def playground():
     train_gt = d.data.get_train_ground_truth()
     affinity_matrix = back_up_affinity_matrix.copy()
     # for k,i in [[2,7], [2,6],[2,5]]:
-    for k,i in [[2,7], [2,6],[2,5]]:
-    # for k,i in [[2,5]]:
+    # for k,i in [[2,7], [2,6],[2,5]]:
+    for k,i in [[2,5]]:
         inds = train_gt == i
-        inds[train_pred == i] = False
+        inds[train_pred != 0] = False
         selected_idxs = np.array(range(len(inds)))[inds]
+        print(selected_idxs)
+        print(neighbors[selected_idxs, :5])
         affinity_matrix = change_local(selected_idxs, neighbors, affinity_matrix, k)
     # for i in [2,3,5,6]:
     #     inds = train_gt == i
