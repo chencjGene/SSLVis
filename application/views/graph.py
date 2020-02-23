@@ -23,6 +23,8 @@ def app_get_manifest():
         labeled_num = int(labeled_num)
         total_num = int(total_num)
         print(dataname, labeled_num, total_num)
+    else:
+        dataname = dataname[0]
     set_model(dataname, labeled_num, total_num)
     return get_manifest()
 

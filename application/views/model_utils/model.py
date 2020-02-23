@@ -91,8 +91,8 @@ class SSLModel(object):
         self.propagation_path_to = None
         self.simplified_affinity_matrix = None
         # # # TODO: for debug
-        self.case_labeling()
-        self.case_labeling2()
+        # self.case_labeling()
+        # self.case_labeling2()
         self._training(evaluate=evaluate, simplifying=simplifying)
 
         # self._training(evaluate=False, simplifying=False)
@@ -167,7 +167,7 @@ class SSLModel(object):
 
         if evaluate:
             # self.evaluate()
-            self.adaptive_evaluation()
+            self.adaptive_evaluation_unasync()
             # self.adaptive_evaluation_bkp()
             # self.adaptive_evaluation_v2()
 
@@ -196,7 +196,7 @@ class SSLModel(object):
         pickle_save_data(influence_matrix_path, self.influence_matrix)
         return
 
-    @async_once
+    # @async_once
     def simplify_influence_matrix(self, threshold=0.7):
         self._influence_matrix()
         logger.info("begin simplify influence matrix")
