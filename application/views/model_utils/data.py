@@ -359,6 +359,51 @@ class GraphData(Data):
 
         return affinity_matrix
 
+    def _find_unconnected_nodes(self, affinity_matrix, labeled_id):
+        # logger.info("Finding unconnected nodes...")
+        edge_indices = affinity_matrix.indices
+        edge_indptr = affinity_matrix.indptr
+        node_num = edge_indptr.shape[0] - 1
+        connected_nodes = np.zeros((node_num))
+        connected_nodes[labeled_id] = 1
+
+        iter_cnt = 0
+        while True:
+            new_connected_nodes = affinity_matrix.dot(connected_nodes)+connected_nodes
+            new_connected_nodes = new_connected_nodes.clip(0, 1)
+            iter_cnt += 1
+            if np.allclose(new_connected_nodes, connected_nodes):
+                break
+            connected_nodes = new_connected_nodes
+        unconnected_nodes = np.where(new_connected_nodes<1)[0]
+        logger.info("Find unconnected nodes end. Count:{}, Iter:{}".format(unconnected_nodes.shape[0], iter_cnt))
+        return unconnected_nodes
+
+    def correct_unconnected_nodes(self, affinity_matrix):
+        logger.info("begin correct unconnected nodes...")
+        affinity_matrix = affinity_matrix.copy()
+        labeled_ids = np.where(self.get_train_label() > -1)[0]
+        iter_cnt = 0
+        while True:
+            unconnected_ids = self._find_unconnected_nodes(affinity_matrix, labeled_ids)
+            if unconnected_ids.shape[0] == 0:
+                logger.info("No correcnted nodes after {} iteration. Correction finished.".format(iter_cnt))
+                return affinity_matrix
+            else:
+                while True:
+                    corrected_id = np.random.choice(unconnected_ids)
+                    k_neighbors = self.neighbors[corrected_id]
+                    find = False
+                    for neighbor_id in k_neighbors:
+                        if neighbor_id not in unconnected_ids:
+                            find = True
+                            iter_cnt += 1
+                            affinity_matrix[corrected_id, neighbor_id] = 1
+                            break
+                    if find:
+                        break
+
+
     def get_neighbors_model(self):
         neighbors_model_path = os.path.join(self.selected_dir, "neighbors_model.pkl")
         if os.path.exists(neighbors_model_path):
