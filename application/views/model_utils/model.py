@@ -368,8 +368,8 @@ class SSLModel(object):
         logger.info("model accuracy without full update: {}".format(acc))
         # self.affinity_matrix = affinity_matrix
         # self.laplacian = laplacian_matrix
-        # self.data.affinity_matrix = self.data.correct_unconnected_nodes(affinity_matrix)
-        self.data.affinity_matrix = affinity_matrix
+        self.data.affinity_matrix = self.data.correct_unconnected_nodes(affinity_matrix)
+        # self.data.affinity_matrix = affinity_matrix
         self._training(rebuild=False, evaluate=True, simplifying=simplifying)
         return pred
 

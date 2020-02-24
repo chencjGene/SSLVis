@@ -11,7 +11,7 @@ from application.views.model_utils.model_helper import build_laplacian_graph
 from application.views.model_utils.model_helper import propagation
 
 def local_update(selected_idxs, F, graph_matrix, affinity_matrix, train_y, alpha=0.2, max_iter=30,
-                tol=0.001, process_record=False, normalized=False):
+                tol=1e-20, process_record=False, normalized=False):
     #: F must be the unnormalized one 
     # TODO: make it more efficient
     y = np.array(train_y)
@@ -107,6 +107,8 @@ def local_search_k(k_list, n_neighbors, selected_idxs, F, initial_affinity_matri
 
     for local_k in k_list:
     # for local_k in [2]:
+        if local_k <= 1:
+            continue
         indptr = [i * local_k for i in range(selected_num + 1)]
         indices = neighbors[selected_idxs][:, :local_k].reshape(-1).tolist()
         data = neighbors[selected_idxs][:, :local_k].reshape(-1)
@@ -114,8 +116,8 @@ def local_search_k(k_list, n_neighbors, selected_idxs, F, initial_affinity_matri
         selected_affinity_matrix = sparse.csr_matrix((data, indices, indptr),
             shape=(selected_num, instance_num)).toarray()
         affinity_matrix = initial_affinity_matrix.toarray()
-        affinity_matrix[selected_idxs, :] = selected_affinity_matrix
         affinity_matrix[:, selected_idxs] = selected_affinity_matrix.T
+        affinity_matrix[selected_idxs, :] = selected_affinity_matrix
         affinity_matrix = sparse.csr_matrix(affinity_matrix)        
 
         # affinity_matrix = affinity_matrix + affinity_matrix.T
@@ -132,8 +134,10 @@ def local_search_k(k_list, n_neighbors, selected_idxs, F, initial_affinity_matri
             train_y, normalized=True)
         # acc = accuracy_score(gt, pred.argmax(axis=1))
         acc = accuracy_score(gt[selected_idxs], pred.argmax(axis=1)[selected_idxs])
-        ent = entropy(pred.T + 1e-20).mean()
-        print(local_k, acc, ent, min_ent, iter_num)
+        max_pred = pred.max(axis=1)
+        prop_pred = pred[max_pred != 0]
+        ent = entropy(prop_pred.T + 1e-20).mean()
+        print(local_k, acc, "ent:", ent, min_ent, iter_num)
         if ent < min_ent:
             print("update k:", ent, min_ent)
             min_ent = ent 

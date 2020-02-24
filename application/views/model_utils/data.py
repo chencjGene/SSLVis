@@ -355,7 +355,7 @@ class GraphData(Data):
                                              affinity_matrix.indices, affinity_matrix.indptr),
                                             shape=(instance_num, instance_num))
 
-        affinity_matrix = self.correct_unconnected_nodes(affinity_matrix)
+        # affinity_matrix = self.correct_unconnected_nodes(affinity_matrix)
         logger.info("affinity_matrix construction finished!!")
 
         self.affinity_matrix = affinity_matrix
@@ -397,7 +397,7 @@ class GraphData(Data):
                 gt = self.get_train_ground_truth()
                 err_cnt = 0
                 all_cnt = 0
-                np.save("./buffer/add_edges.npy", np.array(correted_nodes))
+                # np.save("./buffer/add_edges.npy", np.array(correted_nodes))
                 # for source, target in correted_nodes:
                 #     all_cnt += 1
                 #     if gt[source] != gt[target]:
@@ -419,7 +419,6 @@ class GraphData(Data):
                             break
                     if find:
                         break
-
 
     def get_neighbors_model(self):
         neighbors_model_path = os.path.join(self.selected_dir, "neighbors_model.pkl")
