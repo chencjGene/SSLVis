@@ -368,6 +368,7 @@ class SSLModel(object):
         logger.info("model accuracy without full update: {}".format(acc))
         # self.affinity_matrix = affinity_matrix
         # self.laplacian = laplacian_matrix
+        # self.data.affinity_matrix = self.data.correct_unconnected_nodes(affinity_matrix)
         self.data.affinity_matrix = affinity_matrix
         self._training(rebuild=False, evaluate=True, simplifying=simplifying)
         return pred
@@ -437,7 +438,7 @@ class SSLModel(object):
         print(s / test_X.shape[0])
         return labels, np.array(adaptive_ks)
 
-    @async_once
+    # @async_once
     def adaptive_evaluation(self, pred=None):
         affinity_matrix = self.data.get_graph()
         affinity_matrix.setdiag(0)

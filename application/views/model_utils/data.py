@@ -354,7 +354,10 @@ class GraphData(Data):
         affinity_matrix = sparse.csr_matrix((np.ones(len(affinity_matrix.data)).tolist(),
                                              affinity_matrix.indices, affinity_matrix.indptr),
                                             shape=(instance_num, instance_num))
+
+        affinity_matrix = self.correct_unconnected_nodes(affinity_matrix)
         logger.info("affinity_matrix construction finished!!")
+
         self.affinity_matrix = affinity_matrix
 
         return affinity_matrix
@@ -381,6 +384,8 @@ class GraphData(Data):
 
     def correct_unconnected_nodes(self, affinity_matrix):
         logger.info("begin correct unconnected nodes...")
+        np.random.seed(123)
+        correted_nodes = []
         affinity_matrix = affinity_matrix.copy()
         labeled_ids = np.where(self.get_train_label() > -1)[0]
         iter_cnt = 0
@@ -388,6 +393,17 @@ class GraphData(Data):
             unconnected_ids = self._find_unconnected_nodes(affinity_matrix, labeled_ids)
             if unconnected_ids.shape[0] == 0:
                 logger.info("No correcnted nodes after {} iteration. Correction finished.".format(iter_cnt))
+                # debug: show how many edge is uncorrect
+                gt = self.get_train_ground_truth()
+                err_cnt = 0
+                all_cnt = 0
+                np.save("./buffer/add_edges.npy", np.array(correted_nodes))
+                # for source, target in correted_nodes:
+                #     all_cnt += 1
+                #     if gt[source] != gt[target]:
+                #         err_cnt+=1
+                # if all_cnt>0:
+                #     logger.info("All:{}, Err:{}, Percent:{}".format(all_cnt, err_cnt, err_cnt/all_cnt))
                 return affinity_matrix
             else:
                 while True:
@@ -399,6 +415,7 @@ class GraphData(Data):
                             find = True
                             iter_cnt += 1
                             affinity_matrix[corrected_id, neighbor_id] = 1
+                            correted_nodes.append([corrected_id, neighbor_id])
                             break
                     if find:
                         break
