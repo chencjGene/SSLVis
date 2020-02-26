@@ -83,7 +83,7 @@ class Data(object):
         self.test_idx = processed_data[config.test_idx_name]
         self.labeled_idx = processed_data[config.labeled_idx_name]
         self.unlabeled_idx = processed_data[config.unlabeled_idx_name]
-        self.class_names = processed_data[config.class_name]+["lizard", "snake"]
+        self.class_names = processed_data[config.class_name] #+["lizard", "snake"]
         self.add_info = processed_data[config.add_info_name]
 
         if self.selected_labeled_num is None and self.selected_total_num is None:
@@ -231,7 +231,7 @@ class GraphData(Data):
     def __init__(self, dataname, labeled_num=None, total_num=None, seed=123):
         super(GraphData, self).__init__(dataname, labeled_num, total_num, seed)
 
-        self.max_neighbors = 200
+        self.max_neighbors = 1000
         self.affinity_matrix = None
         self.state_idx = 0
         self.state = {}

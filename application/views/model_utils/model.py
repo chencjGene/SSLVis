@@ -94,7 +94,6 @@ class SSLModel(object):
         self.case_labeling()
         self.case_labeling2()
         self._training(evaluate=evaluate, simplifying=simplifying)
-
         # self._training(evaluate=False, simplifying=False)
         # # # TODO: for debug
         # train_pred = self.labels[-1]
@@ -340,7 +339,7 @@ class SSLModel(object):
         self.data.affinity_matrix = affinity_matrix
         self._training(rebuild=False, evaluate=True, simplifying=simplifying)
 
-    def local_search_k(self, selected_idxs, k_list=None, selected_categories=None, simplifying=True):
+    def local_search_k(self, selected_idxs, k_list=None, selected_categories=None, simplifying=True, evaluate=True):
         if k_list is None:
             k_list = list(range(1,10))
         if selected_categories is not None:
@@ -370,7 +369,7 @@ class SSLModel(object):
         # self.laplacian = laplacian_matrix
         self.data.affinity_matrix = self.data.correct_unconnected_nodes(affinity_matrix)
         # self.data.affinity_matrix = affinity_matrix
-        self._training(rebuild=False, evaluate=True, simplifying=simplifying)
+        self._training(rebuild=False, evaluate=evaluate, simplifying=simplifying)
         return pred
 
     def get_path_to_label(self, process_data, influence_matrix):
@@ -434,11 +433,13 @@ class SSLModel(object):
             adaptive_ks.append(adaptive_k)
 
         acc = accuracy_score(test_y, labels)
+        confusion_mat = confusion_matrix(test_y, labels)
         logger.info("test accuracy: {}".format(acc))
+        logger.info("confusion matrix: \n{}".format(confusion_mat))
         print(s / test_X.shape[0])
         return labels, np.array(adaptive_ks)
 
-    # @async_once
+    @async_once
     def adaptive_evaluation(self, pred=None):
         affinity_matrix = self.data.get_graph()
         affinity_matrix.setdiag(0)
