@@ -160,12 +160,14 @@ class SSLModel(object):
         # self.evaluate(); exit()
 
 
-        if simplifying:
-            # get simplififed matrix asynchronously
-            self.simplify_influence_matrix()
-
+        # if simplifying:
+        #     # get simplififed matrix asynchronously
+        #     print("begin simplify")
+        #     self.simplify_influence_matrix()
+        #
         if evaluate:
             # self.evaluate()
+            print("begin evaluation")
             self.adaptive_evaluation()
             # self.adaptive_evaluation_bkp()
             # self.adaptive_evaluation_v2()
@@ -173,7 +175,7 @@ class SSLModel(object):
         # record_state
         self.data.record_state(self.pred_dist)
 
-        logger.info("_training finished")
+        logger.info("_training finished!!!!!!!!")
 
     def _influence_matrix(self):
         affinity_matrix = self.data.get_graph(self.n_neighbor)
@@ -197,8 +199,8 @@ class SSLModel(object):
 
     @async_once
     def simplify_influence_matrix(self, threshold=0.7):
-        self._influence_matrix()
         logger.info("begin simplify influence matrix")
+        self._influence_matrix()
         affinity_matrix = self.data.get_graph()
         laplacian = build_laplacian_graph(affinity_matrix).tocsr()
         unnorm_dist = self.unnorm_dist
@@ -459,10 +461,10 @@ class SSLModel(object):
             j_in_this_row = test_neighbors[i, :]
             j_in_this_row = j_in_this_row[j_in_this_row != -1]
             estimated_idxs = j_in_this_row[:estimate_k]
-            estimated_idxs = [m[i] for i in estimated_idxs]
+            # estimated_idxs = [m[i] for i in estimated_idxs]
             adaptive_k = affinity_matrix[estimated_idxs, :].sum() / estimate_k
             selected_idxs = j_in_this_row[:int(adaptive_k)]
-            selected_idxs = [m[i] for i in selected_idxs]
+            # selected_idxs = [m[i] for i in selected_idxs]
             p = pred[selected_idxs].sum(axis=0)
             labels.append(p.argmax())
             s += adaptive_k
@@ -482,7 +484,7 @@ class SSLModel(object):
         #     print(neighbors)
             # affinity_matrix = change_local(selected_idxs, neighbors, affinity_matrix, k)
         print(s / test_X.shape[0])
-        return labels, np.array(adaptive_ks)
+        return labels, np.array(adaptive_ks), acc
 
     @async_once
     def adaptive_evaluation_bkp(self):
