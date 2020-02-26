@@ -397,6 +397,9 @@ class Anchors:
         self.tsne = np.dot(self.tsne, self.rotate_matrix)
         self.hierarchy_info = self.get_hierarchical_sampling()
         selection = np.array(self.hierarchy_info[0]["index"]).tolist()
+        for id in self.remove_ids:
+            if id in selection:
+                selection.remove(id)
         # TODO  2020.2.15 change to init tsne
         # tsne = self.re_tsne(selection)
         tsne = self.get_init_tsne(selection)
@@ -410,12 +413,12 @@ class Anchors:
         self.home_tsne = self.old_nodes_tsne
         self.home_tsne_ids = self.old_nodes_id
         self.last_level = 0
-        self.aggregate.aggregate(self.full_x[self.home_tsne_ids], k=np.unique(self.model.get_pred_labels()[self.home_tsne_ids]).shape[0])
-        self.aggregate.reset_labels(self.model.get_pred_labels()[self.home_tsne_ids])
-        aggregate = {}
-        for i, label in enumerate(self.aggregate.labels.tolist()):
-            aggregate[self.home_tsne_ids[i]] = label
-        graph["aggregate"] = aggregate
+        # self.aggregate.aggregate(self.full_x[self.home_tsne_ids], k=np.unique(self.model.get_pred_labels()[self.home_tsne_ids]).shape[0])
+        # self.aggregate.reset_labels(self.model.get_pred_labels()[self.home_tsne_ids])
+        # aggregate = {}
+        # for i, label in enumerate(self.aggregate.labels.tolist()):
+        #     aggregate[self.home_tsne_ids[i]] = label
+        # graph["aggregate"] = aggregate
         return graph
 
     def rotate_area(self, area):
@@ -464,7 +467,6 @@ class Anchors:
         def mapfunc(id):
             return int(m_reverse[id])
         labels = self.model.labels
-        print("labels.shape:", labels.shape)
         process_data = self.model.process_data
 
         samples_x_tsne = np.round(tsne, 2).tolist()
