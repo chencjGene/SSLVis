@@ -175,9 +175,12 @@ let GraphHighlight = function (parent) {
         let new_selection_tmp = lasso.selectedItems().data().map(d => d.id);
         // remove hided lasso items
         let new_selection = [];
-        for(let node_id of new_selection_tmp){
-            if(view.get_visible_items()[node_id] === true) new_selection.push(node_id);
-        }
+        lasso.selectedItems().each(function (d) {
+            let node = d3.select(this);
+            let opacity = node.attr("opacity");
+            let node_id = d.id;
+            if((view.get_visible_items()[node_id] === true) && (opacity != 0)) new_selection.push(node_id);
+        });
         that.highlight(view.get_nodes(), new_selection);
     };
 
