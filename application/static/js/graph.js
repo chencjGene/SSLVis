@@ -470,10 +470,21 @@ let GraphLayout = function (container) {
             return 0.0
         }
         else {
-            if(visible_items[id] === false){
-                return 0;
+            if(highlights.length === 0){
+                if(visible_items[id] === false){
+                    return 0;
+                }
+                return 1
             }
-            return 1
+            else {
+                if(visible_items[id] === false){
+                    return 0;
+                }
+                if(highlights.indexOf(id) === -1){
+                    return 0.3
+                }
+                return 1
+            }
         }
     };
 
