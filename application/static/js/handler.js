@@ -137,6 +137,7 @@ DataLoaderClass.prototype.selected_flows_handler = function(callback){
 
     function _selected_flows_handler(data){
         that.state.selected_flows = data.selected_flows;
+        that.state.highlights = data.selected_idxs;
         console.log("selected_flows_handler", data);
         if (callback) callback();
     }

@@ -622,9 +622,9 @@ class SSLModel(object):
         return self.ent
 
     def get_flows(self, idxs):
-        self.selected_idxs = idxs
         m = self.data.get_new_id_map()
         idxs = np.array([m[i] for i in idxs])
+        self.selected_idxs = idxs
         iter = len(self.labels)
         selected_flows = np.zeros((iter-1, len(self.class_list), len(self.class_list)))
         for i in range(iter-1):
@@ -639,18 +639,30 @@ class SSLModel(object):
         return label_sums, selected_flows
 
     def get_selected_flows(self, data):
-        _, iter_prev, cls_prev, iter_next, cls_next = data.split("-")
-        iter_prev, cls_prev, iter_next, cls_next = \
-            [int(iter_prev), int(cls_prev) - 1, int(iter_next), int(cls_next) - 1]
-        print(iter_prev, cls_prev, iter_next, cls_next)
+        if isinstance(data, list):
+            idxs = data
+            m = self.data.get_new_id_map()
+            idxs = [m[i] for i in idxs]
+        elif data[:4] == "link":
+            _, iter_prev, cls_prev, iter_next, cls_next = data.split("-")
+            iter_prev, cls_prev, iter_next, cls_next = \
+                [int(iter_prev), int(cls_prev) - 1, int(iter_next), int(cls_next) - 1]
+            print(iter_prev, cls_prev, iter_next, cls_next)
 
-        print("total instance num", len(self.labels[0]))
-        idxs = []
-        for i in range(len(self.labels[0])):
-            if (self.labels[iter_prev][i] == cls_prev and \
-                self.labels[iter_next][i] == cls_next):
-                idxs.append(i)
-        idxs = np.array(idxs)
+            print("total instance num", len(self.labels[0]))
+            idxs = []
+            for i in range(len(self.labels[0])):
+                if (self.labels[iter_prev][i] == cls_prev and \
+                    self.labels[iter_next][i] == cls_next):
+                    idxs.append(i)
+        elif data[:4] == "node":
+            _, iter, c = data.split("-")
+            iter, c = [int(iter), int(c) - 1]
+            idxs = []
+            for i in range(len(self.labels[0])):
+                if (self.labels[iter][i] == c):
+                    idxs.append(i) # mapped idxs
+        idxs = np.array(idxs) # mapped idxs
         idxs = np.array([i for i in idxs if i in self.selected_idxs])
         print("selected instances num", len(idxs))
         iter = len(self.labels)

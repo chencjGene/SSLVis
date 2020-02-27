@@ -199,6 +199,9 @@ let GraphHighlight = function (parent) {
         }
         if(all_load === true){
             view.data_manager.show_highlight_node(select_ids);
+            if(select_ids.length){                
+                view.data_manager.get_selected_flows(select_ids);
+            }
         }
         else {
             view.fetch_points(select_ids, new_ids, "highlight", select_ids);

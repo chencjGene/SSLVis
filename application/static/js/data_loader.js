@@ -127,7 +127,16 @@ DataLoaderClass = function () {
 
         // TODO:
         that.update_delete_and_change_label_node = new request_node(that.update_delete_and_change_label_url + params,
-            that.update_delete_and_change_label_handler(that.update_graph_view), "json", "POST");
+            that.update_delete_and_change_label_handler(function(){
+                let show_ids = [];
+                for(let node_id of Object.keys(that.state.nodes).map(d => parseInt(d))){
+                    if(that.state.visible_items[node_id] === true){
+                        show_ids.push(node_id);
+                    }
+                }
+                that.get_dist_view(show_ids);
+                that.update_graph_view();
+            }), "json", "POST");
 
         // that.fisheye_graph_node = new request_node(that.fisheye_graph_url + params,
         //     that.update_fisheye_graph_handler(that.update_fisheye_view), "json", "POST");
@@ -171,7 +180,16 @@ DataLoaderClass = function () {
         data["wh"] = that.graph_view.get_wh();
         let params = "?dataset=" + that.dataset;
         that.add_new_categories_node = new request_node(that.add_new_categories_url + params,
-            that.add_new_categories_handler(that.update_graph_view), "json", "POST");
+            that.add_new_categories_handler(function(){
+                let show_ids = [];
+                for(let node_id of Object.keys(that.state.nodes).map(d => parseInt(d))){
+                    if(that.state.visible_items[node_id] === true){
+                        show_ids.push(node_id);
+                    }
+                }
+                that.get_dist_view(show_ids);
+                that.update_graph_view();
+            }), "json", "POST");
         that.add_new_categories_node.set_data(data);
         that.add_new_categories_node.notify();
     };
@@ -199,7 +217,16 @@ DataLoaderClass = function () {
     that.local_update_k = function(){
         let params = "?dataset=" + that.dataset;
         that.local_update_k_node = new request_node(that.local_update_k_url + params,
-            that.local_update_k_handler(that.update_graph_view), "json", "POST");
+            that.local_update_k_handler(function(){
+                let show_ids = [];
+                for(let node_id of Object.keys(that.state.nodes).map(d => parseInt(d))){
+                    if(that.state.visible_items[node_id] === true){
+                        show_ids.push(node_id);
+                    }
+                }
+                that.get_dist_view(show_ids);
+                that.update_graph_view();
+            }), "json", "POST");
         // let data = {selected_idxs};
         data = that.setting_view.get_local_update_setting();
         selected_idxs = that.graph_view.get_highlights();
@@ -302,8 +329,12 @@ DataLoaderClass = function () {
     };
 
     that.get_selected_flows = function(path_id){
+        that.dist_view.click_id = path_id;
         that.selected_flows_node = new request_node(that.selected_flows_urls,
-            that.selected_flows_handler(that.update_dist_view), "json", "POST");
+            that.selected_flows_handler(function(){
+                that.update_dist_view();
+                that.update_graph_view();
+            }), "json", "POST");
         that.selected_flows_node.set_data({path_id});
         that.selected_flows_node.notify();
     };
@@ -473,11 +504,6 @@ DataLoaderClass = function () {
         that.update_filter_view();
 
         //update view
-        that.update_graph_view();
-    };
-
-    that.update_graph_view = function() {
-        console.log("update graph view");
         let show_ids = [];
         for(let node_id of Object.keys(that.state.nodes).map(d => parseInt(d))){
             if(that.state.visible_items[node_id] === true){
@@ -485,6 +511,11 @@ DataLoaderClass = function () {
             }
         }
         that.get_dist_view(show_ids);
+        that.update_graph_view();
+    };
+
+    that.update_graph_view = function() {
+        console.log("update graph view");
         that.graph_view.component_update({
             "nodes":that.state.nodes,
             "path":that.state.path,
@@ -520,6 +551,14 @@ DataLoaderClass = function () {
         that.set_filter_range([20, 19], label_range, [0, 19], [0,19]);
         // that.set_filter_range([18, 19], label_range, [0, 19], [0,19]);
         that.update_filter_view();
+        // update dist view
+        let show_ids = [];
+        for(let node_id of Object.keys(that.state.nodes).map(d => parseInt(d))){
+            if(that.state.visible_items[node_id] === true){
+                show_ids.push(node_id);
+            }
+        }
+        that.get_dist_view(show_ids);
         that.update_graph_view();
     };
 
@@ -538,6 +577,14 @@ DataLoaderClass = function () {
         that.update_filter_view();
         that.state.visible_items = that.filter_view.get_visible_items();
         that.state.glyphs = that.filter_view.get_glyph_items();
+        // update dist view
+        let show_ids = [];
+        for(let node_id of Object.keys(that.state.nodes).map(d => parseInt(d))){
+            if(that.state.visible_items[node_id] === true){
+                show_ids.push(node_id);
+            }
+        }
+        that.get_dist_view(show_ids);
         that.update_graph_view();
     };
 
@@ -557,12 +604,26 @@ DataLoaderClass = function () {
     that.change_visible_items = function(visible_items) {
         that.state.visible_items = visible_items;
         that.state.rescale = false;
+        let show_ids = [];
+        for(let node_id of Object.keys(that.state.nodes).map(d => parseInt(d))){
+            if(that.state.visible_items[node_id] === true){
+                show_ids.push(node_id);
+            }
+        }
+        that.get_dist_view(show_ids);
         that.update_graph_view();
     };
 
     that.change_glyphs = function(glyphs){
         that.state.glyphs = glyphs;
         that.state.rescale = false;
+        let show_ids = [];
+        for(let node_id of Object.keys(that.state.nodes).map(d => parseInt(d))){
+            if(that.state.visible_items[node_id] === true){
+                show_ids.push(node_id);
+            }
+        }
+        that.get_dist_view(show_ids);
         that.update_graph_view();
     }
 
@@ -597,6 +658,13 @@ DataLoaderClass = function () {
     that.show_highlight_node = function(highlight_nodes) {
         that.state.highlights = highlight_nodes;
         that.state.rescale = false;
+        let show_ids = [];
+        for(let node_id of Object.keys(that.state.nodes).map(d => parseInt(d))){
+            if(that.state.visible_items[node_id] === true){
+                show_ids.push(node_id);
+            }
+        }
+        that.get_dist_view(show_ids);
         that.update_graph_view();
     };
 
@@ -614,6 +682,13 @@ DataLoaderClass = function () {
             that.state.is_show_path = false;
         }
         that.state.rescale = false;
+        let show_ids = [];
+        for(let node_id of Object.keys(that.state.nodes).map(d => parseInt(d))){
+            if(that.state.visible_items[node_id] === true){
+                show_ids.push(node_id);
+            }
+        }
+        that.get_dist_view(show_ids);
         that.update_graph_view();
     };
 
