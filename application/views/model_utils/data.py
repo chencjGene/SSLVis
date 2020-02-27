@@ -16,7 +16,7 @@ from application.views.utils.log_utils import logger
 
 from .model_helper import build_laplacian_graph
 
-DEBUG = True
+DEBUG = False
 
 
 class Data(object):
@@ -231,7 +231,7 @@ class GraphData(Data):
     def __init__(self, dataname, labeled_num=None, total_num=None, seed=123):
         super(GraphData, self).__init__(dataname, labeled_num, total_num, seed)
 
-        self.max_neighbors = 1000
+        self.max_neighbors = 2000
         self.affinity_matrix = None
         self.state_idx = 0
         self.state = {}

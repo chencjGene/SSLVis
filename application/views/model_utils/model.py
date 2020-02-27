@@ -93,20 +93,8 @@ class SSLModel(object):
         # # # TODO: for debug
         self.case_labeling()
         self.case_labeling2()
-        self._training(evaluate=evaluate, simplifying=simplifying)
-        # self._training(evaluate=False, simplifying=False)
-        # # # TODO: for debug
-        # train_pred = self.labels[-1]
-        # train_gt = self.data.get_train_ground_truth()
-        # affinity_matrix = self.data.affinity_matrix
-        # for k, i in [[2, 5]]:
-        #     # for k,i in [[2,5]]:
-        #     inds = train_gt == i
-        #     inds[train_pred == i] = False
-        #     selected_idxs = np.array(range(len(inds)))[inds]
-        #     affinity_matrix = change_local(selected_idxs, self.data.get_neighbors(), affinity_matrix, k)
-        # self.data.affinity_matrix = affinity_matrix
-        # self._training(rebuild=False, evaluate=True, simplifying=True)
+        # self._training(evaluate=evaluate, simplifying=simplifying)
+        self._training(evaluate=False, simplifying=False)
 
 
         logger.info("init finished")
@@ -160,10 +148,10 @@ class SSLModel(object):
         # self.evaluate(); exit()
 
 
-        # if simplifying:
-        #     # get simplififed matrix asynchronously
-        #     print("begin simplify")
-        #     self.simplify_influence_matrix()
+        if simplifying:
+            # get simplififed matrix asynchronously
+            print("begin simplify")
+            self.simplify_influence_matrix()
         #
         if evaluate:
             # self.evaluate()
@@ -632,6 +620,8 @@ class SSLModel(object):
 
     def get_flows(self, idxs):
         self.selected_idxs = idxs
+        m = self.data.get_new_id_map()
+        idxs = np.array([m[i] for i in idxs])
         iter = len(self.labels)
         selected_flows = np.zeros((iter-1, len(self.class_list), len(self.class_list)))
         for i in range(iter-1):
