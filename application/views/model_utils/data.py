@@ -16,7 +16,7 @@ from application.views.utils.log_utils import logger
 
 from .model_helper import build_laplacian_graph
 
-DEBUG = True
+DEBUG = False
 
 
 class Data(object):
@@ -60,14 +60,14 @@ class Data(object):
             # snake = full_snake[:500]
             # np.save(os.path.join(self.data_root, "lizard.npy"), lizard)
             # np.save(os.path.join(self.data_root, "snake.npy"), snake)
-            lizard = np.load(os.path.join(os.path.join(self.data_root, "lizard.npy")))
-            snake = np.load(os.path.join(os.path.join(self.data_root, "snake.npy")))
-            test_labels = pickle_load_data(os.path.join(self.data_root, "new_test.npy"))
-            self.test_idx = []
-            for i, test_idx in enumerate(test_labels):
-                self.test_idx += test_idx
-                self.y[test_idx] = i
-            self.test_idx = np.array(self.test_idx)
+            # lizard = np.load(os.path.join(os.path.join(self.data_root, "lizard.npy")))
+            # snake = np.load(os.path.join(os.path.join(self.data_root, "snake.npy")))
+            # test_labels = pickle_load_data(os.path.join(self.data_root, "new_test.npy"))
+            # self.test_idx = []
+            # for i, test_idx in enumerate(test_labels):
+            #     self.test_idx += test_idx
+            #     self.y[test_idx] = i
+            # self.test_idx = np.array(self.test_idx)
             # self.test_idx = np.concatenate((self.test_idx, lizard, snake))
             # self.y[lizard] = 10
             # self.y[snake] = 11

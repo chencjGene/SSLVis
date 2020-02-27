@@ -29,7 +29,7 @@ from .model_helper import propagation, approximated_influence, exact_influence
 from .model_update import local_search_k
 from .model_helper import build_laplacian_graph
 
-DEBUG = True
+DEBUG = False
 
 def change_local(selected_idxs, neighbors, affinity_matrix, local_k):
     from scipy import sparse
@@ -91,7 +91,6 @@ class SSLModel(object):
         self.propagation_path_to = None
         self.simplified_affinity_matrix = None
         # # # TODO: for debug
-        self.case_labeling()
         self.case_labeling2()
         self._training(evaluate=evaluate, simplifying=simplifying)
         # self._training(evaluate=False, simplifying=False)
@@ -345,6 +344,8 @@ class SSLModel(object):
         self._training(rebuild=False, evaluate=True, simplifying=simplifying)
 
     def local_search_k(self, selected_idxs, k_list=None, selected_categories=None, simplifying=True, evaluate=True):
+        m = self.data.get_new_id_map()
+        selected_idxs = [m[id] for id in selected_idxs if id not in self.data.get_removed_idxs()]
         if k_list is None:
             k_list = list(range(1,10))
         if selected_categories is not None:
@@ -444,7 +445,7 @@ class SSLModel(object):
         print(s / test_X.shape[0])
         return labels, np.array(adaptive_ks)
 
-    @async_once
+    # @async_once
     def adaptive_evaluation(self, pred=None):
         affinity_matrix = self.data.get_graph()
         affinity_matrix.setdiag(0)
