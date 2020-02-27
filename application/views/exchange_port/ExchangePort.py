@@ -260,8 +260,8 @@ class ExchangePortClass(object):
         # return acc
 
     def init_model(self, k, filter_threshold):
-        # self.model.init(k=k, filter_threshold=filter_threshold)
-        self.delete_node(self.model, k, filter_threshold, True)
+        self.model.init(k=k, filter_threshold=filter_threshold)
+        # self.delete_node(self.model, k, filter_threshold, True)
 
     def setK(self, k):
         self.model.setK(k=k)
