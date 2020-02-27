@@ -29,7 +29,7 @@ from .model_helper import propagation, approximated_influence, exact_influence
 from .model_update import local_search_k
 from .model_helper import build_laplacian_graph
 
-DEBUG = False
+DEBUG = True
 
 def change_local(selected_idxs, neighbors, affinity_matrix, local_k):
     from scipy import sparse
@@ -146,7 +146,10 @@ class SSLModel(object):
         logger.info("model accuracy: {}, iter: {}".format(acc, iter))
         logger.info("model entropy: {}".format(entropy(pred_dist.T + 1e-20).mean()))
         # self.evaluate(); exit()
-
+        propagation_path_from, propagation_path_to = self.get_path_to_label(self.process_data,
+                                                                            self.graph)
+        self.propagation_path_from = propagation_path_from
+        self.propagation_path_to = propagation_path_to
 
         if simplifying:
             # get simplififed matrix asynchronously

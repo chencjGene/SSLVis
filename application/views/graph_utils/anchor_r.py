@@ -497,7 +497,7 @@ class Anchors:
         return graph
 
     def get_path(self, ids):
-        self.wait_for_simplify()
+        # self.wait_for_simplify()
         propagation_path_from = self.model.propagation_path_from
         propagation_path_to = self.model.propagation_path_to
         res = {}
