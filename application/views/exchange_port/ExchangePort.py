@@ -246,7 +246,7 @@ class ExchangePortClass(object):
         categories[11] = False
         before_train_pred = d.get_pred_labels()
         if local_update:
-            d.local_search_k(a, [1, 2, 3, 4], categories, simplifying=True)
+            d.local_search_k(a, [1, 2, 3, 4], categories, simplifying=False)
             d.local_search_k(b, [1, 2, 3, 4], categories, simplifying=True)
             # d.local_search_k(c, [1, 2, 3, 4], categories, simplifying=True)
             d.adaptive_evaluation()

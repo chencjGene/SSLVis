@@ -92,20 +92,8 @@ class SSLModel(object):
         self.simplified_affinity_matrix = None
         # # # TODO: for debug
         self.case_labeling2()
-        self._training(evaluate=evaluate, simplifying=simplifying)
-        # self._training(evaluate=False, simplifying=False)
-        # # # TODO: for debug
-        # train_pred = self.labels[-1]
-        # train_gt = self.data.get_train_ground_truth()
-        # affinity_matrix = self.data.affinity_matrix
-        # for k, i in [[2, 5]]:
-        #     # for k,i in [[2,5]]:
-        #     inds = train_gt == i
-        #     inds[train_pred == i] = False
-        #     selected_idxs = np.array(range(len(inds)))[inds]
-        #     affinity_matrix = change_local(selected_idxs, self.data.get_neighbors(), affinity_matrix, k)
-        # self.data.affinity_matrix = affinity_matrix
-        # self._training(rebuild=False, evaluate=True, simplifying=True)
+        # self._training(evaluate=evaluate, simplifying=simplifying)
+        self._training(evaluate=False, simplifying=False)
 
 
         logger.info("init finished")
@@ -162,10 +150,10 @@ class SSLModel(object):
         self.propagation_path_from = propagation_path_from
         self.propagation_path_to = propagation_path_to
 
-        # if simplifying:
-        #     # get simplififed matrix asynchronously
-        #     print("begin simplify")
-        #     self.simplify_influence_matrix()
+        if simplifying:
+            # get simplififed matrix asynchronously
+            print("begin simplify")
+            self.simplify_influence_matrix()
         #
         if evaluate:
             # self.evaluate()
@@ -635,6 +623,8 @@ class SSLModel(object):
         return self.ent
 
     def get_flows(self, idxs):
+        m = self.data.get_new_id_map()
+        idxs = np.array([m[i] for i in idxs])
         self.selected_idxs = idxs
         iter = len(self.labels)
         selected_flows = np.zeros((iter-1, len(self.class_list), len(self.class_list)))
@@ -650,18 +640,30 @@ class SSLModel(object):
         return label_sums, selected_flows
 
     def get_selected_flows(self, data):
-        _, iter_prev, cls_prev, iter_next, cls_next = data.split("-")
-        iter_prev, cls_prev, iter_next, cls_next = \
-            [int(iter_prev), int(cls_prev) - 1, int(iter_next), int(cls_next) - 1]
-        print(iter_prev, cls_prev, iter_next, cls_next)
+        if isinstance(data, list):
+            idxs = data
+            m = self.data.get_new_id_map()
+            idxs = [m[i] for i in idxs]
+        elif data[:4] == "link":
+            _, iter_prev, cls_prev, iter_next, cls_next = data.split("-")
+            iter_prev, cls_prev, iter_next, cls_next = \
+                [int(iter_prev), int(cls_prev) - 1, int(iter_next), int(cls_next) - 1]
+            print(iter_prev, cls_prev, iter_next, cls_next)
 
-        print("total instance num", len(self.labels[0]))
-        idxs = []
-        for i in range(len(self.labels[0])):
-            if (self.labels[iter_prev][i] == cls_prev and \
-                self.labels[iter_next][i] == cls_next):
-                idxs.append(i)
-        idxs = np.array(idxs)
+            print("total instance num", len(self.labels[0]))
+            idxs = []
+            for i in range(len(self.labels[0])):
+                if (self.labels[iter_prev][i] == cls_prev and \
+                    self.labels[iter_next][i] == cls_next):
+                    idxs.append(i)
+        elif data[:4] == "node":
+            _, iter, c = data.split("-")
+            iter, c = [int(iter), int(c) - 1]
+            idxs = []
+            for i in range(len(self.labels[0])):
+                if (self.labels[iter][i] == c):
+                    idxs.append(i) # mapped idxs
+        idxs = np.array(idxs) # mapped idxs
         idxs = np.array([i for i in idxs if i in self.selected_idxs])
         print("selected instances num", len(idxs))
         iter = len(self.labels)
