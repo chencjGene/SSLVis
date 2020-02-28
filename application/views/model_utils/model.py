@@ -6,6 +6,7 @@ from scipy.stats import entropy
 from time import time
 from time import sleep
 from tqdm import tqdm
+import json
 import warnings
 import copy
 
@@ -91,7 +92,7 @@ class SSLModel(object):
         self.propagation_path_to = None
         self.simplified_affinity_matrix = None
         # # # TODO: for debug
-        self.data.label_instance([1436, 4806], [5, 5])
+        self.data.label_instance(json.loads(open(os.path.join(self.selected_dir, "dog_idxs.txt"), "r").read().strip("\n")), [5, 5])
         # self._training(evaluate=evaluate, simplifying=simplifying)
         self._training(evaluate=False, simplifying=False)
 
@@ -417,10 +418,10 @@ class SSLModel(object):
             j_in_this_row = test_neighbors[i, :]
             j_in_this_row = j_in_this_row[j_in_this_row != -1]
             estimated_idxs = j_in_this_row[:estimate_k]
-            estimated_idxs = [m[i] for i in estimated_idxs]
+            # estimated_idxs = [m[i] for i in estimated_idxs]
             adaptive_k = affinity_matrix[estimated_idxs, :].sum() / estimate_k
             selected_idxs = j_in_this_row[:int(adaptive_k)]
-            selected_idxs = [m[i] for i in selected_idxs]
+            # selected_idxs = [m[i] for i in selected_idxs]
             p = pred[selected_idxs].sum(axis=0)
             labels.append(p.argmax())
             s += adaptive_k
