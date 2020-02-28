@@ -91,7 +91,8 @@ class SSLModel(object):
         self.propagation_path_to = None
         self.simplified_affinity_matrix = None
         # # # TODO: for debug
-        self.data.label_instance([1436, 4806], [5, 5])
+        # self.data.label_instance([1436, 4806], [5, 5])
+
         # self._training(evaluate=evaluate, simplifying=simplifying)
         self._training(evaluate=False, simplifying=False)
 
