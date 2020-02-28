@@ -107,25 +107,31 @@ class Data(object):
             self.selected_labeled_idx = idx_info["selected_labeled_idx"]
             self.rest_idxs = np.array(range(len(self.train_idx)))
             return
-        # selected_labeled_idx = np.random.choice(self.labeled_idx, self.selected_labeled_num, replace=False)
-        # class balance selection
-        selected_labeled_num_in_each_class = np.zeros(len(self.class_names))
-        class_num = len(selected_labeled_num_in_each_class)
-        num_per_class = self.selected_labeled_num // class_num
-        selected_labeled_num_in_each_class = (np.ones(class_num) * num_per_class).astype(int)
-        rest_num = self.selected_labeled_num - num_per_class * class_num
-        if rest_num > 0:
-            idx = np.random.choice(class_num, rest_num, replace=False)
-            selected_labeled_num_in_each_class[idx] += 1
-        selected_labeled_idx = []
-        labeled_y = self.y[self.labeled_idx]
-        for i in range(class_num):
-            labeled_idx_in_this_class = self.labeled_idx[labeled_y == i]
-            selected_labeled_idx_in_this_class = \
-                np.random.choice(labeled_idx_in_this_class, selected_labeled_num_in_each_class[i], replace=False)
-            selected_labeled_idx = selected_labeled_idx + selected_labeled_idx_in_this_class.tolist()
-        selected_labeled_idx = np.array(selected_labeled_idx)
-        selected_labeled_idx.sort()
+        #
+        if len(self.labeled_idx) == self.selected_labeled_num:
+            # self.selected_labeled_idx = self.labeled_idx
+            selected_labeled_idx = np.array(self.labeled_idx)
+            selected_labeled_idx.sort()
+        else:
+            # selected_labeled_idx = np.random.choice(self.labeled_idx, self.selected_labeled_num, replace=False)
+            # class balance selection
+            selected_labeled_num_in_each_class = np.zeros(len(self.class_names))
+            class_num = len(selected_labeled_num_in_each_class)
+            num_per_class = self.selected_labeled_num // class_num
+            selected_labeled_num_in_each_class = (np.ones(class_num) * num_per_class).astype(int)
+            rest_num = self.selected_labeled_num - num_per_class * class_num
+            if rest_num > 0:
+                idx = np.random.choice(class_num, rest_num, replace=False)
+                selected_labeled_num_in_each_class[idx] += 1
+            selected_labeled_idx = []
+            labeled_y = self.y[self.labeled_idx]
+            for i in range(class_num):
+                labeled_idx_in_this_class = self.labeled_idx[labeled_y == i]
+                selected_labeled_idx_in_this_class = \
+                    np.random.choice(labeled_idx_in_this_class, selected_labeled_num_in_each_class[i], replace=False)
+                selected_labeled_idx = selected_labeled_idx + selected_labeled_idx_in_this_class.tolist()
+            selected_labeled_idx = np.array(selected_labeled_idx)
+            selected_labeled_idx.sort()
 
         # get unlabeled idx
         rest_selected_labeled_num = self.selected_total_num - self.selected_labeled_num
