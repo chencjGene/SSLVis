@@ -412,6 +412,7 @@ let GraphLayout = function (container) {
 
             path_in_group.enter()
                 .append("path")
+                .attr("class", "propagation-path")
                 .attr("stroke-width", 2.0 * that.zoom_scale)
                 .attr("stroke", edge_color)
                 .attr("opacity", 0)
@@ -643,12 +644,19 @@ let GraphLayout = function (container) {
 
     that.lasso_or_zoom = function(mode) {
         if(mode === "lasso"){
+            highlight_plg.remove_select_edge();
             transform_plg.remove_zoom();
             highlight_plg.set_lasso();
         }
         else if(mode === "zoom"){
+            highlight_plg.remove_select_edge();
             highlight_plg.remove_lasso();
             transform_plg.set_zoom();
+        }
+        else if(mode === "edge-select"){
+            transform_plg.remove_zoom();
+            highlight_plg.remove_lasso();
+            highlight_plg.set_select_edge();
         }
     };
 
