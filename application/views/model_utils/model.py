@@ -95,8 +95,8 @@ class SSLModel(object):
         # # # TODO: for debug
         if self.dataname == "stl":
             self.data.label_instance(json.loads(open(os.path.join(self.selected_dir, "dog_idxs.txt"), "r").read().strip("\n")), [5, 5])
-        # self._training(evaluate=evaluate, simplifying=simplifying)
-        self._training(evaluate=True, simplifying=False)
+        # self._training(evaluate=evaluate, simplifying=simplifying))
+        self._training(evaluate=evaluate, simplifying=False)
 
 
         logger.info("init finished")
@@ -738,4 +738,6 @@ class SSLModel(object):
 
     def case_labeling2(self):
         # self.data.label_instance([2243, 10489], [5,5])
-        self.data.label_instance([2243, 7657], [5,5])
+        self.data.label_instance(
+            json.loads(open(os.path.join(self.selected_dir, "dog_idxs.txt"), "r").read().strip("\n")), [5, 5])
+
