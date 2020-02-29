@@ -259,9 +259,20 @@ class ExchangePortClass(object):
             d.adaptive_evaluation()
         # return acc
 
+    def case_final(self):
+        self.model.case_labeling2()
+        self.model.init(k=6, evaluate=False, simplifying=False)
+        categories = [1 for i in range(12)]
+        categories[11] = False
+        c = json.loads(open(os.path.join(self.model.selected_dir, "local_1_idxs.txt"), "r").read().strip("\n"))
+        e = json.loads(open(os.path.join(self.model.selected_dir, "local_2_idxs.txt"), "r").read().strip("\n"))
+        self.model.local_search_k(c, [1, 2, 3, 4], categories, simplifying=True, evaluate=False)
+        self.model.local_search_k(e, [1, 2, 3, 4], categories, simplifying=True, evaluate=False)
+        self.model.adaptive_evaluation_unasync()
+
     def init_model(self, k, filter_threshold):
         self.model.init(k=k, filter_threshold=filter_threshold)
-        # self.delete_node(self.model, k, filter_threshold, True)
+        # self.case_final()
 
     def setK(self, k):
         self.model.setK(k=k)
