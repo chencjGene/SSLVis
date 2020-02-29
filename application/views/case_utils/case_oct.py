@@ -2,10 +2,11 @@ import numpy as np
 import os
 
 from .case_base import CaseBase
+from ..utils.config_utils import config
 
-
-class CaseOCT( CaseBase):
-    def __init__(self, dataname):
+class CaseOCT(CaseBase):
+    def __init__(self):
+        dataname = config.oct
         super(CaseOCT, self).__init__(dataname)
 
     def run(self, k=6, evaluate=False, simplifying=False):

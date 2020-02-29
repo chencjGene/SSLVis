@@ -16,6 +16,7 @@ from ..graph_utils.IncrementalTSNE import IncrementalTSNE
 from ..graph_utils.anchor_r import Anchors
 from ..utils.log_utils import logger
 from application.views.utils.helper_utils import *
+from ..case_utils import get_case_util
 
 
 class ExchangePortClass(object):
@@ -29,6 +30,8 @@ class ExchangePortClass(object):
         else:
             self.model = SSLModel(self.dataname)
             self.anchor.link_model(self.model)
+            self.case_util = get_case_util(self.dataname)
+            self.case_util.connect_model(self.model)
 
     def reset_dataname(self, dataname):
         self.dataname = dataname
@@ -37,6 +40,8 @@ class ExchangePortClass(object):
         else:
             self.model = SSLModel(self.dataname)
             self.anchor.link_model(self.model)
+            self.case_util = get_case_util(self.dataname)
+            self.case_util.connect_model(self.model)
 
     def reset_model(self, dataname, labeled_num=None, total_num=None):
         self.dataname = dataname
@@ -45,6 +50,8 @@ class ExchangePortClass(object):
         else:
             self.model = SSLModel(self.dataname, labeled_num, total_num)
             self.anchor.link_model(self.model)
+            self.case_util = get_case_util(self.dataname)
+            self.case_util.connect_model(self.model)
 
     def delete_node(self, d, k, filter_threshold, local_update = True):
         a = [58, 65, 82, 131, 145, 146, 153, 172, 175, 193, 198, 203, 234, 236, 252, 300, 316, 319, 336, 341, 385, 399,
@@ -273,7 +280,8 @@ class ExchangePortClass(object):
 
     def init_model(self, k, filter_threshold):
         # self.model.init(k=k, filter_threshold=filter_threshold)
-        self.case_final()
+        # self.case_final()
+        self.case_util.run(k=k)
 
     def setK(self, k):
         self.model.setK(k=k)

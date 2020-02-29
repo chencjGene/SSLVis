@@ -13,6 +13,7 @@ class Config(object):
         self.image_root = os.path.normpath(os.path.join(SERVER_ROOT,"../../images/"))
         self.lib_root = os.path.normpath(os.path.join(SERVER_ROOT, "../../application/views/lib/"))
         self.log_root = os.path.normpath(os.path.join(SERVER_ROOT,"../../../logs/"))
+        self.case_util_root = os.path.normpath(os.path.join(SERVER_ROOT, "../../application/views/case_utils/"))
         # self.model_root = os.path.join(SERVER_ROOT, "../model/")
 
         # extension

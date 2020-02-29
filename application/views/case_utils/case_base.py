@@ -1,6 +1,7 @@
 import numpy as np
 import os
 from ..utils.helper_utils import json_load_data
+from ..utils.config_utils import config
 
 class CaseBase():
     def __init__(self, dataname):
@@ -19,5 +20,5 @@ class CaseBase():
         self.model.init(k=k, evaluate=evaluate, simplifying=simplifying)
 
     def _load_base_config(self):
-        json_data = json_load_data("case_config.json")
+        json_data = json_load_data(os.path.join(config.case_util_root, "case_config.json"))
         self.base_config = json_data[self.dataname]

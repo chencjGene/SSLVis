@@ -3,17 +3,19 @@ import os
 import json
 
 from .case_base import CaseBase
+from ..utils.config_utils import config
 
 class CaseSTL(CaseBase):
-    def __init__(self, dataname):
+    def __init__(self):
+        dataname = config.stl
         super(CaseSTL, self).__init__(dataname)
 
     def run(self, k=6, evaluate=False, simplifying=False):
         step = self.base_config["step"]
         
         if step >= 1:
-            self.data.label_instance(
-                json.loads(open(os.path.join(self.selected_dir, "dog_idxs.txt"), "r").read().strip("\n")), [5, 5])
+            self.model.data.label_instance(
+                json.loads(open(os.path.join(self.model.selected_dir, "dog_idxs.txt"), "r").read().strip("\n")), [5, 5])
             self.model.data.label_instance([697], [5])
         
         self._init_model(k=k, evaluate=evaluate, simplifying=simplifying)
