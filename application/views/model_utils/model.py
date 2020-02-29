@@ -93,7 +93,7 @@ class SSLModel(object):
         self.simplified_affinity_matrix = None
         # # # TODO: for debug
         # self._training(evaluate=evaluate, simplifying=simplifying)
-        self._training(evaluate=True, simplifying=False)
+        self._training(evaluate=evaluate, simplifying=False)
 
 
         logger.info("init finished")
