@@ -19,6 +19,7 @@ function set_up() {
     SettingView = new SettingLayout();
     LossView.controlInstanceView = GraphView;
     LossView.controlInfoView = ImageView;
+    ImageView.GraphView = GraphView;
     DataLoader.set_view(GraphView, "graph");
     DataLoader.set_view(LossView, "dist");
     DataLoader.set_view(ImageView, "image");
@@ -44,7 +45,7 @@ function choose(dataset){
 $(document).ready(function () {
 
     set_up();
-    SettingView.choose("stl-50-12284");
+    SettingView.choose("oct-1000-10000");
     // SettingView.choose("stl-20-2000");
 
     

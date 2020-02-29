@@ -93,9 +93,11 @@ class Anchors:
         logger.info("begin tsne init")
         train_x = self.data.get_full_train_X()
         train_y_final = self.get_pred_labels()
-        self.tsne = IncrementalTSNE(n_components=2, verbose=True, init="random",
-                                        early_exaggeration=1).fit_transform(train_x, labels=train_y_final,
-                                                                        label_alpha=0.3)
+        # self.tsne = IncrementalTSNE(n_components=2, verbose=True, init="random",
+        #                                 early_exaggeration=1).fit_transform(train_x, labels=train_y_final,
+        #                                                                 label_alpha=0.3)
+        self.tsne = TSNE(n_components=2, verbose=True, init="random",
+                                    early_exaggeration=1).fit_transform(train_x)
         np.save(self.tsne_path, self.tsne)
         logger.info("finish tsne init")
 
@@ -155,7 +157,7 @@ class Anchors:
         # get min dis:
         mat = mat.flatten()
         mat = mat[mat>1e-4]
-        min_dis = np.min(mat)
+        min_dis = np.min(mat) * self.model.config["sampling_min_dis"]
         level_unlabeled_selection = np.array(list(filter(lambda id: id not in all_labeled_idx, np.arange(node_num))))
         logger.info("level num:{}".format(levels_number))
         for level_id in range(levels_number - 2, -1, -1):

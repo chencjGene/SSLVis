@@ -710,6 +710,14 @@ let GraphLayout = function (container) {
                 })
     };
 
+    that.mouse_on_image = function(id) {
+        nodes_in_group.attr("r", d => d.id === id? 7*that.zoom_scale:that.r(d.id));
+    };
+
+    that.mouse_out_image = function() {
+        nodes_in_group.attr("r", d => that.r(d.id));
+    };
+
     that.get_level = function(){
         return transform_plg.get_level();
     };

@@ -72,6 +72,16 @@ class Config(object):
         self.pretrain_feature = "pretrain_feature"
         self.superpixel_feature = "superpixel_feature"
 
+        # model config
+        self.stl_config = {
+            "n_neighbors":6,
+            "sampling_min_dis":1
+        }
+        self.oct_config = {
+            "n_neighbors": 5,
+            "sampling_min_dis": 100
+        }
+
 
 
 config = Config()

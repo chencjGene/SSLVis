@@ -5,6 +5,7 @@
 let ImageLayout = function (container){
     let that = this;
     that.container = container;
+    that.GraphView = null;
 
     let bbox = that.container.node().getBoundingClientRect();
     let width = bbox.width;
@@ -191,6 +192,8 @@ let ImageLayout = function (container){
             .attr("y", (d, i) => img_padding+Math.floor(i/x_grid_num)*(grid_size+grid_offset))
             .attr("width", grid_size)
             .attr("height", grid_size)
+            .on("mouseover", d => GraphView.mouse_on_image(d.id))
+            .on("mouseout", GraphView.mouse_out_image)
             .on("click", function (d, i) {
                 that._show_detail(d, i);
                 // return color_unlabel;

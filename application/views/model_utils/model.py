@@ -64,11 +64,12 @@ class SSLModel(object):
         self.signal_state = False
         self._propagation = propagation
         self.alpha = 0.2
+        self.config = config.stl_config if dataname == "stl" else config.oct_config
 
         self.data = GraphData(self.dataname, labeled_num, total_num)
         # self.data.case_set_rest_idxs()
         self.selected_dir = self.data.selected_dir
-        self.n_neighbor = 6
+        self.n_neighbor = self.config["n_neighbors"]
         self.filter_threshold = 0.7
         logger.info("n_neighbor: {}".format(self.n_neighbor))
 
@@ -92,9 +93,10 @@ class SSLModel(object):
         self.propagation_path_to = None
         self.simplified_affinity_matrix = None
         # # # TODO: for debug
-        self.data.label_instance(json.loads(open(os.path.join(self.selected_dir, "dog_idxs.txt"), "r").read().strip("\n")), [5, 5])
+        if self.dataname == "stl":
+            self.data.label_instance(json.loads(open(os.path.join(self.selected_dir, "dog_idxs.txt"), "r").read().strip("\n")), [5, 5])
         # self._training(evaluate=evaluate, simplifying=simplifying)
-        self._training(evaluate=False, simplifying=False)
+        self._training(evaluate=True, simplifying=False)
 
 
         logger.info("init finished")
@@ -144,6 +146,7 @@ class SSLModel(object):
         pred_y = pred_dist.argmax(axis=1)
         acc = accuracy_score(train_gt, pred_y)
         logger.info("model accuracy: {}, iter: {}".format(acc, iter))
+        logger.info("model confusion matrix:\n{}".format(confusion_matrix(train_gt, pred_y)))
         logger.info("model entropy: {}".format(entropy(pred_dist.T + 1e-20).mean()))
         # self.evaluate(); exit()
         propagation_path_from, propagation_path_to = self.get_path_to_label(self.process_data,
