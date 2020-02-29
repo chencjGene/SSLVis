@@ -64,7 +64,7 @@ class SSLModel(object):
         self.signal_state = False
         self._propagation = propagation
         self.alpha = 0.2
-        self.config = config.stl_config if dataname == "stl" else config.oct_config
+        self.config = config.stl_config if dataname.lower() == "stl" else config.oct_config
 
         self.data = GraphData(self.dataname, labeled_num, total_num)
         # self.data.case_set_rest_idxs()

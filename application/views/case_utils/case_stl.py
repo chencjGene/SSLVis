@@ -31,7 +31,11 @@ class CaseSTL(CaseBase):
             self.model.local_search_k(e, [1, 2, 3, 4], categories, simplifying=True, evaluate=False)
         
         if step >= 4:
-            None 
+            edge_list = [[31,1156], [31, 1864], [31, 4525], [31, 10133], [31, 11113]]
+            self.model.data.remove_edge(edge_list)
+
+        if step >= 5:
+            None
 
         if not evaluate:
             self.model.adaptive_evaluation_unasync()

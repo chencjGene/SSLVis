@@ -493,8 +493,11 @@ class GraphData(Data):
     def add_edge(self, added_edges):
         None
 
-    def remove_edge(self, added_edges):
-        None
+    def remove_edge(self, removed_edges):
+        for edges in removed_edges:
+            s, e = edges
+            self.affinity_matrix[s, e] = 0
+            self.affinity_matrix[e, s] = 0
 
     def editing_data(self, data):
         self.remove_instance(data["deleted_idxs"])
