@@ -260,8 +260,8 @@ class ExchangePortClass(object):
         # return acc
 
     def case_final(self):
-        self.model.case_labeling2()
-        self.model.data.label_instance([697], [5])
+        # self.model.case_labeling2()
+        # self.model.data.label_instance([697], [5])
         self.model.init(k=6, evaluate=False, simplifying=False)
         # categories = [1 for i in range(12)]
         # categories[11] = False
