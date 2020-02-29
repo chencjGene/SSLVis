@@ -223,7 +223,7 @@ class GraphData(Data):
         self.state = Node("root")
         self.current_state = self.state
 
-    def _preprocess_neighbors(self):
+    def _preprocess_neighbors(self, rebuild=False, save=True):
         neighbors_model_path = os.path.join(self.selected_dir, "neighbors_model.pkl")
         neighbors_path = os.path.join(self.selected_dir, "neighbors.npy")
         neighbors_weight_path = os.path.join(self.selected_dir,
@@ -232,7 +232,7 @@ class GraphData(Data):
         test_neighbors_weight_path = os.path.join(self.selected_dir, "test_neighbors_weight.npy")
         if os.path.exists(neighbors_model_path) and \
                 os.path.exists(neighbors_path) and \
-                os.path.exists(test_neighbors_path) and DEBUG == False:
+                os.path.exists(test_neighbors_path) and rebuild == False:
             logger.info("neighbors and neighbor_weight exist!!!")
             self.neighbors = np.load(neighbors_path)
             self.test_neighbors = np.load(test_neighbors_path)
@@ -266,11 +266,13 @@ class GraphData(Data):
         logger.info("preprocessed neighbors got!")
 
         # save neighbors information
-        pickle_save_data(neighbors_model_path, nn_fit)
-        np.save(neighbors_path, self.neighbors)
-        np.save(neighbors_weight_path, neighbors_weight)
-        np.save(test_neighbors_path, self.test_neighbors)
-        np.save(test_neighbors_weight_path, test_neighbors_weight)
+        if save:
+            pickle_save_data(neighbors_model_path, nn_fit)
+            np.save(neighbors_path, self.neighbors)
+            np.save(neighbors_weight_path, neighbors_weight)
+            np.save(test_neighbors_path, self.test_neighbors)
+            np.save(test_neighbors_weight_path, test_neighbors_weight)
+        return self.neighbors, self.test_neighbors
 
     def csr_to_impact_matrix(self, neighbor_result, instance_num, max_neighbors):
         neighbors = np.zeros((instance_num, max_neighbors)).astype(int)
@@ -503,6 +505,27 @@ class GraphData(Data):
         self.remove_instance(data["deleted_idxs"])
         self.label_instance(data["labeled_idxs"], data["labels"])
         self.remove_edge(data["deleted_edges"])
+
+    def add_data(self, added_idxs, train_pred):
+        added_idxs = np.array(added_idxs).reshape(-1)
+        self.train_idx = np.hstack((self.train_idx, added_idxs))
+        self.rest_idxs = np.array(range(len(self.train_idx)))
+
+        pre_num = self.affinity_matrix.shape[0]
+        add_num = len(added_idxs)
+        total_num = pre_num + add_num
+        neighbors, test_neighbor = self._preprocess_neighbors(rebuild=True, save=False)
+        new_affinity_matrix  = np.zeros((pre_num + add_num, pre_num + add_num))
+        new_affinity_matrix[:pre_num, :pre_num] = self.affinity_matrix.toarray()
+        for i in range(pre_num, pre_num + add_num):
+            nei_idxs = neighbors[i, 1:6]
+            for idx in nei_idxs:
+                if idx >= len(train_pred) or train_pred[idx] == 3:
+                    new_affinity_matrix[i, idx] = 1
+                    new_affinity_matrix[idx, i] = 1
+        new_affinity_matrix = sparse.csr_matrix(new_affinity_matrix)
+        self.affinity_matrix = new_affinity_matrix
+
 
     def update_graph(self, deleted_idxs):
         logger.info("begin update graph according to editing info")
