@@ -46,7 +46,7 @@ class Data(object):
 
         self._load_data()
 
-        if self.dataname.lower() == config.oct:
+        if self.dataname.lower() == config.oct.lower():
             new_test_data_path = os.path.join(self.data_root, "test_data.pkl")
             self.test_idx = pickle_load_data(new_test_data_path).reshape(-1)
             logger.info("new test data len: {}".format(len(self.test_idx)))
@@ -281,14 +281,14 @@ class GraphData(Data):
 
     def csr_to_impact_matrix(self, neighbor_result, instance_num, max_neighbors):
         neighbors = np.zeros((instance_num, max_neighbors)).astype(int)
-        neighbors_weight = np.zeros((instance_num, self.max_neighbors))
+        neighbors_weight = np.zeros((instance_num, max_neighbors))
         for i in range(instance_num):
             start = neighbor_result.indptr[i]
             end = neighbor_result.indptr[i + 1]
             j_in_this_row = neighbor_result.indices[start:end]
             data_in_this_row = neighbor_result.data[start:end]
             sorted_idx = data_in_this_row.argsort()
-            assert (len(sorted_idx) == self.max_neighbors)
+            assert (len(sorted_idx) == max_neighbors)
             j_in_this_row = j_in_this_row[sorted_idx]
             data_in_this_row = data_in_this_row[sorted_idx]
             neighbors[i, :] = j_in_this_row
@@ -511,7 +511,7 @@ class GraphData(Data):
         self.label_instance(data["labeled_idxs"], data["labels"])
         self.remove_edge(data["deleted_edges"])
 
-    def add_data(self, added_idxs, train_pred):
+    def add_data(self, added_idxs, train_pred, cls):
         added_idxs = np.array(added_idxs).reshape(-1)
         self.train_idx = np.hstack((self.train_idx, added_idxs))
         self.rest_idxs = np.array(range(len(self.train_idx)))
@@ -525,9 +525,30 @@ class GraphData(Data):
         for i in range(pre_num, pre_num + add_num):
             nei_idxs = neighbors[i, 1:6]
             for idx in nei_idxs:
-                if idx >= len(train_pred) or train_pred[idx] == 3:
+                if idx >= len(train_pred) or train_pred[idx] == cls:
                     new_affinity_matrix[i, idx] = 1
                     new_affinity_matrix[idx, i] = 1
+        new_affinity_matrix = sparse.csr_matrix(new_affinity_matrix)
+        self.affinity_matrix = new_affinity_matrix
+
+    def add_data_oct(self, added_idxs, train_pred, cls):
+        added_idxs = np.array(added_idxs).reshape(-1)
+        self.train_idx = np.hstack((self.train_idx, added_idxs))
+        self.rest_idxs = np.array(range(len(self.train_idx)))
+
+        pre_num = self.affinity_matrix.shape[0]
+        add_num = len(added_idxs)
+        total_num = pre_num + add_num
+        neighbors, test_neighbor = self._preprocess_neighbors(rebuild=True, save=False)
+        new_affinity_matrix  = np.zeros((pre_num + add_num, pre_num + add_num))
+        new_affinity_matrix[:pre_num, :pre_num] = self.affinity_matrix.toarray()
+        for i in range(pre_num, pre_num + add_num):
+            nei_idxs = neighbors[i, 1:5]
+            for idx in nei_idxs:
+                if idx >= len(train_pred) or train_pred[idx] == cls:
+                    new_affinity_matrix[i, idx] = 1
+                    new_affinity_matrix[idx, i] = 1
+        self.affinity_matrix = self.correct_unconnected_nodes(self.affinity_matrix)
         new_affinity_matrix = sparse.csr_matrix(new_affinity_matrix)
         self.affinity_matrix = new_affinity_matrix
 

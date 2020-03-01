@@ -638,8 +638,8 @@ class SSLModel(object):
         self._training()
         return self.data.return_state()
 
-    def add_data(self, added_idxs):
-        self.data.add_data(added_idxs, self.get_pred_labels())
+    def add_data(self, added_idxs, cls):
+        self.data.add_data(added_idxs, self.get_pred_labels(), cls)
 
     def add_new_categories(self, name, idxs=None):
         label = self.data.add_new_categories(name)

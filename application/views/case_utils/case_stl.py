@@ -38,9 +38,9 @@ class CaseSTL(CaseBase):
             all_labeled_idxs = self.model.data.labeled_idx
             labeled_y = self.model.data.y[all_labeled_idxs]
             cat_idxs = all_labeled_idxs[labeled_y == 3]
-            self.model.add_data(cat_idxs)
+            self.model.add_data(cat_idxs, 3)
 
-        if step >=4:
+        if step >= 4:
             self.model._training(rebuild=False, evaluate=False, simplifying=False)
 
         if not evaluate:

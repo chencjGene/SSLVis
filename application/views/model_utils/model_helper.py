@@ -81,8 +81,8 @@ def propagation(graph_matrix, affinity_matrix, train_y, alpha=0.2, max_iter=30,
         all_entropy.append(ent.sum())
 
     n_iter_ = 1
-    print("graph_matrix.shape:", graph_matrix.shape)
-    print("label_distributions_.shape:", label_distributions_.shape)
+    # print("graph_matrix.shape:", graph_matrix.shape)
+    # print("label_distributions_.shape:", label_distributions_.shape)
     for _ in range(max_iter):
         if np.abs(label_distributions_ - l_previous).sum() < tol:
             break
