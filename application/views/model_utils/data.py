@@ -46,6 +46,11 @@ class Data(object):
 
         self._load_data()
 
+        if self.dataname.lower() == config.oct:
+            new_test_data_path = os.path.join(self.data_root, "test_data.pkl")
+            self.test_idx = pickle_load_data(new_test_data_path).reshape(-1)
+            logger.info("new test data len: {}".format(len(self.test_idx)))
+
 
     def _load_data(self):
         processed_data_filename = os.path.join(self.data_root, config.processed_dataname)
