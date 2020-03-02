@@ -154,8 +154,12 @@ class ExchangePortClass(object):
         elif self.dataname == "oct":
             train_idx = self.model.data.get_full_train_idx()
             real_id = train_idx[id]
-            paths = self.model.data.add_info["filenames"]
-            img_path = os.path.join(config.image_root, paths[real_id].split("/data/")[2])
+            img_dir = os.path.join(config.image_root, self.dataname)
+            img_path = os.path.join(img_dir, str(real_id) + ".jpg")
+            # train_idx = self.model.data.get_full_train_idx()
+            # real_id = train_idx[id]
+            # paths = self.model.data.add_info["filenames"]
+            # img_path = os.path.join(config.image_root, paths[real_id].split("/data/")[2])
         return img_path
 
     def update_graph(self, area, level):
