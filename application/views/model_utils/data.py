@@ -548,8 +548,8 @@ class GraphData(Data):
                 if idx >= len(train_pred) or train_pred[idx] == cls:
                     new_affinity_matrix[i, idx] = 1
                     new_affinity_matrix[idx, i] = 1
-        self.affinity_matrix = self.correct_unconnected_nodes(self.affinity_matrix)
         new_affinity_matrix = sparse.csr_matrix(new_affinity_matrix)
+        self.affinity_matrix = self.correct_unconnected_nodes(new_affinity_matrix)
         self.affinity_matrix = new_affinity_matrix
 
 
