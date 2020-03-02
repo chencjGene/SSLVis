@@ -550,7 +550,7 @@ class GraphData(Data):
                     new_affinity_matrix[idx, i] = 1
         new_affinity_matrix = sparse.csr_matrix(new_affinity_matrix)
         self.affinity_matrix = self.correct_unconnected_nodes(new_affinity_matrix)
-        self.affinity_matrix = new_affinity_matrix
+        # self.affinity_matrix = new_affinity_matrix
 
 
     def update_graph(self, deleted_idxs):
