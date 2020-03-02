@@ -119,6 +119,8 @@ let DistLayout = function (container) {
         let label_sums = JSON.parse(JSON.stringify(state.label_sums));
         total_iters = label_sums.length;
         current_iter =  total_iters-1;
+        that.controlInstanceView.setIter(current_iter);
+        that.controlInfoView.setIter(current_iter);
         iter_list = new Array(total_iters).fill().map((_, i) => i);
         let flows = JSON.parse(JSON.stringify(state.flows));
         let original_flows = JSON.parse(JSON.stringify(state.flows));

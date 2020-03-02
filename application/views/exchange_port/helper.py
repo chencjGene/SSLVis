@@ -80,3 +80,9 @@ def get_home():
 
 def get_path(ids):
     return exchange_port.get_path(ids)
+
+def get_img_neighbors(ids, k):
+    return exchange_port.get_img_neighbors(ids, k)
+
+def get_data_labels(ids):
+    return exchange_port.get_img_labels(ids)

@@ -1,4 +1,5 @@
 import os
+import json
 from flask import send_file, jsonify
 from flask import Blueprint, request
 
@@ -16,3 +17,10 @@ def info_get_image():
         })
     image_path = get_image_path(id)
     return send_file(image_path)
+
+
+@info.route("/info/neighbors", methods=["POST"])
+def info_get_neighbors():
+    ids = json.loads(request.form["img_ids"])
+    k = int(request.form["k"])
+    return get_img_neighbors(ids, k)

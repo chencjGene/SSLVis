@@ -235,3 +235,11 @@ class ExchangePortClass(object):
     def retrain(self):
         res = self.model.retrain()
         return jsonify(res)
+
+    def get_img_neighbors(self, ids, k):
+        neighbors = self.model.data.get_neighbors()[ids, 1:k+1].tolist()
+        return jsonify(neighbors)
+
+    def get_img_labels(self, ids):
+        labels = self.model.labels[:,ids].T.tolist()
+        return jsonify(labels)

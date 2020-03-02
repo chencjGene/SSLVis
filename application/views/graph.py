@@ -41,7 +41,6 @@ def app_set_influence_filter():
     # TODO: get fisheye-tSNE
     return get_graph(filter_threshold)
 
-
 @graph.route("/graph/GetGraph", methods=["GET", "POST"])
 def app_get_graph():
     # extract info from request
@@ -153,3 +152,8 @@ def app_get_feature():
 def app_new_categories():
     data = json.loads(request.data)
     return add_new_categories(data)
+
+@graph.route("/graph/label", methods=["POST"])
+def app_get_labels():
+    ids = json.loads(request.form["img_ids"])
+    return get_data_labels(ids)

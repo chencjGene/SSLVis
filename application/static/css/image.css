@@ -4,6 +4,9 @@
 
 #info-div {
     background-color: #fafafa;
+    overflow-x: auto;
     overflow-y: auto;
     height: 95%;
+    width: 99%;
+    -webkit-overflow-scrolling: touch;
 }
