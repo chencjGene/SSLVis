@@ -543,11 +543,16 @@ class GraphData(Data):
         new_affinity_matrix  = np.zeros((pre_num + add_num, pre_num + add_num))
         new_affinity_matrix[:pre_num, :pre_num] = self.affinity_matrix.toarray()
         for i in range(pre_num, pre_num + add_num):
-            nei_idxs = neighbors[i, 1:5]
+            nei_idxs = neighbors[i, 1:100]
+            count = 0
             for idx in nei_idxs:
+                # if idx >= len(train_pred) or self.get_train_ground_truth()[idx] == cls:
                 if idx >= len(train_pred) or train_pred[idx] == cls:
                     new_affinity_matrix[i, idx] = 1
                     new_affinity_matrix[idx, i] = 1
+                    count += 1
+                if count > 3:
+                    break
         new_affinity_matrix = sparse.csr_matrix(new_affinity_matrix)
         self.affinity_matrix = self.correct_unconnected_nodes(new_affinity_matrix)
         # self.affinity_matrix = new_affinity_matrix
