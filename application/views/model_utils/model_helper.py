@@ -192,10 +192,9 @@ def approximated_influence(F, affinity_matrix, laplacian_matrix, alpha, train_y,
     # inv_K = splinalg.inv(sparse.identity(affinity_matrix.shape[0])
     #                      - alpha * laplacian_matrix)
     alpha_lap = alpha * laplacian_matrix
-    inv_K = alpha_lap.copy()
-    for n_iter in range(n_iters - 1):
-        logger.info("n_iter: {}".format(n_iter))
-        inv_K = safe_sparse_dot(alpha_lap, inv_K)
+    inv_K = sparse.identity(affinity_matrix.shape[0])
+    for n_iter in range(n_iters):
+        inv_K = safe_sparse_dot(inv_K, alpha_lap) + sparse.identity(affinity_matrix.shape[0])
     logger.info("got inverse matrix")
     tmp = affinity_matrix.copy()
     D = tmp.sum(axis=0).getA1() - tmp.diagonal()
