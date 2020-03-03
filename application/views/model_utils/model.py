@@ -93,7 +93,7 @@ class SSLModel(object):
         self.propagation_path_to = None
         self.simplified_affinity_matrix = None
         # self._training(evaluate=evaluate, simplifying=simplifying))
-        self._training(evaluate=evaluate, simplifying=False)
+        self._training(evaluate=evaluate, simplifying=True)
 
 
         logger.info("init finished")
@@ -146,12 +146,13 @@ class SSLModel(object):
         logger.info("model confusion matrix:\n{}".format(confusion_matrix(train_gt, pred_y)))
         logger.info("model entropy: {}".format(entropy(pred_dist.T + 1e-20).mean()))
         # self.evaluate(); exit()
-        propagation_path_from, propagation_path_to = self.get_path_to_label(self.process_data,
+        if not config.show_simplified:
+            propagation_path_from, propagation_path_to = self.get_path_to_label(self.process_data,
                                                                             self.graph)
-        self.propagation_path_from = propagation_path_from
-        self.propagation_path_to = propagation_path_to
+            self.propagation_path_from = propagation_path_from
+            self.propagation_path_to = propagation_path_to
 
-        if simplifying:
+        if simplifying and config.show_simplified:
             # get simplififed matrix asynchronously
             print("begin simplify")
             self.simplify_influence_matrix()

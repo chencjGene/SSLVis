@@ -82,6 +82,7 @@ class Config(object):
             "n_neighbors": 5,
             "sampling_min_dis": 100
         }
+        self.show_simplified = True
 
 
 
