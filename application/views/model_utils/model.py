@@ -155,7 +155,7 @@ class SSLModel(object):
         if simplifying and config.show_simplified:
             # get simplififed matrix asynchronously
             print("begin simplify")
-            self.simplify_influence_matrix()
+            self.fetch_simplify_influence_matrix()
         #
         if evaluate:
             # self.evaluate()
@@ -189,7 +189,18 @@ class SSLModel(object):
         pickle_save_data(influence_matrix_path, self.influence_matrix)
         return
 
-    @async_once
+    def fetch_simplify_influence_matrix(self):
+        simplify_path = os.path.join(self.selected_dir, "simplify_matrix.npy")
+        if os.path.exists(simplify_path):
+            simplified_affinity_matrix, propagation_path_from, propagation_path_to = pickle_load_data(simplify_path)
+            self.simplified_affinity_matrix = simplified_affinity_matrix
+            self.propagation_path_from = propagation_path_from
+            self.propagation_path_to = propagation_path_to
+        else:
+            self.simplify_influence_matrix()
+            save = (self.simplified_affinity_matrix, self.propagation_path_from, self.propagation_path_to)
+            pickle_save_data(simplify_path, save)
+
     def simplify_influence_matrix(self, threshold=0.7):
         logger.info("begin simplify influence matrix")
         self._influence_matrix()

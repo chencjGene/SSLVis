@@ -78,7 +78,13 @@ DataLoaderClass = function () {
         indegree_widget_range: [-1, -1],
         outdegree_widget_data: null,
         outdegree_widget_range: [-1, -1],
+        //hierarchy info
+        hierarchy:null,
+        last_level:0,
+        last_nodes:[],
         // graph info:
+        complete_graph:null,
+
         nodes: null,
         path: [],
         is_show_path: false,
@@ -564,10 +570,12 @@ DataLoaderClass = function () {
 
     that.graph_home = function() {
         let params = "?dataset=" + that.dataset;
-        let home_node = new request_node(that.home_graph_url + params,
-            that.home_graph_handler(that.graph_home_callback), "json", "POST");
-        home_node.set_data({});
-        home_node.notify();
+        // let home_node = new request_node(that.home_graph_url + params,
+        //     that.home_graph_handler(that.graph_home_callback), "json", "POST");
+        // home_node.set_data({});
+        // home_node.notify();
+        that.get_home();
+        that.graph_home_callback();
     };
 
     that.zoom_graph_view = function() {
@@ -589,16 +597,21 @@ DataLoaderClass = function () {
     };
 
     that.zoom_graph_view_notify = function (area, target_level) {
-        let params = "?dataset=" + that.dataset;
-        let update_graph_node = new request_node(that.zoom_graph_url + params,
-            that.zoom_graph_handler(that.zoom_graph_view), "json", "POST");
         that.state.area = area;
         that.state.rescale = false;
-        update_graph_node.set_data({
-            'area': area,
-            'level': target_level
-        });
-        update_graph_node.notify();
+        that.zoom_graph(area, target_level);
+        that.zoom_graph_view();
+        //
+        // let params = "?dataset=" + that.dataset;
+        // let update_graph_node = new request_node(that.zoom_graph_url + params,
+        //     that.zoom_graph_handler(that.zoom_graph_view), "json", "POST");
+        // that.state.area = area;
+        // that.state.rescale = false;
+        // update_graph_node.set_data({
+        //     'area': area,
+        //     'level': target_level
+        // });
+        // update_graph_node.notify();
     };
 
     that.change_visible_items = function(visible_items) {
@@ -629,8 +642,8 @@ DataLoaderClass = function () {
 
     that.fetch_graph_node = function(must_show_nodes, area, level, wh, mode, data) {
          let params = "?dataset=" + that.dataset;
-        let fetch_graph = new request_node(that.fisheye_graph_url + params,
-            that.fetch_graph_handler(that.zoom_graph_view), "json", "POST");
+        // let fetch_graph = new request_node(that.fisheye_graph_url + params,
+        //     that.fetch_graph_handler(that.zoom_graph_view), "json", "POST");
         that.state.rescale = false;
         if(mode.startsWith("showpath")){
             let from_or_to = mode.split("-")[1];
@@ -646,13 +659,15 @@ DataLoaderClass = function () {
             that.state.highlights = data;
         }
         that.state.area = area;
-        fetch_graph.set_data({
-            'must_show_nodes':must_show_nodes,
-            'area':area,
-            'level':level,
-            'wh':wh
-        });
-        fetch_graph.notify();
+        that.fetch_nodes(area, level, must_show_nodes);
+        that.zoom_graph_view();
+        // fetch_graph.set_data({
+        //     'must_show_nodes':must_show_nodes,
+        //     'area':area,
+        //     'level':level,
+        //     'wh':wh
+        // });
+        // fetch_graph.notify();
     };
 
     that.show_highlight_node = function(highlight_nodes) {

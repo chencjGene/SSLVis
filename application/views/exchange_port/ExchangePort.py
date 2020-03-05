@@ -100,10 +100,11 @@ class ExchangePortClass(object):
         return dist
 
     def get_graph(self, filter_threshold=None, wh = 1):
-        graph = self.anchor.get_nodes(wh)
+        res = self.anchor.get_nodes(wh)
+        graph = res["graph"]
         for id in graph["nodes"]:
             self.current_ids.append(int(id))
-        res = jsonify(graph)
+        res = jsonify(res)
         logger.info("jsonify done")
         return res
 
