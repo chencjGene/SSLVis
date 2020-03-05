@@ -434,6 +434,7 @@ class Anchors:
         }
 
     def update_nodes(self, area, level, must_show_nodes = []):
+        t0 = time.time()
         # area = self.rotate_area(area)
         self.remove_ids = self.model.data.get_removed_idxs()
         selection, old_cnt = self.get_data_selection(area, level, must_show_nodes)
@@ -445,6 +446,7 @@ class Anchors:
         self.old_nodes_tsne = tsne
         graph = self.convert_to_dict(selection, tsne)
         graph["area"] = self.get_data_area(train_x_tsne=tsne)
+        print("update nodes time:", time.time() - t0)
         return graph
 
     def get_home(self):

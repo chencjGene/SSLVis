@@ -123,8 +123,8 @@ let GraphTransform = function (parent) {
             })
             .on("zoom", that.zoomed)
             .on("end", that.zoom_end);
-        view.svg.on(".drag", null);
-            view.svg.on(".dragend", null);
+        // view.svg.on(".drag", null);
+        //     view.svg.on(".dragend", null); //disabled by changjian
         view.svg.call(zoom);
     };
 

@@ -43,5 +43,5 @@ class CaseSTL(CaseBase):
         if step >= 4:
             self.model._training(rebuild=False, evaluate=False, simplifying=False)
 
-        if not evaluate:
-            self.model.adaptive_evaluation_unasync()
+        # if not evaluate:
+        #     self.model.adaptive_evaluation_unasync()

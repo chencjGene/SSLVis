@@ -24,7 +24,7 @@ let GraphLayout = function (container) {
     let color_unlabel = UnlabeledColor;
     let color_label = CategoryColor;
     let edge_color = UnlabeledColor;
-    let AnimationDuration = 300;
+    let AnimationDuration = 100;
     let pathGenerator = d3.line().curve(d3.curveCardinal.tension(0.5));
 
     // draw containter
@@ -37,6 +37,7 @@ let GraphLayout = function (container) {
     let golds_in_group = null;
     let glyph_in_group = null;
     let legend_group = null;
+    that.selection_group = null;
 
     // meta data
     let nodes = {};
@@ -51,6 +52,7 @@ let GraphLayout = function (container) {
     let visible_items = {};
     let aggregate = [];
     let rect_nodes = [];
+    that.selection_box = [[[0.5, 0.5], [1.0, 1.0]]];
 
     // from area to main group
     that.center_scale_x = null;
@@ -77,6 +79,7 @@ let GraphLayout = function (container) {
         nodes_group = that.main_group.append("g").attr("id", "graph-tsne-point-g");
         golds_group = that.main_group.append("g").attr("id", "graph-gold-g");
         glyph_group = that.main_group.append("g").attr("id", "graph-glyph-g");
+        that.selection_group = that.main_group.append("g").attr("id", "graph-selection-g");
         that.width = $('#graph-view-svg').width();
         that.height = $('#graph-view-svg').height();
 

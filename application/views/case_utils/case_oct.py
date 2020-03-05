@@ -64,5 +64,5 @@ class CaseOCT(CaseBase):
         if step >=3:
             self.model._training(rebuild=False, evaluate=evaluate, simplifying=simplifying)
 
-        if not evaluate:
-            self.model.adaptive_evaluation_unasync()
+        # if not evaluate:
+        #     self.model.adaptive_evaluation_unasync()
