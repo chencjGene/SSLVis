@@ -442,10 +442,9 @@ class Anchors:
         # area = self.rotate_area(area)
         self.remove_ids = self.model.data.get_removed_idxs()
         selection, old_cnt = self.get_data_selection(area, level, must_show_nodes)
-        # TODO  2020.2.15 change to init tsne
-        # tsne = self.re_tsne(selection, old_cnt)
+
         tsne = self.get_init_tsne(selection)
-        # tsne = np.dot(tsne, self.rotate_matrix)
+
         self.old_nodes_id = selection
         self.old_nodes_tsne = tsne
         graph = self.convert_to_dict(selection, tsne)
