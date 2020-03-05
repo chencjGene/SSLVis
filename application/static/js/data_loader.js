@@ -79,6 +79,7 @@ DataLoaderClass = function () {
         outdegree_widget_data: null,
         outdegree_widget_range: [-1, -1],
         // graph info:
+        hierarchy: null,
         nodes: null,
         path: [],
         is_show_path: false,

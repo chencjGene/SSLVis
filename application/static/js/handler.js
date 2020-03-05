@@ -38,10 +38,13 @@ DataLoaderClass.prototype.get_graph_handler = function (callback) {
     let that = this;
 
     function _graph_handler(data) {
+        let graph = data.graph;
+        let hierarchy = data.hierarchy;
         console.log(that.manifest_url);
-        that.state.nodes = data.nodes;
-        that.state.area = data.area;
-        that.state.aggregate = data.aggregate;
+        that.state.nodes = graph.nodes;
+        that.state.area = graph.area;
+        that.state.aggregate = graph.aggregate;
+        that.state.hierarchy = hierarchy;
         let selected_idxs = [];
         // TODO: move this part to callback
         for(let i in that.state.nodes){

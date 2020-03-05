@@ -202,8 +202,6 @@ class Anchors:
             res = list(set(res) | set(adds))
         return np.array(res)
 
-
-
     def get_margin(self, process_data):
         iter_num = process_data.shape[0]
         node_num = process_data.shape[1]
@@ -398,12 +396,16 @@ class Anchors:
         self.get_rotate_matrix(self.tsne, wh)
         self.tsne = np.dot(self.tsne, self.rotate_matrix)
         self.hierarchy_info = self.get_hierarchical_sampling()
+        for level in self.hierarchy_info:
+            level["index"] = level["index"].tolist()
         selection = np.array(self.hierarchy_info[0]["index"]).tolist()
+        all_node_num = len(self.model.data.train_idx)
         for id in self.remove_ids:
             if id in selection:
                 selection.remove(id)
         # TODO  2020.2.15 change to init tsne
         # tsne = self.re_tsne(selection)
+        selection = np.arange(0, all_node_num)
         tsne = self.get_init_tsne(selection)
 
 
@@ -421,7 +423,10 @@ class Anchors:
         # for i, label in enumerate(self.aggregate.labels.tolist()):
         #     aggregate[self.home_tsne_ids[i]] = label
         # graph["aggregate"] = aggregate
-        return graph
+        return {
+            "graph":graph,
+            "hierarchy":self.hierarchy_info
+        }
 
     def rotate_area(self, area):
         area_matrix = np.array([[area["x"], area["y"]], [area["x"]+area["width"], area["y"]+area["height"]]])
