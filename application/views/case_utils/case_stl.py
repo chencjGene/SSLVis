@@ -24,7 +24,7 @@ class CaseSTL(CaseBase):
         categories[11] = False
         if step >= 2:
             c = json.loads(open(os.path.join(self.model.selected_dir, "local_1_idxs.txt"), "r").read().strip("\n"))
-            self.model.local_search_k(c, [1, 2, 3, 4], categories, simplifying=True, evaluate=False)
+            self.model.local_search_k(c, [1, 2, 3, 4], categories, simplifying=False, evaluate=False)
         
         if step >= 3:
             e = json.loads(open(os.path.join(self.model.selected_dir, "local_2_idxs.txt"), "r").read().strip("\n"))

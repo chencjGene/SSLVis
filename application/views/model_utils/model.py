@@ -339,6 +339,44 @@ class SSLModel(object):
         logger.info("test accuracy: {}".format(acc))
         return probabilities.argmax(axis=1)
 
+    def adaptive_evaluation_new_test(self, pred, test_X, test_y):
+        affinity_matrix = self.data.get_graph()
+        affinity_matrix.setdiag(0)
+        # test_X = self.data.get_test_X()
+        # test_y = self.data.get_test_ground_truth()
+        neighbors_model = self.data.get_neighbors_model()
+        test_neighbors_result = neighbors_model.kneighbors_graph(test_X,
+                                                        100,
+                                                       mode="distance")
+        test_neighbors, test_neighbors_weight = self.data.csr_to_impact_matrix(test_neighbors_result,
+                                                                               len(test_y), 100)
+        logger.info("neighbor_result got!")
+        estimate_k = 3
+        s = 0
+        labels = []
+        rest_idxs = self.data.get_rest_idxs()
+        m = self.data.get_new_id_map()
+        adaptive_ks = []
+        for i in tqdm(range(test_X.shape[0])):
+            j_in_this_row = test_neighbors[i, :]
+            j_in_this_row = j_in_this_row[j_in_this_row != -1]
+            estimated_idxs = j_in_this_row[:estimate_k]
+            # estimated_idxs = [m[i] for i in estimated_idxs]
+            adaptive_k = affinity_matrix[estimated_idxs, :].sum() / estimate_k
+            selected_idxs = j_in_this_row[:int(adaptive_k)]
+            # selected_idxs = [m[i] for i in selected_idxs]
+            p = pred[selected_idxs].sum(axis=0)
+            labels.append(p.argmax())
+            s += adaptive_k
+            adaptive_ks.append(adaptive_k)
+
+        acc = accuracy_score(test_y, labels)
+        confusion_mat = confusion_matrix(test_y, labels)
+        logger.info("test accuracy: {}".format(acc))
+        logger.info("confusion matrix: \n{}".format(confusion_mat))
+        print(s / test_X.shape[0])
+        return labels
+
     def adaptive_evaluation_unasync(self, pred=None):
         affinity_matrix = self.data.get_graph()
         affinity_matrix.setdiag(0)

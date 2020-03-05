@@ -37,6 +37,7 @@ class Data(object):
         self.labeled_idx = []
         self.class_name = []
         self.removed_idxs = []
+        self.processed_data = []
 
         self.selected_labeled_num = labeled_num
         self.selected_total_num = total_num
@@ -49,12 +50,12 @@ class Data(object):
         if self.dataname.lower() == config.oct.lower():
             new_test_data_path = os.path.join(self.data_root, "test_data.pkl")
             self.test_idx = pickle_load_data(new_test_data_path).reshape(-1)
-            logger.info("new test data len: {}".format(len(self.test_idx)))
 
 
     def _load_data(self):
         processed_data_filename = os.path.join(self.data_root, config.processed_dataname)
         processed_data = pickle_load_data(processed_data_filename)
+        self.processed_data = processed_data
         self.X = processed_data[config.X_name]
         self.y = processed_data[config.y_name]
         self.y = np.array(self.y).astype(int)
@@ -237,7 +238,7 @@ class GraphData(Data):
         test_neighbors_weight_path = os.path.join(self.selected_dir, "test_neighbors_weight.npy")
         if os.path.exists(neighbors_model_path) and \
                 os.path.exists(neighbors_path) and \
-                os.path.exists(test_neighbors_path) and rebuild == False:
+                os.path.exists(test_neighbors_path) and rebuild == False and DEBUG == False:
             logger.info("neighbors and neighbor_weight exist!!!")
             self.neighbors = np.load(neighbors_path)
             self.test_neighbors = np.load(test_neighbors_path)
@@ -367,7 +368,7 @@ class GraphData(Data):
                 break
             connected_nodes = new_connected_nodes
         unconnected_nodes = np.where(new_connected_nodes<1)[0]
-        logger.info("Find unconnected nodes end. Count:{}, Iter:{}".format(unconnected_nodes.shape[0], iter_cnt))
+        # logger.info("Find unconnected nodes end. Count:{}, Iter:{}".format(unconnected_nodes.shape[0], iter_cnt))
         return unconnected_nodes
 
     def correct_unconnected_nodes(self, affinity_matrix):
