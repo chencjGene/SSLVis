@@ -613,6 +613,7 @@ class SSLModel(object):
         return self.ent
 
     def get_flows(self, idxs):
+        t0 = time()
         m = self.data.get_new_id_map()
         idxs = np.array([m[i] for i in idxs])
         self.selected_idxs = idxs
@@ -621,12 +622,14 @@ class SSLModel(object):
         for i in range(iter-1):
             selected_flows[i] = flow_statistic(self.labels[i][idxs], \
                 self.labels[i+1][idxs], self.class_list)
+        print("get_flows time 1: ", time() - t0)
         label_sums = np.zeros((self.labels.shape[0], selected_flows.shape[1]))
         for i in range(self.labels.shape[0]):
             labels = self.labels[i][idxs]
             bins = np.bincount(labels + 1)
             missed_num = label_sums[i].shape[0] - len(bins)
             label_sums[i,:] = np.concatenate((bins, np.zeros(missed_num)))
+        print("get_flows time 2: ", time() - t0)
         return label_sums, selected_flows
 
     def get_selected_flows(self, data):

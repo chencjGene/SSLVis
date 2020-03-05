@@ -42,6 +42,15 @@ DataLoaderClass.prototype.get_graph_handler = function (callback) {
         let complete_graph = data.graph.nodes;
         that.state.complete_graph = complete_graph;
         let hierarchy = data.hierarchy;
+        // TODO: process hierarchy
+        for (let i = 0; i < hierarchy.length - 1; i++){
+            let index = hierarchy[i].index;
+            let next = hierarchy[i].next;
+            let next_index = hierarchy[i + 1].index;
+            for (let j = 0; j < next.length; j++){
+                next[j] = next[j].filter(d => next_index.indexOf(d) > -1);
+            }
+        }
         that.state.hierarchy = hierarchy;
         let graph = that.get_nodes_from_complete_graph(hierarchy[0].index);
 

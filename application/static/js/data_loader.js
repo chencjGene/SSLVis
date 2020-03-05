@@ -291,6 +291,7 @@ DataLoaderClass = function () {
     };
 
     that.get_dist_view = function(selected_idxs){
+        return; // TODO
         let params = "?dataset=" + that.dataset;
         that.flows_node = new request_node(that.flows_urls + params,
             that.get_flows_handler(that.update_dist_view), "json", "POST");

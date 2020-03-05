@@ -8,6 +8,24 @@ DataLoaderClass.prototype.get_nodes_from_complete_graph = function (nodes_id) {
     return graph;
 };
 
+function get_next_level(hierarchy, level, area, complete_graph){
+    let selection = [];
+    let last_next = hierarchy[level-1]['next'];
+    let last_index = hierarchy[level-1]['index'];
+    for(let i=0; i<last_index.length; i++){
+        let ind = last_index[i];
+        let node = complete_graph[ind];
+        let pos = {x:node.x, y:node.y};
+        if((area.x <= pos.x) && (area.x +area.width>= pos.x) && (area.y <= pos.y) &&( area.y + area.height >= pos.y)){
+            // let temp_selection = hierarchy[level]["index"].filter(d => last_next[i].indexOf(d) > -1);
+            let temp_selection = last_next[i];
+            selection = selection.concat(temp_selection);
+            // selection = selection.concat(hierarchy[level]["index"]);
+        }
+        
+    }
+    return selection;
+}
 
 DataLoaderClass.prototype.get_data_selection = function (area, level, must_show_nodes) {
     let that = this;
@@ -20,16 +38,7 @@ DataLoaderClass.prototype.get_data_selection = function (area, level, must_show_
         selection = hierarchy[0]['index'];
     }
     else if(level !== hierarchy.length || that.state.last_level !== hierarchy.length){
-        let last_next = hierarchy[level-1]['next'];
-        let last_index = hierarchy[level-1]['index'];
-        for(let i=0; i<last_index.length; i++){
-            let ind = last_index[i];
-            let node = that.state.complete_graph[ind];
-            let pos = {x:node.x, y:node.y};
-            if((area.x <= pos.x) && (area.x +area.width>= pos.x) && (area.y <= pos.y) &&( area.y + area.height >= pos.y)){
-                selection = selection.concat(hierarchy[level]["index"].filter(d => last_next[i].indexOf(d) > -1))
-            }
-        }
+            selection = get_next_level(hierarchy, level, area, that.state.complete_graph);
     }
     else {
         selection = hierarchy[level]['index'];

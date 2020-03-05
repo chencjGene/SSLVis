@@ -25,6 +25,9 @@ let GraphLayout = function (container) {
     let color_label = CategoryColor;
     let edge_color = UnlabeledColor;
     let AnimationDuration = 100;
+    let create_ani = AnimationDuration;
+    let update_ani = AnimationDuration;
+    let remove_ani = AnimationDuration * 0.1;
     let pathGenerator = d3.line().curve(d3.curveCardinal.tension(0.5));
 
     // draw containter
@@ -225,28 +228,28 @@ let GraphLayout = function (container) {
         return new Promise(function (resolve, reject) {
             nodes_in_group.exit()
                 .transition()
-                .duration(AnimationDuration)
+                .duration(remove_ani)
                 .attr("opacity", 0)
                 .remove()
                .on("end", resolve);
 
             golds_in_group.exit()
                 .transition()
-                .duration(AnimationDuration)
+                .duration(remove_ani)
                 .attr("opacity", 0)
                 .remove()
                 .on("end", resolve);
 
             glyph_in_group.exit()
                 .transition()
-                .duration(AnimationDuration)
+                .duration(remove_ani)
                 .attr("opacity", 0)
                 .remove()
                 .on("end", resolve);
 
             path_in_group.exit()
                 .transition()
-                .duration(AnimationDuration)
+                .duration(remove_ani)
                 .attr("opacity", 0)
                 .remove()
                 .on("end", resolve);

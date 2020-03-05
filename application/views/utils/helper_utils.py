@@ -117,11 +117,15 @@ def flow_statistic(flow_in, flow_out, class_list):
     assert len(flow_in) == len(flow_out)
     class_num = len(class_list)
     m = np.ones((class_num, class_num))
-    _flow_in = np.array(flow_in)
-    _flow_out = np.array(flow_out)
-    for i in range(class_num):
-        for j in range(class_num):
-            m[i, j] = sum(_flow_out[_flow_in == class_list[i]] == class_list[j])
+    # _flow_in = np.array(flow_in)
+    # _flow_out = np.array(flow_out)
+    _flow_in = flow_in
+    _flow_out = flow_out
+    # for i in range(class_num):
+    #     for j in range(class_num):
+    #         m[i, j] = sum(_flow_out[_flow_in == class_list[i]] == class_list[j])
+    for i in range(len(flow_in)):
+        m[_flow_in[i], _flow_out[i]] += 1
     return m
 
 
