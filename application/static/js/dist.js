@@ -240,8 +240,7 @@ let DistLayout = function (container) {
         }
         current_iter = newiter;
         that._update_view();
-        that.controlInstanceView.setIter(newiter);
-        that.controlInfoView.setIter(newiter);
+        data_manager.setIter(newiter);
     };
 
     that._update_view = function () {

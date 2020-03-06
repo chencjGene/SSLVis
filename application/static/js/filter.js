@@ -160,7 +160,7 @@ let FilterLayout = function (container) {
     that.label_scented_widget = function() {
         // label interval
         let min_label_id = -1;
-        let max_label_id = 11;
+        let max_label_id = data_manager.state.label_names.length-1;
         let label_cnt = max_label_id-min_label_id+1;
         function interval_idx(label_id){
             return label_id;
@@ -277,6 +277,10 @@ let FilterLayout = function (container) {
                   return container_height*0.85 - y(d.length/max_len);
               })
             .attr("opacity", (d, i) => (label_widget_range.indexOf(i) > -1)?1:0.2);
+        rects.exit()
+            .transition()
+            .duration(AnimationDuration)
+            .remove();
         // draw axis
         if(container.select("#current-label-axis").size() === 0){
             container.append("g")
