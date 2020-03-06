@@ -55,7 +55,9 @@ let GraphLayout = function (container) {
     let visible_items = {};
     let aggregate = [];
     let rect_nodes = [];
-    that.selection_box = [[[0.5, 0.5], [1.0, 1.0]]];
+    that.selection_box = [
+        // {x:100, y:100, width:300, height:300}
+    ];
 
     // from area to main group
     that.center_scale_x = null;
@@ -95,6 +97,9 @@ let GraphLayout = function (container) {
 
         // init zoom
         transform_plg.set_zoom();
+
+        // TODO: debug
+        that.update_selection_box();
     };
 
     that.set_data_manager = function(new_data_manager) {
@@ -663,6 +668,12 @@ let GraphLayout = function (container) {
             transform_plg.remove_zoom();
             highlight_plg.remove_lasso();
             highlight_plg.set_select_edge();
+        }
+        else if (mode == "rect"){
+            transform_plg.remove_zoom();
+            highlight_plg.remove_lasso();
+            highlight_plg.remove_select_edge();
+            that.set_rect_selection();
         }
     };
 

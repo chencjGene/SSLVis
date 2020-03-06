@@ -93,3 +93,14 @@
 }
 
 
+.cross-line{
+    stroke: black;
+    stroke-width: 2px;
+    opacity: 1;
+}
+
+.cross-line-hide{
+    stroke: black;
+    stroke-width: 2px;
+    opacity: 0;
+}

@@ -10,58 +10,126 @@ GraphLayout.prototype.update_selection_box = function(){
 
 GraphLayout.prototype._create_selection_box = function(){
     let that = this;
-    
 
-    // let drag = function() {
-    //     function dragstarted(d) {
-    //         console.log("start dragstarted");
-    //     }
-      
-    //     function dragged(d) {
-    //       d3.select(this).attr("x", d.x = d3.event.x).attr("y", d.y = d3.event.y);
-    //     }
-      
-    //     function dragended(d) {
-
-    //     }
-      
-    //     return d3.drag()
-    //         .on("start", dragstarted)
-    //         .on("drag", dragged)
-    //         .on("end", dragended);
-    //   }
     let drag = d3.drag()
             .on("start", function(){
                 console.log("start dragstarted");
                 d3.event.sourceEvent.stopPropagation();
             })
             .on("drag", function(d){
-                d3.select(this).attr("x", d.x = d3.event.x).attr("y", d.y = d3.event.y)
+                // d3.select(this).attr("x", d.x = d3.event.x).attr("y", d.y = d3.event.y)
+                d.x = d3.event.x;
+                d.y = d3.event.y;
+                that._update_selection_box();
             })
             .on("end", function(){
 
             });
 
-    that.selection_group.selectAll(".selection-box")
+    let sg = that.selection_group.selectAll(".selection-box")
         .data(that.selection_box)
         .enter()
-        .append("rect")
+        .append("g")
         .attr("class", "selection-box")
-        .attr("width", 400)
-        .attr("height", 400)
-        .attr("x", 100)
-        .attr("y", 100)
-        .style("fill", "none")
-        .style("stroke-width", 2)
-        .style("stroke", "gray")
-        .style("cursor", "pointer")
+        .attr("transform", d => "translate("+(d.x)+","+ (d.y) +")")
         .call(drag);
+    sg.append("rect")
+        .attr("class", "box")
+        .attr("width", d => d.width)
+        .attr("height", d => d.height)
+        .attr("x", d => 0)
+        .attr("y", d => 0)
+        .style("fill", "none")
+        .style("stroke-width", 4)
+        .style("stroke", "gray")
+        .style("cursor", "move");
+    let cross_group = sg.append("g")
+            .attr("class", "cross")
+            .attr("transform", d => "translate("+(d.width - 10)+","+ (10) +")")
+            .on("mouseover", function(){
+                console.log("cross mouse over");
+                d3.select(this).selectAll("line")
+                    .classed("cross-line-hide", false)
+                    .classed("cross-line", true);
+            })
+            .on("mouseout", function(){
+                console.log("cross mouse out");
+                d3.select(this).selectAll("line")
+                .classed("cross-line-hide", true)
+                .classed("cross-line", false);
+            })
+            .on("click", function(d, i){
+                that.selection_box.splice(i, 1);
+                that._remove_selection_box();
+            })
+    cross_group.append("line")
+            .attr("class", "cross-line-hide")
+            .attr("x1", -5)
+            .attr("y1", -5)
+            .attr("x2", 5)
+            .attr("y2", 5);
+    cross_group.append("line")
+            .attr("class", "cross-line-hide")
+            .attr("x1", -5)
+            .attr("y1", 5)
+            .attr("x2", 5)
+            .attr("y2", -5);
+    cross_group.append("rect")
+            .attr("class", "cross-background")
+            .attr("x", -5 * 1.5)
+            .attr("y", -5 * 1.5)
+            .attr("width", 10 * 1.5)
+            .attr("height", 10 * 1.5)
+            .style("opacity", 0);
 };
 
 GraphLayout.prototype._update_selection_box = function(){
+    let that = this;
 
+    let sg = that.selection_group.selectAll(".selection-box")
+        .data(that.selection_box)
+        .attr("transform", d => "translate("+(d.x)+","+ (d.y) +")");
+    sg.selectAll(".box")
+        .attr("width", d => d.width)
+        .attr("height", d => d.height);
+    sg.select(".cross")
+    .attr("transform", d => "translate("+(d.width - 10)+","+ (10) +")");
 };
 
 GraphLayout.prototype._remove_selection_box = function(){
+    let that = this;
+    that.selection_group.selectAll(".selection-box")
+        .data(that.selection_box)
+        .exit()
+        .remove();
+
+};
+
+GraphLayout.prototype.set_rect_selection = function(){
+    let that = this;
+    that.svg.on("mousedown", function(){
+        console.log("set rect selection mousedown");
+        that.selection_box.push({
+            "x": d3.event.x,
+            "y": d3.event.y,
+            "width": 0.1,
+            "height": 0.1
+        })
+        that._create_selection_box();
+        // d3.event.sourceEvent.stopPropagation();
+        that.svg.on("mousemove", function(){
+            let start_x = that.selection_box[that.selection_box.length-1].x;
+            let start_y = that.selection_box[that.selection_box.length-1].y; 
+            that.selection_box[that.selection_box.length-1].width = d3.event.x - start_x;
+            that.selection_box[that.selection_box.length-1].height = d3.event.y - start_y;
+            that._update_selection_box();
+        })
+    })
+    .on("mouseup", function(){
+        that.svg.on("mousemove", null);
+    })
+};
+
+GraphLayout.prototype.remove_rect_selection = function(){
 
 };
