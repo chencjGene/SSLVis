@@ -528,7 +528,7 @@ DataLoaderClass = function () {
 
     };
 
-    that.changeEdgeType = function(data, range){
+    that.update_edge_type_bar = function(data, range){
         let ranges = that.filter_view.get_ranges();
         that.set_filter_range(ranges[0], ranges[1], ranges[2], ranges[3], ranges[4], ranges[5]);
         that.state.edge_type_data = data;
