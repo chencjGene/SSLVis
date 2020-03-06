@@ -1,6 +1,16 @@
 /*
 * added by Changjian Chen, 20200305
 * */
+
+function inbox(box, x, y){
+    if (x > box.x && x < box.x + box.width && y > box.y && y < box.y + box.height){
+        return true;
+    }
+    else{
+        return false;
+    }
+}
+
 GraphLayout.prototype.update_selection_box = function(){
     let that = this;
     that._create_selection_box();
@@ -28,7 +38,7 @@ GraphLayout.prototype._create_selection_box = function(){
     let transform = that.get_transform();
     console.log("get transform:", transform);
     let sg = that.selection_group.selectAll(".selection-box")
-        .data(that.selection_box)
+        .data(that.selection_box, d => d.id)
         .enter()
         .append("g")
         .attr("class", "selection-box")
@@ -102,8 +112,14 @@ GraphLayout.prototype._create_selection_box = function(){
                 .classed("cross-line-hide", true)
                 .classed("cross-line", false);
             })
-            .on("click", function(d, i){
-                that.selection_box.splice(i, 1);
+            .on("click", function(d){
+                // that.selection_box.splice(i, 1);
+                for(let i = 0; i < that.selection_box.length; i++){
+                    if (that.selection_box[i].id === d.id){
+                        that.selection_box.splice(i, 1);
+                        break;
+                    }
+                }
                 that._remove_selection_box();
             })
     cross_group.append("line")
@@ -131,7 +147,7 @@ GraphLayout.prototype._update_selection_box = function(){
     let that = this;
     let transform = that.get_transform();
     let sg = that.selection_group.selectAll(".selection-box")
-        .data(that.selection_box)
+        .data(that.selection_box, d => d.id)
         .attr("transform", d => "translate("+(d.x)+","+ (d.y) +")");
     sg.selectAll(".box")
         .attr("width", d => d.width)
@@ -139,15 +155,37 @@ GraphLayout.prototype._update_selection_box = function(){
     sg.select(".cross")
     .attr("transform", d => "translate("+(d.width - 10)+","+ (10) +")");
 
+
     sg.select(".resize").select("#resize_rect_right_bottom")
         .attr("x", d => d.width-5)
-        .attr("y", d => d.height-5)
+        .attr("y", d => d.height-5);
+
+    for(let i = 0; i < that.selection_box.length; i++){
+        let nodes = Object.values(that.get_nodes())
+            .filter(d => inbox(that.selection_box[i], that.center_scale_x(d.x), that.center_scale_y(d.y)));
+        // let nodes = d3.selectAll(".node-dot")
+        //                 .
+        that.selection_box[i].nodes = nodes;
+    }
+
+    if (that.selection_box.length > 0){
+        d3.selectAll(".node-dot").attr("r", 3);
+        for (let j = 0; j < that.selection_box.length; j++){
+            let selection_idxs = that.selection_box[j].nodes.map(d => d.id);
+            // that.highlight(selection_idxs);
+            for (let i = 0; i < selection_idxs.length; i++){
+                d3.select("#id-" + selection_idxs[i])
+                    .attr("r", 4);
+            }
+        }
+    }
+
 };
 
 GraphLayout.prototype._remove_selection_box = function(){
     let that = this;
     that.selection_group.selectAll(".selection-box")
-        .data(that.selection_box)
+        .data(that.selection_box, d => d.id)
         .exit()
         .remove();
 
@@ -162,8 +200,10 @@ GraphLayout.prototype.set_rect_selection = function(){
             "x": event[0],
             "y": event[1],
             "width": 0.1,
-            "height": 0.1
-        })
+            "height": 0.1,
+            "id": that.selection_box_id_count
+        });
+        that.selection_box_id_count += 1;
         that._create_selection_box();
         // d3.event.sourceEvent.stopPropagation();
         that.svg.on("mousemove", function(){
@@ -183,3 +223,81 @@ GraphLayout.prototype.set_rect_selection = function(){
 GraphLayout.prototype.remove_rect_selection = function(){
 
 };
+
+GraphLayout.prototype.get_path = function(){
+    let that = this;
+    let path = {
+        "from": [],
+        "to": [],
+        "within": [],
+        "between": []
+    };
+    
+    for (let i = 0; i < that.selection_box.length; i++){
+        let focus_nodes = that.selection_box[i].nodes;
+        for (let j = 0; j < focus_nodes.length; j++){
+            focus_nodes[j].box_id = i;
+            focus_nodes[j].visited = false;
+        }
+    }
+
+    for (let i = 0; i < that.selection_box.length; i++){
+        let focus_nodes = that.selection_box[i].nodes;
+        for (let j = 0; j < focus_nodes.length; j++){
+            // focus_nodes[j].box_id = i;
+            let node = focus_nodes[j];
+            if (node.visited) continue;
+             
+            // process from
+            let from = node.from;
+            let from_weight = node.from_weight;
+            for (let k = 0; k < from.length; k++){
+                if (from_weight[k] > 0){
+                    // it is not a safe code
+                    let from_node = DataLoader.state.complete_graph[from[k]];
+                    if (from_node.box_id !== undefined && from_node.box_id > -1){
+                        if (from_node.box_id == node.box_id){
+                            path.within.push([from_node, node, from_weight[k]]);
+                        }
+                        else{
+                            path.between.push([from_node, node, from_weight[k]]);
+                        }
+                    }
+                    else{
+                        path.from.push([from_node, node, from_weight[k]]);
+                    }
+                }
+            }
+            // process to
+            let to = node.to;
+            let to_weight = node.to_weight;
+            for (let k = 0; k < to.length; k++){
+                if (to_weight[k] > 0){
+                    let to_node = DataLoader.state.complete_graph[to[k]];
+                    if (!(to_node.box_id !== undefined && to_node.box_id > -1)){
+                        path.to.push([node, to_node, to_weight[k]]);
+                    }
+                }
+            }
+
+            node.visited = true;
+        }
+    }
+
+    for (let i = 0; i < that.selection_box.length; i++){
+        let focus_nodes = that.selection_box[i].nodes;
+        for (let j = 0; j < focus_nodes.length; j++){
+            focus_nodes[j].box_id = -1;
+        }
+    }
+
+    that.all_path = path;
+    return path;
+}
+
+GraphLayout.prototype.show_edges = function(modes){
+    let that = this;
+    that.get_path();
+    that.set_path();
+    that._update_view();
+}

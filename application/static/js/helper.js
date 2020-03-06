@@ -224,3 +224,16 @@ function set_font(selection) {
         .attr("font-weight", 700)
         .attr("color", "#333333")
 }
+
+
+Array.prototype.delRepeat=function(){
+    var newArray=[];
+    var provisionalTable = {};
+    for (var i = 0, item; (item= this[i]) != null; i++) {
+    if (!provisionalTable[item]) {
+    newArray.push(item);
+    provisionalTable[item] = true;
+    }
+    }
+    return newArray;
+    }
