@@ -231,8 +231,8 @@ GraphLayout.prototype.remove_rect_selection = function(){
 GraphLayout.prototype.get_path = function(){
     let that = this;
     let path = {
-        "from": [],
-        "to": [],
+        "in": [],
+        "out": [],
         "within": [],
         "between": []
     };
@@ -268,7 +268,7 @@ GraphLayout.prototype.get_path = function(){
                         }
                     }
                     else{
-                        path.from.push([from_node, node, from_weight[k]]);
+                        path.in.push([from_node, node, from_weight[k]]);
                     }
                 }
             }
@@ -279,7 +279,7 @@ GraphLayout.prototype.get_path = function(){
                 if (to_weight[k] > 0){
                     let to_node = DataLoader.state.complete_graph[to[k]];
                     if (!(to_node.box_id !== undefined && to_node.box_id > -1)){
-                        path.to.push([node, to_node, to_weight[k]]);
+                        path.out.push([node, to_node, to_weight[k]]);
                     }
                 }
             }
@@ -302,6 +302,14 @@ GraphLayout.prototype.get_path = function(){
 GraphLayout.prototype.show_edges = function(modes){
     let that = this;
     that.get_path();
+    let edge_type_data = {};
+    let edge_type_range = [];
+    for (let i in that.all_path){
+        let len = that.all_path[i].length;
+        edge_type_data[i] = len;
+        edge_type_range.push(i); 
+    }
+    that.data_manager.update_edge_type_bar(edge_type_data, edge_type_range);
     that.set_path();
     that._update_view();
 };

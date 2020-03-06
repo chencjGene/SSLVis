@@ -83,10 +83,10 @@ DataLoaderClass = function () {
         influence_widget_data: null,
         influence_widget_range: [-1, -1],
         edge_type_data: {
-            "in":10,
-            "out":5,
-            "within":30,
-            "between":20
+            "in":0,
+            "out":0,
+            "within":0,
+            "between":0
         },
         edge_type_range: ["in", "out", "within", "between"],
         //hierarchy info
