@@ -96,6 +96,7 @@ let GraphLayout = function (container) {
         //add plugin
         transform_plg = new GraphTransform(that);
         highlight_plg = new GraphHighlight(that);
+        that.highlight_plg = highlight_plg;
 
         // init zoom
         transform_plg.set_zoom();

@@ -37,7 +37,10 @@ let GraphHighlight = function (parent) {
 
         $("#lasso-btn")
             .click(function () {
-                that._change_lasso_mode();
+                // that._change_lasso_mode();
+                $("#lasso-btn").css("background-color", btn_select_color);
+                lasso_btn_path.attr("stroke", "white").attr("fill", "white");
+                view.lasso_or_zoom("rect");
             });
 
 
@@ -53,43 +56,43 @@ let GraphHighlight = function (parent) {
                 view.data_manager.local_update_k(selected_idxs);
             });
 
-        $("#influence-from-btn")
-            .click(function () {
-                let is_show_path = view.get_is_show_path();
-                if(is_show_path){
-                    that.hide_selection_nodes_path();
-                    $("#influence-from-btn").css("background-color", "gray");
-                    influence_from_btn_path.attr("stroke", "white").attr("fill", "white");
-                }
-                else {
-                    is_show_path = true;
-                    if(if_lasso){
-                        that._change_lasso_mode();
-                    }
-                    that.show_selection_nodes_path("from");
-                    $("#influence-from-btn").css("background-color", btn_select_color);
-                    influence_from_btn_path.attr("stroke", "white").attr("fill", "white");
-                }
-            });
+        // $("#influence-from-btn")
+        //     .click(function () {
+        //         let is_show_path = view.get_is_show_path();
+        //         if(is_show_path){
+        //             that.hide_selection_nodes_path();
+        //             $("#influence-from-btn").css("background-color", "gray");
+        //             influence_from_btn_path.attr("stroke", "white").attr("fill", "white");
+        //         }
+        //         else {
+        //             is_show_path = true;
+        //             if(if_lasso){
+        //                 that._change_lasso_mode();
+        //             }
+        //             that.show_selection_nodes_path("from");
+        //             $("#influence-from-btn").css("background-color", btn_select_color);
+        //             influence_from_btn_path.attr("stroke", "white").attr("fill", "white");
+        //         }
+        //     });
 
-        $("#influence-to-btn")
-            .click(function () {
-                let is_show_path = view.get_is_show_path();
-                if(is_show_path){
-                    that.hide_selection_nodes_path();
-                    $("#influence-to-btn").css("background-color", "gray");
-                    influence_to_btn_path.attr("stroke", "white").attr("fill", "white");
-                }
-                else {
-                    is_show_path = true;
-                    if(if_lasso){
-                        that._change_lasso_mode();
-                    }
-                    that.show_selection_nodes_path("to");
-                    $("#influence-to-btn").css("background-color", btn_select_color);
-                    influence_to_btn_path.attr("stroke", "white").attr("fill", "white");
-                }
-            });
+        // $("#influence-to-btn")
+        //     .click(function () {
+        //         let is_show_path = view.get_is_show_path();
+        //         if(is_show_path){
+        //             that.hide_selection_nodes_path();
+        //             $("#influence-to-btn").css("background-color", "gray");
+        //             influence_to_btn_path.attr("stroke", "white").attr("fill", "white");
+        //         }
+        //         else {
+        //             is_show_path = true;
+        //             if(if_lasso){
+        //                 that._change_lasso_mode();
+        //             }
+        //             that.show_selection_nodes_path("to");
+        //             $("#influence-to-btn").css("background-color", btn_select_color);
+        //             influence_to_btn_path.attr("stroke", "white").attr("fill", "white");
+        //         }
+        //     });
 
         $("#select-edge-btn")
         .click(function () {
@@ -97,6 +100,12 @@ let GraphHighlight = function (parent) {
             });
 
         that.add_btn_style();
+    };
+
+    that.reset_selection = function(){
+        $("#lasso-btn").css("background-color", "white");
+        lasso_btn_path.attr("stroke", "black").attr("fill", "black");
+        view.lasso_or_zoom("zoom");
     };
 
     that.add_btn_style = function() {
@@ -216,97 +225,97 @@ let GraphHighlight = function (parent) {
         }
     };
 
-    that.show_selection_nodes_path = function (mode) {
-        let focus_node_data = [];
-        let selection_nodes = view.get_highlights();
-        let nodes = view.get_nodes();
-        for(let id of selection_nodes){
-            let node = nodes[id];
-            // if(node.label[0] !== -1 || node.label[iter] === -1) continue;
-            focus_node_data.push(nodes[id]);
-        }
-        console.log("show nodes:", focus_node_data);
-        // focus_edge_id = null;
-        // focus_edge_node = null;
-        if (focus_node_data.length === 0) {
-            console.log("No node need focus.");
-            return
-        }
+    // that.show_selection_nodes_path = function (mode) {
+    //     let focus_node_data = [];
+    //     let selection_nodes = view.get_highlights();
+    //     let nodes = view.get_nodes();
+    //     for(let id of selection_nodes){
+    //         let node = nodes[id];
+    //         // if(node.label[0] !== -1 || node.label[iter] === -1) continue;
+    //         focus_node_data.push(nodes[id]);
+    //     }
+    //     console.log("show nodes:", focus_node_data);
+    //     // focus_edge_id = null;
+    //     // focus_edge_node = null;
+    //     if (focus_node_data.length === 0) {
+    //         console.log("No node need focus.");
+    //         return
+    //     }
 
-        console.log("focus nodes:", focus_node_data);
+    //     console.log("focus nodes:", focus_node_data);
 
 
-        let path_keys = [];
-        let path = [];
-        let path_nodes = {};
-        let new_nodes = [];
-        let new_area = null;
-        let load_path = false;
-        for(let d of focus_node_data){
-            if(d.from === -1 || d.to === -1){
-                load_path = true;
-                break;
-            }
-        }
-        if(load_path){
-            $.post("/graph/GetPath", {
-                "nodes":JSON.stringify(selection_nodes)
-            }, function (data) {
-                console.log("get path data:", data);
-                for(let id of Object.keys(data)){
-                    nodes[id].from = data[id].from;
-                    nodes[id].to = data[id].to;
-                }
-                showpath()
-            });
-        }
-        else {
-            showpath()
-        }
-        function showpath() {
-            for (let d of focus_node_data) {
-                // if (d.label[iter] === -1 || d.label[0] !== -1) continue;
-                console.log("Node:", d);
-                for (let source_node of d[mode]) {
-                    let s = null;
-                        let e = null;
-                        if(mode === "from"){
-                            s = source_node;
-                            e = d.id;
-                        }
-                        else if(mode === "to"){
-                            s = d.id;
-                            e = source_node
-                        }
-                        let key = s + "," + e;
-                        if (path_keys.indexOf(key) === -1) {
-                            path_keys.push(key);
-                            let keys = key.split(",");
-                            let e = parseInt(keys[0]);
-                            let s = parseInt(keys[1]);
-                            path_nodes[e] = true;
-                            path_nodes[s] = true;
-                            path.push([e, s]);
-                        }
-                }
-            }
-            let must_show_nodes = [];
-            for(let node_id in path_nodes){
-                if(nodes[node_id] === undefined) new_nodes.push(parseInt(node_id));
-                must_show_nodes.push(parseInt(node_id))
-            }
-            // focus_node = JSON.parse(JSON.stringify(path_nodes));
-            if(new_nodes.length === 0){
-                console.log("no new nodes added");
-                view.data_manager.show_path_node(selection_nodes, mode);
-            }
-            else {
-                console.log("fetch nodes");
-                view.fetch_points(must_show_nodes, new_nodes, "showpath-"+mode, selection_nodes);
-            }
-        }
+    //     let path_keys = [];
+    //     let path = [];
+    //     let path_nodes = {};
+    //     let new_nodes = [];
+    //     let new_area = null;
+    //     let load_path = false;
+    //     for(let d of focus_node_data){
+    //         if(d.from === -1 || d.to === -1){
+    //             load_path = true;
+    //             break;
+    //         }
+    //     }
+    //     if(load_path){
+    //         $.post("/graph/GetPath", {
+    //             "nodes":JSON.stringify(selection_nodes)
+    //         }, function (data) {
+    //             console.log("get path data:", data);
+    //             for(let id of Object.keys(data)){
+    //                 nodes[id].from = data[id].from;
+    //                 nodes[id].to = data[id].to;
+    //             }
+    //             showpath()
+    //         });
+    //     }
+    //     else {
+    //         showpath()
+    //     }
+    //     function showpath() {
+    //         for (let d of focus_node_data) {
+    //             // if (d.label[iter] === -1 || d.label[0] !== -1) continue;
+    //             console.log("Node:", d);
+    //             for (let source_node of d[mode]) {
+    //                 let s = null;
+    //                     let e = null;
+    //                     if(mode === "from"){
+    //                         s = source_node;
+    //                         e = d.id;
+    //                     }
+    //                     else if(mode === "to"){
+    //                         s = d.id;
+    //                         e = source_node
+    //                     }
+    //                     let key = s + "," + e;
+    //                     if (path_keys.indexOf(key) === -1) {
+    //                         path_keys.push(key);
+    //                         let keys = key.split(",");
+    //                         let e = parseInt(keys[0]);
+    //                         let s = parseInt(keys[1]);
+    //                         path_nodes[e] = true;
+    //                         path_nodes[s] = true;
+    //                         path.push([e, s]);
+    //                     }
+    //             }
+    //         }
+    //         let must_show_nodes = [];
+    //         for(let node_id in path_nodes){
+    //             if(nodes[node_id] === undefined) new_nodes.push(parseInt(node_id));
+    //             must_show_nodes.push(parseInt(node_id))
+    //         }
+    //         // focus_node = JSON.parse(JSON.stringify(path_nodes));
+    //         if(new_nodes.length === 0){
+    //             console.log("no new nodes added");
+    //             view.data_manager.show_path_node(selection_nodes, mode);
+    //         }
+    //         else {
+    //             console.log("fetch nodes");
+    //             view.fetch_points(must_show_nodes, new_nodes, "showpath-"+mode, selection_nodes);
+    //         }
+    //     }
 
-    };
+    // };
 
     that.hide_selection_nodes_path = function() {
         view.data_manager.show_path_node([]);

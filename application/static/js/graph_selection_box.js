@@ -220,6 +220,7 @@ GraphLayout.prototype.set_rect_selection = function(){
     .on("mouseup", function(){
         that.svg.on("mousemove", null);
         that.show_edges();
+        that.highlight_plg.reset_selection();
     })
 };
 
