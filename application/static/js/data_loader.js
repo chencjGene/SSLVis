@@ -82,6 +82,13 @@ DataLoaderClass = function () {
         outdegree_widget_range: [-1, -1],
         influence_widget_data: null,
         influence_widget_range: [-1, -1],
+        edge_type_data: {
+            "in":10,
+            "out":5,
+            "within":30,
+            "between":20
+        },
+        edge_type_range: ["in", "out", "within", "between"],
         //hierarchy info
         hierarchy:null,
         last_level:0,
@@ -382,6 +389,8 @@ DataLoaderClass = function () {
             "outdegree_widget_range":that.state.outdegree_widget_range,
             "influence_widget_data":that.state.influence_widget_data,
             "influence_widget_range":that.state.influence_widget_range,
+            "edgetype_data":that.state.edge_type_data,
+            "edgetype_range":that.state.edge_type_range
         });
     };
 
@@ -508,7 +517,7 @@ DataLoaderClass = function () {
         that.iter = iter;
         that.set_filter_data(that.state.nodes);
         let ranges = that.filter_view.get_ranges();
-        that.set_filter_range(ranges[0], ranges[1], ranges[2], ranges[3], ranges[4]);
+        that.set_filter_range(ranges[0], ranges[1], ranges[2], ranges[3], ranges[4], range[5]);
         that.update_filter_view();
         that.state.visible_items = that.filter_view.get_visible_items();
         that.state.glyphs = that.filter_view.get_glyph_items();
@@ -519,18 +528,33 @@ DataLoaderClass = function () {
 
     };
 
-    that.set_filter_range = function (uncertainty_range, label_range, indegree_range, outdegree_range, influence_range){
+    that.changeEdgeType = function(data, range){
+        let ranges = that.filter_view.get_ranges();
+        that.set_filter_range(ranges[0], ranges[1], ranges[2], ranges[3], ranges[4], ranges[5]);
+        that.state.edge_type_data = data;
+        that.state.edge_type_range = range;
+        that.update_filter_view();
+
+    };
+
+    that.set_filter_range = function (uncertainty_range, label_range, indegree_range, outdegree_range, influence_range, edgetype_range){
         that.state.uncertainty_widget_range = uncertainty_range;
         that.state.label_widget_range = label_range;
         that.state.indegree_widget_range = indegree_range;
         that.state.outdegree_widget_range = outdegree_range;
         that.state.influence_widget_range = influence_range;
+        that.state.edge_type_range = edgetype_range;
     };
 
     that.update_edge_filter = function(min_threshold, max_threshold) {
         that.state.edge_filter_threshold = [min_threshold/20, (max_threshold+1)/20];
         console.log(that.state.edge_filter_threshold);
         that.update_graph_view();
+    };
+
+    that.update_edge_type_filter = function(range) {
+        that.state.edge_type_range = range;
+        console.log("Edge type filter:", range);
     };
 
     // setting view
@@ -560,7 +584,8 @@ DataLoaderClass = function () {
             label_range.push(i);
         }
         // // edited by Changjian
-        that.set_filter_range([20, 19], label_range, [0, 19], [0,19], [1,19]);
+        that.set_filter_range([20, 19], label_range, [0, 19], [0,19],
+            [1,19], ["in", "out", "within", "between"]);
         that.update_filter_view();
 
         //update view
@@ -609,7 +634,8 @@ DataLoaderClass = function () {
         for(let i=0; i<=that.state.label_names.length; i++){
             label_range.push(i);
         }
-        that.set_filter_range([20, 19], label_range, [0, 19], [0,19], [1,19]);
+        that.set_filter_range([20, 19], label_range, [0, 19], [0,19],
+            [1,19], ["in", "out", "within", "between"]);
         // that.set_filter_range([18, 19], label_range, [0, 19], [0,19]);
         that.update_filter_view();
         // update dist view
@@ -636,7 +662,7 @@ DataLoaderClass = function () {
     that.zoom_graph_view = function() {
         that.set_filter_data(that.state.nodes);
         let ranges = that.filter_view.get_ranges();
-        that.set_filter_range(ranges[0], ranges[1], ranges[2], ranges[3], ranges[4]);
+        that.set_filter_range(ranges[0], ranges[1], ranges[2], ranges[3], ranges[4], ranges[5]);
         that.update_filter_view();
         that.state.visible_items = that.filter_view.get_visible_items();
         that.state.glyphs = that.filter_view.get_glyph_items();

@@ -21,6 +21,7 @@ let FilterLayout = function (container) {
     let indegree_svg = null;
     let outdegree_svg = null;
     let edgeInfluence_svg = null;
+    let edgeType_svg = null;
 
     //data
     let label_widget_data = null;
@@ -33,6 +34,8 @@ let FilterLayout = function (container) {
     let outdegree_widget_range = [-1, -1];
     let influence_widget_data = null;
     let influence_widget_range = [-1,-1];
+    let edgetype_data = null;
+    let edgetype_range = [];
 
     //filter flag
     let control_items = {};
@@ -51,6 +54,19 @@ let FilterLayout = function (container) {
     let influence_start_drag = null;
     let influence_end_drag = null;
 
+    let edge_type_icons = {
+        "in":null,
+        "out":null,
+        "within":null,
+        "between":null
+    };
+    let edge_type_rects = {
+        "in":null,
+        "out":null,
+        "within":null,
+        "between":null
+    };
+
     //label
     let label_rect = {};
 
@@ -60,9 +76,15 @@ let FilterLayout = function (container) {
         indegree_svg = container.select("#current-indegree-svg");
         outdegree_svg = container.select("#current-outdegree-svg");
         edgeInfluence_svg = container.select("#current-edgeinfluence-svg");
+        edgeType_svg = container.select("#current-edgetype-svg");
 
         widget_width = parseInt($("#current-uncertainty-svg").width());
         widget_height = parseInt($("#current-uncertainty-svg").height());
+
+        edge_type_icons["in"] = container.select("#in_icon");
+        edge_type_icons["out"] = container.select("#out_icon");
+        edge_type_icons["within"] = container.select("#within_icon");
+        edge_type_icons["between"] = container.select("#between_icon");
     };
 
     that.set_data_manager = function(new_data_manager) {
@@ -86,6 +108,8 @@ let FilterLayout = function (container) {
         outdegree_widget_range = state.outdegree_widget_range;
         influence_widget_data = state.influence_widget_data;
         influence_widget_range = state.influence_widget_range;
+        edgetype_data = state.edgetype_data;
+        edgetype_range = state.edgetype_range;
 
         // init flags
         uncertain_items = {};
@@ -154,7 +178,8 @@ let FilterLayout = function (container) {
         that.label_scented_widget();
         that._draw_widget(indegree_widget_data, indegree_svg, "indegree", indegree_widget_range, indegree_items);
         that._draw_widget(outdegree_widget_data, outdegree_svg, "outdegree", outdegree_widget_range, outdegree_items);
-        that.draw_edge_widget(influence_widget_data, edgeInfluence_svg, "influence", influence_widget_range)
+        that.draw_edge_influence_widget(influence_widget_data, edgeInfluence_svg, "influence", influence_widget_range);
+        that.draw_edge_type_widget(edgetype_data, edgeType_svg, "edgetype", edgetype_range)
     };
 
     that.label_scented_widget = function() {
@@ -609,10 +634,10 @@ let FilterLayout = function (container) {
     };
 
     that.get_ranges = function() {
-        return [uncertainty_widget_range, label_widget_range, indegree_widget_range, outdegree_widget_range, influence_widget_range]
+        return [uncertainty_widget_range, label_widget_range, indegree_widget_range, outdegree_widget_range, influence_widget_range, edgetype_range]
     };
 
-    that.draw_edge_widget = function(distribution, container, type, range){
+    that.draw_edge_influence_widget = function(distribution, container, type, range){
         // distribution
         let max_len = 0;
         let bar_cnt = distribution.length;
@@ -770,6 +795,178 @@ let FilterLayout = function (container) {
                             return 0.5
                         })
                     }))
+    };
+
+    that.draw_edge_type_widget = function(distribution, container, type, range){
+        // distribution
+        let types = ["in", "out", "within", "between"];
+        let data = [];
+        for(let edge_type of types){
+            data.push({
+                "type":edge_type,
+                "cnt":distribution[edge_type],
+                "show":range.indexOf(edge_type)>-1
+            })
+        }
+        let max_len = 0;
+        let bar_cnt = data.length;
+        for(let node_ary of data){
+            if(max_len < node_ary.cnt){
+                max_len = node_ary.cnt;
+            }
+        }
+        // draw
+        let container_width = widget_width;
+        let container_height = widget_height;
+        let x = d3.scaleBand().rangeRound([container_width*0.1, container_width*0.9], .05).paddingInner(0.7).paddingOuter(0.4).domain(d3.range(bar_cnt));
+        let y = d3.scaleLinear().range([container_height*0.85, container_height*0.05]).domain([0, 1]);
+
+        //draw bar chart
+        if(container.select("#current-"+type+"-rects").size() === 0){
+            container.append("g")
+                .attr("id", "current-"+type+"-rects");
+        }
+        let rects = container.select("#current-"+type+"-rects").selectAll("rect").data(data);
+        //create
+        rects
+            .enter()
+            .append("rect")
+            .attr("class", "widget-bar-chart")
+            .style("fill", "rgb(127, 127, 127)")
+            .attr("x", function(d, i) { return x(i); })
+            .attr("width", x.bandwidth())
+            .attr("y", function(d, i) { return y(d.cnt/max_len); })
+            .attr("height", function(d) {
+                return container_height*0.85 - y(d.cnt/max_len);
+            })
+            .attr("opacity", (d, i) => d.show?1:0.2)
+            .on("mouseover", function (d, i) {
+                let rect = d3.select(this);
+                if(rect.attr("opacity") == 1){
+                    rect.attr("opacity", 0.5);
+                    that.set_edge_type_icon_opacity(edge_type_icons[d.type], 0.5);
+                }
+            })
+            .on("mouseout", function (d, i) {
+                let rect = d3.select(this);
+                if(rect.attr("opacity") == 0.5){
+                    rect.attr("opacity", 1);
+                    that.set_edge_type_icon_opacity(edge_type_icons[d.type], 1);
+                }
+            })
+            .on("click", function (d, i) {
+                let rect = d3.select(this);
+                if(rect.attr("opacity") != 0.2){
+                    // no select
+                    rect.attr("opacity", 0.2);
+                    that.set_edge_type_icon_opacity(edge_type_icons[d.type], 0.2);
+                    let index = range.indexOf(d.type);
+                    if (index !== -1) range.splice(index, 1);
+                }
+                else {
+                    rect.attr("opacity", 0.5);
+                    that.set_edge_type_icon_opacity(edge_type_icons[d.type], 0.5);
+                    let index = range.indexOf(d.type);
+                    if (index === -1) range.push(d.type);
+                }
+                data_manager.update_edge_type_filter(range);
+            })
+            .each(function (d) {
+                let rect = d3.select(this);
+                edge_type_rects[d.type] = rect;
+            });
+        //update
+        rects.transition()
+            .duration(AnimationDuration)
+            .attr("x", function(d, i) { return x(i); })
+            .attr("width", x.bandwidth())
+            .attr("y", function(d, i) { return y(d.cnt/max_len); })
+            .attr("height", function(d) {
+                return container_height*0.85 - y(d.cnt/max_len);
+            })
+            .attr("opacity", (d, i) => d.show?1:0.2);
+        rects.each(function (d) {
+                let rect = d3.select(this);
+                edge_type_rects[d.type] = rect;
+                if(d.show){
+                    that.set_edge_type_icon_opacity(edge_type_icons[d.type], 1);
+                }
+                else {
+                    that.set_edge_type_icon_opacity(edge_type_icons[d.type], 0.2);
+                }
+            });
+        //remove
+        rects.exit()
+            .transition()
+            .duration(AnimationDuration)
+            .attr("opacity", 0)
+            .remove();
+
+        // draw x-axis
+        if(container.select("#current-"+type+"-axis").size() === 0){
+            container.append("g")
+                .attr("id","current-"+type+"-axis")
+                .append("line")
+                .attr("x1", container_width*0.1)
+                .attr("y1", container_height*0.85)
+                .attr("x2", container_width*0.9)
+                .attr("y2", container_height*0.85)
+                .attr("stroke", "black")
+                .attr("stroke-width", 1);
+        }
+
+        // icons
+        for(let type_id of Object.keys(edge_type_icons)){
+            let icon = edge_type_icons[type_id];
+            let rect = edge_type_rects[type_id];
+            let d = rect.datum();
+            icon.on("mouseover", function () {
+                if(rect.attr("opacity") == 1){
+                    icon.attr("opacity", 0.5);
+                    rect.attr("opacity", 0.5);
+                    that.set_edge_type_icon_opacity(edge_type_icons[d.type], 0.5);
+                }
+            })
+            .on("mouseout", function () {
+                if(rect.attr("opacity") == 0.5){
+                    icon.attr("opacity", 1);
+                    rect.attr("opacity", 1);
+                    that.set_edge_type_icon_opacity(edge_type_icons[d.type], 1);
+                }
+            })
+            .on("click", function () {
+                if(rect.attr("opacity") != 0.2){
+                    // no select
+                    rect.attr("opacity", 0.2);
+                    icon.attr("opacity", 0.2);
+                    that.set_edge_type_icon_opacity(edge_type_icons[d.type], 0.2);
+                    let index = range.indexOf(d.type);
+                    if (index !== -1) range.splice(index, 1);
+                }
+                else {
+                    rect.attr("opacity", 0.5);
+                    icon.attr("opacity", 0.5);
+                    that.set_edge_type_icon_opacity(edge_type_icons[d.type], 0.5);
+                    let index = range.indexOf(d.type);
+                    if (index === -1) range.push(d.type);
+                }
+                data_manager.update_edge_type_filter(range);
+            })
+
+        }
+    };
+
+    that.set_edge_type_icon_opacity = function(selection, opacity){
+        let path = selection.selectAll("path");
+        let polygon = selection.selectAll("polygon");
+        path
+            .transition()
+            .duration(AnimationDuration)
+            .attr("opacity", opacity);
+        polygon
+            .transition()
+            .duration(AnimationDuration)
+            .attr("opacity", opacity);
     };
 
     that.init = function () {

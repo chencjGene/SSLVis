@@ -389,3 +389,7 @@ label.field.focused .psuedo_select ul {
   flex: 0 1 300px;
   height: 60px;
 }
+
+#edge-type-container {
+  display: flex;
+}

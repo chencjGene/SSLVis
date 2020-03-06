@@ -300,4 +300,4 @@ GraphLayout.prototype.show_edges = function(modes){
     that.get_path();
     that.set_path();
     that._update_view();
-}
+};
