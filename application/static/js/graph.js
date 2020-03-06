@@ -58,6 +58,7 @@ let GraphLayout = function (container) {
     that.selection_box = [
         // {x:100, y:100, width:300, height:300}
     ];
+    let edge_filter_threshold = 0;
 
     // from area to main group
     that.center_scale_x = null;
@@ -122,6 +123,7 @@ let GraphLayout = function (container) {
         glyphs = state.glyphs;
         aggregate = state.aggregate;
         rect_nodes = state.rect_nodes;
+        edge_filter_threshold = state.edge_filter_threshold;
         // path
         path = [];
         path_nodes = {};
@@ -131,24 +133,35 @@ let GraphLayout = function (container) {
             let mode = apath[1];
             if(mode === "from"){
                 let target_id = node_id;
-                for(let source_id of nodes[target_id].from){
+                for(let i=0; i<nodes[target_id].from.length; i++){
+                    let source_id = nodes[target_id].from[i];
+                    let weight = nodes[target_id].from_weight[i];
                     let key = source_id+","+target_id;
                     if(path_keys.indexOf(key) > -1) continue;
-                    path.push([nodes[source_id], nodes[target_id]]);
+                    path.push([nodes[source_id], nodes[target_id], weight]);
                     path_keys.push(key);
-                    path_nodes[source_id] = true;
-                    path_nodes[target_id] = true;
+                    weight = that.transform_weight(weight);
+                    if(weight >= edge_filter_threshold[0] && weight <= edge_filter_threshold[1]){
+                        path_nodes[source_id] = true;
+                        path_nodes[target_id] = true;
+                    }
+
                 }
             }
             else if(mode === "to"){
                 let source_id = node_id;
-                for(let target_id of nodes[source_id].to){
+                for(let i=0; i<nodes[source_id].to.length;i++){
+                    let target_id = nodes[source_id].to[i];
+                    let weight = nodes[target_id].to_weight[i];
                     let key = source_id+","+target_id;
                     if(path_keys.indexOf(key) > -1) continue;
-                    path.push([nodes[source_id], nodes[target_id]]);
+                    path.push([nodes[source_id], nodes[target_id], weight]);
                     path_keys.push(key);
-                    path_nodes[source_id] = true;
-                    path_nodes[target_id] = true;
+                    weight = that.transform_weight(weight);
+                    if(weight >= edge_filter_threshold[0] && weight <= edge_filter_threshold[1]){
+                        path_nodes[source_id] = true;
+                        path_nodes[target_id] = true;
+                    }
                 }
             }
 
@@ -187,7 +200,7 @@ let GraphLayout = function (container) {
             path_in_group = path_group.selectAll("path")
                 .data(path_ary, d => d[0].id+","+d[1].id);
             //
-            that.show_select_rect();
+            // that.show_select_rect();
             console.log("remove");
             await that._remove();
             console.log("transform");
@@ -549,7 +562,8 @@ let GraphLayout = function (container) {
     };
 
     that.opacity_path = function(path) {
-        if(is_show_path){
+        let weight = that.transform_weight(path[2]);
+        if(is_show_path && weight >= edge_filter_threshold[0] && weight <= edge_filter_threshold[1]){
             return 1;
         }
         else{

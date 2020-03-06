@@ -76,6 +76,7 @@ class SSLModel(object):
         self.simplified_affinity_matrix = None
         self.propagation_path_from = None
         self.propagation_path_to = None
+        self.influence_matrix = None
         # self._get_signal_state()
 
     def init(self, k=None, filter_threshold=None, evaluate=True, simplifying=True):
@@ -92,6 +93,7 @@ class SSLModel(object):
         self.propagation_path_from = None
         self.propagation_path_to = None
         self.simplified_affinity_matrix = None
+        self.influence_matrix = None
         # self._training(evaluate=evaluate, simplifying=simplifying))
         self._training(evaluate=evaluate, simplifying=True)
 
@@ -146,16 +148,18 @@ class SSLModel(object):
         logger.info("model confusion matrix:\n{}".format(confusion_matrix(train_gt, pred_y)))
         logger.info("model entropy: {}".format(entropy(pred_dist.T + 1e-20).mean()))
         # self.evaluate(); exit()
-        if not config.show_simplified:
-            propagation_path_from, propagation_path_to = self.get_path_to_label(self.process_data,
+        # if not config.show_simplified:
+        propagation_path_from, propagation_path_to = self.get_path_to_label(self.process_data,
                                                                             self.graph)
-            self.propagation_path_from = propagation_path_from
-            self.propagation_path_to = propagation_path_to
+        self._influence_matrix()
+        self.propagation_path_from = propagation_path_from
+        self.propagation_path_to = propagation_path_to
 
-        if simplifying and config.show_simplified:
-            # get simplififed matrix asynchronously
-            print("begin simplify")
-            self.fetch_simplify_influence_matrix()
+
+        # if simplifying and config.show_simplified:
+        #     # get simplififed matrix asynchronously
+        #     print("begin simplify")
+        #     self.fetch_simplify_influence_matrix()
         #
         if evaluate:
             # self.evaluate()
@@ -192,13 +196,14 @@ class SSLModel(object):
     def fetch_simplify_influence_matrix(self):
         simplify_path = os.path.join(self.selected_dir, "simplify_matrix.npy")
         if os.path.exists(simplify_path):
-            simplified_affinity_matrix, propagation_path_from, propagation_path_to = pickle_load_data(simplify_path)
+            simplified_affinity_matrix, propagation_path_from, propagation_path_to, influence_matrix = pickle_load_data(simplify_path)
             self.simplified_affinity_matrix = simplified_affinity_matrix
             self.propagation_path_from = propagation_path_from
             self.propagation_path_to = propagation_path_to
+            self.influence_matrix = influence_matrix
         else:
             self.simplify_influence_matrix()
-            save = (self.simplified_affinity_matrix, self.propagation_path_from, self.propagation_path_to)
+            save = (self.simplified_affinity_matrix, self.propagation_path_from, self.propagation_path_to, self.influence_matrix)
             pickle_save_data(simplify_path, save)
 
     def simplify_influence_matrix(self, threshold=0.7):
