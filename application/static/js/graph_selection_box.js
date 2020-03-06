@@ -35,7 +35,8 @@ GraphLayout.prototype._create_selection_box = function(){
             .on("end", function(){
 
             });
-
+    let transform = that.get_transform();
+    console.log("get transform:", transform);
     let sg = that.selection_group.selectAll(".selection-box")
         .data(that.selection_box)
         .enter()
@@ -95,7 +96,7 @@ GraphLayout.prototype._create_selection_box = function(){
 
 GraphLayout.prototype._update_selection_box = function(){
     let that = this;
-
+    let transform = that.get_transform();
     let sg = that.selection_group.selectAll(".selection-box")
         .data(that.selection_box)
         .attr("transform", d => "translate("+(d.x)+","+ (d.y) +")");
@@ -131,19 +132,21 @@ GraphLayout.prototype.set_rect_selection = function(){
     let that = this;
     that.svg.on("mousedown", function(){
         console.log("set rect selection mousedown");
+        let event = d3.mouse(that.main_group.node());
         that.selection_box.push({
-            "x": d3.event.x,
-            "y": d3.event.y,
+            "x": event[0],
+            "y": event[1],
             "width": 0.1,
             "height": 0.1
         })
         that._create_selection_box();
         // d3.event.sourceEvent.stopPropagation();
         that.svg.on("mousemove", function(){
+            let event = d3.mouse(that.main_group.node());
             let start_x = that.selection_box[that.selection_box.length-1].x;
             let start_y = that.selection_box[that.selection_box.length-1].y; 
-            that.selection_box[that.selection_box.length-1].width = d3.event.x - start_x;
-            that.selection_box[that.selection_box.length-1].height = d3.event.y - start_y;
+            that.selection_box[that.selection_box.length-1].width = event[0] - start_x;
+            that.selection_box[that.selection_box.length-1].height = event[1] - start_y;
             that._update_selection_box();
         })
     })

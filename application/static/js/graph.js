@@ -792,6 +792,10 @@ let GraphLayout = function (container) {
         //     .attr("stroke", "rgb(127,127,127)");
     };
 
+    that.get_transform = function() {
+        return transform_plg.get_transform();
+    }
+
     // that.get_area = function(){
     //     return transform_plg.get_area();
     // };
