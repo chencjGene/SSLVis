@@ -55,6 +55,7 @@ let GraphLayout = function (container) {
     let visible_items = {};
     let aggregate = [];
     let rect_nodes = [];
+    that.selection_box_id_count = 0;
     that.selection_box = [
         // {x:100, y:100, width:300, height:300}
     ];
@@ -98,9 +99,6 @@ let GraphLayout = function (container) {
 
         // init zoom
         transform_plg.set_zoom();
-
-        // TODO: debug
-        that.update_selection_box();
     };
 
     that.set_data_manager = function(new_data_manager) {
@@ -145,7 +143,6 @@ let GraphLayout = function (container) {
                         path_nodes[source_id] = true;
                         path_nodes[target_id] = true;
                     }
-
                 }
             }
             else if(mode === "to"){
@@ -179,6 +176,12 @@ let GraphLayout = function (container) {
     that.setIter = async function (newiter) {
         iter = newiter;
         await that._update_view(false);
+    };
+
+    // for debug
+    that.set_path = function(){
+        path = that.all_path["between"];
+        console.log("path", path);
     };
 
     that._update_view = function() {
