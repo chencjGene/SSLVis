@@ -33,7 +33,7 @@ GraphLayout.prototype._create_selection_box = function(){
                 that._update_selection_box();
             })
             .on("end", function(){
-
+                that.show_edges();
             });
     let transform = that.get_transform();
     console.log("get transform:", transform);
@@ -51,7 +51,7 @@ GraphLayout.prototype._create_selection_box = function(){
         .attr("x", d => 0)
         .attr("y", d => 0)
         .style("fill", "none")
-        .style("stroke-width", 4)
+        .style("stroke-width", 4 * that.zoom_scale)
         .style("stroke", "gray")
         .style("cursor", "move");
     let cross_group = sg.append("g")
@@ -81,22 +81,22 @@ GraphLayout.prototype._create_selection_box = function(){
             })
     cross_group.append("line")
             .attr("class", "cross-line-hide")
-            .attr("x1", -5)
-            .attr("y1", -5)
-            .attr("x2", 5)
-            .attr("y2", 5);
+            .attr("x1", -5 * that.zoom_scale)
+            .attr("y1", -5 * that.zoom_scale)
+            .attr("x2", 5 * that.zoom_scale)
+            .attr("y2", 5 * that.zoom_scale);
     cross_group.append("line")
             .attr("class", "cross-line-hide")
-            .attr("x1", -5)
-            .attr("y1", 5)
-            .attr("x2", 5)
-            .attr("y2", -5);
+            .attr("x1", -5 * that.zoom_scale)
+            .attr("y1", 5 * that.zoom_scale)
+            .attr("x2", 5 * that.zoom_scale)
+            .attr("y2", -5 * that.zoom_scale);
     cross_group.append("rect")
             .attr("class", "cross-background")
-            .attr("x", -5 * 1.5)
-            .attr("y", -5 * 1.5)
-            .attr("width", 10 * 1.5)
-            .attr("height", 10 * 1.5)
+            .attr("x", -5 * 1.5 * that.zoom_scale)
+            .attr("y", -5 * 1.5 * that.zoom_scale)
+            .attr("width", 10 * 1.5 * that.zoom_scale)
+            .attr("height", 10 * 1.5 * that.zoom_scale)
             .style("opacity", 0);
 };
 
@@ -121,13 +121,13 @@ GraphLayout.prototype._update_selection_box = function(){
     }
 
     if (that.selection_box.length > 0){
-        d3.selectAll(".node-dot").attr("r", 3);
+        d3.selectAll(".node-dot").attr("r", 3 * that.zoom_scale);
         for (let j = 0; j < that.selection_box.length; j++){
             let selection_idxs = that.selection_box[j].nodes.map(d => d.id);
             // that.highlight(selection_idxs);
             for (let i = 0; i < selection_idxs.length; i++){
                 d3.select("#id-" + selection_idxs[i])
-                    .attr("r", 4);
+                    .attr("r", 4 * that.zoom_scale);
             }
         }
     }

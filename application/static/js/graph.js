@@ -565,13 +565,15 @@ let GraphLayout = function (container) {
     };
 
     that.opacity_path = function(path) {
-        let weight = that.transform_weight(path[2]);
-        if(is_show_path && weight >= edge_filter_threshold[0] && weight <= edge_filter_threshold[1]){
-            return 1;
-        }
-        else{
-            return 0;
-        }
+        // TODO: disable by changjian for debug
+        // let weight = that.transform_weight(path[2]);
+        // if(is_show_path && weight >= edge_filter_threshold[0] && weight <= edge_filter_threshold[1]){
+        //     return 1;
+        // }
+        // else{
+        //     return 0;
+        // }
+        return 1;
     };
 
     that._center_tsne = function(nodes) {
