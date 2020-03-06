@@ -387,8 +387,6 @@ class Anchors:
             np.save(self.matrix_path, self.rotate_matrix)
             logger.info("finish rotate matrix:{}, wh={}".format(self.rotate_matrix, best_wh))
 
-
-
     def get_nodes(self, wh):
         self.remove_ids = self.model.data.get_removed_idxs()
         self.tsne = self.get_train_x_tsne()
@@ -462,6 +460,8 @@ class Anchors:
         logger.info("convert to dict")
         propagation_path_from = self.model.propagation_path_from
         propagation_path_to = self.model.propagation_path_to
+        influence_matrix = self.model.influence_matrix.copy()
+        influence_matrix.data /= influence_matrix.data.max()
         ground_truth = self.model.data.get_full_train_ground_truth()
         samples_truth = ground_truth[selection]
         if self.data_degree is None:
@@ -492,12 +492,18 @@ class Anchors:
                 "label": labels[:,m[id]].tolist(),
                 "score": scores,
                 "truth": samples_truth[i],
-                "from":-1 if propagation_path_from is None else list(map(mapfunc, propagation_path_from[m[id]])),
-                "to": -1 if propagation_path_to is None else list(map(mapfunc, propagation_path_to[m[id]])),
+                "from":list(map(mapfunc, propagation_path_from[m[id]])),
+                "to": list(map(mapfunc, propagation_path_to[m[id]])),
                 "in_degree": int(degree[m[id]][1]),
                 "out_degree": int(degree[m[id]][0]),
-                "entropy": float(self.entropy[m[id]])
+                "entropy": float(self.entropy[m[id]]),
+                "from_weight":[],
+                "to_weight":[]
             }
+            for from_edge in samples_nodes[id]["from"]:
+                samples_nodes[id]["from_weight"].append(float(np.round(influence_matrix[m[id], m[from_edge]], 2)))
+            for to_edge in samples_nodes[id]["to"]:
+                samples_nodes[id]["to_weight"].append(float(np.round(influence_matrix[m[to_edge], m[id]], 2)))
         graph = {
             "nodes":samples_nodes
         }

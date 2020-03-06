@@ -20,6 +20,7 @@ let FilterLayout = function (container) {
     let label_svg = null;
     let indegree_svg = null;
     let outdegree_svg = null;
+    let edgeInfluence_svg = null;
 
     //data
     let label_widget_data = null;
@@ -30,6 +31,8 @@ let FilterLayout = function (container) {
     let indegree_widget_range = [-1, -1];
     let outdegree_widget_data = null;
     let outdegree_widget_range = [-1, -1];
+    let influence_widget_data = null;
+    let influence_widget_range = [-1,-1];
 
     //filter flag
     let control_items = {};
@@ -45,6 +48,8 @@ let FilterLayout = function (container) {
     let indegree_end_drag = null;
     let outdegree_start_drag = null;
     let outdegree_end_drag = null;
+    let influence_start_drag = null;
+    let influence_end_drag = null;
 
     //label
     let label_rect = {};
@@ -54,6 +59,7 @@ let FilterLayout = function (container) {
         label_svg = container.select("#current-label-svg");
         indegree_svg = container.select("#current-indegree-svg");
         outdegree_svg = container.select("#current-outdegree-svg");
+        edgeInfluence_svg = container.select("#current-edgeinfluence-svg");
 
         widget_width = parseInt($("#current-uncertainty-svg").width());
         widget_height = parseInt($("#current-uncertainty-svg").height());
@@ -78,6 +84,8 @@ let FilterLayout = function (container) {
         indegree_widget_range = state.indegree_widget_range;
         outdegree_widget_data = state.outdegree_widget_data;
         outdegree_widget_range = state.outdegree_widget_range;
+        influence_widget_data = state.influence_widget_data;
+        influence_widget_range = state.influence_widget_range;
 
         // init flags
         uncertain_items = {};
@@ -146,6 +154,7 @@ let FilterLayout = function (container) {
         that.label_scented_widget();
         that._draw_widget(indegree_widget_data, indegree_svg, "indegree", indegree_widget_range, indegree_items);
         that._draw_widget(outdegree_widget_data, outdegree_svg, "outdegree", outdegree_widget_range, outdegree_items);
+        that.draw_edge_widget(influence_widget_data, edgeInfluence_svg, "influence", influence_widget_range)
     };
 
     that.label_scented_widget = function() {
@@ -596,7 +605,167 @@ let FilterLayout = function (container) {
     };
 
     that.get_ranges = function() {
-        return [uncertainty_widget_range, label_widget_range, indegree_widget_range, outdegree_widget_range]
+        return [uncertainty_widget_range, label_widget_range, indegree_widget_range, outdegree_widget_range, influence_widget_range]
+    };
+
+    that.draw_edge_widget = function(distribution, container, type, range){
+        // distribution
+        let max_len = 0;
+        let bar_cnt = distribution.length;
+        for(let node_ary of distribution){
+            if(max_len < node_ary){
+                max_len = node_ary;
+            }
+        }
+        // draw
+        let container_width = widget_width;
+        let container_height = widget_height;
+        let x = d3.scaleBand().rangeRound([container_width*0.1, container_width*0.9], .05).paddingInner(0.05).domain(d3.range(bar_cnt));
+        let y = d3.scaleLinear().range([container_height*0.85, container_height*0.05]).domain([0, 1]);
+
+        //draw bar chart
+        if(container.select("#current-"+type+"-rects").size() === 0){
+            container.append("g")
+                .attr("id", "current-"+type+"-rects");
+        }
+        let rects = container.select("#current-"+type+"-rects").selectAll("rect").data(distribution);
+        //create
+        rects
+            .enter()
+            .append("rect")
+            .attr("class", "widget-bar-chart")
+            .style("fill", "rgb(127, 127, 127)")
+            .attr("x", function(d, i) { return x(i); })
+            .attr("width", x.bandwidth())
+            .attr("y", function(d, i) { return y(d/max_len); })
+            .attr("height", function(d) {
+                return container_height*0.85 - y(d/max_len);
+            })
+            .attr("opacity", (d, i) => (i>=range[0]&&i<=range[1])?1:0.5);
+        //update
+        rects.transition()
+            .duration(AnimationDuration)
+            .attr("x", function(d, i) { return x(i); })
+            .attr("width", x.bandwidth())
+            .attr("y", function(d, i) { return y(d/max_len); })
+            .attr("height", function(d) {
+                return container_height*0.85 - y(d/max_len);
+            })
+            .attr("opacity", (d, i) => (i>=range[0]&&i<=range[1])?1:0.5);
+        //remove
+        rects.exit()
+            .transition()
+            .duration(AnimationDuration)
+            .attr("opacity", 0)
+            .remove();
+
+        // draw x-axis
+        if(container.select("#current-"+type+"-axis").size() === 0){
+            container.append("g")
+                .attr("id","current-"+type+"-axis")
+                .append("line")
+                .attr("x1", container_width*0.1)
+                .attr("y1", container_height*0.85)
+                .attr("x2", container_width*0.9)
+                .attr("y2", container_height*0.85)
+                .attr("stroke", "black")
+                .attr("stroke-width", 1);
+        }
+
+        //draw dragble
+        let draggable_item_path = "M0 -6 L6 6 L-6 6 Z";
+        let drag_interval = x.step();
+        let start_drag = null;
+        let end_drag = null;
+        if(container.select(".start-drag").size() === 0){
+            start_drag = container.append("path")
+                .attr("class", "start-drag")
+                .attr("d", draggable_item_path)
+                .attr("fill", "rgb(127, 127, 127)")
+                .attr("transform", "translate("+(container_width*0.1+range[0]*drag_interval-2)+","+(container_height*0.9)+")");
+            end_drag = container.append("path")
+                .attr("class", "end-drag")
+                .attr("d", draggable_item_path)
+                .attr("fill", "rgb(127, 127, 127)")
+                .attr("transform", "translate("+(container_width*0.1+(range[1]+1)*drag_interval+2)+","+(container_height*0.9)+")");
+        }
+        else {
+            start_drag = container.select(".start-drag");
+            end_drag = container.select(".end-drag");
+            start_drag.transition()
+                .duration(AnimationDuration)
+                .attr("transform", "translate("+(container_width*0.1+range[0]*drag_interval-2)+","+(container_height*0.9)+")");
+            end_drag.transition()
+                .duration(AnimationDuration)
+                .attr("transform", "translate("+(container_width*0.1+(range[1]+1)*drag_interval+2)+","+(container_height*0.9)+")");
+        }
+        start_drag.call(d3.drag()
+                    .on("drag", function () {
+                        let x = d3.event.x;
+                        let drag_btn = d3.select(this);
+                        let min_x = container_width*0.09;
+                        let max_x = -1;
+                        let end_pos = end_drag.attr("transform").slice(end_drag.attr("transform").indexOf("(")+1, end_drag.attr("transform").indexOf(","));
+                        max_x = parseFloat(end_pos);
+                        if((x<=min_x)||(x>=max_x)) return;
+                        drag_btn.attr("transform", "translate("+(x)+","+(container_height*0.9)+")");
+                        container.selectAll("rect").attr("opacity", function (d, i) {
+                            let change = false;
+                            let rect = d3.select(this);
+                            let rect_x = parseFloat(rect.attr("x"));
+                            let rect_width = parseFloat(rect.attr("width"));
+                            if((rect_x>=x)&&(rect_x+rect_width<=max_x)){
+                                // in control
+                                if(rect.attr("opacity")!=1)change = true;
+                                if(change) {
+
+                                    range[0] = i;
+                                    data_manager.update_edge_filter(range[0], range[1]);
+                                }
+                                return 1
+                            }
+                            if(rect.attr("opacity")!=0.5)change = true;
+                            if(change) {
+
+                                range[0] = i+1;
+                                data_manager.update_edge_filter(range[0], range[1]);
+                            }
+                            return 0.5
+                        })
+                    }));
+            end_drag.call(d3.drag()
+                    .on("drag", function () {
+                        let x = d3.event.x;
+                        let drag_btn = d3.select(this);
+                        let max_x = container_width*0.91;
+                        let min_x = -1;
+                        let end_pos = start_drag.attr("transform").slice(start_drag.attr("transform").indexOf("(")+1, start_drag.attr("transform").indexOf(","));
+                        min_x = parseFloat(end_pos);
+                        if((x<=min_x)||(x>=max_x)) return;
+                        drag_btn.attr("transform", "translate("+(x)+","+(container_height*0.9)+")");
+
+                        container.selectAll("rect").attr("opacity", function (d, i) {
+                            let change = false;
+                            let rect = d3.select(this);
+                            let rect_x = parseFloat(rect.attr("x"));
+                            let rect_width = parseFloat(rect.attr("width"));
+                            if((rect_x>=min_x)&&(rect_x+rect_width<=x)){
+                                // in control
+                                if(rect.attr("opacity")!=1)change = true;
+                                if(change) {
+                                    range[1] = i;
+                                    data_manager.update_edge_filter(range[0], range[1]);
+                                }
+                                return 1
+                            }
+                            if(rect.attr("opacity")!=0.5)change = true;
+                            if(change) {
+                                range[1] = i-1;
+                                data_manager.update_edge_filter(range[0], range[1]);
+                            }
+                            return 0.5
+                        })
+                    }))
     };
 
     that.init = function () {
