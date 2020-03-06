@@ -1,6 +1,16 @@
 /*
 * added by Changjian Chen, 20200305
 * */
+
+function inbox(box, x, y){
+    if (x > box.x && x < box.x + box.width && y > box.y && y < box.y + box.height){
+        return true;
+    }
+    else{
+        return false;
+    }
+}
+
 GraphLayout.prototype.update_selection_box = function(){
     let that = this;
     that._create_selection_box();
@@ -94,6 +104,18 @@ GraphLayout.prototype._update_selection_box = function(){
         .attr("height", d => d.height);
     sg.select(".cross")
     .attr("transform", d => "translate("+(d.width - 10)+","+ (10) +")");
+
+    for(let i = 0; i < that.selection_box.length; i++){
+        let nodes = Object.values(that.get_nodes())
+            .filter(d => inbox(that.selection_box[i], that.center_scale_x(d.x), that.center_scale_y(d.y)));
+        that.selection_box[i].nodes = nodes;
+    }
+
+    if (that.selection_box.length > 0){
+        let selection_idxs = that.selection_box[0].nodes.map(d => d.id);
+        that.highlight(selection_idxs);
+    }
+
 };
 
 GraphLayout.prototype._remove_selection_box = function(){

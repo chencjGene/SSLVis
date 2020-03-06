@@ -195,7 +195,7 @@ let GraphHighlight = function (parent) {
     that.highlight = function(nodes, select_ids) {
         console.log("Highlight nodes:", select_ids);
         // if(select_ids.length<20)
-            view.data_manager.update_image_view(select_ids);
+            // view.data_manager.update_image_view(select_ids); // TODO: disable by changjian
         //first check if all select_id are in nodes
         let all_load = true;
         let new_ids = [];
@@ -207,9 +207,9 @@ let GraphHighlight = function (parent) {
         }
         if(all_load === true){
             view.data_manager.show_highlight_node(select_ids);
-            if(select_ids.length){                
-                view.data_manager.get_selected_flows(select_ids);
-            }
+            // if(select_ids.length){                
+            //     view.data_manager.get_selected_flows(select_ids);
+            // } // TODO: disabled by changjian
         }
         else {
             view.fetch_points(select_ids, new_ids, "highlight", select_ids);
