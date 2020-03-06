@@ -55,6 +55,8 @@ DataLoaderClass = function () {
     that.image_view = null;
     that.setting_view = null;
 
+    that.iter = -1;
+
     // Data storage
     that.state = {
         // manifest_data: null,
@@ -384,7 +386,7 @@ DataLoaderClass = function () {
     };
 
     that.set_filter_data = function (nodes) {
-        let iter = Object.values(nodes)[0].label.length-1;
+        let iter = that.iter;
         // uncertainty
         let certainty_distribution = [];
         let min_certainty = 0;
@@ -413,7 +415,7 @@ DataLoaderClass = function () {
 
         // label interval
         let min_label_id = -1;
-        let max_label_id = 11;
+        let max_label_id = that.state.label_names.length-1;
         let labels = [];
         let label_cnt = max_label_id-min_label_id+1;
         for(let i=0; i<label_cnt; i++){
@@ -502,6 +504,21 @@ DataLoaderClass = function () {
         that.state.influence_widget_data = influence_distribution;
     };
 
+    that.setIter = function (iter) {
+        that.iter = iter;
+        that.set_filter_data(that.state.nodes);
+        let ranges = that.filter_view.get_ranges();
+        that.set_filter_range(ranges[0], ranges[1], ranges[2], ranges[3], ranges[4]);
+        that.update_filter_view();
+        that.state.visible_items = that.filter_view.get_visible_items();
+        that.state.glyphs = that.filter_view.get_glyph_items();
+        that.update_graph_view();
+
+        that.graph_view.setIter(iter);
+        that.image_view.setIter(iter);
+
+    };
+
     that.set_filter_range = function (uncertainty_range, label_range, indegree_range, outdegree_range, influence_range){
         that.state.uncertainty_widget_range = uncertainty_range;
         that.state.label_widget_range = label_range;
@@ -534,11 +551,12 @@ DataLoaderClass = function () {
         for(let node_id of  Object.keys(that.state.nodes).map(d => parseInt(d))){
             that.state.visible_items[node_id] = true;
         }
+        that.iter = Object.values(that.state.nodes)[0].label.length-1;
 
         // update filter
         that.set_filter_data(that.state.nodes);
         let label_range = [];
-        for(let i=0; i<13; i++){
+        for(let i=0; i<=that.state.label_names.length; i++){
             label_range.push(i);
         }
         // // edited by Changjian
@@ -588,7 +606,7 @@ DataLoaderClass = function () {
         // update filter
         that.set_filter_data(that.state.nodes);
         let label_range = [];
-        for(let i=0; i<13; i++){
+        for(let i=0; i<=that.state.label_names.length; i++){
             label_range.push(i);
         }
         that.set_filter_range([20, 19], label_range, [0, 19], [0,19], [1,19]);
