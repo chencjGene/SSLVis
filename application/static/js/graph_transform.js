@@ -27,6 +27,10 @@ let GraphTransform = function (parent) {
         view.main_group.attr("transform", transform);
     };
 
+    that.get_transform = function() {
+        return transform;
+    };
+
     that.zoomed = function() {
         that.apply_transform(d3.event.transform);
 
