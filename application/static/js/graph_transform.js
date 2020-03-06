@@ -104,7 +104,7 @@ let GraphTransform = function (parent) {
                         // transform = d3.event.transform;
                         view.data_manager.zoom_graph_view_notify(area, target_level);
                     }
-                }, 100);
+                }, 500);
 
         }
         // else {

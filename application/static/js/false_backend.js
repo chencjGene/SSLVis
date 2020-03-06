@@ -37,7 +37,7 @@ DataLoaderClass.prototype.get_data_selection = function (area, level, must_show_
     if(level === 0) {
         selection = hierarchy[0]['index'];
     }
-    else if(level !== hierarchy.length || that.state.last_level !== hierarchy.length){
+    else if(level !== that.state.last_level){
             selection = get_next_level(hierarchy, level, area, that.state.complete_graph);
     }
     else {

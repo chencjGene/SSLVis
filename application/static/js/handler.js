@@ -46,9 +46,10 @@ DataLoaderClass.prototype.get_graph_handler = function (callback) {
         for (let i = 0; i < hierarchy.length - 1; i++){
             let index = hierarchy[i].index;
             let next = hierarchy[i].next;
+
             let next_index = hierarchy[i + 1].index;
             for (let j = 0; j < next.length; j++){
-                next[j] = next[j].filter(d => next_index.indexOf(d) > -1);
+                next[j] = next[j].map(d => next_index[d]);
             }
         }
         that.state.hierarchy = hierarchy;
