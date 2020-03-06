@@ -54,6 +54,49 @@ GraphLayout.prototype._create_selection_box = function(){
         .style("stroke-width", 4 * that.zoom_scale)
         .style("stroke", "gray")
         .style("cursor", "move");
+    let resize_box_group = sg.append("g")
+        .attr("class", "resize");
+    resize_box_group.append("rect")
+        .attr("class", "resize-rect")
+        .attr("id", "resize_rect_right_bottom")
+        .attr("x", d => d.width-5)
+        .attr("y", d => d.height-5)
+        .attr("width", 10)
+        .attr("height", 10)
+        .attr("fill", "gray")
+        .attr("stroke-width", 0)
+        .style("cursor", "nw-resize")
+        .call(d3.drag().on("start", function () {
+            d3.event.sourceEvent.stopPropagation();
+        }).on("drag", function (d) {
+                let event = d3.mouse(that.main_group.node());
+                d.width = event[0] - d.x;
+                d.height= event[1] - d.y;
+
+                that._update_selection_box();
+        }));
+    resize_box_group.append("rect")
+        .attr("class", "resize-rect")
+        .attr("id", "resize_rect_left_top")
+        .attr("x", -5)
+        .attr("y", -5)
+        .attr("width", 10)
+        .attr("height", 10)
+        .attr("fill", "gray")
+        .attr("stroke-width", 0)
+        .style("cursor", "nw-resize")
+        .call(d3.drag().on("start", function () {
+            d3.event.sourceEvent.stopPropagation();
+        }).on("drag", function (d) {
+                let event = d3.mouse(that.main_group.node());
+                d.width =d.x+d.width- event[0];
+                d.height=d.y+d.height-event[1];
+                d.x = event[0];
+                d.y = event[1];
+
+                that._update_selection_box();
+        }));
+
     let cross_group = sg.append("g")
             .attr("class", "cross")
             .attr("transform", d => "translate("+(d.width - 10)+","+ (10) +")")
@@ -111,6 +154,11 @@ GraphLayout.prototype._update_selection_box = function(){
         .attr("height", d => d.height);
     sg.select(".cross")
     .attr("transform", d => "translate("+(d.width - 10)+","+ (10) +")");
+
+
+    sg.select(".resize").select("#resize_rect_right_bottom")
+        .attr("x", d => d.width-5)
+        .attr("y", d => d.height-5);
 
     for(let i = 0; i < that.selection_box.length; i++){
         let nodes = Object.values(that.get_nodes())
