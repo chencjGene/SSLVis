@@ -11,7 +11,7 @@ let GraphTransform = function (parent) {
     let current_level = 0;
     let send_zoom_cnt = 0;
     let send_zoom_request = [];
-    let AnimationDuration = 1000;
+    let AnimationDuration = 10;
     let zoom_maintain_status = [];
 
 
@@ -104,7 +104,7 @@ let GraphTransform = function (parent) {
                         // transform = d3.event.transform;
                         view.data_manager.zoom_graph_view_notify(area, target_level);
                     }
-                }, 1000);
+                }, 100);
 
         }
         // else {
