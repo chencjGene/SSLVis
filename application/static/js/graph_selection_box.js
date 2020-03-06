@@ -59,10 +59,10 @@ GraphLayout.prototype._create_selection_box = function(){
     resize_box_group.append("rect")
         .attr("class", "resize-rect")
         .attr("id", "resize_rect_right_bottom")
-        .attr("x", d => d.width-5)
-        .attr("y", d => d.height-5)
-        .attr("width", 10)
-        .attr("height", 10)
+        .attr("x", d => d.width - 5 * that.zoom_scale)
+        .attr("y", d => d.height - 5 * that.zoom_scale)
+        .attr("width", 10 * that.zoom_scale)
+        .attr("height", 10 * that.zoom_scale)
         .attr("fill", "gray")
         .attr("stroke-width", 0)
         .style("cursor", "nw-resize")
@@ -74,14 +74,16 @@ GraphLayout.prototype._create_selection_box = function(){
                 d.height= event[1] - d.y;
 
                 that._update_selection_box();
-        }));
+        })).on("end", function(){
+            that.show_edges();
+        });
     resize_box_group.append("rect")
         .attr("class", "resize-rect")
         .attr("id", "resize_rect_left_top")
-        .attr("x", -5)
-        .attr("y", -5)
-        .attr("width", 10)
-        .attr("height", 10)
+        .attr("x", -5 * that.zoom_scale)
+        .attr("y", -5 * that.zoom_scale)
+        .attr("width", 10  * that.zoom_scale)
+        .attr("height", 10  * that.zoom_scale)
         .attr("fill", "gray")
         .attr("stroke-width", 0)
         .style("cursor", "nw-resize")
@@ -157,8 +159,8 @@ GraphLayout.prototype._update_selection_box = function(){
 
 
     sg.select(".resize").select("#resize_rect_right_bottom")
-        .attr("x", d => d.width-5)
-        .attr("y", d => d.height-5);
+        .attr("x", d => d.width-5 * that.zoom_scale)
+        .attr("y", d => d.height-5 * that.zoom_scale);
 
     for(let i = 0; i < that.selection_box.length; i++){
         let nodes = Object.values(that.get_nodes())
@@ -217,6 +219,7 @@ GraphLayout.prototype.set_rect_selection = function(){
     })
     .on("mouseup", function(){
         that.svg.on("mousemove", null);
+        that.show_edges();
     })
 };
 

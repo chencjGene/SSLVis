@@ -141,7 +141,7 @@ let curve_mid = function (u, v) {
         let mid = [(u[0]+v[0])/2, (u[1]+v[1])/2];
         // console.log(Math.sqrt(Math.pow(u[0]-v[0], 2), Math.pow(u[1]-v[1], 2)))
         // let c = Math.sqrt(Math.pow(u[0]-v[0], 2), Math.pow(u[1]-v[1], 2))*0.3;
-        let c = 40+(Math.random()-0.5)*5;
+        let c = 800+(Math.random()-0.5)*5;
         if(u[1] === v[1]) {
             u[1] += 0.00005
         }
