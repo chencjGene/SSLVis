@@ -6,6 +6,7 @@ from anytree import Node
 from anytree.exporter import DictExporter
 from scipy.stats import entropy
 from tqdm import tqdm
+from time import time
 
 from sklearn.neighbors.unsupervised import NearestNeighbors
 
@@ -440,6 +441,7 @@ class GraphData(Data):
         print("current state:", self.current_state.name)
 
     def return_state(self):
+        t0 = time()
         max_count = 1
         history = []
         for i in range(self.state_idx):
@@ -461,9 +463,9 @@ class GraphData(Data):
                 dist[2] = len(pre_data["train_idx"]) - len(data["train_idx"])
                 # label changes
                 pre_label = pre_data["pred"].argmax(axis=1)
-                pre_label[pre_data["pred"].max(axis=1) < 1e-8] = -1
+                pre_label[pre_data["pred"].max(axis=1) == 0] = -1
                 label = data["pred"].argmax(axis=1)
-                label[data["pred"].argmax(axis=1) < 1e-8] = -1
+                label[data["pred"].argmax(axis=1) == 0] = -1
                 dist[3] = sum(label != pre_label)
             dist = [int(k) for k in dist]
             # update max_count
@@ -484,6 +486,7 @@ class GraphData(Data):
             unnorm_dist = state["dist"].copy()
             state["dist"] = [i / max_count for i in unnorm_dist]
             state["unnorm_dist"] = unnorm_dist
+        print("return state time cost: ", time() - t0)
         return {
             "history": history,
             "current_id": int(self.current_state.name)

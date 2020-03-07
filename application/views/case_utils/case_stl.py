@@ -12,13 +12,14 @@ class CaseSTL(CaseBase):
 
     def run(self, k=6, evaluate=True, simplifying=False):
         step = self.base_config["step"]
-        self._init_model(k=k, evaluate=True, simplifying=simplifying)
+        self._init_model(k=k, evaluate=evaluate, simplifying=simplifying)
         if step >= 1:
             self.model.data.label_instance(
                 json.loads(open(os.path.join(self.model.selected_dir, "dog_idxs.txt"), "r").read().strip("\n")), [5, 5])
             self.model.data.label_instance([697], [5])
         
-        self._init_model(k=k, evaluate=True, simplifying=simplifying)
+            # self._init_model(k=k, evaluate=True, simplifying=simplifying)
+            self.model._training(rebuild=False, evaluate=False, simplifying=False)
 
         categories = [1 for i in range(10)]
         if step >= 2:
