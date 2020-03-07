@@ -501,9 +501,9 @@ class Anchors:
                 "to_weight":[]
             }
             for from_edge in samples_nodes[id]["from"]:
-                samples_nodes[id]["from_weight"].append(float(np.round(influence_matrix[m[id], m[from_edge]], 2)))
+                samples_nodes[id]["from_weight"].append(float(np.round(influence_matrix[m[id], m[from_edge]], 6)))
             for to_edge in samples_nodes[id]["to"]:
-                samples_nodes[id]["to_weight"].append(float(np.round(influence_matrix[m[to_edge], m[id]], 2)))
+                samples_nodes[id]["to_weight"].append(float(np.round(influence_matrix[m[to_edge], m[id]], 6)))
         graph = {
             "nodes":samples_nodes
         }
