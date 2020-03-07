@@ -83,10 +83,10 @@ DataLoaderClass = function () {
         influence_widget_data: null,
         influence_widget_range: [-1, -1],
         edge_type_data: {
-            "in":0,
-            "out":0,
-            "within":0,
-            "between":0
+            "in":10,
+            "out":5,
+            "within":30,
+            "between":20
         },
         edge_type_range: ["in", "out", "within", "between"],
         //hierarchy info
@@ -516,7 +516,7 @@ DataLoaderClass = function () {
         that.iter = iter;
         that.set_filter_data(that.state.nodes);
         let ranges = that.filter_view.get_ranges();
-        that.set_filter_range(ranges[0], ranges[1], ranges[2], ranges[3], ranges[4], range[5]);
+        that.set_filter_range(ranges[0], ranges[1], ranges[2], ranges[3], ranges[4], ranges[5]);
         that.update_filter_view();
         that.state.visible_items = that.filter_view.get_visible_items();
         that.state.glyphs = that.filter_view.get_glyph_items();

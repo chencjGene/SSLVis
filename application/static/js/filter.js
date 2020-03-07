@@ -66,6 +66,12 @@ let FilterLayout = function (container) {
         "within":null,
         "between":null
     };
+    let edge_type_checkboxes = {
+        "in": null,
+        "out": null,
+        "within": null,
+        "between": null
+    };
 
     //label
     let label_rect = {};
@@ -85,6 +91,11 @@ let FilterLayout = function (container) {
         edge_type_icons["out"] = container.select("#out_icon");
         edge_type_icons["within"] = container.select("#within_icon");
         edge_type_icons["between"] = container.select("#between_icon");
+
+        edge_type_checkboxes["in"] = container.select("#in-checkbox");
+        edge_type_checkboxes["out"] = container.select("#out-checkbox");
+        edge_type_checkboxes["within"] = container.select("#within-checkbox");
+        edge_type_checkboxes["between"] = container.select("#between-checkbox");
     };
 
     that.set_data_manager = function(new_data_manager) {
@@ -248,7 +259,7 @@ let FilterLayout = function (container) {
                 if(rect.attr("opacity") != 0.2){
                     // no select
                     rect.attr("opacity", 0.2);
-                    checkbox.attr("xlink:href", "#check-no-select");
+                    checkbox.select("rect").attr("fill", (d,i) => "white");
                     for(let id of label_rect[i].data){
                         label_items[id] = false;
                     }
@@ -257,7 +268,7 @@ let FilterLayout = function (container) {
                 }
                 else {
                     rect.attr("opacity", 0.5);
-                    checkbox.attr("xlink:href", "#check-select");
+                    checkbox.select("rect").attr("fill", (d,i) => d.label===0?color_unlabel:color_label[d.label-1]);
                     for(let id of label_rect[i].data){
                         label_items[id] = true;
                     }
@@ -319,20 +330,19 @@ let FilterLayout = function (container) {
             .attr("stroke-width", 1);
         }
         // draw checkbox
-        if(container.select("#current-label-checkbox").size() === 0){
+        if(container.select(".current-label-checkbox").size() === 0){
             let bandwidth = x.bandwidth()*0.7;
             let offset = x.bandwidth()*0.15;
-            container.append("g")
-                .attr("id", "current-label-checkbox-hover")
-                .selectAll("rect")
+            let groups = container
+                .selectAll(".current-label-checkbox")
                 .data(Object.values(label_rect))
-                .enter()
-                .append("rect")
-                .attr("x", (d, i) => x(label_rect[i].label)+offset)
-                .attr("y", container_height*0.85+offset)
-                .attr("width", bandwidth)
-                .attr("height", bandwidth)
-                .attr("opacity", 0)
+			    .enter()
+                .append("g")
+                .attr("class", "current-label-checkbox")
+                .each(function (d, i) {
+                    label_rect[i].checkbox = d3.select(this);
+                })
+                .attr("transform", (d, i) => "translate("+(x(label_rect[i].label)+offset)+","+(container_height*0.85+offset)+")")
                 .on("mouseover", function (d, i) {
                     let rect = label_rect[i].rect;
                     let checkbox = label_rect[i].checkbox;
@@ -342,7 +352,6 @@ let FilterLayout = function (container) {
                 })
                 .on("mouseout", function (d, i) {
                     let rect = label_rect[i].rect;
-                    let checkbox = label_rect[i].checkbox;
                     if(rect.attr("opacity") == 0.5){
                         rect.attr("opacity", 1);
                     }
@@ -353,7 +362,7 @@ let FilterLayout = function (container) {
                     if(rect.attr("opacity") != 0.2){
                         // no select
                         rect.attr("opacity", 0.2);
-                        checkbox.attr("xlink:href", "#check-no-select");
+                        checkbox.select("rect").attr("fill", (d,i) =>  "white");
                         for(let id of label_rect[i].data){
                             label_items[id] = false;
                         }
@@ -362,7 +371,7 @@ let FilterLayout = function (container) {
                     }
                     else {
                         rect.attr("opacity", 0.5);
-                        checkbox.attr("xlink:href", "#check-select");
+                        checkbox.select("rect").attr("fill", (d,i) => (d.label===0?color_unlabel:color_label[d.label-1]));
                         for(let id of label_rect[i].data){
                             label_items[id] = true;
                         }
@@ -370,34 +379,103 @@ let FilterLayout = function (container) {
                         label_widget_range.push(i);
                     }
                 });
-            container.append("g")
-                .attr("id", "current-label-checkbox")
-                .selectAll("use")
-                .data(Object.values(label_rect))
-                .enter()
-                .append("use")
-                .attr("xlink:href", (d, i) => label_widget_range.indexOf(i)>-1?"#check-select":"#check-no-select")
-                .attr("x", (d, i) => x(label_rect[i].label)+offset)
-                .attr("y", container_height*0.85+offset)
+            groups.append("rect")
+                .attr("x", 0)
+                .attr("y", 0)
                 .attr("width", bandwidth)
                 .attr("height", bandwidth)
-                .each(function (d, i) {
-                    let checkbox = d3.select(this);
-                    label_rect[i].checkbox = checkbox;
-                })
+                .attr("rx", bandwidth / 4)
+                .attr("ry", bandwidth / 4)
+                .attr("fill", (d,i) => label_rect[i].rect.attr("opacity")==1 ? (i===0?color_unlabel:color_label[i-1]) : "white")
+                .attr("stroke", (d,i) => (i===0?color_unlabel:color_label[i-1]));
+            groups.append("text")
+                .style("stroke", "white")
+                .style("fill", "white")
+                .attr("text-anchor", "middle")
+                .attr("x", bandwidth / 2)
+                .attr("y", bandwidth / 2 + 6)
+                .text("\u2714");
+
+
+            // container.append("g")
+            //     .attr("id", "current-label-checkbox-hover")
+            //     .selectAll("rect")
+            //     .data(Object.values(label_rect))
+            //     .enter()
+            //     .append("rect")
+            //     .attr("x", (d, i) => x(label_rect[i].label)+offset)
+            //     .attr("y", container_height*0.85+offset)
+            //     .attr("width", bandwidth)
+            //     .attr("height", bandwidth)
+            //     .attr("opacity", 0)
+            //     .on("mouseover", function (d, i) {
+            //         let rect = label_rect[i].rect;
+            //         let checkbox = label_rect[i].checkbox;
+            //         if(rect.attr("opacity") == 1){
+            //             rect.attr("opacity", 0.5);
+            //         }
+            //     })
+            //     .on("mouseout", function (d, i) {
+            //         let rect = label_rect[i].rect;
+            //         let checkbox = label_rect[i].checkbox;
+            //         if(rect.attr("opacity") == 0.5){
+            //             rect.attr("opacity", 1);
+            //         }
+            //     })
+            //     .on("click", function (d, i) {
+            //         let rect = label_rect[i].rect;
+            //         let checkbox = label_rect[i].checkbox;
+            //         if(rect.attr("opacity") != 0.2){
+            //             // no select
+            //             rect.attr("opacity", 0.2);
+            //             checkbox.attr("xlink:href", "#check-no-select");
+            //             for(let id of label_rect[i].data){
+            //                 label_items[id] = false;
+            //             }
+            //             that.update_widget_showing_items(label_rect[i].data);
+            //             label_widget_range.splice(label_widget_range.indexOf(i), 1);
+            //         }
+            //         else {
+            //             rect.attr("opacity", 0.5);
+            //             checkbox.attr("xlink:href", "#check-select");
+            //             for(let id of label_rect[i].data){
+            //                 label_items[id] = true;
+            //             }
+            //             that.update_widget_showing_items(label_rect[i].data);
+            //             label_widget_range.push(i);
+            //         }
+            //     });
+            // container.append("g")
+            //     .attr("id", "current-label-checkbox")
+            //     .selectAll("use")
+            //     .data(Object.values(label_rect))
+            //     .enter()
+            //     .append("use")
+            //     .attr("xlink:href", (d, i) => label_widget_range.indexOf(i)>-1?"#check-select":"#check-no-select")
+            //     .attr("x", (d, i) => x(label_rect[i].label)+offset)
+            //     .attr("y", container_height*0.85+offset)
+            //     .attr("width", bandwidth)
+            //     .attr("height", bandwidth)
+            //     .each(function (d, i) {
+            //         let checkbox = d3.select(this);
+            //         label_rect[i].checkbox = checkbox;
+            //     })
         }
         else {
-            container.select("#current-label-checkbox-hover")
-                .selectAll("rect")
+            container.selectAll(".current-label-checkbox")
                 .data(Object.values(label_rect));
-            container.select("#current-label-checkbox")
-                .selectAll("use")
-                .data(Object.values(label_rect))
-                .attr("xlink:href", (d, i) => label_widget_range.indexOf(i)>-1?"#check-select":"#check-no-select")
+            container.selectAll(".current-label-checkbox")
                 .each(function (d, i) {
-                    let checkbox = d3.select(this);
-                    label_rect[i].checkbox = checkbox;
-                });
+                        label_rect[i].checkbox = d3.select(this);
+                    });
+            container.selectAll(".current-label-checkbox")
+                .select("rect")
+                .data(Object.values(label_rect));
+
+
+            container.selectAll(".current-label-checkbox")
+                .select("rect")
+                .attr("fill", (d,i) => label_rect[d.label].rect.attr("opacity")==1 ? (d.label===0?color_unlabel:color_label[d.label-1]) : "white")
         }
     };
 
@@ -808,8 +886,7 @@ let FilterLayout = function (container) {
                 "show":range.indexOf(edge_type)>-1
             })
         }
-        // let max_len = 0;
-        let max_len = 1;    
+        let max_len = 1;
         let bar_cnt = data.length;
         for(let node_ary of data){
             if(max_len < node_ary.cnt){
@@ -845,14 +922,12 @@ let FilterLayout = function (container) {
                 let rect = d3.select(this);
                 if(rect.attr("opacity") == 1){
                     rect.attr("opacity", 0.5);
-                    that.set_edge_type_icon_opacity(edge_type_icons[d.type], 0.5);
                 }
             })
             .on("mouseout", function (d, i) {
                 let rect = d3.select(this);
                 if(rect.attr("opacity") == 0.5){
                     rect.attr("opacity", 1);
-                    that.set_edge_type_icon_opacity(edge_type_icons[d.type], 1);
                 }
             })
             .on("click", function (d, i) {
@@ -860,13 +935,13 @@ let FilterLayout = function (container) {
                 if(rect.attr("opacity") != 0.2){
                     // no select
                     rect.attr("opacity", 0.2);
-                    that.set_edge_type_icon_opacity(edge_type_icons[d.type], 0.2);
+                    that.set_edge_type_checkbox(edge_type_checkboxes[d.type], false);
                     let index = range.indexOf(d.type);
                     if (index !== -1) range.splice(index, 1);
                 }
                 else {
                     rect.attr("opacity", 0.5);
-                    that.set_edge_type_icon_opacity(edge_type_icons[d.type], 0.5);
+                    that.set_edge_type_checkbox(edge_type_checkboxes[d.type], true);
                     let index = range.indexOf(d.type);
                     if (index === -1) range.push(d.type);
                 }
@@ -890,10 +965,10 @@ let FilterLayout = function (container) {
                 let rect = d3.select(this);
                 edge_type_rects[d.type] = rect;
                 if(d.show){
-                    that.set_edge_type_icon_opacity(edge_type_icons[d.type], 1);
+                    that.set_edge_type_checkbox(edge_type_checkboxes[d.type], true);
                 }
                 else {
-                    that.set_edge_type_icon_opacity(edge_type_icons[d.type], 0.2);
+                    that.set_edge_type_checkbox(edge_type_checkboxes[d.type], false);
                 }
             });
         //remove
@@ -917,37 +992,32 @@ let FilterLayout = function (container) {
         }
 
         // icons
-        for(let type_id of Object.keys(edge_type_icons)){
-            let icon = edge_type_icons[type_id];
+        for(let type_id of Object.keys(edge_type_checkboxes)){
+            let checkbox = edge_type_checkboxes[type_id];
             let rect = edge_type_rects[type_id];
             let d = rect.datum();
-            icon.on("mouseover", function () {
-                if(rect.attr("opacity") == 1){
-                    icon.attr("opacity", 0.5);
-                    rect.attr("opacity", 0.5);
-                    that.set_edge_type_icon_opacity(edge_type_icons[d.type], 0.5);
-                }
-            })
-            .on("mouseout", function () {
-                if(rect.attr("opacity") == 0.5){
-                    icon.attr("opacity", 1);
-                    rect.attr("opacity", 1);
-                    that.set_edge_type_icon_opacity(edge_type_icons[d.type], 1);
-                }
-            })
-            .on("click", function () {
+            checkbox
+                .on("mouseover", function () {
+                    if(rect.attr("opacity") == 1){
+                        rect.attr("opacity", 0.5);
+                    }
+                })
+                .on("mouseout", function () {
+                    if(rect.attr("opacity") == 0.5){
+                        rect.attr("opacity", 1);
+                    }
+                })
+                .on("click", function () {
                 if(rect.attr("opacity") != 0.2){
                     // no select
                     rect.attr("opacity", 0.2);
-                    icon.attr("opacity", 0.2);
-                    that.set_edge_type_icon_opacity(edge_type_icons[d.type], 0.2);
+                    that.set_edge_type_checkbox(checkbox, false);
                     let index = range.indexOf(d.type);
                     if (index !== -1) range.splice(index, 1);
                 }
                 else {
                     rect.attr("opacity", 0.5);
-                    icon.attr("opacity", 0.5);
-                    that.set_edge_type_icon_opacity(edge_type_icons[d.type], 0.5);
+                    that.set_edge_type_checkbox(checkbox, true);
                     let index = range.indexOf(d.type);
                     if (index === -1) range.push(d.type);
                 }
@@ -968,6 +1038,12 @@ let FilterLayout = function (container) {
             .transition()
             .duration(AnimationDuration)
             .attr("opacity", opacity);
+    };
+
+    that.set_edge_type_checkbox = function(selection, is_check){
+        selection.select("text")
+            .style("stroke", is_check?"black":"white")
+            .style("fill", is_check?"black":"white");
     };
 
     that.init = function () {

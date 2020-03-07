@@ -393,3 +393,29 @@ label.field.focused .psuedo_select ul {
 #edge-type-container {
   display: flex;
 }
+
+.toolbar-seprator {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  margin-top: 15px;
+  margin-bottom: 5px;
+}
+
+.seprator-line {
+    margin: 0;
+    color: #c1c1c1;
+    border: 0;
+    border-top: 1px solid #c1c1c1;
+    flex: 0 0 60px;
+}
+
+.seprator-title {
+  font-size: 13px;
+  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+  font-weight: 600;
+  flex: 0 0 30px;
+  margin-left: 5px;
+  margin-right: 5px;
+}
