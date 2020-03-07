@@ -83,10 +83,10 @@ DataLoaderClass = function () {
         influence_widget_data: null,
         influence_widget_range: [-1, -1],
         edge_type_data: {
-            "in":0,
-            "out":0,
-            "within":0,
-            "between":0
+            "in":10,
+            "out":10,
+            "within":10,
+            "between":10
         },
         edge_type_range: [],
         //hierarchy info
@@ -586,7 +586,7 @@ DataLoaderClass = function () {
         }
         // // edited by Changjian
         that.set_filter_range([20, 19], label_range, [0, 19], [0,19],
-            [1,19], ["in", "out", "within", "between"]);
+            [1,19], []);
         that.update_filter_view();
 
         //update view
@@ -637,7 +637,7 @@ DataLoaderClass = function () {
             label_range.push(i);
         }
         that.set_filter_range([20, 19], label_range, [0, 19], [0,19],
-            [1,19], ["in", "out", "within", "between"]);
+            [1,19], []);
         // that.set_filter_range([18, 19], label_range, [0, 19], [0,19]);
         that.update_filter_view();
         // update dist view
