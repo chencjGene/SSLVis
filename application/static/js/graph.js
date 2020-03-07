@@ -111,6 +111,7 @@ let GraphLayout = function (container) {
     that.component_update = async function(state) {
         console.log("get graph state:", state);
         that._update_data(state);
+        that.data_manager.update_image_view(highlights);
         await that._update_view();
     };
 
@@ -142,7 +143,7 @@ let GraphLayout = function (container) {
             }
         }
         nodes = delRepeatDictArr(nodes);
-        // highlights = delRepeatDictArr(highlights);
+        highlights = highlights.delRepeat();
 
         // }
         // glyphs
@@ -366,8 +367,9 @@ let GraphLayout = function (container) {
                     // check if hided
                     if(visible_items[d.id] === false) return;
                     //  that.highlight([d.id]);
-                    that.focus_nodes = [d];
-                    that.show_edges();
+                    // that.focus_nodes = [d];
+                    // that.show_edges();
+                    that.highlight([d.id]);
                 })
                 .transition()
                 .duration(AnimationDuration)
@@ -683,7 +685,9 @@ let GraphLayout = function (container) {
     };
 
     that.highlight = function(ids){
-        highlight_plg.highlight(nodes, ids);
+        // highlight_plg.highlight(nodes, ids);
+        that.focus_nodes = ids.map(d => DataLoader.state.complete_graph[d]);
+        that.show_edges();
     };
 
     that.get_highlights = function() {

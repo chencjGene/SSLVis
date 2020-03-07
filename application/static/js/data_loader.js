@@ -359,6 +359,7 @@ DataLoaderClass = function () {
             that.selected_flows_handler(function(){
                 that.update_dist_view();
                 that.update_graph_view();
+                that.highlight_nodes(that.state.focus_idxs);
             }), "json", "POST");
         that.selected_flows_node.set_data({path_id});
         that.selected_flows_node.notify();
