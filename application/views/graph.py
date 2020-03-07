@@ -43,6 +43,7 @@ def app_set_influence_filter():
 
 @graph.route("/graph/GetGraph", methods=["GET", "POST"])
 def app_get_graph():
+    print("GetGraph Request")
     # extract info from request
     k = request.args.get("k", None)
     wh = request.args.get("wh", 1.0)
