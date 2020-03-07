@@ -182,6 +182,10 @@ let GraphHighlight = function (parent) {
         }
     };
 
+    that.highlight_pure = function(){
+
+    };
+
 
     that._change_lasso_mode = function () {
         if (if_lasso) {

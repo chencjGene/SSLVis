@@ -131,11 +131,14 @@ let GraphLayout = function (container) {
             let path_in_this_type = all_path[type]
                 .filter(d => d[2] > edge_filter_threshold[0] && d[2] < edge_filter_threshold[1]);
             path = path.concat(path_in_this_type);
+            // get in/out nodes
             if (type === "in" || type === "out"){
                 nodes = nodes.concat(all_path[type + "_nodes"]);
+                highlights = highlights.concat(all_path[type + "_nodes"].map(d => d.id));
             }
         }
         nodes = delRepeatDictArr(nodes);
+        // highlights = delRepeatDictArr(highlights);
 
         // }
         // glyphs
@@ -542,14 +545,6 @@ let GraphLayout = function (container) {
     };
 
     that.opacity_path = function(path) {
-        // TODO: disable by changjian for debug
-        // let weight = that.transform_weight(path[2]);
-        // if(is_show_path && weight >= edge_filter_threshold[0] && weight <= edge_filter_threshold[1]){
-        //     return 1;
-        // }
-        // else{
-        //     return 0;
-        // }
         return 1;
     };
 

@@ -267,6 +267,7 @@ GraphLayout.prototype.get_path = function(){
         "in_nodes": [],
         "out_nodes": []
     };
+    let highlights = [];
 
     for (let i in DataLoader.state.complete_graph){
         DataLoader.state.complete_graph[i].box_id = -1;
@@ -286,6 +287,7 @@ GraphLayout.prototype.get_path = function(){
             // focus_nodes[j].box_id = i;
             let node = focus_nodes[j];
             if (node.visited) continue;
+            highlights.push(node.id);
              
             // process from
             let from = node.from;
@@ -333,7 +335,8 @@ GraphLayout.prototype.get_path = function(){
     // }
 
     that.all_path = path;
-    return path;
+    that.highlights = highlights;
+    return [path, highlights];
 }
 
 GraphLayout.prototype.show_edges = function(modes){
@@ -346,8 +349,9 @@ GraphLayout.prototype.show_edges = function(modes){
         edge_type_data[i] = len;
         edge_type_range.push(i); 
     }
-    that.data_manager.update_edge_type_bar(edge_type_data, edge_type_range);
+    that.data_manager.update_edge_type_bar(edge_type_data);
     // that.set_path();
     that.data_manager.state.path = that.all_path;
+    that.data_manager.state.highlights = that.highlights;
     that.data_manager.update_graph_view();
 };

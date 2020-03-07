@@ -83,12 +83,12 @@ DataLoaderClass = function () {
         influence_widget_data: null,
         influence_widget_range: [-1, -1],
         edge_type_data: {
-            "in":10,
-            "out":5,
-            "within":30,
-            "between":20
+            "in":0,
+            "out":0,
+            "within":0,
+            "between":0
         },
-        edge_type_range: ["in", "out", "within", "between"],
+        edge_type_range: [],
         //hierarchy info
         hierarchy:null,
         last_level:0,
@@ -527,12 +527,12 @@ DataLoaderClass = function () {
 
     };
 
-    that.update_edge_type_bar = function(data, range){
+    that.update_edge_type_bar = function(data){
         console.log("update edge type bar");
         let ranges = that.filter_view.get_ranges();
         that.set_filter_range(ranges[0], ranges[1], ranges[2], ranges[3], ranges[4], ranges[5]);
         that.state.edge_type_data = data;
-        that.state.edge_type_range = range;
+        // that.state.edge_type_range = range;
         that.update_filter_view();
 
     };
