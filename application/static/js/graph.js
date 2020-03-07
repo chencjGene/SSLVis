@@ -142,6 +142,8 @@ let GraphLayout = function (container) {
                 highlights = highlights.concat([].concat.apply([], path_in_this_type.map(d => [d[0].id, d[1].id])));
             }
         }
+        // add focus nodes
+        nodes = nodes.concat(that.focus_nodes);
         nodes = delRepeatDictArr(nodes);
         highlights = highlights.delRepeat();
 
