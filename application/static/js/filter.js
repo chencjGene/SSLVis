@@ -1023,7 +1023,7 @@ let FilterLayout = function (container) {
                 }
                 data_manager.update_edge_type_filter(range);
             })
-
+            that.set_edge_type_checkbox(checkbox, d.show)
         }
     };
 
