@@ -348,6 +348,12 @@ DataLoaderClass = function () {
         that.set_history_node.notify();
     };
 
+    that.get_history = function(){
+        that.get_history_node = new request_node(that.get_history_url + params,
+            that.update_history_handler(that.update_history_view), "json", "GET");
+        that.get_history_node.notify();
+    };
+
     that.change_dist_mode = function(){
         that.state.dist_mode = !that.state.dist_mode;
         that.update_dist_view();
