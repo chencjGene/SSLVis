@@ -201,13 +201,13 @@ GraphLayout.prototype._update_selection_box = function(){
 
     // TODO: highlight 
     if (that.selection_box.length > 0){
-        d3.selectAll(".node-dot").attr("r", d => that.r(d.id) * that.zoom_scale);
+        d3.selectAll(".node-dot").attr("r", d => 3.5 * that.zoom_scale);
         for (let j = 0; j < that.selection_box.length; j++){
             let selection_idxs = that.selection_box[j].nodes.map(d => d.id);
             // that.highlight(selection_idxs);
             for (let i = 0; i < selection_idxs.length; i++){
                 d3.select("#id-" + selection_idxs[i])
-                    .attr("r", 4 * that.zoom_scale);
+                    .attr("r", d => 5 * that.zoom_scale);
             }
         }
     }

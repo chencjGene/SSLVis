@@ -93,7 +93,7 @@ let ImageLayout = function (container){
     };
 
     that.component_update = async function(state) {
-        // console.log("graph component update");
+        console.log("image component update:", state);
         await that._update_data(state);
         if(img_url !== undefined && img_url !== null){
             detail_pos = -1;

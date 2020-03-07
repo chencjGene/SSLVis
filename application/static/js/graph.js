@@ -24,7 +24,7 @@ let GraphLayout = function (container) {
     let color_unlabel = UnlabeledColor;
     let color_label = CategoryColor;
     let edge_color = UnlabeledColor;
-    let AnimationDuration = 0;
+    let AnimationDuration = 10;
     let create_ani = AnimationDuration;
     let update_ani = AnimationDuration;
     let remove_ani = AnimationDuration * 0.1;
@@ -44,6 +44,7 @@ let GraphLayout = function (container) {
 
     // meta data
     let nodes = {};
+    let nodes_in_this_level = [];
     let path = [];
     let path_nodes = {};
     let is_show_path = false;
@@ -110,11 +111,13 @@ let GraphLayout = function (container) {
     that.component_update = async function(state) {
         console.log("get graph state:", state);
         that._update_data(state);
+        that.data_manager.update_image_view(highlights);
         await that._update_view();
     };
 
     that._update_data = function(state) {
-        nodes = state.nodes;
+        nodes_in_this_level = state.nodes;
+        nodes = JSON.parse(JSON.stringify(nodes_in_this_level));
         nodes = Object.values(nodes);
         is_show_path = state.is_show_path;
         highlights = state.highlights;
@@ -140,7 +143,7 @@ let GraphLayout = function (container) {
             }
         }
         nodes = delRepeatDictArr(nodes);
-        // highlights = delRepeatDictArr(highlights);
+        highlights = highlights.delRepeat();
 
         // }
         // glyphs
@@ -364,8 +367,9 @@ let GraphLayout = function (container) {
                     // check if hided
                     if(visible_items[d.id] === false) return;
                     //  that.highlight([d.id]);
-                    that.focus_nodes = [d];
-                    that.show_edges();
+                    // that.focus_nodes = [d];
+                    // that.show_edges();
+                    that.highlight([d.id]);
                 })
                 .transition()
                 .duration(AnimationDuration)
@@ -461,18 +465,11 @@ let GraphLayout = function (container) {
     };
 
     that.r = function(id) {
-        if(is_show_path){
-            if(path_nodes[id] !== undefined){
-                return 5*that.zoom_scale;
-            }
-            return 3.5*that.zoom_scale
+        if( highlights.indexOf(id) > -1){
+            return 5 * that.zoom_scale;
         }
-        else {
-            if( highlights.indexOf(id) > -1){
-                return 5*that.zoom_scale;
-            }
-            return 3.5*that.zoom_scale
-        }
+        return 3.5 * that.zoom_scale
+        
     };
 
     that.opacity = function(id) {
@@ -648,7 +645,7 @@ let GraphLayout = function (container) {
     };
 
     that.get_nodes = function() {
-        return nodes;
+        return nodes_in_this_level;
     };
 
     that.get_nodes_in_group = function() {
@@ -688,7 +685,9 @@ let GraphLayout = function (container) {
     };
 
     that.highlight = function(ids){
-        highlight_plg.highlight(nodes, ids);
+        // highlight_plg.highlight(nodes, ids);
+        that.focus_nodes = ids.map(d => DataLoader.state.complete_graph[d]);
+        that.show_edges();
     };
 
     that.get_highlights = function() {
