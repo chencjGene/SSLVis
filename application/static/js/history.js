@@ -36,7 +36,7 @@ let HistoryLayout = function (container) {
         that.cell_group.attr("transform", "translate(" + margin_horizontal + ", " + 0 + ")");
         that.legend_group.attr("transform", "translate(" + margin_horizontal + ", " + 0 + ")");
 
-        let legend = ["# added edges", "# removed edges", "# removed instances", "# label changes"];
+        let legend = ["# edge changes", "# added labels", "# added instances", "# label changes"];
         that.legend_group.selectAll("text.legend")
             .data(legend)
             .enter()
