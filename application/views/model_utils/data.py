@@ -465,7 +465,7 @@ class GraphData(Data):
                 pre_label = pre_data["pred"].argmax(axis=1)
                 pre_label[pre_data["pred"].max(axis=1) == 0] = -1
                 label = data["pred"].argmax(axis=1)
-                label[data["pred"].argmax(axis=1) == 0] = -1
+                label[data["pred"].max(axis=1) == 0] = -1
                 dist[3] = sum(label != pre_label)
             dist = [int(k) for k in dist]
             # update max_count
