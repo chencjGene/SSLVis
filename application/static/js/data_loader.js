@@ -83,10 +83,10 @@ DataLoaderClass = function () {
         influence_widget_data: null,
         influence_widget_range: [-1, -1],
         edge_type_data: {
-            "in":10,
-            "out":10,
-            "within":10,
-            "between":10
+            "in":0,
+            "out":0,
+            "within":0,
+            "between":0
         },
         edge_type_range: [],
         //hierarchy info
@@ -288,7 +288,7 @@ DataLoaderClass = function () {
     }
 
     // update img_url in states and update ImageView
-    that.update_image_view = function(nodes){
+    that.update_image_view = async function(nodes){
         that.state.img_grid_urls = [];
         for(let node_id of nodes){
             that.state.img_grid_urls.push({
@@ -296,7 +296,7 @@ DataLoaderClass = function () {
                 id:node_id,
             })
         }
-        that.image_view.component_update({
+        await that.image_view.component_update({
             "img_grid_urls": that.state.img_grid_urls
         })
     };
@@ -357,9 +357,10 @@ DataLoaderClass = function () {
         that.dist_view.click_id = path_id;
         that.selected_flows_node = new request_node(that.selected_flows_urls,
             that.selected_flows_handler(function(){
-                that.update_dist_view();
+
                 that.update_graph_view();
                 that.highlight_nodes(that.state.focus_idxs);
+                that.update_dist_view();
             }), "json", "POST");
         that.selected_flows_node.set_data({path_id});
         that.selected_flows_node.notify();
