@@ -60,6 +60,7 @@ let GraphLayout = function (container) {
         // {x:100, y:100, width:300, height:300}
     ];
     let edge_filter_threshold = 0;
+    that.focus_nodes = [];
 
     // from area to main group
     that.center_scale_x = null;
@@ -134,7 +135,8 @@ let GraphLayout = function (container) {
             // get in/out nodes
             if (type === "in" || type === "out"){
                 nodes = nodes.concat(all_path[type + "_nodes"]);
-                highlights = highlights.concat(all_path[type + "_nodes"].map(d => d.id));
+                // highlights = highlights.concat(all_path[type + "_nodes"].map(d => d.id));
+                highlights = highlights.concat([].concat.apply([], path_in_this_type.map(d => [d[0].id, d[1].id])));
             }
         }
         nodes = delRepeatDictArr(nodes);
@@ -361,7 +363,9 @@ let GraphLayout = function (container) {
                 .on("click", function (d) {
                     // check if hided
                     if(visible_items[d.id] === false) return;
-                     that.highlight([d.id]);
+                    //  that.highlight([d.id]);
+                    that.focus_nodes = [d];
+                    that.show_edges();
                 })
                 .transition()
                 .duration(AnimationDuration)

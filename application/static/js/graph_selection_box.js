@@ -123,6 +123,7 @@ GraphLayout.prototype._create_selection_box = function(){
                     }
                 }
                 that._remove_selection_box();
+                that.show_edges();
             })
     cross_group.append("line")
             .attr("id", "cross-line-1")
@@ -273,16 +274,19 @@ GraphLayout.prototype.get_path = function(){
         DataLoader.state.complete_graph[i].box_id = -1;
     }
     
-    for (let i = 0; i < that.selection_box.length; i++){
-        let focus_nodes = that.selection_box[i].nodes;
+    let all_nodes = that.selection_box.map(d => d.nodes);
+    all_nodes.push(that.focus_nodes);
+
+    for (let i = 0; i < all_nodes.length; i++){
+        let focus_nodes = all_nodes[i];
         for (let j = 0; j < focus_nodes.length; j++){
             focus_nodes[j].box_id = i;
             focus_nodes[j].visited = false;
         }
     }
 
-    for (let i = 0; i < that.selection_box.length; i++){
-        let focus_nodes = that.selection_box[i].nodes;
+    for (let i = 0; i < all_nodes.length; i++){
+        let focus_nodes = all_nodes[i];
         for (let j = 0; j < focus_nodes.length; j++){
             // focus_nodes[j].box_id = i;
             let node = focus_nodes[j];
@@ -294,7 +298,7 @@ GraphLayout.prototype.get_path = function(){
             let from_weight = node.from_weight;
             for (let k = 0; k < from.length; k++){
                 if (from_weight[k] > 0){
-                    // it is not a safe code
+                    //TODO: it is not a safe code
                     let from_node = DataLoader.state.complete_graph[from[k]];
                     if (from_node.box_id !== undefined && from_node.box_id > -1){
                         if (from_node.box_id == node.box_id){
