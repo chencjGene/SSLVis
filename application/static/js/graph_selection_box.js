@@ -50,7 +50,8 @@ GraphLayout.prototype._create_selection_box = function(){
         .attr("height", d => d.height)
         .attr("x", d => 0)
         .attr("y", d => 0)
-        .style("fill", "none")
+        .style("fill", "white")
+        .style("fill-opacity", 0)
         .style("stroke-width", 4 * that.zoom_scale)
         .style("stroke", "gray")
         .style("cursor", "move");
@@ -115,7 +116,6 @@ GraphLayout.prototype._create_selection_box = function(){
                 .classed("cross-line", false);
             })
             .on("click", function(d){
-                // that.selection_box.splice(i, 1);
                 for(let i = 0; i < that.selection_box.length; i++){
                     if (that.selection_box[i].id === d.id){
                         that.selection_box.splice(i, 1);
@@ -125,12 +125,14 @@ GraphLayout.prototype._create_selection_box = function(){
                 that._remove_selection_box();
             })
     cross_group.append("line")
+            .attr("id", "cross-line-1")
             .attr("class", "cross-line-hide")
             .attr("x1", -5 * that.zoom_scale)
             .attr("y1", -5 * that.zoom_scale)
             .attr("x2", 5 * that.zoom_scale)
             .attr("y2", 5 * that.zoom_scale);
     cross_group.append("line")
+            .attr("id", "cross-line-2")
             .attr("class", "cross-line-hide")
             .attr("x1", -5 * that.zoom_scale)
             .attr("y1", 5 * that.zoom_scale)
@@ -153,23 +155,46 @@ GraphLayout.prototype._update_selection_box = function(){
         .attr("transform", d => "translate("+(d.x)+","+ (d.y) +")");
     sg.selectAll(".box")
         .attr("width", d => d.width)
-        .attr("height", d => d.height);
-    sg.select(".cross")
-    .attr("transform", d => "translate("+(d.width - 10)+","+ (10) +")");
+        .attr("height", d => d.height)
+        .style("stroke-width", 4 * that.zoom_scale);
+    let cross_group = sg.select(".cross")
+        .attr("transform", d => "translate("+(d.width - 10)+","+ (10) +")");
+    cross_group.select("#cross-line-1")
+        .attr("x1", -5 * that.zoom_scale)
+        .attr("y1", -5 * that.zoom_scale)
+        .attr("x2", 5 * that.zoom_scale)
+        .attr("y2", 5 * that.zoom_scale);
+    cross_group.select("#cross-line-2")
+        .attr("x1", -5 * that.zoom_scale)
+        .attr("y1", 5 * that.zoom_scale)
+        .attr("x2", 5 * that.zoom_scale)
+        .attr("y2", -5 * that.zoom_scale);
+    cross_group.select("rect")
+        .attr("x", -5 * 1.5 * that.zoom_scale)
+        .attr("y", -5 * 1.5 * that.zoom_scale)
+        .attr("width", 10 * 1.5 * that.zoom_scale)
+        .attr("height", 10 * 1.5 * that.zoom_scale);
 
 
     sg.select(".resize").select("#resize_rect_right_bottom")
         .attr("x", d => d.width-5 * that.zoom_scale)
-        .attr("y", d => d.height-5 * that.zoom_scale);
+        .attr("y", d => d.height-5 * that.zoom_scale)
+        .attr("width", 10 * that.zoom_scale)
+        .attr("height", 10 * that.zoom_scale);
+    sg.select(".resize").select("#resize_rect_left_top")
+        .attr("x", -5 * that.zoom_scale)
+        .attr("y", -5 * that.zoom_scale)
+        .attr("width", 10  * that.zoom_scale)
+        .attr("height", 10  * that.zoom_scale);
 
+    // update data
     for(let i = 0; i < that.selection_box.length; i++){
         let nodes = Object.values(that.get_nodes())
             .filter(d => inbox(that.selection_box[i], that.center_scale_x(d.x), that.center_scale_y(d.y)));
-        // let nodes = d3.selectAll(".node-dot")
-        //                 .
         that.selection_box[i].nodes = nodes;
     }
 
+    // TODO: highlight 
     if (that.selection_box.length > 0){
         d3.selectAll(".node-dot").attr("r", 3 * that.zoom_scale);
         for (let j = 0; j < that.selection_box.length; j++){

@@ -657,6 +657,9 @@ let GraphLayout = function (container) {
         let arc = d3.arc().outerRadius(11 * that.zoom_scale).innerRadius(7 * that.zoom_scale);
         glyph_in_group.selectAll("path")
             .attr("d", arc);
+            
+            // 
+            that._update_selection_box();
         }
 
     };
