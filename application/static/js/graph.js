@@ -442,6 +442,10 @@ let GraphLayout = function (container) {
                 .on("mouseout", function (d) {
                         d3.select(this).style("stroke-width", 2.0 * that.zoom_scale);
                     })
+                .on("mousedown", function (d) {
+                    console.log("mousedown", d);
+                    that.data_manager.update_edit_state(d, "delete edge");
+                })
                 .transition()
                 .duration(AnimationDuration)
                 .attr("opacity", d => that.opacity_path(d))
@@ -778,7 +782,22 @@ let GraphLayout = function (container) {
 
     that.get_transform = function() {
         return transform_plg.get_transform();
-    }
+    };
+
+    that.highlight_edges = function(edge_data) {
+        let edge_keys = [];
+        for(let edge of edge_data){
+            let key = edge[0]+','+edge[1];
+            edge_keys.push(key)
+        }
+        path_in_group.attr("stroke-width", function (d) {
+            let key = d[0].id+","+d[1].id;
+            if(edge_keys.indexOf(key) > -1){
+                return 4.0 * that.zoom_scale
+            }
+            else return 2.0 * that.zoom_scale
+        })
+    };
 
     // that.get_area = function(){
     //     return transform_plg.get_area();

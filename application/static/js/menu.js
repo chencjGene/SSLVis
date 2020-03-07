@@ -50,7 +50,7 @@ let EditLayout = function(){
 
     that.clean_click_menu = function(){
         d3.selectAll(".iw-curMenu").remove();
-    }
+    };
 
     that.update_click_menu = function(container, d){
         let menu = [];
@@ -82,27 +82,33 @@ let EditLayout = function(){
 
         click_node_menu = menu;
         if (menu.length > 0) {
-            container.contextMenu(click_node_menu, click_menu_settings);
+            $('#graph-tsne-point-g').contextMenu(click_node_menu, click_menu_settings);
         }
 
         // edge 
         menu = [];
+        // menu.push({
+        //     title: 'Add',
+        //     name: 'Add',
+        //     color: '',
+        //     className: "iw-mnotSelected add-menu-item",
+        //     fun: function () {
+        //         console.log("click add edge menu")
+        //     }
+        // });
         menu.push({
-            title: 'Add',
-            name: 'Add',
+            title: 'Delete',
+            name: 'Delete',
             color: '',
             className: "iw-mnotSelected add-menu-item",
-            fun: function () {
-                d3.select(focus_edge_node).style("display", "none");
-                that._apply_delete_and_update_label();
-                that._update_wait_list_group();
-                focus_node_change_switch = true;
-                focus_edge_change_switch = true;
+            fun: function (d) {
+                console.log("delete add edge menu", focus_data, focus_mode);
+                that.editing();
             }
         });
         click_edge_menu = menu;
         if (menu.length > 0) {
-            $('#graph-view-link-g').contextMenu(click_edge_menu, click_menu_settings);
+            $('#graph-path-g').contextMenu(click_edge_menu, click_menu_settings);
         }
 
     };
@@ -118,10 +124,10 @@ let EditLayout = function(){
     that.update_focus = function(data, mode){
         focus_data = data;
         focus_mode = mode;
-    }
+    };
 
     that.editing = function(label){
-        console.log("editing", {label, focus_data, focus_mode});
+        // console.log("editing", {label, focus_data, focus_mode});
         if (focus_mode === "instance"){
             if (label === -1){
                 if (Array.isArray(focus_data)){
@@ -135,11 +141,13 @@ let EditLayout = function(){
             }
             else{
                 edit_state.labeled_idxs.push(focus_data);
-                edit_state.labels.push(focus_data);
+                edit_state.labels.push(label);
             }
         }
         else if (focus_mode === "delete edge"){
-
+            let source = focus_data[0];
+            let target = focus_data[1];
+            edit_state.deleted_edges.push([source.id, target.id]);
         }
         else if (focus_mode === "add edge"){
 
@@ -147,7 +155,17 @@ let EditLayout = function(){
         else {
 
         }
+        console.log("Now edit state:", edit_state);
+    };
+
+    that.eval_edit = function() {
         that.data_manager.update_delete_and_change_label(edit_state);
+        edit_state = {
+            deleted_idxs: [],
+            labeled_idxs: [],
+            labels: [],
+            deleted_edges: []
+        };
     };
 
 

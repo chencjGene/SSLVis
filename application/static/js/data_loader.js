@@ -151,7 +151,9 @@ DataLoaderClass = function () {
 
         // TODO:
         that.update_delete_and_change_label_node = new request_node(that.update_delete_and_change_label_url + params,
-            that.update_delete_and_change_label_handler(function(){
+            that.update_delete_and_change_label_handler(function(must_show_nodes, area, level){
+                that.state.is_zoom = false;
+                that.fetch_nodes(area, level, must_show_nodes);
                 let show_ids = [];
                 for(let node_id of Object.keys(that.state.nodes).map(d => parseInt(d))){
                     if(that.state.visible_items[node_id] === true){
@@ -178,6 +180,10 @@ DataLoaderClass = function () {
         that.edit_view.update_info({
             label_names: that.state.label_names
         });
+    };
+
+    that.eval_edit_info = function() {
+        that.edit_view.eval_edit();
     };
 
     that.update_delete_and_change_label = function (edit_state) {
@@ -241,7 +247,10 @@ DataLoaderClass = function () {
     that.local_update_k = function(){
         let params = "?dataset=" + that.dataset;
         that.local_update_k_node = new request_node(that.local_update_k_url + params,
-            that.local_update_k_handler(function(){
+            that.local_update_k_handler(function(must_show_nodes, area, level){
+                that.state.is_zoom = false;
+                that.fetch_nodes(area, level, must_show_nodes);
+
                 let show_ids = [];
                 for(let node_id of Object.keys(that.state.nodes).map(d => parseInt(d))){
                     if(that.state.visible_items[node_id] === true){
