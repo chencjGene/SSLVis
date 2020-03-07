@@ -808,7 +808,8 @@ let FilterLayout = function (container) {
                 "show":range.indexOf(edge_type)>-1
             })
         }
-        let max_len = 0;
+        // let max_len = 0;
+        let max_len = 1;    
         let bar_cnt = data.length;
         for(let node_ary of data){
             if(max_len < node_ary.cnt){

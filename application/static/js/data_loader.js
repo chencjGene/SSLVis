@@ -97,7 +97,12 @@ DataLoaderClass = function () {
         complete_graph:null,
         edge_filter_threshold:[0.05, 1],
         nodes: null,
-        path: [],
+        path: {
+            "in": [],
+            "out": [],
+            "within": [],
+            "between": []
+        },
         is_show_path: false,
         highlights: [],
         area: null,
@@ -285,14 +290,6 @@ DataLoaderClass = function () {
         })
     };
 
-    // that.update_graph_view = function(rescale){
-    //     console.log("update graph view");
-    //     that.graph_view.component_update({
-    //         "graph_data": that.state.graph_data,
-    //         "label_names": that.state.label_names
-    //     }, rescale);
-    // };
-    //
 
     that.update_history_view = function(){
         console.log("update history view");
@@ -529,6 +526,7 @@ DataLoaderClass = function () {
     };
 
     that.update_edge_type_bar = function(data, range){
+        console.log("update edge type bar");
         let ranges = that.filter_view.get_ranges();
         that.set_filter_range(ranges[0], ranges[1], ranges[2], ranges[3], ranges[4], ranges[5]);
         that.state.edge_type_data = data;
@@ -555,6 +553,7 @@ DataLoaderClass = function () {
     that.update_edge_type_filter = function(range) {
         that.state.edge_type_range = range;
         console.log("Edge type filter:", range);
+        that.update_graph_view();
     };
 
     // setting view
@@ -569,7 +568,7 @@ DataLoaderClass = function () {
     that.get_graph_view = function() {
         that.state.rescale = true;
         that.state.highlights = [];
-        that.state.path = [];
+        // that.state.path = [];
         that.is_show_path = false;
         that.state.visible_items = {};
         for(let node_id of  Object.keys(that.state.nodes).map(d => parseInt(d))){
@@ -613,6 +612,7 @@ DataLoaderClass = function () {
             "aggregate": that.state.aggregate,
             "rect_nodes": that.state.rect_nodes,
             "edge_filter_threshold": that.state.edge_filter_threshold,
+            "edge_type_range": that.state.edge_type_range
         });
         reset_spinner();
     };

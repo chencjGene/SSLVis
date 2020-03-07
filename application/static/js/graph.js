@@ -123,47 +123,53 @@ let GraphLayout = function (container) {
         aggregate = state.aggregate;
         rect_nodes = state.rect_nodes;
         edge_filter_threshold = state.edge_filter_threshold;
-        // path
+        edge_type_range = state.edge_type_range;
+        all_path = state.path;
         path = [];
-        path_nodes = {};
-        let path_keys = [];//remove duplicates
-        for(let apath of state.path){
-            let node_id = apath[0];
-            let mode = apath[1];
-            if(mode === "from"){
-                let target_id = node_id;
-                for(let i=0; i<nodes[target_id].from.length; i++){
-                    let source_id = nodes[target_id].from[i];
-                    let weight = nodes[target_id].from_weight[i];
-                    let key = source_id+","+target_id;
-                    if(path_keys.indexOf(key) > -1) continue;
-                    path.push([nodes[source_id], nodes[target_id], weight]);
-                    path_keys.push(key);
-                    weight = that.transform_weight(weight);
-                    if(weight >= edge_filter_threshold[0] && weight <= edge_filter_threshold[1]){
-                        path_nodes[source_id] = true;
-                        path_nodes[target_id] = true;
-                    }
-                }
-            }
-            else if(mode === "to"){
-                let source_id = node_id;
-                for(let i=0; i<nodes[source_id].to.length;i++){
-                    let target_id = nodes[source_id].to[i];
-                    let weight = nodes[target_id].to_weight[i];
-                    let key = source_id+","+target_id;
-                    if(path_keys.indexOf(key) > -1) continue;
-                    path.push([nodes[source_id], nodes[target_id], weight]);
-                    path_keys.push(key);
-                    weight = that.transform_weight(weight);
-                    if(weight >= edge_filter_threshold[0] && weight <= edge_filter_threshold[1]){
-                        path_nodes[source_id] = true;
-                        path_nodes[target_id] = true;
-                    }
-                }
-            }
-
+        for (let type of edge_type_range){
+            path = path.concat(all_path[type]);
         }
+        // // path
+        // path = [];
+        // path_nodes = {};
+        // let path_keys = [];//remove duplicates
+        // for(let apath of state.path){
+        //     let node_id = apath[0];
+        //     let mode = apath[1];
+        //     if(mode === "from"){
+        //         let target_id = node_id;
+        //         for(let i=0; i<nodes[target_id].from.length; i++){
+        //             let source_id = nodes[target_id].from[i];
+        //             let weight = nodes[target_id].from_weight[i];
+        //             let key = source_id+","+target_id;
+        //             if(path_keys.indexOf(key) > -1) continue;
+        //             path.push([nodes[source_id], nodes[target_id], weight]);
+        //             path_keys.push(key);
+        //             weight = that.transform_weight(weight);
+        //             if(weight >= edge_filter_threshold[0] && weight <= edge_filter_threshold[1]){
+        //                 path_nodes[source_id] = true;
+        //                 path_nodes[target_id] = true;
+        //             }
+        //         }
+        //     }
+        //     else if(mode === "to"){
+        //         let source_id = node_id;
+        //         for(let i=0; i<nodes[source_id].to.length;i++){
+        //             let target_id = nodes[source_id].to[i];
+        //             let weight = nodes[target_id].to_weight[i];
+        //             let key = source_id+","+target_id;
+        //             if(path_keys.indexOf(key) > -1) continue;
+        //             path.push([nodes[source_id], nodes[target_id], weight]);
+        //             path_keys.push(key);
+        //             weight = that.transform_weight(weight);
+        //             if(weight >= edge_filter_threshold[0] && weight <= edge_filter_threshold[1]){
+        //                 path_nodes[source_id] = true;
+        //                 path_nodes[target_id] = true;
+        //             }
+        //         }
+        //     }
+
+        // }
         // glyphs
         // glyphs = that.get_top_k_uncertainty(nodes, 20);
         // // removed by Changjian for reducing visual clutter
@@ -181,7 +187,7 @@ let GraphLayout = function (container) {
 
     // for debug
     that.set_path = function(){
-        path = that.all_path["between"];
+        path = that.all_path["in"];
         console.log("path", path);
     };
 

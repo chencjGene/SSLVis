@@ -102,7 +102,7 @@ GraphLayout.prototype._create_selection_box = function(){
 
     let cross_group = sg.append("g")
             .attr("class", "cross")
-            .attr("transform", d => "translate("+(d.width - 10)+","+ (10) +")")
+            .attr("transform", d => "translate("+(d.width - 10 * that.zoom_scale)+","+ (10 * that.zoom_scale) +")")
             .on("mouseover", function(){
                 console.log("cross mouse over");
                 d3.select(this).selectAll("line")
@@ -130,14 +130,16 @@ GraphLayout.prototype._create_selection_box = function(){
             .attr("x1", -5 * that.zoom_scale)
             .attr("y1", -5 * that.zoom_scale)
             .attr("x2", 5 * that.zoom_scale)
-            .attr("y2", 5 * that.zoom_scale);
+            .attr("y2", 5 * that.zoom_scale)
+            .style("stroke-width", 2  * that.zoom_scale);
     cross_group.append("line")
             .attr("id", "cross-line-2")
             .attr("class", "cross-line-hide")
             .attr("x1", -5 * that.zoom_scale)
             .attr("y1", 5 * that.zoom_scale)
             .attr("x2", 5 * that.zoom_scale)
-            .attr("y2", -5 * that.zoom_scale);
+            .attr("y2", -5 * that.zoom_scale)
+            .style("stroke-width", 2  * that.zoom_scale);
     cross_group.append("rect")
             .attr("class", "cross-background")
             .attr("x", -5 * 1.5 * that.zoom_scale)
@@ -158,17 +160,19 @@ GraphLayout.prototype._update_selection_box = function(){
         .attr("height", d => d.height)
         .style("stroke-width", 4 * that.zoom_scale);
     let cross_group = sg.select(".cross")
-        .attr("transform", d => "translate("+(d.width - 10)+","+ (10) +")");
+        .attr("transform", d => "translate("+(d.width - 10 * that.zoom_scale)+","+ (10 * that.zoom_scale) +")");
     cross_group.select("#cross-line-1")
         .attr("x1", -5 * that.zoom_scale)
         .attr("y1", -5 * that.zoom_scale)
         .attr("x2", 5 * that.zoom_scale)
-        .attr("y2", 5 * that.zoom_scale);
+        .attr("y2", 5 * that.zoom_scale)
+        .style("stroke-width", 2  * that.zoom_scale);
     cross_group.select("#cross-line-2")
         .attr("x1", -5 * that.zoom_scale)
         .attr("y1", 5 * that.zoom_scale)
         .attr("x2", 5 * that.zoom_scale)
-        .attr("y2", -5 * that.zoom_scale);
+        .attr("y2", -5 * that.zoom_scale)
+        .style("stroke-width", 2  * that.zoom_scale);
     cross_group.select("rect")
         .attr("x", -5 * 1.5 * that.zoom_scale)
         .attr("y", -5 * 1.5 * that.zoom_scale)
@@ -335,6 +339,7 @@ GraphLayout.prototype.show_edges = function(modes){
         edge_type_range.push(i); 
     }
     that.data_manager.update_edge_type_bar(edge_type_data, edge_type_range);
-    that.set_path();
-    that._update_view();
+    // that.set_path();
+    that.data_manager.state.path = that.all_path;
+    that.data_manager.update_graph_view();
 };
