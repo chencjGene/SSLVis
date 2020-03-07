@@ -237,3 +237,16 @@ Array.prototype.delRepeat=function(){
     }
     return newArray;
     }
+
+function delRepeatDictArr(dict_arr){
+    for (let i = 0; i < dict_arr.length; i++){
+        dict_arr[i].visited = false;
+    }
+    let new_arr = [];
+    for (let i = 0; i < dict_arr.length; i++){
+        if (dict_arr[i].visited) continue;
+        new_arr.push(dict_arr[i]);
+        dict_arr[i].visited = true;
+    }
+    return new_arr;
+}

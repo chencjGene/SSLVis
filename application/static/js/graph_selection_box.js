@@ -200,7 +200,7 @@ GraphLayout.prototype._update_selection_box = function(){
 
     // TODO: highlight 
     if (that.selection_box.length > 0){
-        d3.selectAll(".node-dot").attr("r", 3 * that.zoom_scale);
+        d3.selectAll(".node-dot").attr("r", d => that.r(d.id) * that.zoom_scale);
         for (let j = 0; j < that.selection_box.length; j++){
             let selection_idxs = that.selection_box[j].nodes.map(d => d.id);
             // that.highlight(selection_idxs);
@@ -263,8 +263,14 @@ GraphLayout.prototype.get_path = function(){
         "in": [],
         "out": [],
         "within": [],
-        "between": []
+        "between": [],
+        "in_nodes": [],
+        "out_nodes": []
     };
+
+    for (let i in DataLoader.state.complete_graph){
+        DataLoader.state.complete_graph[i].box_id = -1;
+    }
     
     for (let i = 0; i < that.selection_box.length; i++){
         let focus_nodes = that.selection_box[i].nodes;
@@ -298,6 +304,7 @@ GraphLayout.prototype.get_path = function(){
                     }
                     else{
                         path.in.push([from_node, node, from_weight[k]]);
+                        path.in_nodes.push(from_node);
                     }
                 }
             }
@@ -309,6 +316,7 @@ GraphLayout.prototype.get_path = function(){
                     let to_node = DataLoader.state.complete_graph[to[k]];
                     if (!(to_node.box_id !== undefined && to_node.box_id > -1)){
                         path.out.push([node, to_node, to_weight[k]]);
+                        path.out_nodes.push(to_node);
                     }
                 }
             }
@@ -317,12 +325,12 @@ GraphLayout.prototype.get_path = function(){
         }
     }
 
-    for (let i = 0; i < that.selection_box.length; i++){
-        let focus_nodes = that.selection_box[i].nodes;
-        for (let j = 0; j < focus_nodes.length; j++){
-            focus_nodes[j].box_id = -1;
-        }
-    }
+    // for (let i = 0; i < that.selection_box.length; i++){
+    //     let focus_nodes = that.selection_box[i].nodes;
+    //     for (let j = 0; j < focus_nodes.length; j++){
+    //         focus_nodes[j].box_id = -1;
+    //     }
+    // }
 
     that.all_path = path;
     return path;

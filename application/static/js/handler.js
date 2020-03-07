@@ -41,6 +41,10 @@ DataLoaderClass.prototype.get_graph_handler = function (callback) {
         console.log("Get data:", data);
         let complete_graph = data.graph.nodes;
         that.state.complete_graph = complete_graph;
+        // set box id 
+        for (let i in that.state.complete_graph){
+            that.state.complete_graph[i].box_id = -1;
+        }
         let hierarchy = data.hierarchy;
         // TODO: process hierarchy
         for (let i = 0; i < hierarchy.length - 1; i++){

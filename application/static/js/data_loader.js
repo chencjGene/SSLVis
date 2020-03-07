@@ -101,7 +101,9 @@ DataLoaderClass = function () {
             "in": [],
             "out": [],
             "within": [],
-            "between": []
+            "between": [],
+            "in_nodes": [],
+            "out_nodes": []
         },
         is_show_path: false,
         highlights: [],
