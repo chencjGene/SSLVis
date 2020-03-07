@@ -111,8 +111,14 @@ class ExchangePortClass(object):
     def local_update_k(self, data):
         # self.model.local_update(data["selected_idxs"], local_k=3)
         self.model.local_search_k(data["selected_idxs"], list(range(data["range"][0], data["range"][1]+1)), data["selected_categories"])
-
-        return self.fisheye(self.current_ids, data["area"], data["level"], data["wh"])
+        graph = self.anchor.get_nodes(data["wh"])
+        res = {
+            "graph": graph,
+            "area": data["area"],
+            "level": data["level"]
+        }
+        return jsonify(res)
+        # return self.fisheye(self.current_ids, data["area"], data["level"], data["wh"])
         # return jsonify(res)
 
     def get_loss(self):
@@ -204,7 +210,15 @@ class ExchangePortClass(object):
             if id not in data["deleted_idxs"]:
                 remain_ids.append(id)
         self.anchor.data_degree = None
-        return self.fisheye(remain_ids, data["area"], data["level"], data["wh"])
+        graph = self.anchor.get_nodes(data["wh"])
+        res = {
+            "graph": graph,
+            "must_show_ids": remain_ids,
+            "area": data["area"],
+            "level": data["level"]
+        }
+        return jsonify(res)
+        # return self.fisheye(remain_ids, data["area"], data["level"], data["wh"])
 
     def add_new_categories(self, data):
         name = data["name"]

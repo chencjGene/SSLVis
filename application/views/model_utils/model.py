@@ -428,7 +428,7 @@ class SSLModel(object):
         print(s / test_X.shape[0])
         return labels, np.array(adaptive_ks)
 
-    # @async_once
+    @async_once
     def adaptive_evaluation(self, pred=None):
         affinity_matrix = self.data.get_graph()
         affinity_matrix.setdiag(0)

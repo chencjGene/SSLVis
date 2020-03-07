@@ -181,9 +181,25 @@ DataLoaderClass.prototype.local_update_k_handler = function(callback){
 
     function _local_update_k_handler(data){
         console.log("local_update_k_handler", data);
-        that.state.nodes = data.nodes;
+        let complete_graph = data.graph.graph.nodes;
+        that.state.complete_graph = complete_graph;
+        let hierarchy = data.graph.hierarchy;
+        // TODO: process hierarchy
+        for (let i = 0; i < hierarchy.length - 1; i++){
+            let index = hierarchy[i].index;
+            let next = hierarchy[i].next;
 
-        if(callback) callback();
+            let next_index = hierarchy[i + 1].index;
+            for (let j = 0; j < next.length; j++){
+                next[j] = next[j].map(d => next_index[d]);
+            }
+        }
+        that.state.hierarchy = hierarchy;
+        let must_show_nodes = Object.keys(that.state.nodes).map(d => parseInt(d));
+        let area = data.area;
+        let level = data.level;
+
+        if(callback) callback(must_show_nodes, area, level);
     }
     return _local_update_k_handler;
 };
@@ -214,8 +230,27 @@ DataLoaderClass.prototype.update_delete_and_change_label_handler = function(call
     let that = this;
 
     function _update_delete_and_change_label_handler(data){
-        that.state.nodes = data.nodes;
-        if (callback) callback();
+        let complete_graph = data.graph.graph.nodes;
+        that.state.complete_graph = complete_graph;
+        let hierarchy = data.graph.hierarchy;
+        // TODO: process hierarchy
+        for (let i = 0; i < hierarchy.length - 1; i++){
+            let index = hierarchy[i].index;
+            let next = hierarchy[i].next;
+
+            let next_index = hierarchy[i + 1].index;
+            for (let j = 0; j < next.length; j++){
+                next[j] = next[j].map(d => next_index[d]);
+            }
+        }
+        that.state.hierarchy = hierarchy;
+        let must_show_nodes = data.must_show_nodes;
+        let area = data.area;
+        let level = data.level;
+
+
+
+        if (callback) callback(must_show_nodes, area, level);
     }
     return _update_delete_and_change_label_handler;
 };
