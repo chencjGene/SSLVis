@@ -744,9 +744,17 @@ let FilterLayout = function (container) {
             .style("fill", "rgb(127, 127, 127)")
             .attr("x", function(d, i) { return x(i); })
             .attr("width", x.bandwidth())
-            .attr("y", function(d, i) { return y(d/max_len); })
+            .attr("y", function(d, i) {
+                let val = d/max_len;
+                val = Math.max(val, 0.05);
+                val = d===0?d:val;
+                return y(val);
+            })
             .attr("height", function(d) {
-                return container_height*0.85 - y(d/max_len);
+                let val = d/max_len;
+                val = Math.max(val, 0.05);
+                val = d===0?d:val;
+                return container_height*0.85 - y(val);
             })
             .attr("opacity", (d, i) => (i>=range[0]&&i<=range[1])?1:0.5);
         //update
@@ -754,9 +762,17 @@ let FilterLayout = function (container) {
             .duration(AnimationDuration)
             .attr("x", function(d, i) { return x(i); })
             .attr("width", x.bandwidth())
-            .attr("y", function(d, i) { return y(d/max_len); })
+            .attr("y", function(d, i) {
+                let val = d/max_len;
+                val = Math.max(val, 0.05);
+                val = d===0?d:val;
+                return y(val);
+            })
             .attr("height", function(d) {
-                return container_height*0.85 - y(d/max_len);
+                let val = d/max_len;
+                val = Math.max(val, 0.05);
+                val = d===0?d:val;
+                return container_height*0.85 - y(val);
             })
             .attr("opacity", (d, i) => (i>=range[0]&&i<=range[1])?1:0.5);
         //remove

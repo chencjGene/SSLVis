@@ -282,6 +282,7 @@ let GraphHighlight = function (parent) {
                          .attr('d', line([xy0, xy0]))
                         .attr("stroke", "black")
                         .attr("stroke-width", 1);
+                view.data_manager.edit_view.update_click_menu($('#graph-view-svg'), "edges");
             })
             .on('mouseup', function(){
                 keep = false;
@@ -295,11 +296,18 @@ let GraphHighlight = function (parent) {
 
                     }
                 });
+                let path_keys = [];
                 view.main_group.select("#select-edge_path").remove();
                 for(let path of highlight_paths){
                     path.style("stroke-width", 4.0 * view.zoom_scale);
+                    let key = path.datum();
+                    path_keys.push([key[0], key[1]]);
                 }
-                console.log("find paths:", highlight_paths)
+                if(path_keys.length === 0){
+                    view.data_manager.edit_view.remove_menu($("#graph-view-svg"))
+                }
+                view.data_manager.update_edit_state(path_keys, "delete edge");
+                console.log("find paths:", path_keys)
             })
             .on('mousemove', function(){
                 if (keep) {

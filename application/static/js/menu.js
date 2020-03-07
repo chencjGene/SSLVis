@@ -24,6 +24,10 @@ let EditLayout = function(){
         'triggerOn': 'click'
     };
 
+    let mouseup_menu_settings = {
+        'triggerOn': 'mouseup'
+    };
+
     that.data_manager = null;
 
     
@@ -44,72 +48,111 @@ let EditLayout = function(){
         }
         
         that.clean_click_menu();
-        that.update_click_menu($('#main_group'), 1);
-        that.update_click_menu($('#grid-group'), 1);
+        that.update_click_menu($('#graph-tsne-point-g'), "node");
+        that.update_click_menu($('#graph-path-g'), "edge");
+        // that.update_click_menu($('#grid-group'), 1);
     };
 
     that.clean_click_menu = function(){
         d3.selectAll(".iw-curMenu").remove();
     };
 
-    that.update_click_menu = function(container, d){
-        let menu = [];
-        label_names.forEach(function(d, i){
-            let sm = {
-                    title:d,
-                    name:d,
-                    color: label_colors[i],
-                    className: "iw-mnotSelected label-menu-item",
-                    fun:function(){
-                        console.log("click menu", d);
-                        let label = name_2_label_map[d];
-                        that.editing(label);
-                    }
-                };
-                menu.push(sm);
+    that.update_click_menu = function(container, type){
+        if(type === "node"){
+            let menu = [];
+            label_names.forEach(function(d, i){
+                let sm = {
+                        title:d,
+                        name:d,
+                        color: label_colors[i],
+                        className: "iw-mnotSelected label-menu-item",
+                        fun:function(){
+                            console.log("click menu", d);
+                            let label = name_2_label_map[d];
+                            that.editing(label);
+                        }
+                    };
+                    menu.push(sm);
+                });
+            menu.push({
+                title: 'Add',
+                name: '\u2295',
+                color: '',
+                className: "iw-mnotSelected add-menu-item",
+                fun: function () {
+                    console.log("add", d);
+                    // let label = -1;
+                    // that.editing(label);
+                }
             });
-        menu.push({
-            title: 'Add',
-            name: '\u2295',
-            color: '',
-            className: "iw-mnotSelected add-menu-item",
-            fun: function () {
-                console.log("add", d);
-                // let label = -1;
-                // that.editing(label);
-            }
-        });
 
-        click_node_menu = menu;
-        if (menu.length > 0) {
-            $('#graph-tsne-point-g').contextMenu(click_node_menu, click_menu_settings);
+            click_node_menu = menu;
+            if (menu.length > 0) {
+                container.contextMenu(click_node_menu, click_menu_settings);
+            }
+        }
+        else if(type === "edge"){
+            // edge
+            menu = [];
+            // menu.push({
+            //     title: 'Add',
+            //     name: 'Add',
+            //     color: '',
+            //     className: "iw-mnotSelected add-menu-item",
+            //     fun: function () {
+            //         console.log("click add edge menu")
+            //     }
+            // });
+            menu.push({
+                title: 'Delete',
+                name: 'Delete',
+                color: '',
+                className: "iw-mnotSelected add-menu-item",
+                fun: function (d) {
+                    console.log("delete add edge menu", focus_data, focus_mode);
+                    that.editing();
+                }
+            });
+            click_edge_menu = menu;
+            if (menu.length > 0) {
+                container.contextMenu(click_edge_menu, click_menu_settings);
+            }
+        }
+        else if(type === "edges"){
+            console.log("update edges menu");
+            menu = [];
+            // menu.push({
+            //     title: 'Add',
+            //     name: 'Add',
+            //     color: '',
+            //     className: "iw-mnotSelected add-menu-item",
+            //     fun: function () {
+            //         console.log("click add edge menu")
+            //     }
+            // });
+            menu.push({
+                title: 'Delete',
+                name: 'Delete',
+                color: '',
+                className: "iw-mnotSelected add-menu-item",
+                fun: function (d) {
+                    console.log("delete add edge menu", focus_data, focus_mode);
+                    let tmp = focus_data;
+                    for(let data of tmp){
+                        focus_data = data;
+                        that.editing();
+                    }
+                    that.remove_menu($("#graph-view-svg"))
+                }
+            });
+            click_edge_menu = menu;
+            if (menu.length > 0) {
+                container.contextMenu(click_edge_menu, mouseup_menu_settings);
+            }
         }
 
-        // edge 
-        menu = [];
-        // menu.push({
-        //     title: 'Add',
-        //     name: 'Add',
-        //     color: '',
-        //     className: "iw-mnotSelected add-menu-item",
-        //     fun: function () {
-        //         console.log("click add edge menu")
-        //     }
-        // });
-        menu.push({
-            title: 'Delete',
-            name: 'Delete',
-            color: '',
-            className: "iw-mnotSelected add-menu-item",
-            fun: function (d) {
-                console.log("delete add edge menu", focus_data, focus_mode);
-                that.editing();
-            }
-        });
-        click_edge_menu = menu;
-        if (menu.length > 0) {
-            $('#graph-path-g').contextMenu(click_edge_menu, click_menu_settings);
-        }
+
+
 
     };
 
@@ -124,6 +167,10 @@ let EditLayout = function(){
     that.update_focus = function(data, mode){
         focus_data = data;
         focus_mode = mode;
+    };
+
+    that.remove_menu = function(container){
+        container.contextMenu('destroy');
     };
 
     that.editing = function(label){
