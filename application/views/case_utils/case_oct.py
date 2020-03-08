@@ -20,31 +20,31 @@ class CaseOCT(CaseBase):
         categories = [1 for i in range(12)]
         categories[11] = False
 
-        if step >= 1:
-            c = json.loads(open(os.path.join(self.model.selected_dir, "local_1_idxs.txt"), "r").read().strip("\n"))
-            self.model.local_search_k(c, [1, 2, 3, 4], categories, simplifying=False, evaluate=evaluate)
-
-        if step >= 2:
-            e = json.loads(open(os.path.join(self.model.selected_dir, "local_2_idxs.txt"), "r").read().strip("\n"))
-            self.model.local_search_k(e, [1, 2, 3, 4], categories, simplifying=True, evaluate=evaluate)
-
-        if step >= 3:
-            train_pred_step_1 = self.model.get_pred_labels()
-            train_gt = self.model.data.get_train_ground_truth()
-            affinity_matrix = self.model.data.affinity_matrix
-            for i in range(len(train_pred_step_1)):
-                # for i in selected_idxs:
-                #     if i in selected_idxs:
-                #         continue
-                if train_pred_step_1[i] != train_gt[i]:
-                    nei_idx = affinity_matrix[i, :].indices
-                    for s in nei_idx:
-                        if train_gt[i] != train_gt[s]:
-                            affinity_matrix[i, s] = 0
-                            affinity_matrix[s, i] = 0
-
-            self.model.data.affinity_matrix = self.model.data.correct_unconnected_nodes(affinity_matrix)
-            self.model._training(rebuild=False, evaluate=evaluate, simplifying=simplifying)
+        # if step >= 1:
+        #     c = json.loads(open(os.path.join(self.model.selected_dir, "local_1_idxs.txt"), "r").read().strip("\n"))
+        #     self.model.local_search_k(c, [1, 2, 3, 4], categories, simplifying=False, evaluate=evaluate)
+        #
+        # if step >= 2:
+        #     e = json.loads(open(os.path.join(self.model.selected_dir, "local_2_idxs.txt"), "r").read().strip("\n"))
+        #     self.model.local_search_k(e, [1, 2, 3, 4], categories, simplifying=True, evaluate=evaluate)
+        #
+        # if step >= 3:
+        #     train_pred_step_1 = self.model.get_pred_labels()
+        #     train_gt = self.model.data.get_train_ground_truth()
+        #     affinity_matrix = self.model.data.affinity_matrix
+        #     for i in range(len(train_pred_step_1)):
+        #         # for i in selected_idxs:
+        #         #     if i in selected_idxs:
+        #         #         continue
+        #         if train_pred_step_1[i] != train_gt[i]:
+        #             nei_idx = affinity_matrix[i, :].indices
+        #             for s in nei_idx:
+        #                 if train_gt[i] != train_gt[s]:
+        #                     affinity_matrix[i, s] = 0
+        #                     affinity_matrix[s, i] = 0
+        #
+        #     self.model.data.affinity_matrix = self.model.data.correct_unconnected_nodes(affinity_matrix)
+        #     self.model._training(rebuild=False, evaluate=evaluate, simplifying=simplifying)
 
         if step >= 4:
             train_pred_step_2 = self.model.get_pred_labels()

@@ -41,6 +41,7 @@ class CaseSTL(CaseBase):
             cat_idxs = all_labeled_idxs[labeled_y == 3]
             self.model.add_data(cat_idxs, 3)
             self.model._training(rebuild=False, evaluate=True, simplifying=False)
+            self.model._influence_matrix(rebuild=True)
             self.model.adaptive_evaluation_unasync()
         self.model.adaptive_evaluation()
         return
