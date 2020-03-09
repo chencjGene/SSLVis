@@ -477,6 +477,45 @@ let FilterLayout = function (container) {
                 .select("rect")
                 .attr("fill", (d,i) => label_rect[d.label].rect.attr("opacity")==1 ? (d.label===0?color_unlabel:color_label[d.label-1]) : "white")
         }
+
+        // draw label glyph
+        if(label_distribution.length === 11){
+            console.log("STL data");
+            if(container.select("#current-label-glyphs").size() === 0){
+                container.append("g")
+                    .attr("id", "current-label-glyphs");
+            }
+            let glyphs = container.select("#current-label-glyphs").selectAll("use").data(label_distribution);
+            glyphs.enter()
+                .append("use")
+                .attr("xlink:href", (d,i) => "#stl-class-"+(i-1))
+                .attr("x", function(d, i) { return x(i); })
+                .attr("y", function(d, i) {
+                    let offset = 0;
+                    if(d.length/max_len < 0.3) offset = -18;
+
+                    return y(d.length/max_len)+offset;
+                })
+                .attr("width", 18)
+                .attr("height", 18);
+            glyphs
+                .transition()
+                .duration(AnimationDuration)
+                .attr("x", function(d, i) { return x(i); })
+                .attr("y", function(d, i) {
+                    let offset = 0;
+                    if(d.length/max_len < 0.3) offset = -18;
+
+                    return y(d.length/max_len)+offset;
+                })
+                .attr("width", 18)
+                .attr("height", 18);
+
+            glyphs.exit()
+            .transition()
+            .duration(AnimationDuration)
+            .remove();
+        }
     };
 
     that.update_widget_showing_items = function(ids) {
