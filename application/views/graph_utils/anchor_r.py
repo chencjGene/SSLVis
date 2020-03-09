@@ -65,6 +65,7 @@ class Anchors:
         else:
             self.hierarchy_info_path = os.path.join(self.selected_dir, "hierarchy_info" + config.pkl_ext)
             self.tsne_path = os.path.join(self.selected_dir, "tsne.npy")
+        print("tsne path:{}".format(self.tsne_path))
         self.matrix_path = os.path.join(self.selected_dir, "matrix.npy")
         self.full_x = self.data.get_full_train_X()
         self.old_nodes_id = []
@@ -404,6 +405,7 @@ class Anchors:
             level["index"] = level["index"].tolist()
         selection = np.array(self.hierarchy_info[0]["index"]).tolist()
         all_node_num = len(self.tsne)
+        print(all_node_num)
         for id in self.remove_ids:
             if id in selection:
                 selection.remove(id)
@@ -507,9 +509,9 @@ class Anchors:
                 "to_weight":[]
             }
             for from_edge in samples_nodes[id]["from"]:
-                samples_nodes[id]["from_weight"].append(float(np.round(influence_matrix[m[id], m[from_edge]], 6)))
+                samples_nodes[id]["from_weight"].append(float(np.round(influence_matrix[m[id], m[from_edge]], 10)))
             for to_edge in samples_nodes[id]["to"]:
-                samples_nodes[id]["to_weight"].append(float(np.round(influence_matrix[m[to_edge], m[id]], 6)))
+                samples_nodes[id]["to_weight"].append(float(np.round(influence_matrix[m[to_edge], m[id]], 10)))
         graph = {
             "nodes":samples_nodes
         }

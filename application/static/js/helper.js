@@ -137,26 +137,70 @@ let oneD_sum = function(vec){
 };
 
 
-let curve_mid = function (u, v) {
-        let mid = [(u[0]+v[0])/2, (u[1]+v[1])/2];
-        // console.log(Math.sqrt(Math.pow(u[0]-v[0], 2), Math.pow(u[1]-v[1], 2)))
-        // let c = Math.sqrt(Math.pow(u[0]-v[0], 2), Math.pow(u[1]-v[1], 2))*0.3;
-        let c = 800+(Math.random()-0.5)*5;
-        if(u[1] === v[1]) {
-            u[1] += 0.00005
+let curve_mid = function (u, v, radius) {
+        function distance(u, v) {
+            return Math.sqrt(Math.pow(v[0] - u[0], 2) + Math.pow(v[1] - u[1], 2));
         }
-        let tmp = Math.sqrt(c/(1+Math.pow((u[0]-v[0])/(u[1]-v[1]), 2)));
-        let res_x1 = tmp+(u[0]+v[0])/2;
-        let res_x2 = -tmp+(u[0]+v[0])/2;
-        let res_y1 = (u[0]-v[0])*(res_x1-(u[0]+v[0])/2)/(v[1]-u[1])+(u[1]+v[1])/2;
-        let res_y2 = (u[0]-v[0])*(res_x2-(u[0]+v[0])/2)/(v[1]-u[1])+(u[1]+v[1])/2;
-        if((res_x1-(u[0]+v[0])/2)*(v[1]-u[1])-(v[0]-u[0])*(res_y1-(u[1]+v[1])/2) < 0){
-            return [res_x1, res_y1]
+        // let mid = [(u[0]+v[0])/2, (u[1]+v[1])/2];
+        // // console.log(Math.sqrt(Math.pow(u[0]-v[0], 2), Math.pow(u[1]-v[1], 2)))
+        // // let c = Math.sqrt(Math.pow(u[0]-v[0], 2), Math.pow(u[1]-v[1], 2))*0.3;
+        // let c = 800+(Math.random()-0.5)*5;
+        // if(u[1] === v[1]) {
+        //     u[1] += 0.00005
+        // }
+        // let tmp = Math.sqrt(c/(1+Math.pow((u[0]-v[0])/(u[1]-v[1]), 2)));
+        // let res_x1 = tmp+(u[0]+v[0])/2;
+        // let res_x2 = -tmp+(u[0]+v[0])/2;
+        // let res_y1 = (u[0]-v[0])*(res_x1-(u[0]+v[0])/2)/(v[1]-u[1])+(u[1]+v[1])/2;
+        // let res_y2 = (u[0]-v[0])*(res_x2-(u[0]+v[0])/2)/(v[1]-u[1])+(u[1]+v[1])/2;
+        // if((res_x1-(u[0]+v[0])/2)*(v[1]-u[1])-(v[0]-u[0])*(res_y1-(u[1]+v[1])/2) < 0){
+        //     return [res_x1, res_y1]
+        // }
+        // else {
+        //     return [res_x2, res_y2]
+        // }
+    let mid = [(u[0]+v[0])/2, (u[1]+v[1])/2];
+    let a = distance(mid, u);
+    let r = radius;
+    let b = Math.sqrt(r*r-a*a);
+    let xa = mid[0]-u[0];
+    let ya = mid[1]-u[1];
+    let res_x1 = mid[0] + b*ya/a;
+    let res_y1 = mid[1] - b*xa/a;
+    let res_x2 = mid[0] - b*ya/a;
+    let res_y2 = mid[1] + b*xa/a;
+    if((Math.abs(distance([res_x1, res_y1], u)-r)>1e-4) ||
+    (Math.abs(distance([res_x1, res_y1], v)-r)>1e-4)||
+    (Math.abs(distance([res_x2, res_y2], u)-r)>1e-4)||
+    (Math.abs(distance([res_x2, res_y2], v)-r)>1e-4)){
+        console.log("R ERROR!!!!!!!!!");
+        return false
+    }
+    let center = [];
+    if((res_x1-(u[0]+v[0])/2)*(v[1]-u[1])-(v[0]-u[0])*(res_y1-(u[1]+v[1])/2) < 0){
+            center = [res_x1, res_y1]
+    }
+    else {
+        center = [res_x2, res_y2]
+    }
+    let c = a*a/b;
+    let mid_center = [center[0]-mid[0], center[1]-mid[1]];
+    let res_mid = [mid_center[0]*c/b, mid_center[1]*c/b];
+    let res = [mid[0]-res_mid[0], mid[1]-res_mid[1]];
+    return res;
+
+};
+
+let get_vector_degree = function (u, v) {
+    function distance(u, v) {
+            return Math.sqrt(Math.pow(v[0] - u[0], 2) + Math.pow(v[1] - u[1], 2));
         }
-        else {
-            return [res_x2, res_y2]
-        }
-}
+    let multi = u[0]*v[0]+u[1]*v[1];
+    let u_dis = distance(u,[0,0]);
+    let v_dis = distance(v,[0,0]);
+    let cos = multi/(u_dis*v_dis);
+    return Math.acos(cos);
+};
 
 function deepCopy(obj) {
     let _obj = Array.isArray(obj) ? [] : {}

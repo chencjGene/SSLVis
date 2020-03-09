@@ -25,5 +25,5 @@ GraphLayout.prototype.get_top_k_uncertainty = function(nodes, k) {
 };
 
 GraphLayout.prototype.transform_weight = function (weight) {
-    return Math.pow(weight, 1/5)
+    return Math.pow(weight, 1/7)
 };

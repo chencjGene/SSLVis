@@ -29,6 +29,7 @@ let GraphLayout = function (container) {
     let update_ani = AnimationDuration;
     let remove_ani = AnimationDuration * 0.1;
     let pathGenerator = d3.line().curve(d3.curveCardinal.tension(0.5));
+    let path_curve = 1;
 
     // draw containter
     let path_group = null;
@@ -62,6 +63,10 @@ let GraphLayout = function (container) {
     ];
     let edge_filter_threshold = 0;
     that.focus_nodes = [];
+    let path_line = d3.line()
+			.x(function(d){ return d.x; })
+                        .y(function(d){ return d.y; })
+                        .curve(d3.curveLinear);
 
     // from area to main group
     that.center_scale_x = null;
@@ -181,6 +186,33 @@ let GraphLayout = function (container) {
             let glyphs_ary = nodes_ary.filter(d => glyphs.indexOf(d.id)>-1);
             let path_ary = path;
 
+            let nodes_dict = {};
+            for(let node of nodes){
+                nodes_dict[node.id] = node;
+            }
+            // let fbundling = d3.ForceEdgeBundling()
+			// 	.nodes(nodes_dict)
+			// 	.edges(path_ary.map(function (d) {
+            //         return {
+			// 	    "source":d[0].id,
+            //         "target":d[1].id
+			// 	    }
+            //     }).filter(d => d.source !== d.target));
+            // let res = fbundling();
+            // for(let line of res){
+            //     for(let path_node_id = 0; path_node_id < line.length; path_node_id++){
+            //         if(path_node_id === 0 || path_node_id === line.length-1){
+            //             let tmp = line[path_node_id];
+            //             line[path_node_id] = {};
+            //             line[path_node_id].x = tmp.x;
+            //             line[path_node_id].y = tmp.y;
+            //         }
+            //         line[path_node_id].x  = that.center_scale_x(line[path_node_id].x);
+            //         line[path_node_id].y  = that.center_scale_y(line[path_node_id].y);
+            //     }
+            // }
+            // path_ary = path_ary.map((d,i) => d.concat([res[i]]));
+            // console.log("bundling res", path_ary);
             nodes_in_group = nodes_group.selectAll("circle")
                 .data(nodes_ary, d => d.id);
             golds_in_group = golds_group.selectAll("path")
@@ -316,10 +348,17 @@ let GraphLayout = function (container) {
                 .transition()
                 .duration(AnimationDuration)
                 .attr("d", function (d) {
+                    // return path_line(d[3]);
                     let begin = [that.center_scale_x(d[0].x), that.center_scale_y(d[0].y)];
                     let end = [that.center_scale_x(d[1].x), that.center_scale_y(d[1].y)];
-                    let mid = curve_mid(begin, end);
-                    return pathGenerator([begin,mid, end]);
+
+                    let dis = Math.sqrt(Math.pow(begin[0]-end[0], 2) + Math.pow(begin[1]-end[1], 2));
+                    let radius = dis*path_curve;
+                    let mid = curve_mid(begin, end, radius);
+                    let path = d3.path();
+                    path.moveTo(begin[0], begin[1]);
+                    path.arcTo(mid[0], mid[1], end[0], end[1], radius);
+                    return path.toString();
                 })
                 .attr("opacity", d => that.opacity_path(d))
                 .on("end", resolve);
@@ -436,10 +475,17 @@ let GraphLayout = function (container) {
                 .attr("marker-mid", d => "url(#arrow-gray)")
                 .attr("fill", "none")
                 .attr("d", function (d) {
+                    // return path_line(d[3])
                     let begin = [that.center_scale_x(d[0].x), that.center_scale_y(d[0].y)];
                     let end = [that.center_scale_x(d[1].x), that.center_scale_y(d[1].y)];
-                    let mid = curve_mid(begin, end);
-                    return pathGenerator([begin,mid, end]);
+
+                    let dis = Math.sqrt(Math.pow(begin[0]-end[0], 2) + Math.pow(begin[1]-end[1], 2));
+                    let radius = dis*path_curve;
+                    let mid = curve_mid(begin, end, radius);
+                    let path = d3.path();
+                    path.moveTo(begin[0], begin[1]);
+                    path.arcTo(mid[0], mid[1], end[0], end[1], radius);
+                    return path.toString();
                 })
                 .on("mouseover", function (d) {
                             console.log(d);
@@ -605,10 +651,17 @@ let GraphLayout = function (container) {
             .transition()
             .duration(AnimationDuration)
             .attr("d", function (d) {
-            let begin = [that.center_scale_x(d[0].x), that.center_scale_y(d[0].y)];
-            let end = [that.center_scale_x(d[1].x), that.center_scale_y(d[1].y)];
-            let mid = curve_mid(begin, end);
-            return pathGenerator([begin,mid, end]);
+                // return path_line(d[3]);
+                let begin = [that.center_scale_x(d[0].x), that.center_scale_y(d[0].y)];
+                    let end = [that.center_scale_x(d[1].x), that.center_scale_y(d[1].y)];
+
+                    let dis = Math.sqrt(Math.pow(begin[0]-end[0], 2) + Math.pow(begin[1]-end[1], 2));
+                    let radius = dis*path_curve;
+                    let mid = curve_mid(begin, end, radius);
+                    let path = d3.path();
+                    path.moveTo(begin[0], begin[1]);
+                    path.arcTo(mid[0], mid[1], end[0], end[1], radius);
+                    return path.toString();
             })
             .attr("stroke-width", 1.7 * that.zoom_scale);
         let arc = d3.arc().outerRadius(11 * that.zoom_scale).innerRadius(7 * that.zoom_scale);
@@ -626,10 +679,17 @@ let GraphLayout = function (container) {
         path_in_group
 
             .attr("d", function (d) {
+                // return path_line(d[3]);
             let begin = [that.center_scale_x(d[0].x), that.center_scale_y(d[0].y)];
-            let end = [that.center_scale_x(d[1].x), that.center_scale_y(d[1].y)];
-            let mid = curve_mid(begin, end);
-            return pathGenerator([begin,mid, end]);
+                    let end = [that.center_scale_x(d[1].x), that.center_scale_y(d[1].y)];
+
+                    let dis = Math.sqrt(Math.pow(begin[0]-end[0], 2) + Math.pow(begin[1]-end[1], 2));
+                    let radius = dis*path_curve;
+                    let mid = curve_mid(begin, end, radius);
+                    let path = d3.path();
+                    path.moveTo(begin[0], begin[1]);
+                    path.arcTo(mid[0], mid[1], end[0], end[1], radius);
+                    return path.toString();
             })
             .attr("stroke-width", 1.7 * that.zoom_scale);
         let arc = d3.arc().outerRadius(11 * that.zoom_scale).innerRadius(7 * that.zoom_scale);
@@ -686,7 +746,7 @@ let GraphLayout = function (container) {
         transform_plg.fetch_points(select_ids, new_nodes, type, data);
     };
 
-    that.highlight = function(ids){
+    that.highlight = function(ids) {
         // highlight_plg.highlight(nodes, ids);
         that.focus_nodes = ids.map(d => DataLoader.state.complete_graph[d]);
         that.show_edges();
