@@ -22,6 +22,8 @@ from ..graph_utils.RandomSampler import random_sample
 from sklearn.neighbors import BallTree
 from ..graph_utils.aggregation import Aggregation
 
+
+
 class Anchors:
     def __init__(self):
         # path value
@@ -57,8 +59,12 @@ class Anchors:
         self.model = sslmodel
         self.data = sslmodel.data
         self.selected_dir = self.model.data.selected_dir
-        self.hierarchy_info_path = os.path.join(self.selected_dir, "hierarchy_info" + config.pkl_ext)
-        self.tsne_path = os.path.join(self.selected_dir, "tsne.npy")
+        if config.use_add_tsne:
+            self.hierarchy_info_path = os.path.join(self.selected_dir, "add_hierarchy_info" + config.pkl_ext)
+            self.tsne_path = os.path.join(self.selected_dir, "add_tsne.npy")
+        else:
+            self.hierarchy_info_path = os.path.join(self.selected_dir, "hierarchy_info" + config.pkl_ext)
+            self.tsne_path = os.path.join(self.selected_dir, "tsne.npy")
         self.matrix_path = os.path.join(self.selected_dir, "matrix.npy")
         self.full_x = self.data.get_full_train_X()
         self.old_nodes_id = []
@@ -397,7 +403,7 @@ class Anchors:
         for level in self.hierarchy_info:
             level["index"] = level["index"].tolist()
         selection = np.array(self.hierarchy_info[0]["index"]).tolist()
-        all_node_num = len(self.model.data.train_idx)
+        all_node_num = len(self.tsne)
         for id in self.remove_ids:
             if id in selection:
                 selection.remove(id)

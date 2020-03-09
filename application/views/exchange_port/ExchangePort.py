@@ -100,6 +100,10 @@ class ExchangePortClass(object):
         return dist
 
     def get_graph(self, filter_threshold=None, wh = 1):
+        if self.case_util.base_config["step"] >= 5:
+            config.use_add_tsne = True
+        else:
+            config.use_add_tsne = False
         res = self.anchor.get_nodes(wh)
         graph = res["graph"]
         for id in graph["nodes"]:

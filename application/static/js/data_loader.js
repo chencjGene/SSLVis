@@ -162,6 +162,7 @@ DataLoaderClass = function () {
                 }
                 that.get_dist_view(show_ids);
                 that.update_graph_view();
+                that.get_history();
             }), "json", "POST");
 
         // that.fisheye_graph_node = new request_node(that.fisheye_graph_url + params,
@@ -259,6 +260,7 @@ DataLoaderClass = function () {
                 }
                 that.get_dist_view(show_ids);
                 that.update_graph_view();
+                that.get_history();
             }), "json", "POST");
         // let data = {selected_idxs};
         data = that.setting_view.get_local_update_setting();
@@ -346,6 +348,13 @@ DataLoaderClass = function () {
         let data = {"id": id};
         that.set_history_node.set_data(data);
         that.set_history_node.notify();
+    };
+
+    that.get_history = function(){
+        let params = "?dataset=" + that.dataset;
+        that.get_history_node = new request_node(that.get_history_url + params,
+            that.update_history_handler(that.update_history_view), "json", "GET");
+        that.get_history_node.notify();
     };
 
     that.change_dist_mode = function(){

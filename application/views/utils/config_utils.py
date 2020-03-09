@@ -83,6 +83,7 @@ class Config(object):
             "sampling_min_dis": 100
         }
         self.show_simplified = True
+        self.use_add_tsne = True
 
 
 

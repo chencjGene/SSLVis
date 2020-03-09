@@ -173,7 +173,9 @@ class SSLModel(object):
 
         logger.info("_training finished!!!!!!!!")
 
-    def _influence_matrix(self):
+    def _influence_matrix(self, rebuild = False):
+        if self.influence_matrix is not None and (not DEBUG) and (not rebuild):
+            return
         affinity_matrix = self.data.get_graph(self.n_neighbor)
         laplacian = build_laplacian_graph(affinity_matrix)
         train_y = self.data.get_train_label()
@@ -181,7 +183,7 @@ class SSLModel(object):
         influence_matrix_path = os.path.join(self.selected_dir,
                                              "{}_{}_influence_matrix.pkl"
                                              .format(self.alpha, self.n_neighbor))
-        if os.path.exists(influence_matrix_path) and (not DEBUG):
+        if os.path.exists(influence_matrix_path) and (not DEBUG) and (not rebuild):
             logger.info("influence_matrix exist!!!")
             self.influence_matrix = pickle_load_data(influence_matrix_path)
             return
@@ -190,7 +192,8 @@ class SSLModel(object):
         self.influence_matrix = \
             approximated_influence(self.unnorm_dist, affinity_matrix,
                                    laplacian, self.alpha, train_y, self.n_iters)
-        pickle_save_data(influence_matrix_path, self.influence_matrix)
+        if not rebuild:
+            pickle_save_data(influence_matrix_path, self.influence_matrix)
         return
 
     def fetch_simplify_influence_matrix(self):

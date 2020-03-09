@@ -455,12 +455,16 @@ class GraphData(Data):
                 pre_data = self.state_data[pre_data_state.name]
                 now_affinity = data["affinity_matrix"]
                 pre_affinity = pre_data["affinity_matrix"]
-                # added edges
-                dist[0] = (now_affinity[pre_affinity == 0] == 1).sum()
-                # removed edges
-                dist[1] = (now_affinity[pre_affinity == 1] == 0).sum()
+                # # added edges
+                # dist[0] = (now_affinity[pre_affinity == 0] == 1).sum()
+                # # removed edges
+                # dist[1] = (now_affinity[pre_affinity == 1] == 0).sum()
+                # edge changes
+                dist[0] = ((now_affinity + pre_affinity) == 1).sum()
+                # added labels
+                dist[1] = sum(data["train_y"] != -1) - sum(pre_data["train_y"] != -1)
                 # removed instances
-                dist[2] = len(pre_data["train_idx"]) - len(data["train_idx"])
+                dist[2] = len(data["train_idx"]) - len(pre_data["train_idx"])
                 # label changes
                 pre_label = pre_data["pred"].argmax(axis=1)
                 pre_label[pre_data["pred"].max(axis=1) == 0] = -1
