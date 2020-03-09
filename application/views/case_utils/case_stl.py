@@ -10,8 +10,9 @@ class CaseSTL(CaseBase):
         dataname = config.stl
         super(CaseSTL, self).__init__(dataname)
 
-    def run(self, k=6, evaluate=True, simplifying=False):
-        step = self.base_config["step"]
+    def run(self, k=6, evaluate=True, simplifying=False, step=None):
+        if step is None:
+            step = self.base_config["step"]
         self._init_model(k=k, evaluate=evaluate, simplifying=simplifying)
         if step >= 1:
             self.model.data.label_instance(
@@ -25,7 +26,7 @@ class CaseSTL(CaseBase):
         if step >= 2:
             c = json.loads(open(os.path.join(self.model.selected_dir, "local_1_idxs.txt"), "r").read().strip("\n"))
             self.model.local_search_k(c, [1, 2, 3, 4], categories, simplifying=False, evaluate=True)
-        
+
         if step >= 3:
             e = json.loads(open(os.path.join(self.model.selected_dir, "local_2_idxs.txt"), "r").read().strip("\n"))
             self.model.local_search_k(e, [1, 2, 3, 4], categories, simplifying=True, evaluate=True)
