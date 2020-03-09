@@ -298,49 +298,49 @@ f: {
 	};
 
 	that._create = function(){
-		let groups = svg.selectAll("g")
-			.data(that.check_list)
-			.enter()
-			.append("g")
-			.attr("transform", (d,i) => "translate("+ (rect_width * 1.1 * i) + 
-				"," + (30 - rect_width / 2) +")")
-			.on("click", function(d, i){
-				that.check_list[i] = !that.check_list[i];
-				d3.select(this)
-					.select("rect")
-					.attr("fill", that.check_list[i] ? CategoryColor[i] : "white");
-			});
-		groups.append("rect")
-			.attr("x", 0)
-			.attr("y", 0)
-			.attr("width", rect_width)
-			.attr("height", rect_width)
-			.attr("rx", rect_width / 4)
-			.attr("ry", rect_width / 4)
-			.attr("fill", (d,i) => that.check_list[i] ? CategoryColor[i] : "white")
-			.attr("stroke", (d,i) => CategoryColor[i]);
-		groups.append("text")
-			.style("stroke", "white")
-			.style("fill", "white")
-			.attr("text-anchor", "middle")
-			.attr("x", rect_width / 2)
-			.attr("y", rect_width / 2 + 6)
-			.text("\u2714");
+		// let groups = svg.selectAll("g")
+		// 	.data(that.check_list)
+		// 	.enter()
+		// 	.append("g")
+		// 	.attr("transform", (d,i) => "translate("+ (rect_width * 1.1 * i) + 
+		// 		"," + (30 - rect_width / 2) +")")
+		// 	.on("click", function(d, i){
+		// 		that.check_list[i] = !that.check_list[i];
+		// 		d3.select(this)
+		// 			.select("rect")
+		// 			.attr("fill", that.check_list[i] ? CategoryColor[i] : "white");
+		// 	});
+		// groups.append("rect")
+		// 	.attr("x", 0)
+		// 	.attr("y", 0)
+		// 	.attr("width", rect_width)
+		// 	.attr("height", rect_width)
+		// 	.attr("rx", rect_width / 4)
+		// 	.attr("ry", rect_width / 4)
+		// 	.attr("fill", (d,i) => that.check_list[i] ? CategoryColor[i] : "white")
+		// 	.attr("stroke", (d,i) => CategoryColor[i]);
+		// groups.append("text")
+		// 	.style("stroke", "white")
+		// 	.style("fill", "white")
+		// 	.attr("text-anchor", "middle")
+		// 	.attr("x", rect_width / 2)
+		// 	.attr("y", rect_width / 2 + 6)
+		// 	.text("\u2714");
 	};
 
 	that._update = function(){
-		let groups = svg.selectAll("g")
-			.data(that.check_list)
-			.attr("transform", (d,i) => "translate("+ (rect_width * 1.1 * i) + 
-				"," + (30 - rect_width / 2) +")");
+		// let groups = svg.selectAll("g")
+		// 	.data(that.check_list)
+		// 	.attr("transform", (d,i) => "translate("+ (rect_width * 1.1 * i) + 
+		// 		"," + (30 - rect_width / 2) +")");
 	};
 
 	that._remove = function(){
-		let groups = svg.selectAll("g")
-			.data(that.check_list)
-			.exit();
+		// let groups = svg.selectAll("g")
+		// 	.data(that.check_list)
+		// 	.exit();
 
-		groups.remove();
+		// groups.remove();
 	};
 
 

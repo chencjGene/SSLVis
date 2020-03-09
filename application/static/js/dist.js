@@ -552,53 +552,53 @@ let DistLayout = function (container) {
         console.log("begin create_legend", label_names);
 
         // rectangle version
-        // legend_group.selectAll("rect.legend")
-        //     .data(label_names)
-        //     .enter()
-        //     .append("rect")
-        //     .attr("class", "legend")
-        //     .attr("width", rect_width)
-        //     .attr("height", rect_height)
-        //     .attr("x", (d,i) => (rect_width * i + rect_margin * i))
-        //     .attr("y", 0)
-        //     .attr("fill", (d,i) => colors[i]);
-        // legend_group.selectAll("text.legend")
-        //     .data(label_names)
-        //     .enter()
-        //     .append("text")
-        //     .attr("class", "legend")
-        //     .attr("x", (d,i) => (rect_width * i + rect_margin * i + rect_width / 2))
-        //     .attr("y", rect_height / 2 + 5)
-        //     .attr("text-anchor", "middle")
-        //     .attr("font-size", 15)
-        //     .attr("fill", FontColor)
-        //     .text(d => d);
-
-        // circle version
-        legend_group.selectAll("circle.legend")
+        legend_group.selectAll("rect.legend")
             .data(label_names)
             .enter()
-            .append("circle")
+            .append("rect")
             .attr("class", "legend")
-            .attr("cx", (d,i) => (rect_width * i + rect_margin * i))
-            .attr("cy", rect_height / 2)
-            .attr("r", 4)
+            .attr("width", rect_height)
+            .attr("height", rect_height)
+            .attr("x", (d,i) => (rect_width * i + rect_margin * i))
+            .attr("y", 0)
             .attr("fill", (d,i) => colors[i]);
         legend_group.selectAll("text.legend")
             .data(label_names)
             .enter()
             .append("text")
             .attr("class", "legend")
-            .attr("x", (d,i) => (rect_width * i + rect_margin * i + 10))
+            .attr("x", (d,i) => (rect_width * i + rect_margin * i + rect_height + 2))
             .attr("y", rect_height / 2 + 5)
             .attr("text-anchor", "start")
             .attr("font-size", 15)
             .attr("fill", FontColor)
-            .text(d => d)
-            .each(function () {
-                let text = d3.select(this);
-                set_font(text);
-            });
+            .text(d => d);
+
+        // circle version
+        // legend_group.selectAll("circle.legend")
+        //     .data(label_names)
+        //     .enter()
+        //     .append("circle")
+        //     .attr("class", "legend")
+        //     .attr("cx", (d,i) => (rect_width * i + rect_margin * i))
+        //     .attr("cy", rect_height / 2)
+        //     .attr("r", 4)
+        //     .attr("fill", (d,i) => colors[i]);
+        // legend_group.selectAll("text.legend")
+        //     .data(label_names)
+        //     .enter()
+        //     .append("text")
+        //     .attr("class", "legend")
+        //     .attr("x", (d,i) => (rect_width * i + rect_margin * i + 10))
+        //     .attr("y", rect_height / 2 + 5)
+        //     .attr("text-anchor", "start")
+        //     .attr("font-size", 15)
+        //     .attr("fill", FontColor)
+        //     .text(d => d)
+        //     .each(function () {
+        //         let text = d3.select(this);
+        //         set_font(text);
+        //     });
     };
 
     that._update = function () {
@@ -674,24 +674,23 @@ let DistLayout = function (container) {
     };
 
     that._update_legend = function(){
-        legend_group.selectAll("circle.legend")
-            .data(label_names)
-            .attr("cx", (d,i) => (rect_width * i + rect_margin * i))
-            .attr("cy", rect_height / 2)
-            .attr("r", 4)
-            .attr("fill", (d,i) => colors[i]);
-        legend_group.selectAll("text.legend")
-            .data(label_names)
-            .attr("x", (d,i) => (rect_width * i + rect_margin * i + 10))
-            .attr("y", rect_height / 2 + 5)
-            .attr("text-anchor", "start")
-            .attr("font-size", 15)
-            .attr("fill", FontColor)
-            .text(d => d)
-            .each(function () {
-                let text = d3.select(this);
-                set_font(text);
-            });
+        // legend_group.selectAll("circle.legend")
+        //     .data(label_names)
+        //     .attr("x", (d,i) => (rect_width * i + rect_margin * i))
+        //     .attr("y", rect_height / 2)
+        //     .attr("fill", (d,i) => colors[i]);
+        // legend_group.selectAll("text.legend")
+        //     .data(label_names)
+        //     .attr("x", (d,i) => (rect_width * i + rect_margin * i + 10))
+        //     .attr("y", rect_height / 2 + 5)
+        //     .attr("text-anchor", "start")
+        //     .attr("font-size", 15)
+        //     .attr("fill", FontColor)
+        //     .text(d => d)
+        //     .each(function () {
+        //         let text = d3.select(this);
+        //         set_font(text);
+        //     });
     };
 
     that._update_selected_flows = function(){
