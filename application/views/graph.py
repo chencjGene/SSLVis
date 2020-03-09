@@ -158,3 +158,8 @@ def app_new_categories():
 def app_get_labels():
     ids = json.loads(request.form["img_ids"])
     return get_data_labels(ids)
+
+@graph.route("/graph/entropy", methods=["POST"])
+def app_get_entropy():
+    ids = json.loads(request.form["img_ids"])
+    return get_img_entropy(ids)

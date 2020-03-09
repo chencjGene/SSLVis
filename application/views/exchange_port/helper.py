@@ -86,3 +86,6 @@ def get_img_neighbors(ids, k):
 
 def get_data_labels(ids):
     return exchange_port.get_img_labels(ids)
+
+def get_img_entropy(ids):
+    return exchange_port.get_img_entropy(ids)

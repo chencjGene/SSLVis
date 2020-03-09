@@ -398,6 +398,7 @@ DataLoaderClass = function () {
     that.update_filter_view = function() {
         console.log("update filter view");
         that.filter_view.component_update({
+            "label_names": that.state.label_names,
             "uncertainty_widget_data": that.state.uncertainty_widget_data,
             "uncertainty_widget_range": that.state.uncertainty_widget_range,
             "label_widget_data": that.state.label_widget_data,

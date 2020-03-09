@@ -29,6 +29,7 @@ let ImageLayout = function (container){
     let shortAnimationDuration = 10;
     let get_neighbors_url = "/info/neighbors";
     let get_label_url = "/graph/label";
+    let get_entropy_url = "/graph/entropy";
     let x_grid_num = parseInt((layout_width-5)/(grid_offset+grid_size));
     let color_unlabel = "#A9A9A9";
     let color_label = d3.schemeCategory10;
@@ -39,7 +40,7 @@ let ImageLayout = function (container){
     let img_grid_urls = [];
     let img_neighbors_ids = [];
     let show_neighbor_mode = false;
-    let k_num = 5;
+    let k_num = 6;
     let current_mode = "grid";
 
     let data_manager = null;
@@ -123,6 +124,16 @@ let ImageLayout = function (container){
             acc.push(url.id);
             return acc;
         }, []);
+        await that.get_img_entropy(ids);
+        img_grid_urls.sort(function (a, b) {
+            return b.entropy - a.entropy;
+        });
+        console.log("sorted urls:", img_grid_urls);
+        ids = img_grid_urls.reduce(function (acc, url) {
+            acc.push(url.id);
+            return acc;
+        }, []);
+        console.log("sorted ids:", ids);
         await that.get_neighbors_data(ids);
         await that.get_image_label(img_neighbors_ids.reduce(function (acc, url) {
             acc.push(url.id);
@@ -451,6 +462,21 @@ let ImageLayout = function (container){
                     img_neighbors_ids = img_neighbors_ids.concat(neighbor)
                 }
                 console.log("Get neighbors:", img_neighbors_ids);
+                resolve();
+            })
+        })
+    };
+
+    that.get_img_entropy = function(img_ids) {
+        return new Promise(function (resolve, reject) {
+            $.post(get_entropy_url, {
+                img_ids:JSON.stringify(img_ids)
+            },function (d) {
+                let entropys = d;
+                for(let idx=0; idx<entropys.length; idx++){
+                    img_grid_urls[idx].entropy = entropys[idx];
+                }
+                console.log("Get entropys:", img_grid_urls);
                 resolve();
             })
         })
