@@ -286,18 +286,7 @@ label.field.focused .psuedo_select ul {
   flex-direction: column;
   flex: 6 1 160px;
 }
-#toolbar-title {
-  width: 100%;
-  height: 40px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 14px;
-  border-bottom: 1px solid #c1c1c1;
-  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
-  border-top: 1px solid #c1c1c1;
-  font-weight: 500;
-}
+
 .pulldown-icon {
   font-size: 12px;
   margin-left: 80%;

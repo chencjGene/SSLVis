@@ -8,8 +8,8 @@ let DistLayout = function (container) {
 
     let bbox = that.container.node().getBoundingClientRect();
     // overall layout
-    let width = bbox.width;
-    let height = bbox.height;
+    let width = bbox.width-20;
+    let height = bbox.height-20;
     let x_shift = 40;
     // legend layout
     let legend_hight = 25;
