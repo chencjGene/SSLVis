@@ -32,6 +32,7 @@ def build_laplacian_graph(affinity_matrix):
 
 def propagation(graph_matrix, affinity_matrix, train_y, alpha=0.2, max_iter=30,
                 tol=1e-12, process_record=False, normalized=False):
+    t0 = time()
     y = np.array(train_y)
     # label construction
     # construct a categorical distribution for classification only
@@ -155,6 +156,8 @@ def propagation(graph_matrix, affinity_matrix, train_y, alpha=0.2, max_iter=30,
         all_loss = all_loss[:new_iter_num + 1]
         all_entropy[new_iter_num] = all_entropy[n_iter_ - 1]
         all_entropy = all_entropy[:new_iter_num + 1]
+
+    print("propagation time:", time() - t0)
 
     return label_distributions_, all_loss, all_entropy, process_data, unnorm_dist
 
