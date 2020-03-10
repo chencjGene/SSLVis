@@ -342,6 +342,7 @@ function delRepeatDictArr(dict_arr){
 }
 
 
+
 function variableWidthPath(src, target, src_width, target_width) {
     let gap = 15;
     let src_to_target_norm_vector = {
@@ -387,3 +388,110 @@ function variableWidthPath(src, target, src_width, target_width) {
             fourth_point.x - third_point.x, fourth_point.y - third_point.y, 1.8 * length
   )}
 }
+
+var intersect = function(rect1, rect2, padding_label) {
+    return !((rect1.x + rect1.w + padding_label < rect2.x) || (rect2.x + rect2.w + padding_label < rect1.x) ||
+        (rect1.y + rect1.h + padding_label < rect2.y) || (rect2.y + rect2.h + padding_label < rect1.y))
+};
+
+function quadrant(center, point){
+    let x = point.x - center.x;
+    let y = point.y - center.y;
+    if (x > 0){
+        if (y > 0){
+            return 0;
+        }
+        else{
+            return 3;
+        }
+    }
+    else{
+        if (y > 0){
+            return 1;
+        }
+        else{
+            return 2;
+        }
+    }
+}
+
+
+
+function label_layout(nodes, path, zoom_scale){
+    let img_width = 6 * zoom_scale;
+    let img_height = 6  * zoom_scale;
+    let padding = 1  * zoom_scale;
+    for (let i = 0; i < nodes.length; i++){
+        nodes[i].quad = [0, 0, 0, 0]; // 0 for candidate; 1 for taken; -1 for forbidden
+    }
+    path.forEach(d => {
+        let src = d[0];
+        let tgt = d[1];
+        let src_quad = quadrant(src, tgt);
+        let tgt_quad = quadrant(tgt, src);
+        src.quad[src_quad] = -1;
+        tgt.quad[tgt_quad] = -1;
+    });
+
+    function return_rect(node, j){
+        let x = node.x;
+        let y = node.y;
+        if (j === 3){
+            y = y - img_height;
+        }
+        else if (j === 2){
+            x = x - img_width;
+            y = y - img_height;
+        }
+        else if (j === 1){
+            x = x - img_width;
+        }
+        return {
+                "x": x, 
+                "y": y, 
+                "w": img_width, 
+                "h": img_height,
+                "url": DataLoader.image_url + "?filename=" + node.id + ".jpg"
+                }
+    }
+
+    function update_nodes_quad(focus_node, quad, start){
+        let rect = return_rect(focus_node, quad);
+        for (let i = start + 1; i < nodes.length; i++){
+            let node = nodes[i];
+            for (let j = 0; j < 4; j++){
+                if (node.quad[j] < 0) continue;
+                virtual_rect = return_rect(node, j);
+                if (intersect(rect, virtual_rect, padding)) node.quad[j] = -1;
+            }
+        }
+    };
+
+    let sorted_nodes = nodes; // TODO
+    let imgs = [];
+    for (let i = 0; i < nodes.length; i++){
+        let node = nodes[i];
+        for (let j = 0; j < 4; j++){
+            if (node.quad[j] < 0) continue;
+            else{
+                node.quad[j] = 1;
+                imgs.push({
+                    "node": node,
+                    "quad": j,
+                    "w": img_width / zoom_scale, 
+                    "h": img_height / zoom_scale,
+                    "url": DataLoader.image_url + "?filename=" + node.id + ".jpg"
+                });
+                update_nodes_quad(node, j, i);
+                break;
+            }
+            // if (can_place) break;
+            // else{
+            //     node.quad[j] = 0;
+            // }
+        }
+    }
+    console.log("label layout", imgs);
+    return imgs;
+};
+
