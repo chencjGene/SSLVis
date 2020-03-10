@@ -240,6 +240,20 @@ f: {
 
 		form.f.init.register();
 
+		// add data
+		$("#add-data").slider(
+			{ 
+				id: "slider0", 
+				min: 1, 
+				max: 2000, 
+				range: false, 
+				value: 500
+			});
+		$("#add-data").on("slide", function(slideEvt) {
+			$("#data-num").text(slideEvt.value);
+		}); 
+
+
 		// global slider
 		$("#global-k").slider(
 			{ 

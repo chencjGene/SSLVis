@@ -8,8 +8,8 @@ let DistLayout = function (container) {
 
     let bbox = that.container.node().getBoundingClientRect();
     // overall layout
-    let width = bbox.width-20;
-    let height = bbox.height-20;
+    let width = bbox.width;
+    let height = bbox.height - 10;
     let x_shift = 40;
     // legend layout
     let legend_hight = 25;
@@ -57,6 +57,7 @@ let DistLayout = function (container) {
     let iter_list = null;
     let total_iters = null;
     let current_iter = 0;
+    let slider_color = "#A9A9A9";
 
     // flags
     that.click_id = null;
@@ -74,20 +75,26 @@ let DistLayout = function (container) {
             });
         node_group = svg.append("g")
             .attr("id", "node_group")
-            .attr("transform", "translate(" + 0 + ", " + 0 + ")");
+            .attr("transform", "translate(" + 0 + ", " + 10 + ")");
         link_group = svg.append("g")
             .attr("id", "link_group")
-            .attr("transform", "translate(" + 0 + ", " + 0 + ")");
+            .attr("transform", "translate(" + 0 + ", " + 10 + ")");
         selected_link_group = svg.append("g")
             .attr("id", "selected_link_group")
-            .attr("transform", "translate(" + 0 + ", " + 0 + ")");
+            .attr("transform", "translate(" + 0 + ", " + 10 + ")");
         slider_group = svg.append("g")
             .attr("id", "slider_group")
-            .attr("transform", "translate(" + 0 + ", " + (slider_y_shift) + ")");
+            .attr("transform", "translate(" + 0 + ", " + (10 + slider_y_shift) + ")");
         legend_group = svg.append("g")
             .attr("id", "legend_group")
             .attr("transform", "translate(" + legend_x_shift + ", " 
-                + legend_y_shift + ")");
+                + (10 + legend_y_shift) + ")");
+        svg.append("text")
+            .attr("x", width - 70)
+            .attr("y", height)
+            .attr("text-anchor", "start")
+            .attr("font-size", 16)
+            .text("Iteration")
     };
 
     that.set_data_manager = function (_data_manager) {
@@ -510,7 +517,7 @@ let DistLayout = function (container) {
             .attr("x2", xPositionScale(current_iter))
             .attr("y2", 0)
             .attr("stroke-width", slider_height)
-            .attr("stroke", "#808080")
+            .attr("stroke", slider_color)
             .attr("stroke-linecap", "round");
         slider_group.selectAll("circle")
             .data(iter_list)
@@ -521,8 +528,8 @@ let DistLayout = function (container) {
                 return xPositionScale(i)
             })
             .attr('cy', 0)
-            .attr("fill", "#808080")
-            .attr("r", slider_height + 2)
+            .attr("fill", slider_color)
+            .attr("r", slider_height + 4)
             .on("click", function (d, i) {
                 that.setIter(i);
             });
@@ -533,8 +540,8 @@ let DistLayout = function (container) {
             .attr('cx', xPositionScale(current_iter))
             .attr("cy", 0)
             .attr("fill", "#ffffff")
-            .attr("r", slider_height + 4)
-            .attr("stroke", "#808080")
+            .attr("r", slider_height + 6)
+            .attr("stroke", slider_color)
             .attr("stroke-width", 3)
             .call(d3.drag().on("start", drag_start).on("drag", drag_slider).on("end", drag_slider_end));
         slider_group.selectAll(".loss-text")
@@ -545,6 +552,7 @@ let DistLayout = function (container) {
             .attr("x", (d,i) => xPositionScale(i))
             .attr("y", 6)
             .attr("text-anchor", "middle")
+            .attr("font-size", 16)
             .text(d => d);
     };
 
@@ -570,7 +578,8 @@ let DistLayout = function (container) {
             .attr("x", (d,i) => (rect_width * i + rect_margin * i + rect_height + 2))
             .attr("y", rect_height / 2 + 5)
             .attr("text-anchor", "start")
-            .attr("font-size", 15)
+            .attr("font-size", 16)
+            .attr("font-family", '"Helvetica Neue", Helvetica, Arial, sans-serif')
             .attr("fill", FontColor)
             .text(d => d);
 
@@ -654,7 +663,7 @@ let DistLayout = function (container) {
         slider_group.selectAll("#loss-slider-base-circle")
             .attr("fill", function (d, i) {
                 if(i<=current_iter){
-                    return "#808080";
+                    return slider_color;
                 }
                 else return "#e4e7ed";
             })
