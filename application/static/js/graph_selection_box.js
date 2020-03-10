@@ -18,6 +18,19 @@ GraphLayout.prototype.update_selection_box = function(){
     that._remove_selection_box();
 };
 
+GraphLayout.prototype.update_snapshot = function(){
+    let that = this;
+    // update data
+
+    for (let i = 0; i < that.selection_box.length; i++){
+        
+    }
+
+    that._create_snapshot();
+    that._update_snapshot();
+    that._remove_snapshot();
+};
+
 GraphLayout.prototype._create_selection_box = function(){
     let that = this;
 
@@ -148,18 +161,54 @@ GraphLayout.prototype._create_selection_box = function(){
             .attr("width", 10 * 1.5 * that.zoom_scale)
             .attr("height", 10 * 1.5 * that.zoom_scale)
             .style("opacity", 0);
+
 };
 
 GraphLayout.prototype._update_selection_box = function(){
     let that = this;
     let transform = that.get_transform();
+
+    // update data
+    for(let i = 0; i < that.selection_box.length; i++){
+        let nodes = Object.values(that.get_nodes())
+            .filter(d => inbox(that.selection_box[i], that.center_scale_x(d.x), that.center_scale_y(d.y)));
+        that.selection_box[i].nodes = nodes;
+        let label_dist = nodes.map(d =>d.label.slice(-1)[0]);
+        let label_count = new Array(12).fill(0);
+        label_dist.forEach(b => {label_count[b] = label_count[b] + 1});
+        let max_count_cls = -1;
+        let max_count = -1
+        for (let i = 0; i < label_count.length; i++){
+            if(label_count[i] > max_count){
+                max_count = label_count[i];
+                max_count_cls = i;
+            }
+        }
+        that.selection_box[i].label_count = label_count;
+        that.selection_box[i].max_count_cls = max_count_cls;
+    }
+
+    // TODO: highlight 
+    if (that.selection_box.length > 0){
+        d3.selectAll(".node-dot").attr("r", d => 3.5 * that.zoom_scale);
+        for (let j = 0; j < that.selection_box.length; j++){
+            let selection_idxs = that.selection_box[j].nodes.map(d => d.id);
+            // that.highlight(selection_idxs);
+            for (let i = 0; i < selection_idxs.length; i++){
+                d3.select("#id-" + selection_idxs[i])
+                    .attr("r", d => 5 * that.zoom_scale);
+            }
+        }
+    }
+
     let sg = that.selection_group.selectAll(".selection-box")
         .data(that.selection_box, d => d.id)
         .attr("transform", d => "translate("+(d.x)+","+ (d.y) +")");
     sg.selectAll(".box")
         .attr("width", d => d.width)
         .attr("height", d => d.height)
-        .style("stroke-width", 4 * that.zoom_scale);
+        .style("stroke-width", 4 * that.zoom_scale)
+        .style("stroke", d => CategoryColor[d.max_count_cls]);
     let cross_group = sg.select(".cross")
         .attr("transform", d => "translate("+(d.width - 10 * that.zoom_scale)+","+ (10 * that.zoom_scale) +")");
     cross_group.select("#cross-line-1")
@@ -185,32 +234,14 @@ GraphLayout.prototype._update_selection_box = function(){
         .attr("x", d => d.width-5 * that.zoom_scale)
         .attr("y", d => d.height-5 * that.zoom_scale)
         .attr("width", 10 * that.zoom_scale)
-        .attr("height", 10 * that.zoom_scale);
+        .attr("height", 10 * that.zoom_scale)
+        .style("fill", d => CategoryColor[d.max_count_cls]);
     sg.select(".resize").select("#resize_rect_left_top")
         .attr("x", -5 * that.zoom_scale)
         .attr("y", -5 * that.zoom_scale)
         .attr("width", 10  * that.zoom_scale)
-        .attr("height", 10  * that.zoom_scale);
-
-    // update data
-    for(let i = 0; i < that.selection_box.length; i++){
-        let nodes = Object.values(that.get_nodes())
-            .filter(d => inbox(that.selection_box[i], that.center_scale_x(d.x), that.center_scale_y(d.y)));
-        that.selection_box[i].nodes = nodes;
-    }
-
-    // TODO: highlight 
-    if (that.selection_box.length > 0){
-        d3.selectAll(".node-dot").attr("r", d => 3.5 * that.zoom_scale);
-        for (let j = 0; j < that.selection_box.length; j++){
-            let selection_idxs = that.selection_box[j].nodes.map(d => d.id);
-            // that.highlight(selection_idxs);
-            for (let i = 0; i < selection_idxs.length; i++){
-                d3.select("#id-" + selection_idxs[i])
-                    .attr("r", d => 5 * that.zoom_scale);
-            }
-        }
-    }
+        .attr("height", 10  * that.zoom_scale)
+        .style("fill", d => CategoryColor[d.max_count_cls]);
 
 };
 
@@ -255,6 +286,46 @@ GraphLayout.prototype.set_rect_selection = function(){
 };
 
 GraphLayout.prototype.remove_rect_selection = function(){
+
+};
+
+GraphLayout.prototype._create_snapshot = function(){
+    let that = this;
+    let sg = that.snapshot_group.selectAll("g.snapshot")
+        .data(that.selection_box, d => d.id)
+        .enter()
+        .append("g")
+        .attr("class", "snapshot")
+        .attr("transform", d => "translate("+(d.x)+","+ (d.y) +")");
+
+    sg.append("rect")
+        .attr("class", "snapshot-box")
+        .attr("x", d => d.x)
+        .attr("y", d => d.y)
+        .attr("width", 20)
+        .attr("height", 20)
+        .style("fill", "white")
+        .style("fill-opacity", 0)
+        .style("stroke", "gray")
+        .style("sroke-width", 2);
+    
+    let dist_group = sg.append("g")
+        .attr("class", "snapshot-dist");
+        dist_group.selectAll("rect")
+        .data(d => d.label_count)
+        .enter()
+        .append("rect")
+        .attr("x", (d, i) => i * 5)
+        .attr("y", d => 0)
+        .attr("width", 5)
+        .attr("height", d => d * 10);
+};
+
+GraphLayout.prototype._update_snapshot = function(){
+
+};
+
+GraphLayout.prototype._remove_snapshot = function(){
 
 };
 
@@ -358,4 +429,5 @@ GraphLayout.prototype.show_edges = function(modes){
     that.data_manager.state.path = that.all_path;
     that.data_manager.state.highlights = that.highlights;
     that.data_manager.update_graph_view();
+    // that.update_snapshot();
 };

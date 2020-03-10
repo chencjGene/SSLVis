@@ -42,6 +42,7 @@ let GraphLayout = function (container) {
     let glyph_in_group = null;
     let legend_group = null;
     that.selection_group = null;
+    that.snapshot_group = null;
 
     // meta data
     let nodes = {};
@@ -61,6 +62,7 @@ let GraphLayout = function (container) {
     that.selection_box = [
         // {x:100, y:100, width:300, height:300}
     ];
+    that.snapshot_edge = [];
     let edge_filter_threshold = 0;
     that.focus_nodes = [];
     let path_line = d3.line()
@@ -94,6 +96,7 @@ let GraphLayout = function (container) {
         golds_group = that.main_group.append("g").attr("id", "graph-gold-g");
         glyph_group = that.main_group.append("g").attr("id", "graph-glyph-g");
         that.selection_group = that.main_group.append("g").attr("id", "graph-selection-g");
+        that.snapshot_group = that.svg.append("g").attr("id", "snapshot-group");
         that.width = $('#graph-view-svg').width();
         that.height = $('#graph-view-svg').height();
 
