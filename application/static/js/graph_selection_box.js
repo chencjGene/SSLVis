@@ -21,9 +21,80 @@ GraphLayout.prototype.update_selection_box = function(){
 GraphLayout.prototype.update_snapshot = function(){
     let that = this;
     // update data
-
     for (let i = 0; i < that.selection_box.length; i++){
-        
+        that.selection_box[i].snapshot_edge = {
+            "in": 0,
+            "out": 0,
+            "within": 0,
+            "between": new Array(that.selection_box.length).fill(0)
+        };
+    }
+    // edge type: in out within between
+    // type in
+    let single_paths = that.all_path["in"];
+    for (let i = 0; i < single_paths.length; i++){
+        let path = single_paths[i];
+        let box_id = path[1].box_id;
+        that.selection_box[box_id].snapshot_edge["in"] += 1;
+    }
+
+    // type out
+    single_paths = that.all_path["out"]
+    for (let i = 0; i < single_paths.length; i++){
+        let path = single_paths[i];
+        let box_id = path[0].box_id;
+        that.selection_box[box_id].snapshot_edge["out"] += 1;
+    }
+
+    // type within
+    single_paths = that.all_path["within"]
+    for (let i = 0; i < single_paths.length; i++){
+        let path = single_paths[i];
+        let box_id = path[0].box_id;
+        that.selection_box[box_id].snapshot_edge["within"] += 1;
+    }
+
+    // type between
+    single_paths = that.all_path["between"]
+    for (let i = 0; i < single_paths.length; i++){
+        let path = single_paths[i];
+        let source_box_id = path[0].box_id;
+        let target_box_id = path[1].box_idx;
+        that.selection_box[source_box_id].snapshot_edge["between"][target_box_id] += 1;
+    }
+
+    // get edges
+    that.snapshot_edge = [];
+    for (let i = 0; i < that.selection_box.length; i++){
+        let box = that.selection_box[i];
+        let edge = null;
+
+        // in edge
+        if (box.snapshot_edge["in"] > 0){
+            edge = [box, box, box.snapshot_edge["in"]];
+            that.snapshot_edge.push(edge);
+        }
+
+        // out edge
+        if (box.snapshot_edge["out"] > 0){
+            edge = [box, box, box.snapshot_edge["out"]];
+            that.snapshot_edge.push(edge);
+        }
+
+        // within edge
+        if (box.snapshot_edge["within"] > 0){
+            edge = [box, box, box.snapshot_edge["within"]];
+            that.snapshot_edge.push(edge);
+        }
+
+        // between edge
+        for (let j = 0; j < that.selection_box.length; j++){
+            let count = box.snapshot_edge["between"][j];
+            if (count > 0){
+                edge = [box, that.selection_box[j], count];
+                that.snapshot_edge.push(edge);
+            }
+        }
     }
 
     that._create_snapshot();
