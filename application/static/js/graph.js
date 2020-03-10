@@ -345,8 +345,8 @@ let GraphLayout = function (container) {
 
             path_in_group
                 .attr("stroke-width", 2.0 * that.zoom_scale)
-                .attr("stroke", edge_color)
-                .attr("marker-mid", d => "url(#arrow-gray)")
+                .attr("stroke", d => "url(#path"  + d[0].id + "-" + d[1].id + ")")
+                // .attr("marker-mid", d => "url(#arrow-gray)")
                 .attr("fill", "none")
                 .transition()
                 .duration(AnimationDuration)
@@ -469,13 +469,29 @@ let GraphLayout = function (container) {
                 .attr("opacity", d => that.opacity(d.id))
                 .on("end", resolve);
 
+            const gradient = path_in_group.enter()
+                .append("linearGradient")
+                .attr("gradientUnits", "userSpaceOnUse")
+                .attr("id", d => "path" + d[0].id + "-" + d[1].id)
+                .attr("x1", d => that.center_scale_x(d[0].x))
+                .attr("y1", d => that.center_scale_y(d[0].y))
+                .attr("x2", d => that.center_scale_x(d[1].x))
+                .attr("y2", d => that.center_scale_y(d[1].y));
+            gradient.append("stop")
+                .attr("offset", "0%")
+                .attr("stop-color", d => d[0].label[iter]===-1?color_unlabel:color_label[d[0].label[iter]]);
+            gradient.append("stop")
+                .attr("offset", "100%")
+                .attr("stop-color", d => d[1].label[iter]===-1?color_unlabel:color_label[d[1].label[iter]]);
+
             path_in_group.enter()
                 .append("path")
                 .attr("class", "propagation-path")
                 .attr("stroke-width", 2.0 * that.zoom_scale)
-                .attr("stroke", edge_color)
+                // .attr("stroke", edge_color)
+                .attr("stroke", d => "url(#path"  + d[0].id + "-" + d[1].id + ")")
                 .attr("opacity", 0)
-                .attr("marker-mid", d => "url(#arrow-gray)")
+                // .attr("marker-mid", d => "url(#arrow-gray)")
                 .attr("fill", "none")
                 .attr("d", function (d) {
                     // return path_line(d[3])
