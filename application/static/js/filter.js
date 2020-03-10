@@ -36,6 +36,7 @@ let FilterLayout = function (container) {
     let influence_widget_range = [-1,-1];
     let edgetype_data = null;
     let edgetype_range = [];
+    let label_names = [];
 
     //filter flag
     let control_items = {};
@@ -109,6 +110,7 @@ let FilterLayout = function (container) {
     };
 
     that._update_data = function(state) {
+        label_names = ["unlabeled"].concat(state.label_names);
         label_widget_data = state.label_widget_data;
         label_widget_range = state.label_widget_range;
         uncertainty_widget_data = state.uncertainty_widget_data;
@@ -516,6 +518,32 @@ let FilterLayout = function (container) {
             .duration(AnimationDuration)
             .remove();
         }
+
+        // draw label legend
+        if(container.select("#current-label-legends").size() === 0){
+            container.append("g")
+                .attr("id", "current-label-legends");
+        }
+        let legends = container.select("#current-label-legends").selectAll("text").data(label_names);
+        legends.enter()
+            .append("text")
+            .attr("class", "legend")
+            .attr("text-anchor", "start")
+            .attr("font-size", 15)
+            .attr("fill", FontColor)
+            .attr("x", 0)
+            .attr("y", 0)
+            .attr("transform", function(d, i){
+                let xcor=x(i);
+                let ycor=container_height*0.85+27;
+                return "translate(" + (xcor)
+                    + ", " + ycor + ") rotate(30)";
+            })
+            .text(d => d)
+            .each(function () {
+                let text = d3.select(this);
+                set_font(text);
+            });
     };
 
     that.update_widget_showing_items = function(ids) {

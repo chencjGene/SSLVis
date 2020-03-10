@@ -264,6 +264,10 @@ class ExchangePortClass(object):
         neighbors = self.model.data.get_neighbors()[ids, 1:k+1].tolist()
         return jsonify(neighbors)
 
+    def get_img_entropy(self, ids):
+        entropy = self.anchor.get_entropy()[ids].tolist()
+        return jsonify(entropy)
+
     def get_img_labels(self, ids):
         labels = self.model.labels[:,ids].T.tolist()
         return jsonify(labels)

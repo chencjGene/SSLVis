@@ -11,9 +11,9 @@
     height: 100%;
     /*border-width: 2px;*/
     border-color: #5e5e5e;
-    border-right: 1px solid #c1c1c1;
-    border-left: 1px solid #c1c1c1;
-    background-color: #fafafa;
+    /*border-right: 1px solid #c1c1c1;*/
+    /*border-left: 1px solid #c1c1c1;*/
+    /*background-color: #fafafa;*/
 }
 
 #my-graph-right {
