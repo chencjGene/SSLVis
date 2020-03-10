@@ -18,6 +18,9 @@ let GraphLayout = function (container) {
     that.zoom_scale = 1;
     let star_inner_r = 6;
     let star_outer_r = 15;
+    let path_begin_width = 6;
+    let path_mid_width = 3.5;
+    let path_end_width = 1;
 
     // other consts
     let btn_select_color = "#560731";
@@ -193,29 +196,35 @@ let GraphLayout = function (container) {
             for(let node of nodes){
                 nodes_dict[node.id] = node;
             }
-            // let fbundling = d3.ForceEdgeBundling()
-			// 	.nodes(nodes_dict)
-			// 	.edges(path_ary.map(function (d) {
-            //         return {
-			// 	    "source":d[0].id,
-            //         "target":d[1].id
-			// 	    }
-            //     }).filter(d => d.source !== d.target));
-            // let res = fbundling();
-            // for(let line of res){
-            //     for(let path_node_id = 0; path_node_id < line.length; path_node_id++){
-            //         if(path_node_id === 0 || path_node_id === line.length-1){
-            //             let tmp = line[path_node_id];
-            //             line[path_node_id] = {};
-            //             line[path_node_id].x = tmp.x;
-            //             line[path_node_id].y = tmp.y;
-            //         }
-            //         line[path_node_id].x  = that.center_scale_x(line[path_node_id].x);
-            //         line[path_node_id].y  = that.center_scale_y(line[path_node_id].y);
-            //     }
-            // }
-            // path_ary = path_ary.map((d,i) => d.concat([res[i]]));
-            // console.log("bundling res", path_ary);
+            for(let path of path_ary){
+                let alabel = nodes_dict[path[0].id].label[iter];
+                let blabel = nodes_dict[path[1].id].label[iter];
+                path.edge_type = alabel+","+blabel;
+            }
+            let fbundling = d3.ForceEdgeBundling()
+				.nodes(nodes_dict)
+				.edges(path_ary.map(function (d) {
+                    return {
+				        "source":d[0].id,
+                        "target":d[1].id,
+                        "edge_type":d.edge_type
+				    }
+                }).filter(d => d.source !== d.target));
+            let res = fbundling();
+            for(let line of res){
+                for(let path_node_id = 0; path_node_id < line.length; path_node_id++){
+                    if(path_node_id === 0 || path_node_id === line.length-1){
+                        let tmp = line[path_node_id];
+                        line[path_node_id] = {};
+                        line[path_node_id].x = tmp.x;
+                        line[path_node_id].y = tmp.y;
+                    }
+                    line[path_node_id].x  = that.center_scale_x(line[path_node_id].x);
+                    line[path_node_id].y  = that.center_scale_y(line[path_node_id].y);
+                }
+            }
+            path_ary = path_ary.map((d,i) => d.concat([res[i]]));
+            console.log("bundling res", path_ary);
             nodes_in_group = nodes_group.selectAll("circle")
                 .data(nodes_ary, d => d.id);
             golds_in_group = golds_group.selectAll("path")
@@ -345,16 +354,26 @@ let GraphLayout = function (container) {
 
             path_in_group
                 .attr("stroke-width", 2.0 * that.zoom_scale)
-                .attr("stroke", d => "url(#path"  + d[0].id + "-" + d[1].id + ")")
+                .attr("fill", d => "url(#path"  + d[0].id + "-" + d[1].id + ")")
+                .attr("stroke", "none")
                 // .attr("marker-mid", d => "url(#arrow-gray)")
-                .attr("fill", "none")
+                // .attr("fill", "none")
                 .transition()
                 .duration(AnimationDuration)
                 .attr("d", function (d) {
-                    // return path_line(d[3]);
+                    return bezier_tapered(d[3][0], d[3][1], d[3][2], path_begin_width * that.zoom_scale,
+                        path_mid_width * that.zoom_scale, path_end_width * that.zoom_scale);
+                    return "M{0} {1}, Q {2} {3}, {4} {5}".format(
+                        d[3][0].x, d[3][0].y,
+                        d[3][1].x, d[3][1].y,
+                        d[3][2].x, d[3][2].y);
+                    return path_line(d[3]);
+
                     let begin = [that.center_scale_x(d[0].x), that.center_scale_y(d[0].y)];
                     let end = [that.center_scale_x(d[1].x), that.center_scale_y(d[1].y)];
-
+                    let begin_dict={x:begin[0], y:begin[1]};
+                    let end_dict={x:end[0], y:end[1]};
+                    // return variableWidthPath(begin_dict, end_dict, 8, 2);
                     let dis = Math.sqrt(Math.pow(begin[0]-end[0], 2) + Math.pow(begin[1]-end[1], 2));
                     let radius = dis*path_curve;
                     let mid = curve_mid(begin, end, radius);
@@ -488,16 +507,24 @@ let GraphLayout = function (container) {
                 .append("path")
                 .attr("class", "propagation-path")
                 .attr("stroke-width", 2.0 * that.zoom_scale)
-                // .attr("stroke", edge_color)
-                .attr("stroke", d => "url(#path"  + d[0].id + "-" + d[1].id + ")")
+                .attr("stroke", "none")
+                .attr("fill", d => "url(#path"  + d[0].id + "-" + d[1].id + ")")
                 .attr("opacity", 0)
                 // .attr("marker-mid", d => "url(#arrow-gray)")
-                .attr("fill", "none")
+                // .attr("fill", "none")
                 .attr("d", function (d) {
-                    // return path_line(d[3])
+                    return bezier_tapered(d[3][0], d[3][1], d[3][2], path_begin_width * that.zoom_scale,
+                        path_mid_width * that.zoom_scale, path_end_width * that.zoom_scale);
+                    return "M{0} {1}, Q {2} {3}, {4} {5}".format(
+                        d[3][0].x, d[3][0].y,
+                        d[3][1].x, d[3][1].y,
+                        d[3][2].x, d[3][2].y);
+                    return path_line(d[3])
                     let begin = [that.center_scale_x(d[0].x), that.center_scale_y(d[0].y)];
                     let end = [that.center_scale_x(d[1].x), that.center_scale_y(d[1].y)];
-
+                    let begin_dict={x:begin[0], y:begin[1]};
+                    let end_dict={x:end[0], y:end[1]};
+                    // return variableWidthPath(begin_dict, end_dict, 8, 2);
                     let dis = Math.sqrt(Math.pow(begin[0]-end[0], 2) + Math.pow(begin[1]-end[1], 2));
                     let radius = dis*path_curve;
                     let mid = curve_mid(begin, end, radius);
@@ -670,10 +697,18 @@ let GraphLayout = function (container) {
             .transition()
             .duration(AnimationDuration)
             .attr("d", function (d) {
-                // return path_line(d[3]);
+                return bezier_tapered(d[3][0], d[3][1], d[3][2], path_begin_width * that.zoom_scale,
+                        path_mid_width * that.zoom_scale, path_end_width * that.zoom_scale);
+                return "M{0} {1}, Q {2} {3}, {4} {5}".format(
+                        d[3][0].x, d[3][0].y,
+                        d[3][1].x, d[3][1].y,
+                        d[3][2].x, d[3][2].y);
+                return path_line(d[3]);
                 let begin = [that.center_scale_x(d[0].x), that.center_scale_y(d[0].y)];
                     let end = [that.center_scale_x(d[1].x), that.center_scale_y(d[1].y)];
-
+                    let begin_dict={x:begin[0], y:begin[1]};
+                    let end_dict={x:end[0], y:end[1]};
+                    // return variableWidthPath(begin_dict, end_dict, 8, 2);
                     let dis = Math.sqrt(Math.pow(begin[0]-end[0], 2) + Math.pow(begin[1]-end[1], 2));
                     let radius = dis*path_curve;
                     let mid = curve_mid(begin, end, radius);
@@ -698,10 +733,18 @@ let GraphLayout = function (container) {
         path_in_group
 
             .attr("d", function (d) {
-                // return path_line(d[3]);
+                return bezier_tapered(d[3][0], d[3][1], d[3][2], path_begin_width * that.zoom_scale,
+                        path_mid_width * that.zoom_scale, path_end_width * that.zoom_scale);
+                return "M{0} {1}, Q {2} {3}, {4} {5}".format(
+                        d[3][0].x, d[3][0].y,
+                        d[3][1].x, d[3][1].y,
+                        d[3][2].x, d[3][2].y);
+                return path_line(d[3]);
             let begin = [that.center_scale_x(d[0].x), that.center_scale_y(d[0].y)];
                     let end = [that.center_scale_x(d[1].x), that.center_scale_y(d[1].y)];
-
+                    let begin_dict={x:begin[0], y:begin[1]};
+                    let end_dict={x:end[0], y:end[1]};
+                    // return variableWidthPath(begin_dict, end_dict, 8, 2);
                     let dis = Math.sqrt(Math.pow(begin[0]-end[0], 2) + Math.pow(begin[1]-end[1], 2));
                     let radius = dis*path_curve;
                     let mid = curve_mid(begin, end, radius);

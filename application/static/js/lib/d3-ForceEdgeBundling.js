@@ -9,14 +9,16 @@
 	d3.ForceEdgeBundling = function () {
 		var data_nodes = {}, // {'nodeid':{'x':,'y':},..}
 			data_edges = [], // [{'source':'nodeid1', 'target':'nodeid2'},..]
+			edge_types = [],
 			compatibility_list_for_edge = [],
+			repulse_list_for_edge = [],
 			subdivision_points_for_edge = [],
 			K = 0.1, // global bundling constant controlling edge stiffness
 			S_initial = 0.1, // init. distance to move points
 			P_initial = 1, // init. subdivision number
-			P_rate = 2, // subdivision rate increase
-			C = 6, // number of cycles to perform
-			I_initial = 90, // init. number of iterations for cycle
+			P_rate = 1, // subdivision rate increase
+			C = 2, // number of cycles to perform
+			I_initial = 40, // init. number of iterations for cycle
 			I_rate = 0.6666667, // rate at which iteration number decreases i.e. 2/3
 			compatibility_threshold = 0.6,
 			eps = 1e-6;
@@ -105,6 +107,12 @@
 			}
 		}
 
+		function initialize_repulse_lists() {
+			for (var i = 0; i < data_edges.length; i++) {
+				repulse_list_for_edge[i] = []; //0 compatible edges.
+			}
+		}
+
 		function filter_self_loops(edgelist) {
 			var filtered_edge_list = [];
 
@@ -155,7 +163,8 @@
 						'source': subdivision_points_for_edge[compatible_edges_list[oe]][i],
 						'target': subdivision_points_for_edge[e_idx][i]
 					}), 1));
-
+					diff *= 2;
+					diff = Math.min(diff, 2);
 					sum_of_forces.x += force.x * diff;
 					sum_of_forces.y += force.y * diff;
 				}
@@ -164,9 +173,112 @@
 			return sum_of_forces;
 		}
 
+		function apply_repulsive_force(e_idx, i) {
+			var sum_of_forces = {
+				'x': 0,
+				'y': 0
+			};
+			var repulse_edges_list = repulse_list_for_edge[e_idx];
+			let all_panel = subdivision_points_for_edge[e_idx].length;
+			for (var oe = 0; oe < repulse_edges_list.length; oe++) {
+				// var force = {
+				// 	'x': 1/(-subdivision_points_for_edge[repulse_edges_list[oe]][all_panel-1-i].x + subdivision_points_for_edge[e_idx][i].x),
+				// 	'y': 1/(-subdivision_points_for_edge[repulse_edges_list[oe]][all_panel-1-i].y + subdivision_points_for_edge[e_idx][i].y)
+				// };
+				let oidx = repulse_edges_list[oe];
+				var direction = {
+					'x': -subdivision_points_for_edge[repulse_edges_list[oe]][all_panel-1-i].x + subdivision_points_for_edge[e_idx][i].x,
+					'y': -subdivision_points_for_edge[repulse_edges_list[oe]][all_panel-1-i].y + subdivision_points_for_edge[e_idx][i].y
+				};
+				let len = Math.sqrt(direction.x*direction.x + direction.y*direction.y);
+				direction.x /= len;
+				direction.y /= len;
+
+
+				// if ((Math.abs(force.x) > eps) || (Math.abs(force.y) > eps)) {
+					var diff = (1 / Math.pow(len, 1))/8;
+					diff = Math.min(diff, 1);
+					if(notsame_type(data_edges[e_idx], data_edges[oidx]) && (!anti_parallel(data_edges[e_idx], data_edges[oidx]))){
+						// diff *= 4;
+						// if(Math.random()>0.9){
+						// 	diff =3;
+						// }
+					}
+
+					sum_of_forces.x += direction.x * diff;
+					sum_of_forces.y += direction.y * diff;
+				// }
+			}
+
+			return sum_of_forces;
+		}
+
+		function apply_random_force(e_idx, i) {
+			let random_state = Math.floor(Math.random()*20);
+			let random_x_flag = Math.random()>0.5?1:-1;
+			let random_y_flag = Math.random()>0.5?1:-1;
+			let random_force = {
+				x:0,
+				y:0
+			};
+			if(random_state === 0){
+				random_force.x = random_x_flag*5;
+				random_force.y = random_y_flag*5;
+			}
+			return random_force;
+		}
+
+		function apply_center_force(e_idx, i) {
+			var sum_of_forces = {
+				'x': 0,
+				'y': 0
+			};
+			let edge = subdivision_points_for_edge[e_idx];
+			let node = edge[i];
+			let source = edge[0];
+			let target = edge[edge.length-1];
+			let mid = {
+				x: (source.x+target.x)/2,
+				y: (source.y+target.y)/2
+			};
+			let vec = {
+				x: target.x - source.x,
+				y: target.y - source.y
+			}
+			let k = (mid.x*vec.x+mid.y*vec.y-node.x*vec.x-node.y*vec.y)/(vec.x*vec.x + vec.y*vec.y);
+			let attractive_point = {
+				x:node.x+k*vec.x,
+				y:node.y+k*vec.y
+			};
+			let s = 10;
+			sum_of_forces.x = (attractive_point.x - node.x)*s;
+			sum_of_forces.y = (attractive_point.y - node.y)*s;
+			return sum_of_forces;
+		}
+
+		function apply_arc_force(e_idx, i) {
+			var sum_of_forces = {
+				'x': 0,
+				'y': 0
+			};
+			let edge = subdivision_points_for_edge[e_idx];
+			let node = edge[i];
+			let source = edge[0];
+			let target = edge[edge.length-1];
+			let mid = {
+				x: (source.x+target.x)/2,
+				y: (source.y+target.y)/2
+			};
+
+			let s = 0.15;
+			sum_of_forces.x = (mid.x - node.x)*s;
+			sum_of_forces.y = (mid.y - node.y)*s;
+			return sum_of_forces;
+		}
+
 
 		function apply_resulting_forces_on_subdivision_points(e_idx, P, S) {
-			var kP = K / (edge_length(data_edges[e_idx]) * (P + 1)); // kP=K/|P|(number of segments), where |P| is the initial length of edge P.
+			var kP = K / (edge_length(data_edges[e_idx]) * (P + 1)) * 2; // kP=K/|P|(number of segments), where |P| is the initial length of edge P.
 			// (length * (num of sub division pts - 1))
 			var resulting_forces_for_subdivision_points = [{
 				'x': 0,
@@ -181,9 +293,22 @@
 
 				spring_force = apply_spring_force(e_idx, i, kP);
 				electrostatic_force = apply_electrostatic_force(e_idx, i, S);
+				let direction_wrong_force = apply_repulsive_force(e_idx, i);
+				let center_force = apply_center_force(e_idx, i);
+				let arc_force = apply_arc_force(e_idx, i);
+				// let random_force = apply_random_force(e_idx, i);
+				// console.log(direction_wrong_force);
+				// electrostatic_force = {
+				// 	x:0,
+				// 	y:0
+				// };
+				// direction_wrong_force = {
+				// 	x:0,
+				// 	y:0
+				// };
 
-				resulting_force.x = S * (spring_force.x + electrostatic_force.x);
-				resulting_force.y = S * (spring_force.y + electrostatic_force.y);
+				resulting_force.x = S * (spring_force.x + electrostatic_force.x + direction_wrong_force.x + center_force.x + arc_force.x);
+				resulting_force.y = S * (spring_force.y + electrostatic_force.y + direction_wrong_force.y + center_force.y + arc_force.y);
 
 				resulting_forces_for_subdivision_points.push(resulting_force);
 			}
@@ -201,9 +326,58 @@
 		/*** Edge Division Calculation Methods ***/
 		function update_edge_divisions(P) {
 			for (var e_idx = 0; e_idx < data_edges.length; e_idx++) {
-				if (P === 1) {
+				if (P >= 1) {
+					subdivision_points_for_edge[e_idx] = [];
 					subdivision_points_for_edge[e_idx].push(data_nodes[data_edges[e_idx].source]); // source
-					subdivision_points_for_edge[e_idx].push(edge_midpoint(data_edges[e_idx])); // mid point
+					// subdivision_points_for_edge[e_idx].push(edge_midpoint(data_edges[e_idx])); // mid point
+					let vect = {
+							x: data_nodes[data_edges[e_idx].target].x-data_nodes[data_edges[e_idx].source].x,
+							y: data_nodes[data_edges[e_idx].target].y-data_nodes[data_edges[e_idx].source].y
+					};
+					if(P === 1) {
+						let begin = [data_nodes[data_edges[e_idx].source].x, data_nodes[data_edges[e_idx].source].y];
+						let end = [data_nodes[data_edges[e_idx].target].x, data_nodes[data_edges[e_idx].target].y];
+						let edge_ty = data_edges[e_idx].edge_type;
+						if(edge_types.indexOf(edge_ty) === -1){
+							edge_types.push(edge_ty);
+						}
+						let type_idx = edge_types.indexOf(edge_ty);
+						let path_curve = 0.6+0.4*type_idx;
+						let dis = Math.sqrt(Math.pow(begin[0]-end[0], 2) + Math.pow(begin[1]-end[1], 2));
+						let radius = dis*path_curve;
+						let mid = curve_mid(begin, end, radius);
+						subdivision_points_for_edge[e_idx].push({
+							x:mid[0],
+							y:mid[1]
+						})
+					}
+					else if(P === 2){
+						let begin = [data_nodes[data_edges[e_idx].source].x, data_nodes[data_edges[e_idx].source].y];
+						let end = [data_nodes[data_edges[e_idx].target].x, data_nodes[data_edges[e_idx].target].y];
+						let path_curve = 2;
+						let dis = Math.sqrt(Math.pow(begin[0]-end[0], 2) + Math.pow(begin[1]-end[1], 2));
+						let radius = dis*path_curve;
+						let mid = curve_mid(begin, end, radius);
+						let mid1 = {
+							x: (begin[0] + mid[0]) / 2,
+							y: (begin[1] + mid[1]) / 2
+						};
+						let mid2 = {
+							x: (end[0] + mid[0]) / 2,
+							y: (end[1] + mid[1]) / 2
+						};
+						subdivision_points_for_edge[e_idx].push(mid1);
+						subdivision_points_for_edge[e_idx].push(mid2);
+					}
+					else {
+						for(let i=1; i<=P; i++){
+						subdivision_points_for_edge[e_idx].push({
+							x: i/(P+1)*vect.x + data_nodes[data_edges[e_idx].source].x,
+							y: i/(P+1)*vect.y + data_nodes[data_edges[e_idx].source].y
+						})
+					}
+					}
+
 					subdivision_points_for_edge[e_idx].push(data_nodes[data_edges[e_idx].target]); // target
 				} else {
 					var divided_edge_length = compute_divided_edge_length(e_idx);
@@ -242,7 +416,10 @@
 
 		/*** Edge compatibility measures ***/
 		function angle_compatibility(P, Q) {
-			return Math.abs(vector_dot_product(edge_as_vector(P), edge_as_vector(Q)) / (edge_length(P) * edge_length(Q)));
+			// return (vector_dot_product(edge_as_vector(P), edge_as_vector(Q)) / (edge_length(P) * edge_length(Q)) + 1)/2;
+			let angle = vector_dot_product(edge_as_vector(P), edge_as_vector(Q)) / (edge_length(P) * edge_length(Q));
+			return angle<0?0:angle;
+			// return Math.abs(angle);
 		}
 
 		function scale_compatibility(P, Q) {
@@ -294,7 +471,7 @@
 		}
 
 		function are_compatible(P, Q) {
-			return (compatibility_score(P, Q) >= compatibility_threshold);
+			return (compatibility_score(P, Q) >= compatibility_threshold) && (!repulsity_score(P, Q));
 		}
 
 		function compute_compatibility_lists() {
@@ -308,6 +485,41 @@
 			}
 		}
 
+		/* Find repulse force */
+		function compute_repulsive_lists() {
+			for (var e = 0; e < data_edges.length - 1; e++) {
+				for (var oe = e + 1; oe < data_edges.length; oe++) { // don't want any duplicates
+					if (are_repulsive(data_edges[e], data_edges[oe])) {
+						repulse_list_for_edge[e].push(oe);
+						repulse_list_for_edge[oe].push(e);
+					}
+				}
+			}
+		}
+
+		function are_repulsive(P, Q) {
+			return (repulsity_score(P, Q));
+		}
+
+		function repulsity_score(P, Q) {
+			return (anti_parallel(P, Q) || notsame_type(P, Q)) && in_compatibility(P, Q);
+		}
+
+		function in_compatibility(P, Q) {
+			return ((Math.abs(vector_dot_product(edge_as_vector(P), edge_as_vector(Q)) / (edge_length(P) * edge_length(Q)))) *
+				scale_compatibility(P, Q) * position_compatibility(P, Q) * visibility_compatibility(P, Q)) > compatibility_threshold
+		}
+
+		function anti_parallel(P, Q) {
+			let angle = vector_dot_product(edge_as_vector(P), edge_as_vector(Q)) / (edge_length(P) * edge_length(Q));
+			// if(angle < 0) console.log("get anti parallel", P, Q);
+			return angle<0;
+		}
+
+		function notsame_type(P, Q) {
+			return P.edge_type !== Q.edge_type
+		}
+
 		/*** ************************ ***/
 
 		/*** Main Bundling Loop Methods ***/
@@ -318,8 +530,11 @@
 
 			initialize_edge_subdivisions();
 			initialize_compatibility_lists();
+			initialize_repulse_lists();
 			update_edge_divisions(P);
 			compute_compatibility_lists();
+			compute_repulsive_lists();
+			console.log("repulsive lists:", repulse_list_for_edge);
 
 			for (var cycle = 0; cycle < C; cycle++) {
 				for (var iteration = 0; iteration < I; iteration++) {
@@ -336,10 +551,10 @@
 				}
 				// prepare for next cycle
 				S = S / 2;
-				P = P * P_rate;
+				// P = P * P_rate;
 				I = I_rate * I;
 
-				update_edge_divisions(P);
+				// update_edge_divisions(P);
 				//console.log('C' + cycle);
 				//console.log('P' + P);
 				//console.log('S' + S);

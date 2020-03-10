@@ -136,6 +136,52 @@ let oneD_sum = function(vec){
     return sum;
 };
 
+let bezier_tapered = function(begin, mid, end, begin_width, mid_width, end_width){
+    begin_width /= 2;
+    mid_width /= 2;
+    end_width /= 2;
+    let cen = {
+        x:(begin.x+end.x)/2,
+        y:(begin.y+end.y)/2
+    };
+    let direct = {
+        x:mid.x-cen.x,
+        y:mid.y-cen.y
+    };
+    let direct_len = Math.sqrt(direct.x*direct.x + direct.y*direct.y);
+    direct.x /= direct_len;
+    direct.y /= direct_len;
+
+    let begin1 = {
+        x: begin.x + direct.x * begin_width,
+        y: begin.y + direct.y * begin_width
+    };
+    let mid1 = {
+        x: mid.x + direct.x * mid_width,
+        y: mid.y + direct.y * mid_width
+    };
+    let end1 = {
+        x: end.x + direct.x * end_width,
+        y: end.y + direct.y * end_width
+    };
+    let begin2 = {
+        x: begin.x - direct.x * begin_width,
+        y: begin.y - direct.y * begin_width
+    };
+    let mid2 = {
+        x: mid.x - direct.x * mid_width,
+        y: mid.y - direct.y * mid_width
+    };
+    let end2 = {
+        x: end.x - direct.x * end_width,
+        y: end.y - direct.y * end_width
+    };
+    return "M {0} {1} Q {2} {3}, {4} {5} L {6} {7} Q {8} {9}, {10} {11} Z".format(
+        begin1.x, begin1.y, mid1.x, mid1.y, end1.x, end1.y,
+        end2.x, end2.y, mid2.x, mid2.y, begin2.x, begin2.y
+    )
+
+};
 
 let curve_mid = function (u, v, radius) {
         function distance(u, v) {
@@ -293,4 +339,51 @@ function delRepeatDictArr(dict_arr){
         dict_arr[i].visited = true;
     }
     return new_arr;
+}
+
+
+function variableWidthPath(src, target, src_width, target_width) {
+    let gap = 15;
+    let src_to_target_norm_vector = {
+        "x": target.y - src.y,
+        "y": -target.x + src.x
+    };
+    let src_to_target_norm_vector_length = Math.sqrt(src_to_target_norm_vector.x * src_to_target_norm_vector.x +
+        src_to_target_norm_vector.y * src_to_target_norm_vector.y);
+    src_to_target_norm_vector.x /= src_to_target_norm_vector_length;
+    src_to_target_norm_vector.y /= src_to_target_norm_vector_length;
+
+    let first_point = {
+        "x": src.x + src_width / 2 * src_to_target_norm_vector.x,
+        "y": src.y + src_width / 2 * src_to_target_norm_vector.y
+    };
+    let second_point = {
+        "x": target.x + target_width / 2 * src_to_target_norm_vector.x,
+        "y": target.y + target_width / 2 * src_to_target_norm_vector.y
+    };
+    let third_point = {
+        "x": target.x - target_width / 2 * src_to_target_norm_vector.x,
+        "y": target.y - target_width / 2 * src_to_target_norm_vector.y
+    };
+    let fourth_point = {
+        "x": src.x - src_width / 2 * src_to_target_norm_vector.x,
+        "y": src.y - src_width / 2 * src_to_target_norm_vector.y
+    };
+    let length = Math.sqrt(Math.pow(target.x - src.x, 2) + Math.pow(target.y - src.y, 2));
+
+    if (length > 0) {
+        return "M {0}, {1} a{4},{4} 0 0,0 {2},{3} L {5}, {6} a{9},{9} 0 0,1 {7},{8}".format(
+            first_point.x, first_point.y,
+            second_point.x - first_point.x, second_point.y - first_point.y, 1.8 * length,
+            third_point.x, third_point.y,
+            -third_point.x + fourth_point.x, -third_point.y + fourth_point.y, 1.8 * length
+        )
+    }
+    else {
+        return "M {0}, {1} a{4},{4} 0 0,0 {2},{3} L {5}, {6} a{9},{9} 0 0,0 {7},{8}".format(
+            second_point.x, second_point.y,
+            first_point.x - second_point.x, first_point.y - second_point.y, 1.8 * length,
+            fourth_point.x, fourth_point.y,
+            fourth_point.x - third_point.x, fourth_point.y - third_point.y, 1.8 * length
+  )}
 }
