@@ -132,7 +132,7 @@ let GraphLayout = function (container) {
         transform_plg.set_zoom();
 
         // init legend
-        that._draw_legend();
+        // that._draw_legend();
     };
 
     that._draw_legend = function() {
@@ -147,7 +147,7 @@ let GraphLayout = function (container) {
             .attr("fill", "white");
         legend_group.append("rect")
             .attr("x", 40)
-            .attr("y", 35)
+            .attr("y", 15)
             .attr("width", 310)
             .attr("height", 30)
             .attr("stroke", "black")
@@ -157,15 +157,15 @@ let GraphLayout = function (container) {
             .attr("fill", "none");
         // draw tapered
         let tapered_group = legend_group.append("g").attr("id", "tapered-legend");
-        let tapered_path = "M 50 45 L 200 50 L 50 55 Z";
-        let arrow_path = "M 230 50 L 280 50 L 330 50 ";
+        let tapered_path = "M 50 25 Q 125 12.5, 200 29.5 L 200 30.5 Q 125 17.5, 50 35 Z";
+        let arrow_path = "M 230 30 L 280 30 L 330 30 ";
         tapered_group.append("path")
             .attr("d", tapered_path)
             .attr("fill", "rgb(127, 127, 127)")
             .attr("stroke", "none");
         tapered_group.append("text")
             .attr("x", 210)
-            .attr("y", 57)
+            .attr("y", 37)
             .attr("font-weight", 400)
             .attr("font-size", 20)
             .attr("text-anchor", "start")
@@ -376,8 +376,8 @@ let GraphLayout = function (container) {
                 .attr("orient", "auto")
                 .attr("markerUnits", "strokeWidth")
                 .append("path")
-                .attr("d", "M0,4 L4,2 L0,0")
-                .attr("stroke", edge_color)
+                .attr("d", "M-1,4 L3,2 L-1,0")
+                .attr("stroke", "rgb(127,127,127)")
                 .attr("fill", "transparent")
                 .attr("opacity", 1)
                 .attr("stroke-width", 1);

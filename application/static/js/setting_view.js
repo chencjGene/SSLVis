@@ -276,19 +276,21 @@ f: {
 				range: true, 
 				value: [2,3]
 			});
+		$("#setk-button").on("click", function(slideEvt){
+			d3.select(this).select("use").attr("xlink:href", "#animate-setk-icon")
+		});
+
 		$("#local-k").on("slide", function(slideEvt){
 			let v = slideEvt.value;
 			$("#k-range").text("[" + v[0] + "," + v[1] + "]");
 		})
 		
-		$('#load-button').on('click', function() {
-			var $this = $(this);
-			$this.html('<span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span>Loading...').attr('disabled', true);
+		$('#localk-button').on('click', function() {
+			d3.select(this).select("use").attr("xlink:href", "#animate-localk-icon")
 		});
 
-		$('#update-button').on('click', function() {
-			var $this = $(this);
-			$this.html('<span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span>Updating...').attr('disabled', true);
+		$('#loaddataset-button').on('click', function() {
+			d3.select(this).select("use").attr("xlink:href", "#animate-update-icon")
 		});
 
 	};

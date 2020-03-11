@@ -416,3 +416,28 @@ label.field.focused .psuedo_select ul {
   margin-left: 5px;
   margin-right: 5px;
 }
+
+#loaddataset-button, #setk-button, #localk-button {
+  margin-top: 23px;
+}
+
+.circle-path {
+  transform: translate(15px,15px);
+/*   transform-origin: center; */
+  animation: rotate_arrow 2s infinite;
+}
+
+@keyframes rotate_arrow {
+  from {
+        -webkit-transform: rotate(0deg);
+        transform: rotate(0deg);
+    }
+    99.999% {
+        -webkit-transform: rotate(359deg);
+        transform: rotate(359deg);
+    }
+    to {
+        -webkit-transform: rotate(0deg);
+        transform: rotate(0deg);
+    }
+}

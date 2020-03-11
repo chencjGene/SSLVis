@@ -50,6 +50,7 @@ let GraphHighlight = function (parent) {
 
         $("#refresh-btn")
             .click(function () {
+                d3.select("#refresh-btn").select("use").attr("xlink:href", "#animate-update-icon");
                 view.data_manager.eval_edit_info();
             });
 
@@ -69,10 +70,12 @@ let GraphHighlight = function (parent) {
     };
 
     that.add_btn_style = function() {
-        let btn_ids = ["apply-delete-btn", "lasso-btn", "fisheye-btn", "home-btn", "refresh-btn", "influence-to-btn", "influence-from-btn", "select-edge-btn"];
+        let btn_ids = ["apply-delete-btn", "lasso-btn", "fisheye-btn", "home-btn", "refresh-btn", "influence-to-btn", "influence-from-btn",
+            "select-edge-btn", "loaddataset-button", "setk-button", "localk-button"];
         for(let btn_id of btn_ids){
             let select_id = "#"+btn_id;
             let path = d3.select(select_id).selectAll("path");
+            let polygon = d3.select(select_id).selectAll("polygon");
             $(select_id)
             .on("mouseover", function () {
             if (d3.select(select_id).style("background-color") === "rgba(0, 0, 0, 0)"
@@ -80,6 +83,7 @@ let GraphHighlight = function (parent) {
                 || d3.select(select_id).style("background-color") === "rgb(255, 255, 255)") {
                 d3.select(select_id).style("background", "gray");
                 path.attr("stroke", "white").attr("fill", "white");
+                polygon.attr("stroke", "white").attr("fill", "white");
             }
         })
             .on("mousemove", function () {
@@ -88,12 +92,14 @@ let GraphHighlight = function (parent) {
                 || d3.select(select_id).style("background-color") === "rgb(255, 255, 255)") {
                 d3.select(select_id).style("background", "gray");
                 path.attr("stroke", "white").attr("fill", "white");
+                polygon.attr("stroke", "white").attr("fill", "white");
             }
         })
             .on("mouseout", function () {
             if (d3.select(select_id).style("background-color") === "gray") {
                 d3.select(select_id).style("background", "white");
                 path.attr("stroke", "black").attr("fill", "black");
+                polygon.attr("stroke", "black").attr("fill", "black");
             }
         });
         }
