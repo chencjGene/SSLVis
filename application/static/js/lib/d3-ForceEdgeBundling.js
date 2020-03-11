@@ -6,7 +6,7 @@
 
  */
 (function () {
-	d3.ForceEdgeBundling = function () {
+	d3.ForceEdgeBundling = function (setS, setelect) {
 		var data_nodes = {}, // {'nodeid':{'x':,'y':},..}
 			data_edges = [], // [{'source':'nodeid1', 'target':'nodeid2'},..]
 			edge_types = [],
@@ -14,14 +14,15 @@
 			repulse_list_for_edge = [],
 			subdivision_points_for_edge = [],
 			K = 0.1, // global bundling constant controlling edge stiffness
-			S_initial = 0.1, // init. distance to move points
+			S_initial = setS, // init. distance to move points
 			P_initial = 1, // init. subdivision number
 			P_rate = 1, // subdivision rate increase
 			C = 2, // number of cycles to perform
 			I_initial = 40, // init. number of iterations for cycle
 			I_rate = 0.6666667, // rate at which iteration number decreases i.e. 2/3
 			compatibility_threshold = 0.6,
-			eps = 1e-6;
+			eps = 1e-6,
+			elect_scale = setelect;
 
 
 		/*** Geometry Helper Methods ***/
@@ -159,11 +160,11 @@
 				};
 
 				if ((Math.abs(force.x) > eps) || (Math.abs(force.y) > eps)) {
-					var diff = (1 / Math.pow(custom_edge_length({
+					var diff = (Math.pow(custom_edge_length({
 						'source': subdivision_points_for_edge[compatible_edges_list[oe]][i],
 						'target': subdivision_points_for_edge[e_idx][i]
-					}), 1));
-					diff *= 2;
+					}), 2));
+					diff *= elect_scale;
 					diff = Math.min(diff, 2);
 					sum_of_forces.x += force.x * diff;
 					sum_of_forces.y += force.y * diff;

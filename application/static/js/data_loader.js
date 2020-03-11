@@ -189,6 +189,11 @@ DataLoaderClass = function () {
         that.edit_view.eval_edit();
     };
 
+    that.show_delete_and_change_label = function(edit_state) {
+        that.state.edit_state = edit_state;
+        that.update_graph_view();
+    };
+
     that.update_delete_and_change_label = function (edit_state) {
         that.state.edit_state = edit_state;
         let data = JSON.parse(JSON.stringify(edit_state));
@@ -665,7 +670,8 @@ DataLoaderClass = function () {
             "aggregate": that.state.aggregate,
             "rect_nodes": that.state.rect_nodes,
             "edge_filter_threshold": that.state.edge_filter_threshold,
-            "edge_type_range": that.state.edge_type_range
+            "edge_type_range": that.state.edge_type_range,
+            "edit_state": that.state.edit_state
         });
         reset_spinner();
     };

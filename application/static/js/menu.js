@@ -202,6 +202,7 @@ let EditLayout = function(){
         else {
 
         }
+        that.data_manager.show_delete_and_change_label(edit_state);
         console.log("Now edit state:", edit_state);
     };
 
