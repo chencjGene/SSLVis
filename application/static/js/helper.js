@@ -341,6 +341,20 @@ function delRepeatDictArr(dict_arr){
     return new_arr;
 }
 
+function delRepeatPath(path){
+    let check_dir = {};
+    let new_path = [];
+    for (let i = 0; i < path.length; i++){
+        let p = path[i];
+        let id = p[0].id + "-" + p[1].id;
+        if (check_dir[id] === undefined){
+            check_dir[id] = 1;
+            new_path.push(p);
+        }
+    }
+    return new_path;
+}
+
 
 
 function variableWidthPath(src, target, src_width, target_width) {
@@ -394,6 +408,12 @@ var intersect = function(rect1, rect2, padding_label) {
         (rect1.y + rect1.h + padding_label < rect2.y) || (rect2.y + rect2.h + padding_label < rect1.y))
 };
 
+let path_rect_intersect = function(path, rect){
+    return bezierIntersect.quadBezierAABB(path[4][0].x, path[4][0].y,
+        path[4][1].x, path[4][1].y, path[4][2].x, path[4][2].y,
+        rect.x, rect.y, rect.x + rect.w, rect.y + rect.h)
+};
+
 function quadrant(center, point){
     let x = point.x - center.x;
     let y = point.y - center.y;
@@ -421,23 +441,13 @@ function label_layout(nodes, path, zoom_scale){
     let img_width = 6 * zoom_scale;
     let img_height = 6  * zoom_scale;
     let padding = 1  * zoom_scale;
-    for (let i = 0; i < nodes.length; i++){
-        nodes[i].quad = [0, 0, 0, 0]; // 0 for candidate; 1 for taken; -1 for forbidden
-    }
-    path.forEach(d => {
-        let src = d[0];
-        let tgt = d[1];
-        let src_quad = quadrant(src, tgt);
-        let tgt_quad = quadrant(tgt, src);
-        src.quad[src_quad] = -1;
-        tgt.quad[tgt_quad] = -1;
-    });
 
     function return_rect(node, j){
         let x = node.x;
         let y = node.y;
         if (j === 3){
             y = y - img_height;
+            x = x + img_width * 0.02;
         }
         else if (j === 2){
             x = x - img_width;
@@ -445,12 +455,17 @@ function label_layout(nodes, path, zoom_scale){
         }
         else if (j === 1){
             x = x - img_width;
+            y = y + img_height * 0.02;
+        }
+        else if (j === 0){
+            x = x + img_width * 0.02;
+            y = y + img_height * 0.02;
         }
         return {
                 "x": x, 
                 "y": y, 
-                "w": img_width, 
-                "h": img_height,
+                "w": img_width * 0.98, 
+                "h": img_height * 0.98,
                 "url": DataLoader.image_url + "?filename=" + node.id + ".jpg"
                 }
     }
@@ -466,6 +481,28 @@ function label_layout(nodes, path, zoom_scale){
             }
         }
     };
+
+    for (let i = 0; i < nodes.length; i++){
+        nodes[i].quad = [0, 0, 0, 0]; // 0 for candidate; 1 for taken; -1 for forbidden
+        for (let j = 0; j < 4; j++){
+            let rect = return_rect(nodes[i], j);
+            for (let k = 0; k < path.length; k++){
+                if (path_rect_intersect(path[k], rect)){
+                    nodes[i].quad[j] = -1;
+                    break;
+                }
+            }
+        }
+    }
+    // path.forEach(d => {
+    //     let src = d[0];
+    //     let tgt = d[1];
+    //     let src_quad = quadrant(src, tgt);
+    //     let tgt_quad = quadrant(tgt, src);
+    //     src.quad[src_quad] = -1;
+    //     tgt.quad[tgt_quad] = -1;
+    // });
+
 
     let sorted_nodes = nodes; // TODO
     let imgs = [];
@@ -495,3 +532,44 @@ function label_layout(nodes, path, zoom_scale){
     return imgs;
 };
 
+function get_multiple_connected_path(node, all_graph, in_step, out_step, threshold){
+    let path = [];
+    // all_graph = DataLoader.state.complete_graph;
+    // in step
+    candi_queue = [node];
+    for(let i = 0; i < in_step; i++){
+        new_queue = [];
+        for (let j = 0; j < candi_queue.length; j++){
+            let n = candi_queue[j];
+            let from_list = n.from;
+            let from_weight = n.from_weight;
+            for (let k = 0; k < from_list.length; k++){
+                if (from_weight[k] > threshold[0] && from_weight[k]< threshold[1]){
+                    path.push([all_graph[from_list[k]], n, from_weight[k]]);
+                    new_queue.push(all_graph[from_list[k]]);
+                }
+            }
+        }
+        candi_queue = new_queue;
+    }
+
+    // out step
+    candi_queue = [node];
+    for(let i = 0; i < out_step; i++){
+        new_queue = [];
+        for (let j = 0; j < candi_queue.length; j++){
+            let n = candi_queue[j];
+            let to_list = n.to;
+            let to_weight = n.to_weight;
+            for (let k = 0; k < to_list.length; k++){
+                if (to_weight[k] > threshold[0] && to_weight[k]< threshold[1]){
+                    path.push([n, all_graph[to_list[k]], to_weight[k]]);
+                    new_queue.push(all_graph[to_list[k]]);
+                }
+            }
+        }
+        candi_queue = new_queue;
+    }
+
+    return path;
+};

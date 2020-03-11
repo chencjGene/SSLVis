@@ -53,6 +53,7 @@ let GraphLayout = function (container) {
 
     // meta data
     let nodes = {};
+    that.linked_nodes = null;
     let nodes_in_this_level = [];
     let path = [];
     let path_nodes = {};
@@ -79,6 +80,8 @@ let GraphLayout = function (container) {
     that.snapshot_edge = [];
     let edge_filter_threshold = 0;
     that.focus_nodes = [];
+    that.multi_step_in = 2;
+    that.multi_step_out = 1;
     let path_line = d3.line()
 			.x(function(d){ return d.x; })
                         .y(function(d){ return d.y; })
@@ -176,15 +179,21 @@ let GraphLayout = function (container) {
         highlights = highlights.delRepeat();
 
         if (that.focus_nodes.length === 1 && that.selection_box.length === 0){
-            // imgs = label_layout(nodes, path, 1);
-            let linked_nodes = [];
+            // get multiple connected path
+            let new_path = get_multiple_connected_path(that.focus_nodes[0], that.data_manager.state.complete_graph,
+                    that.multi_step_in, that.multi_step_out, edge_filter_threshold);
+            path = path.concat(new_path);
+            path = delRepeatPath(path);
+
+            that.linked_nodes = [];
             path.forEach(d => {
-                linked_nodes.push(d[0]);
-                linked_nodes.push(d[1]);
+                that.linked_nodes.push(d[0]);
+                that.linked_nodes.push(d[1]);
             });
-            linked_nodes = linked_nodes.concat(that.focus_nodes);
-            linked_nodes = delRepeatDictArr(linked_nodes);
-            imgs = label_layout(linked_nodes, path, that.zoom_scale);
+            that.linked_nodes = that.linked_nodes.concat(that.focus_nodes);
+            that.linked_nodes = delRepeatDictArr(that.linked_nodes);
+            nodes = nodes.concat(that.linked_nodes);
+            nodes = delRepeatDictArr(nodes);
         }
 
         // }
@@ -253,6 +262,20 @@ let GraphLayout = function (container) {
                 }
             }
             path_ary = path_ary.map((d,i) => d.concat([res[i]]));
+            let ori_res = deepCopy(res);
+            ori_res.forEach(d => {
+                for(let i = 0; i < d.length; i++){
+                    d[i].x = that.center_scale_x_reverse(d[i].x);
+                    d[i].y = that.center_scale_y_reverse(d[i].y);
+                }
+            })
+            path_ary = path_ary.map((d,i) => d.concat([ori_res[i]]));
+            that.path_ary = path_ary;
+            if (that.focus_nodes.length === 1 && that.selection_box.length === 0){
+                imgs = label_layout(that.linked_nodes, path_ary, that.zoom_scale);
+            }
+
+            console.log("path_ary", path_ary);
             console.log("bundling res", path_ary);
             nodes_in_group = nodes_group.selectAll("circle")
                 .data(nodes_ary, d => d.id);
