@@ -18,9 +18,12 @@ let GraphLayout = function (container) {
     that.zoom_scale = 1;
     let star_inner_r = 6;
     let star_outer_r = 15;
-    let path_begin_width = 6;
-    let path_mid_width = 3.5;
-    let path_end_width = 1;
+    let path_width_scale = 1.75;
+    let path_begin_width = 2*path_width_scale;
+    let path_end_width = 0;
+    let path_mid_width = (path_begin_width+path_end_width)/2;
+    let bundling_force_S = 0.02;
+    let bundling_elect_scale = 6;
 
     // other consts
     let btn_select_color = "#560731";
@@ -63,6 +66,12 @@ let GraphLayout = function (container) {
     let aggregate = [];
     let rect_nodes = [];
     let imgs = [];
+
+    //edit info
+    let add_labeled_nodes = [];
+    let add_labeled_label = [];
+    let delete_edges = [];
+
     that.selection_box_id_count = 0;
     that.selection_box = [
         // {x:100, y:100, width:300, height:300}
@@ -145,6 +154,10 @@ let GraphLayout = function (container) {
         edge_type_range = state.edge_type_range;
         all_path = state.path;
         path = [];
+        add_labeled_nodes = state.edit_state.labeled_idxs;
+        add_labeled_label = state.edit_state.labels;
+        delete_edges = state.edit_state.deleted_edges.map(d => d[0]+","+d[1]);
+
         
         for (let type of edge_type_range){
             let path_in_this_type = all_path[type]
@@ -204,7 +217,7 @@ let GraphLayout = function (container) {
             //
             // let nodes_ary = Object.values(nodes);
             let nodes_ary = nodes;
-            let golds_ary = nodes_ary.filter(d => d.label[0] > -1);
+            let golds_ary = nodes_ary.filter(d => d.label[0] > -1 || add_labeled_nodes.indexOf(d.id) > -1);
             let glyphs_ary = nodes_ary.filter(d => glyphs.indexOf(d.id)>-1);
             let path_ary = path;
 
@@ -217,7 +230,7 @@ let GraphLayout = function (container) {
                 let blabel = nodes_dict[path[1].id].label[iter];
                 path.edge_type = alabel+","+blabel;
             }
-            let fbundling = d3.ForceEdgeBundling()
+            let fbundling = d3.ForceEdgeBundling(bundling_force_S, bundling_elect_scale)
 				.nodes(nodes_dict)
 				.edges(path_ary.map(function (d) {
                     return {
@@ -359,6 +372,11 @@ let GraphLayout = function (container) {
                 .transition()
                 .duration(AnimationDuration)
                 .attr("fill", function (d) {
+                    let added_idx = add_labeled_nodes.indexOf(d.id);
+                    if(added_idx > -1){
+                        let label = add_labeled_label[added_idx];
+                        return label===-1?color_unlabel:color_label[label];
+                    }
                     return d.label[iter]===-1?color_unlabel:color_label[d.label[iter]];
                 })
                 .attr("opacity", d => that.opacity(d.id))
@@ -486,6 +504,12 @@ let GraphLayout = function (container) {
                 .attr("id", d => "gold-" + d.id)
                 .attr("d", d => star_path(star_outer_r * that.zoom_scale, star_inner_r * that.zoom_scale, that.center_scale_x(d.x), that.center_scale_y(d.y)))
                 .attr("fill", function (d) {
+                    let added_idx = add_labeled_nodes.indexOf(d.id);
+                    if(added_idx > -1){
+                        let label = add_labeled_label[added_idx];
+                        return label===-1?color_unlabel:color_label[label];
+                    }
+
                     return d.label[iter]===-1?color_unlabel:color_label[d.label[iter]];
                 })
                 .attr("stroke", "white")
@@ -577,10 +601,16 @@ let GraphLayout = function (container) {
                 })
                 .on("mouseover", function (d) {
                             console.log(d);
-                            d3.select(this).style("stroke-width", 4.0 * that.zoom_scale);
+                            d3.select(this).attr("d", function (d) {
+                                return bezier_tapered(d[3][0], d[3][1], d[3][2], path_begin_width * that.zoom_scale * 3,
+                        path_mid_width * that.zoom_scale * 3, path_end_width * that.zoom_scale * 3);
+                            });
                         })
                 .on("mouseout", function (d) {
-                        d3.select(this).style("stroke-width", 2.0 * that.zoom_scale);
+                        d3.select(this).attr("d", function (d) {
+                                return bezier_tapered(d[3][0], d[3][1], d[3][2], path_begin_width * that.zoom_scale,
+                        path_mid_width * that.zoom_scale, path_end_width * that.zoom_scale);
+                            });
                     })
                 .on("mousedown", function (d) {
                     console.log("mousedown", d);
@@ -705,6 +735,11 @@ let GraphLayout = function (container) {
     };
 
     that.opacity_path = function(path) {
+        let key = path[0].id+","+path[1].id;
+        // if deleted:
+        if(delete_edges.indexOf(key) > -1){
+            return 0
+        }
         return 1;
     };
 
@@ -999,6 +1034,25 @@ let GraphLayout = function (container) {
             }
             else return 2.0 * that.zoom_scale
         })
+    };
+
+    // debug
+    that.update_path_width_scale = async function(scale) {
+        path_width_scale = scale;
+        path_begin_width = 2*path_width_scale;
+        path_end_width = 0;
+        path_mid_width = (path_begin_width+path_end_width)/2;
+        await that._update_view()
+    };
+
+    that.update_bundling_S = async function(S) {
+        bundling_force_S = S;
+        await that._update_view();
+    };
+
+    that.update_bundling_elec = async function(elect) {
+        bundling_elect_scale = elect;
+        await that._update_view();
     };
 
     // that.get_area = function(){
