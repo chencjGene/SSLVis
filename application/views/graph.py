@@ -60,6 +60,11 @@ def app_local_update_k():
     data = json.loads(request.data)
     return local_update_k(data)
 
+@graph.route("/graph/AddData", methods=["GET", "POST"])
+def app_add_data():
+    data = json.loads(request.data)
+    return add_data(data)
+
 @graph.route('/graph/GetLoss', methods=['POST', 'GET'])
 def app_get_loss():
     return get_loss()

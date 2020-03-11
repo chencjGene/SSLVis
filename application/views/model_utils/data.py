@@ -460,7 +460,12 @@ class GraphData(Data):
                 # # removed edges
                 # dist[1] = (now_affinity[pre_affinity == 1] == 0).sum()
                 # edge changes
-                dist[0] = ((now_affinity + pre_affinity) == 1).sum()
+                # for adding data
+                min_len = pre_affinity.shape[0]
+                if now_affinity.shape[0] < pre_affinity.shape[0]:
+                    min_len = now_affinity.shape[0]
+                dist[0] = ((now_affinity[:min_len, :min_len] 
+                    + pre_affinity[:min_len, :min_len]) == 1).sum()
                 # added labels
                 dist[1] = sum(data["train_y"] != -1) - sum(pre_data["train_y"] != -1)
                 # removed instances
@@ -470,7 +475,7 @@ class GraphData(Data):
                 pre_label[pre_data["pred"].max(axis=1) == 0] = -1
                 label = data["pred"].argmax(axis=1)
                 label[data["pred"].max(axis=1) == 0] = -1
-                dist[3] = sum(label != pre_label)
+                dist[3] = sum(label[:min_len] != pre_label[:min_len])
             dist = [int(k) for k in dist]
             # update max_count
             if max(dist) > max_count:
@@ -527,7 +532,16 @@ class GraphData(Data):
         pre_num = self.affinity_matrix.shape[0]
         add_num = len(added_idxs)
         total_num = pre_num + add_num
-        neighbors, test_neighbor = self._preprocess_neighbors(rebuild=True, save=False)
+        add_data_neighbors_path = os.path.join(self.selected_dir, "add_data_neighbors.pkl")
+        add_data_test_neighbors_path = os.path.join(self.selected_dir, "add_data_test_neighbors.pkl")
+        if os.path.exists(add_data_neighbors_path) and os.path.exists(add_data_test_neighbors_path):
+            neighbors = pickle_load_data(add_data_neighbors_path)
+            test_neighbors = pickle_load_data(add_data_test_neighbors_path)
+        else:
+            neighbors, test_neighbors = self._preprocess_neighbors(rebuild=True, save=False)
+            pickle_save_data(add_data_neighbors_path, neighbors)
+            pickle_save_data(add_data_test_neighbors_path, test_neighbors)
+        self.neighbors = neighbors
         new_affinity_matrix  = np.zeros((pre_num + add_num, pre_num + add_num))
         new_affinity_matrix[:pre_num, :pre_num] = self.affinity_matrix.toarray()
         for i in range(pre_num, pre_num + add_num):
@@ -537,7 +551,8 @@ class GraphData(Data):
                     new_affinity_matrix[i, idx] = 1
                     new_affinity_matrix[idx, i] = 1
         new_affinity_matrix = sparse.csr_matrix(new_affinity_matrix)
-        self.affinity_matrix = new_affinity_matrix
+        self.affinity_matrix = self.correct_unconnected_nodes(new_affinity_matrix)
+        # self.affinity_matrix = new_affinity_matrix
 
     def add_data_oct(self, added_idxs, train_pred, cls):
         added_idxs = np.array(added_idxs).reshape(-1)
@@ -547,7 +562,16 @@ class GraphData(Data):
         pre_num = self.affinity_matrix.shape[0]
         add_num = len(added_idxs)
         total_num = pre_num + add_num
-        neighbors, test_neighbor = self._preprocess_neighbors(rebuild=True, save=False)
+        add_data_neighbors_path = os.path.join(self.selected_dir, "add_data_neighbors.pkl")
+        add_data_test_neighbors_path = os.path.join(self.selected_dir, "add_data_test_neighbors.pkl")
+        if os.path.exists(add_data_neighbors_path) and os.path.exists(add_data_test_neighbors_path):
+            neighbors = pickle_load_data(add_data_neighbors_path)
+            test_neighbors = pickle_load_data(add_data_test_neighbors_path)
+        else:
+            neighbors, test_neighbors = self._preprocess_neighbors(rebuild=True, save=False)
+            pickle_save_data(add_data_neighbors_path, neighbors)
+            pickle_save_data(add_data_test_neighbors_path, test_neighbors)
+        self.neighbors = neighbors
         new_affinity_matrix  = np.zeros((pre_num + add_num, pre_num + add_num))
         new_affinity_matrix[:pre_num, :pre_num] = self.affinity_matrix.toarray()
         for i in range(pre_num, pre_num + add_num):

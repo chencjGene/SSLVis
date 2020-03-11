@@ -8,9 +8,13 @@ function update_k(){
 }
 
 function local_update_k(){
-
     DataLoader.local_update_k();
 }
+
+function add_data(){
+    let data_num = $("#add-data").slider("getValue");
+    DataLoader.add_data(data_num);
+};
 
 function update_filter_threshold(threshold){
     DataLoader.update_filter_threshold(threshold);
