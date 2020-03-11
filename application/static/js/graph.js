@@ -183,7 +183,7 @@ let GraphLayout = function (container) {
     that.component_update = async function(state) {
         console.log("get graph state:", state);
         that._update_data(state);
-        // that.data_manager.update_image_view(highlights);
+        that.data_manager.update_image_view(highlights);
         await that._update_view();
     };
 

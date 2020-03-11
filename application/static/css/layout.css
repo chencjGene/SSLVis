@@ -35,7 +35,7 @@ body {
 }
 
 #control-column {
-    flex: 0 1 560px;
+    flex: 0 1 280px;
     /* width: 18%; */
 }
 
@@ -49,7 +49,7 @@ body {
 }
 
 #history-info-column{
-    flex: 0 1 560px;
+    flex: 0 1 350px;
     /*border-left: 1px solid #c1c1c1;*/
     display: flex;
     flex-direction: column;
