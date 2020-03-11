@@ -58,6 +58,7 @@ let DistLayout = function (container) {
     let total_iters = null;
     let current_iter = 0;
     let slider_color = "#A9A9A9";
+    that.flow_text = [];
 
     // flags
     that.click_id = null;

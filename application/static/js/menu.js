@@ -62,7 +62,7 @@ let EditLayout = function(){
             let menu = [];
             menu.push({
                 // title: 'Label As',
-                name: 'Label As:',
+                name: 'Label as:',
                 color: '',
                 className: "iw-mnotSelected label-as",
                 fun: function () {
@@ -85,17 +85,17 @@ let EditLayout = function(){
                     };
                     menu.push(sm);
                 });
-            menu.push({
-                title: 'Add',
-                name: '\u2295',
-                color: '',
-                className: "iw-mnotSelected add-menu-item",
-                fun: function () {
-                    console.log("add", d);
-                    // let label = -1;
-                    // that.editing(label);
-                }
-            });
+            // menu.push({
+            //     title: 'Add',
+            //     name: '\u2295',
+            //     color: '',
+            //     className: "iw-mnotSelected add-menu-item",
+            //     fun: function () {
+            //         console.log("add", d);
+            //         // let label = -1;
+            //         // that.editing(label);
+            //     }
+            // });
 
             click_node_menu = menu;
             if (menu.length > 0) {
