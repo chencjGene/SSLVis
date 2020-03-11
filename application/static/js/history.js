@@ -6,13 +6,13 @@ let HistoryLayout = function (container) {
     let bbox = that.container.node().getBoundingClientRect();
     let width = bbox.width;
     let height = bbox.height;
-    let margin_horizontal = 10;
+    let margin_horizontal = 5;
     let layout_width = width - margin_horizontal * 2;
     let layout_height = height * 0.8;
     let title_height = 30;
     let action_id_center = layout_width * 0.15;
     let cell_center = layout_width * 0.5;
-    let text_center = layout_width * 0.85;
+    let text_center = layout_width * 0.75;
     let cell_height = 60;
     let cell_width = layout_width;
     let dist_start = cell_center - layout_width * 0.2;
@@ -166,7 +166,7 @@ let HistoryLayout = function (container) {
             .attr("class", ".bottom-line")
             .attr("x", action_id_center + margin_horizontal)
             .attr("y", cell_height)
-            .attr("width", cell_width - action_id_center - margin_horizontal)
+            .attr("width", cell_width - action_id_center - margin_horizontal * 6)
             .attr("height", 1)
             .style("fill", "rgb(222,222,222)");
         that.cells.selectAll("rect.change")
@@ -198,7 +198,7 @@ let HistoryLayout = function (container) {
             .attr("font-size", "12px")
             .attr("font-weight", 700)
             .attr("fill", "#333333")
-            .attr("text-anchor", "middle")
+            .attr("text-anchor", "start")
             .attr("x", text_center)
             .attr("y", cell_height * 0.5 + 4.5)
             .attr("text-anchor", "start")
