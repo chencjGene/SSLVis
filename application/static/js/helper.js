@@ -483,7 +483,9 @@ function label_layout(nodes, path, zoom_scale){
     };
 
     for (let i = 0; i < nodes.length; i++){
-        nodes[i].quad = [0, 0, 0, 0]; // 0 for candidate; 1 for taken; -1 for forbidden
+        if (nodes[i].quad === undefined){
+            nodes[i].quad = [0, 0, 0, 0]; // 0 for candidate; 1 for taken; -1 for forbidden
+        }
         for (let j = 0; j < 4; j++){
             let rect = return_rect(nodes[i], j);
             for (let k = 0; k < path.length; k++){
@@ -494,6 +496,18 @@ function label_layout(nodes, path, zoom_scale){
             }
         }
     }
+
+    // sort
+    for (let i = 0; i < nodes.length; i++){
+        nodes[i].placed = 0;
+        for (let j = 0; j < 4; j++){
+            if (nodes[i].quad[j] === 1){
+                nodes[i].placed = 1;
+            }
+        }
+    }
+    nodes.sort( (a,b) => b.placed - a.placed);
+
     // path.forEach(d => {
     //     let src = d[0];
     //     let tgt = d[1];

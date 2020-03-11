@@ -333,6 +333,13 @@ label.field.focused .psuedo_select ul {
     color: #333333;
 }
 
+.slider-text{
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #333333;
+}
+
 #global-k-div{
 }
 

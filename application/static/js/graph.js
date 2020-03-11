@@ -55,7 +55,7 @@ let GraphLayout = function (container) {
 
     // meta data
     let nodes = {};
-    that.linked_nodes = null;
+    that.linked_nodes = [];
     let nodes_in_this_level = [];
     let path = [];
     let path_nodes = {};
@@ -225,7 +225,6 @@ let GraphLayout = function (container) {
         // add focus nodes
         nodes = nodes.concat(that.focus_nodes);
         nodes = delRepeatDictArr(nodes);
-        highlights = highlights.delRepeat();
 
         if (that.focus_nodes.length === 1 && that.selection_box.length === 0){
             // get multiple connected path
@@ -244,6 +243,10 @@ let GraphLayout = function (container) {
             nodes = nodes.concat(that.linked_nodes);
             nodes = delRepeatDictArr(nodes);
         }
+
+        
+        highlights = highlights.concat(that.linked_nodes.map(d => d.id));
+        highlights = highlights.delRepeat();
 
         // }
         // glyphs
