@@ -3,16 +3,29 @@
 * */
 
 // DistLayout.prototype._create_slider = function(){
+//     let that = this;
 // };
 
 // DistLayout.prototype._update_slider = function(){
+//     let that = this;
 // };
 
 // DistLayout.prototype._remove_slider = function(){
+//     let that = this;
 
 // };
 
 
-// .extent([[slider_x_shift - node_width/2, 5 + legend_hight],
-//     // [slider_x_shift + slider_width + node_width/2, slider_y_shift - 15]])
-//     [slider_x_shift + slider_width + node_width/2, slider_y_shift - 15]])
+
+// DistLayout.prototype._create_legend = function(){
+//     let that = this;
+// };
+
+// DistLayout.prototype._update_legend = function(){
+//     let that = this;
+// };
+
+// DistLayout.prototype._remove_legend = function(){
+//     let that = this;
+
+// };

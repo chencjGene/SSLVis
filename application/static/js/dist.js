@@ -40,6 +40,7 @@ let DistLayout = function (container) {
     let svg = null;
     let node_group = null;
     let link_group = null;
+    let flow_text_group = null;
     let slider_group = null;
     let legend_group = null;
     let selected_link_group = null;
@@ -79,6 +80,9 @@ let DistLayout = function (container) {
             .attr("transform", "translate(" + 0 + ", " + 10 + ")");
         link_group = svg.append("g")
             .attr("id", "link_group")
+            .attr("transform", "translate(" + 0 + ", " + 10 + ")");
+        flow_text_group = svg.append("g")
+            .attr("id", "flow_text_group")
             .attr("transform", "translate(" + 0 + ", " + 10 + ")");
         selected_link_group = svg.append("g")
             .attr("id", "selected_link_group")
@@ -177,7 +181,8 @@ let DistLayout = function (container) {
                     _nodes.push({
                         "name": i + "-" + j,
                         "color": colors[j],
-                        "class": j
+                        "class": j,
+                        "layer": i
                     })
                 }
             }
@@ -195,7 +200,8 @@ let DistLayout = function (container) {
                             "names": i + "-" + j + "-" + (i + 1) + "-" + k,
                             "value": flow[j][k],
                             "source_class": j,
-                            "target_class": k
+                            "target_class": k,
+                            "level": i
                         })
                     }
                 }
@@ -216,8 +222,36 @@ let DistLayout = function (container) {
         });
         nodes = res.nodes;
         links = dist_mode ? res.links : res.links.filter(d => d.source_class !== d.target_class);
-        // console.log("nodes: ", nodes);
-        // console.log("links: ", links);
+        
+        // get flow text
+        let consist_links = res.links.filter(d => d.source_class === d.target_class);
+        let change_links = res.links.filter(d => d.source_class !== d.target_class);
+        consist_links = consist_links.filter(function(d){
+            for(let i = 0; i < change_links.length; i++){
+                let c = change_links[i];
+                if (c.level !== d.level) continue;
+                if ((c.source_class > d.source_class && c.target_class < d.target_class) ||
+                    (c.source_class < d.source_class && c.target_class > d.target_class)){
+                        return false;
+                    }
+            }
+            return true;
+        })
+        // links.forEach(d => d.select = 0);
+        // consist_links.forEach(d => d.select = 1);
+        that.flow_text = [];
+        for (let i = 0; i < label_names.length; i++){
+            that.flow_text.push({"id": i});
+            let text_data = that.flow_text[i];
+            text_data.link = {"link": {}};
+            text_data.h = -1;
+            consist_links.forEach(d => {
+                if(d.source_class === i && d.value > text_data.h){
+                    text_data.h = d.value;
+                    text_data.link = d;
+                }
+            })
+        }
 
         // for selected_flows
         selected_links = []
@@ -332,6 +366,21 @@ let DistLayout = function (container) {
                 that._pinked_highlight();
 
             });
+
+        // create flow text
+        flow_text_group.selectAll("text.flow-text")
+            .data(that.flow_text, d => d.id)
+            .enter()
+            .append("text")
+            .attr("class", "flow-text")
+            .attr("font-size", 14)
+            .attr("text-anchor", "middle")
+            .attr("x", d => (d.link.source.x1 + d.link.target.x0) / 2)
+            .attr("y", d => (d.link.source.y0 + d.link.source.y1 
+                + d.link.target.y0 + d.link.target.y1) / 4 + 7)
+            .text((d,i) => label_names[i])
+            .style("fill", "white")
+            .style("opacity", d => d.link.width > 14 ? 1 : 0)
 
         // create slider
         that._create_slider();
@@ -645,6 +694,15 @@ let DistLayout = function (container) {
             .attr("stroke-width", d => Math.max(...[1.5, d.width]))
             .attr("stroke-opacity", 0.4)
             .style("fill-opacity", 0);
+
+        
+        flow_text_group.selectAll(".flow-text")
+            .data(that.flow_text, d => d.id)
+            .attr("x", d => (d.link.source.x1 + d.link.target.x0) / 2)
+            .attr("y", d => (d.link.source.y0 + d.link.source.y1 + 
+                d.link.target.y0 + d.link.target.y1) / 4 + 7)
+            .text((d,i) => label_names[i])
+            .style("opacity", d => d.link.width > 14 ? 1 : 0);
 
         // update slider
         that._update_slider();
