@@ -165,6 +165,7 @@ DataLoaderClass = function () {
                 that.get_dist_view(show_ids);
                 that.update_graph_view();
                 that.get_history();
+                d3.select("#refresh-btn").select("use").attr("xlink:href", "#static-update-icon");
             }), "json", "POST");
 
         // that.fisheye_graph_node = new request_node(that.fisheye_graph_url + params,

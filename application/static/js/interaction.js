@@ -32,10 +32,9 @@ function change_dist_mode(){
 }
 
 function reset_spinner(){
-    $('#load-button').html("Load")
-        .attr("disabled", false);
-    $('#update-button').html("Update")
-    .attr("disabled", false);
+    d3.select("#localk-button").select("use").attr("xlink:href", "#static-localk-icon");
+    d3.select("#setk-button").select("use").attr("xlink:href", "#static-setk-icon");
+    d3.select("#loaddataset-button").select("use").attr("xlink:href", "#static-upload-icon");
 }
 
 function add_new_categories(name, idxs){
