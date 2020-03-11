@@ -35,7 +35,7 @@ body {
 }
 
 #control-column {
-    flex: 0 1 280px;
+    flex: 0 1 560px;
     /* width: 18%; */
 }
 
@@ -49,7 +49,7 @@ body {
 }
 
 #history-info-column{
-    flex: 0 1 330px;
+    flex: 0 1 560px;
     /*border-left: 1px solid #c1c1c1;*/
     display: flex;
     flex-direction: column;
@@ -108,7 +108,7 @@ body {
 .content-container {
     border: 1px solid #c1c1c1;
     border-radius: 5px;
-    margin: 0 5px 5px 5px;
+    margin: 0 10px 5px 10px;
     /*height: 100%;*/
 }
 

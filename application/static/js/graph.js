@@ -20,7 +20,7 @@ let GraphLayout = function (container) {
     let star_outer_r = 15;
     let path_width_scale = 1.75;
     let path_begin_width = 2*path_width_scale;
-    let path_end_width = 0;
+    let path_end_width = 0.4;
     let path_mid_width = (path_begin_width+path_end_width)/2;
     let bundling_force_S = 0.02;
     let bundling_elect_scale = 6;
@@ -30,12 +30,14 @@ let GraphLayout = function (container) {
     let color_unlabel = UnlabeledColor;
     let color_label = CategoryColor;
     let edge_color = UnlabeledColor;
-    let AnimationDuration = 10;
+    let AnimationDuration = 100;
     let create_ani = AnimationDuration;
     let update_ani = AnimationDuration;
     let remove_ani = AnimationDuration * 0.1;
     let pathGenerator = d3.line().curve(d3.curveCardinal.tension(0.5));
     let path_curve = 1;
+    let unccertainty_line_stroke_width = 2;
+    let uncertainty_hat_fill = "rgb(127, 127, 127)";
 
     // draw containter
     let path_group = null;
@@ -128,6 +130,53 @@ let GraphLayout = function (container) {
 
         // init zoom
         transform_plg.set_zoom();
+
+        // init legend
+        that._draw_legend();
+    };
+
+    that._draw_legend = function() {
+        let legend_group = that.svg.append("g").attr("id", "legend-group");
+        // draw rect
+        legend_group.append("rect")
+            .attr("x", 0)
+            .attr("y", 0)
+            .attr("width", 350)
+            .attr("height", 65)
+            .attr("stroke", "none")
+            .attr("fill", "white");
+        legend_group.append("rect")
+            .attr("x", 40)
+            .attr("y", 35)
+            .attr("width", 310)
+            .attr("height", 30)
+            .attr("stroke", "black")
+            .attr("stroke-width", 1)
+            .attr("rx", 5)
+            .attr("ry", 5)
+            .attr("fill", "none");
+        // draw tapered
+        let tapered_group = legend_group.append("g").attr("id", "tapered-legend");
+        let tapered_path = "M 50 45 L 200 50 L 50 55 Z";
+        let arrow_path = "M 230 50 L 280 50 L 330 50 ";
+        tapered_group.append("path")
+            .attr("d", tapered_path)
+            .attr("fill", "rgb(127, 127, 127)")
+            .attr("stroke", "none");
+        tapered_group.append("text")
+            .attr("x", 210)
+            .attr("y", 57)
+            .attr("font-weight", 400)
+            .attr("font-size", 20)
+            .attr("text-anchor", "start")
+            .text("=");
+        tapered_group.append("path")
+            .attr("d", arrow_path)
+            .attr("marker-end", d => "url(#arrow-gray)")
+            .attr("stroke", "rgb(127, 127, 127)")
+            .attr("stroke-width", 2);
+
+
     };
 
     that.set_data_manager = function(new_data_manager) {
@@ -137,7 +186,7 @@ let GraphLayout = function (container) {
     that.component_update = async function(state) {
         console.log("get graph state:", state);
         that._update_data(state);
-        that.data_manager.update_image_view(highlights);
+        // that.data_manager.update_image_view(highlights);
         await that._update_view();
     };
 
@@ -414,10 +463,57 @@ let GraphLayout = function (container) {
                 .attr("transform", d =>"translate("+that.center_scale_x(d.x)+","+that.center_scale_y(d.y)+")")
                 .attr("opacity", d => that.opacity(d.id))
                 .on("end", resolve);
-            glyph_in_group.selectAll("path")
-                .append("path")
+            glyph_in_group.selectAll(".glyph-path")
+                .transition()
+                .duration(AnimationDuration)
                 .attr("d", arc)
                 .attr("fill", (d,i) => color_label[i]);
+            glyph_in_group
+                .selectAll(".uncertainty-value")
+                .select("path")
+                .transition()
+                .duration(AnimationDuration)
+                .attr("d", function (d) {
+                    let uncertainty = d.entropy;
+                    let angle = Math.PI/2*uncertainty;
+                    let arc = d3.arc()
+                        .innerRadius(13 * that.zoom_scale)
+                        .outerRadius(13 * that.zoom_scale)
+                        .startAngle(-angle)
+                        .endAngle(angle);
+                    return arc();
+                })
+                .attr("stroke", "black")
+                .attr("stroke-width", unccertainty_line_stroke_width * that.zoom_scale);
+            glyph_in_group
+                .selectAll(".uncertainty-value-hat-left")
+                .attr("d", function (d) {
+                    return "M {0} {1} L {2} {3} L {4} {5} Z".format(
+                        0, -13 * that.zoom_scale,
+                        6* that.zoom_scale, -13 * that.zoom_scale - 10* that.zoom_scale,
+                        -6* that.zoom_scale, -13 * that.zoom_scale - 10* that.zoom_scale
+                    )
+                })
+                .attr("transform", function (d) {
+                    let uncertainty = d.entropy;
+                    let angle = 90*uncertainty;
+                    return "rotate({0})".format(-angle);
+                });
+            glyph_in_group
+                .selectAll(".uncertainty-value-hat-right")
+                .attr("d", function (d) {
+                    return "M {0} {1} L {2} {3} L {4} {5} Z".format(
+                        0, -13 * that.zoom_scale,
+                        6* that.zoom_scale, -13 * that.zoom_scale - 10* that.zoom_scale,
+                        -6* that.zoom_scale, -13 * that.zoom_scale - 10* that.zoom_scale
+                    )
+                })
+                .attr("transform", function (d) {
+                    let uncertainty = d.entropy;
+                    let angle = 90*uncertainty;
+                    return "rotate({0})".format(angle);
+                });
+
 
             path_in_group
                 .attr("stroke-width", 2.0 * that.zoom_scale)
@@ -482,6 +578,7 @@ let GraphLayout = function (container) {
             nodes_in_group.enter()
                 .append("circle")
                 .attr("id", d => "id-" + d.id)
+                .attr("cursor", "default")
                 .attr("class", "node-dot")
                 .attr("cx", d => that.center_scale_x(d.x))
                 .attr("cy", d => that.center_scale_y(d.y))
@@ -525,6 +622,7 @@ let GraphLayout = function (container) {
             golds_in_group.enter()
                 .append("path")
                 .attr("id", d => "gold-" + d.id)
+                .attr("cursor", "default")
                 .attr("d", d => star_path(star_outer_r * that.zoom_scale, star_inner_r * that.zoom_scale, that.center_scale_x(d.x), that.center_scale_y(d.y)))
                 .attr("fill", function (d) {
                     let added_idx = add_labeled_nodes.indexOf(d.id);
@@ -555,7 +653,7 @@ let GraphLayout = function (container) {
 
             let pie = d3.pie().value(d => d);
             let arc = d3.arc().outerRadius(11 * that.zoom_scale).innerRadius(7 * that.zoom_scale);
-            glyph_in_group.enter()
+            let glyphgs = glyph_in_group.enter()
                 .append("g")
                 .attr("class", "pie-chart")
                 .each(function (d) {
@@ -563,15 +661,66 @@ let GraphLayout = function (container) {
                     d.piechart = node;
                 })
                 .attr("transform", d =>"translate("+that.center_scale_x(d.x)+","+that.center_scale_y(d.y)+")")
-                .attr("opacity", 0)
-                .selectAll("path")
+                .attr("opacity", 0);
+            glyphgs.selectAll("path")
                 .data(d => pie(d.score[iter]))
                 .enter()
                 .append("path")
+                .attr("class", "glyph-path")
                 .attr("d", arc)
                 .attr("fill", (d,i) => color_label[i]);
-            glyph_in_group.enter()
-                .selectAll("g")
+            let uncertainty_values = glyphgs
+                .append("g")
+                .attr("class", "uncertainty-value");
+            uncertainty_values.append("path")
+                .attr("class", "uncertainty-value-path")
+                .attr("d", function (d) {
+                    let uncertainty = d.entropy;
+                    let angle = Math.PI/2*uncertainty;
+                    let arc = d3.arc()
+                        .innerRadius(13 * that.zoom_scale)
+                        .outerRadius(13 * that.zoom_scale)
+                        .startAngle(-angle)
+                        .endAngle(angle);
+                    return arc();
+                })
+                .attr("stroke", "black")
+                .attr("stroke-width", unccertainty_line_stroke_width * that.zoom_scale);
+            uncertainty_values.append("path")
+                .attr("class", "uncertainty-value-hat-left")
+                .attr("d", function (d) {
+                    return "M {0} {1} L {2} {3} L {4} {5} Z".format(
+                        0, -13 * that.zoom_scale,
+                        6* that.zoom_scale, -13 * that.zoom_scale - 10* that.zoom_scale,
+                        -6* that.zoom_scale, -13 * that.zoom_scale - 10* that.zoom_scale
+                    )
+                })
+                .attr("transform", function (d) {
+                    let uncertainty = d.entropy;
+                    let angle = 90*uncertainty;
+                    return "rotate({0})".format(-angle);
+                })
+                .attr("stroke", "none")
+                .attr("fill", uncertainty_hat_fill);
+            uncertainty_values.append("path")
+                .attr("class", "uncertainty-value-hat-right")
+                .attr("d", function (d) {
+                    return "M {0} {1} L {2} {3} L {4} {5} Z".format(
+                        0, -13 * that.zoom_scale,
+                        6* that.zoom_scale, -13 * that.zoom_scale - 10* that.zoom_scale,
+                        -6* that.zoom_scale, -13 * that.zoom_scale - 10* that.zoom_scale
+                    )
+                })
+                .attr("transform", function (d) {
+                    let uncertainty = d.entropy;
+                    let angle = 90*uncertainty;
+                    return "rotate({0})".format(angle);
+                })
+                .attr("stroke", "none")
+                .attr("fill", uncertainty_hat_fill);
+
+
+            glyphgs
                 .transition()
                 .duration(AnimationDuration)
                 .attr("opacity", d => that.opacity(d.id))
@@ -595,7 +744,7 @@ let GraphLayout = function (container) {
             path_in_group.enter()
                 .append("path")
                 .attr("class", "propagation-path")
-                .attr("stroke-width", 2.0 * that.zoom_scale)
+                .attr("cursor", "default")
                 .attr("stroke", "none")
                 .attr("fill", d => "url(#path"  + d[0].id + "-" + d[1].id + ")")
                 .attr("opacity", 0)
@@ -839,10 +988,52 @@ let GraphLayout = function (container) {
             })
             .attr("stroke-width", 1.7 * that.zoom_scale);
         let arc = d3.arc().outerRadius(11 * that.zoom_scale).innerRadius(7 * that.zoom_scale);
-        glyph_in_group.selectAll("path")
+        glyph_in_group.selectAll(".glyph-path")
             .transition()
             .duration(AnimationDuration)
             .attr("d", arc);
+        glyph_in_group
+                .selectAll(".uncertainty-value")
+                .select("path")
+                .attr("d", function (d) {
+                    let uncertainty = d.entropy;
+                    let angle = Math.PI/2*uncertainty;
+                    let arc = d3.arc()
+                        .innerRadius(13 * that.zoom_scale)
+                        .outerRadius(13 * that.zoom_scale)
+                        .startAngle(-angle)
+                        .endAngle(angle);
+                    return arc();
+                })
+                .attr("stroke-width", unccertainty_line_stroke_width * that.zoom_scale);
+            glyph_in_group
+                .selectAll(".uncertainty-value-hat-left")
+                .attr("d", function (d) {
+                    return "M {0} {1} L {2} {3} L {4} {5} Z".format(
+                        0, -13 * that.zoom_scale,
+                        6* that.zoom_scale, -13 * that.zoom_scale - 10* that.zoom_scale,
+                        -6* that.zoom_scale, -13 * that.zoom_scale - 10* that.zoom_scale
+                    )
+                })
+                .attr("transform", function (d) {
+                    let uncertainty = d.entropy;
+                    let angle = 90*uncertainty;
+                    return "rotate({0})".format(-angle);
+                });
+            glyph_in_group
+                .selectAll(".uncertainty-value-hat-right")
+                .attr("d", function (d) {
+                    return "M {0} {1} L {2} {3} L {4} {5} Z".format(
+                        0, -13 * that.zoom_scale,
+                        6* that.zoom_scale, -13 * that.zoom_scale - 10* that.zoom_scale,
+                        -6* that.zoom_scale, -13 * that.zoom_scale - 10* that.zoom_scale
+                    )
+                })
+                .attr("transform", function (d) {
+                    let uncertainty = d.entropy;
+                    let angle = 90*uncertainty;
+                    return "rotate({0})".format(angle);
+                });
         }
         else {
             nodes_in_group
@@ -875,9 +1066,50 @@ let GraphLayout = function (container) {
             })
             .attr("stroke-width", 1.7 * that.zoom_scale);
         let arc = d3.arc().outerRadius(11 * that.zoom_scale).innerRadius(7 * that.zoom_scale);
-        glyph_in_group.selectAll("path")
+        glyph_in_group.selectAll(".glyph-path")
             .attr("d", arc);
-        
+        glyph_in_group
+                .selectAll(".uncertainty-value")
+                .select("path")
+                .attr("d", function (d) {
+                    let uncertainty = d.entropy;
+                    let angle = Math.PI/2*uncertainty;
+                    let arc = d3.arc()
+                        .innerRadius(13 * that.zoom_scale)
+                        .outerRadius(13 * that.zoom_scale)
+                        .startAngle(-angle)
+                        .endAngle(angle);
+                    return arc();
+                })
+                .attr("stroke-width", unccertainty_line_stroke_width * that.zoom_scale);
+        glyph_in_group
+                .selectAll(".uncertainty-value-hat-left")
+                .attr("d", function (d) {
+                    return "M {0} {1} L {2} {3} L {4} {5} Z".format(
+                        0, -13 * that.zoom_scale,
+                        6* that.zoom_scale, -13 * that.zoom_scale - 10* that.zoom_scale,
+                        -6* that.zoom_scale, -13 * that.zoom_scale - 10* that.zoom_scale
+                    )
+                })
+                .attr("transform", function (d) {
+                    let uncertainty = d.entropy;
+                    let angle = 90*uncertainty;
+                    return "rotate({0})".format(angle);
+                });
+            glyph_in_group
+                .selectAll(".uncertainty-value-hat-right")
+                .attr("d", function (d) {
+                    return "M {0} {1} L {2} {3} L {4} {5} Z".format(
+                        0, -13 * that.zoom_scale,
+                        6* that.zoom_scale, -13 * that.zoom_scale - 10* that.zoom_scale,
+                        -6* that.zoom_scale, -13 * that.zoom_scale - 10* that.zoom_scale
+                    )
+                })
+                .attr("transform", function (d) {
+                    let uncertainty = d.entropy;
+                    let angle = 90*uncertainty;
+                    return "rotate({0})".format(-angle);
+                });
         img_in_group
         .attr("x", function(d){
             if (d.quad === 1 || d.quad === 2){

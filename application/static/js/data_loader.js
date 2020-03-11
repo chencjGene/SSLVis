@@ -90,7 +90,7 @@ DataLoaderClass = function () {
             "within":0,
             "between":0
         },
-        edge_type_range: [],
+        edge_type_range: ["between"],
         //hierarchy info
         hierarchy:null,
         last_level:0,
@@ -642,7 +642,7 @@ DataLoaderClass = function () {
         }
         // // edited by Changjian
         that.set_filter_range([20, 19], label_range, [0, 19], [0,19],
-            [1,19], []);
+            [1,19], ["between"]);
         that.update_filter_view();
 
         //update view
@@ -769,14 +769,14 @@ DataLoaderClass = function () {
 
     that.change_glyphs = function(glyphs){
         that.state.glyphs = glyphs;
-        that.state.rescale = false;
-        let show_ids = [];
-        for(let node_id of Object.keys(that.state.nodes).map(d => parseInt(d))){
-            if(that.state.visible_items[node_id] === true){
-                show_ids.push(node_id);
-            }
-        }
-        that.get_dist_view(show_ids);
+        // that.state.rescale = false;
+        // let show_ids = [];
+        // for(let node_id of Object.keys(that.state.nodes).map(d => parseInt(d))){
+        //     if(that.state.visible_items[node_id] === true){
+        //         show_ids.push(node_id);
+        //     }
+        // }
+        // that.get_dist_view(show_ids);
         that.update_graph_view();
     };
 

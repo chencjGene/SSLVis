@@ -15,6 +15,11 @@ let GraphHighlight = function (parent) {
     let edit_btn_path = null;
     let btn_select_color = "#560731";
 
+    let path_width_scale = 1.75;
+    let path_begin_width = 2*path_width_scale;
+    let path_end_width = 0.4;
+    let path_mid_width = (path_begin_width+path_end_width)/2;
+
     that._init = function () {
         that.set_view(parent);
         lasso = d3.lasso()
@@ -273,7 +278,10 @@ let GraphHighlight = function (parent) {
             .on('mousedown', function(){
                 view.main_group.select("#select-edge_path").remove();
                 d3.selectAll(".propagation-path")
-                    .style("stroke-width", 2.0 * view.zoom_scale);
+                    .attr("d", function (d) {
+                        return bezier_tapered(d[3][0], d[3][1], d[3][2], path_begin_width * view.zoom_scale,
+                        path_mid_width * view.zoom_scale, path_end_width * view.zoom_scale);
+                    });
                 keep = true;
                 xy0 = d3.mouse(view.main_group.node());
                 path = view.main_group
@@ -281,7 +289,7 @@ let GraphHighlight = function (parent) {
                          .attr("id", "select-edge_path")
                          .attr('d', line([xy0, xy0]))
                         .attr("stroke", "black")
-                        .attr("stroke-width", 1);
+                        .attr("stroke-width", view.zoom_scale);
                 view.data_manager.edit_view.update_click_menu($('#graph-view-svg'), "edges");
             })
             .on('mouseup', function(){
@@ -299,7 +307,10 @@ let GraphHighlight = function (parent) {
                 let path_keys = [];
                 view.main_group.select("#select-edge_path").remove();
                 for(let path of highlight_paths){
-                    path.style("stroke-width", 4.0 * view.zoom_scale);
+                    path.attr("d", function (d) {
+                        return bezier_tapered(d[3][0], d[3][1], d[3][2], path_begin_width * view.zoom_scale * 3,
+                        path_mid_width * view.zoom_scale * 3, path_end_width * view.zoom_scale * 3);
+                    });
                     let key = path.datum();
                     path_keys.push([key[0], key[1]]);
                 }

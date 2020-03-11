@@ -26,6 +26,7 @@ let ImageLayout = function (container){
     let legend_height = 25;
     let AnimationDuration = 500;
     let longAnimationDuration = 500;
+    let neighbor_border = 20;
     let shortAnimationDuration = 10;
     let get_neighbors_url = "/info/neighbors";
     let get_label_url = "/graph/label";
@@ -40,7 +41,7 @@ let ImageLayout = function (container){
     let img_grid_urls = [];
     let img_neighbors_ids = [];
     let show_neighbor_mode = false;
-    let k_num = 6;
+    let k_num = 7;
     let current_mode = "grid";
 
     let data_manager = null;
@@ -61,16 +62,16 @@ let ImageLayout = function (container){
         // draw img neighbor boundary
         img_neighbors.append("line")
             .attr("id", "img-neighbor-boundary")
-            .attr("stroke", "rgb(127,127,127)")
-            .attr("stroke-width", 1)
-            .attr("opacity", 0.7);
+            .attr("stroke", "black")
+            .attr("stroke-width", 2)
+            .attr("opacity", 0.9);
         img_neighbors.append("text")
             .attr("x", img_padding+(grid_size+grid_offset)/2)
             .attr("y", img_padding*2)
             .attr("text-anchor", "middle")
             .text("Image");
         img_neighbors.append("text")
-            .attr("x", img_padding+(grid_size+grid_offset)+3)
+            .attr("x", img_padding+(grid_size+grid_offset)-5+neighbor_border)
             .attr("y", img_padding*2)
             .attr("text-anchor", "start")
             .text("Nearest Neighbors");
@@ -95,10 +96,17 @@ let ImageLayout = function (container){
 
     that.component_update = async function(state) {
         console.log("image component update:", state);
+        let new_ids = state.img_grid_urls.map(d => d.id);
+        let old_ids = img_grid_urls.map(d => d.id);
+        new_ids.sort((a, b) => a-b);
+        old_ids.sort((a, b) => a-b);
+        if(new_ids+'' === old_ids+'') return ;
+
+
         await that._update_data(state);
         if(img_url !== undefined && img_url !== null){
             detail_pos = -1;
-            AnimationDuration = shortAnimationDuration;
+            // AnimationDuration = shortAnimationDuration;
             that._show_detail(img_url, img_grid_urls.length);
         }
         else {
@@ -306,7 +314,7 @@ let ImageLayout = function (container){
         let neighbor_row_num = k_num+1;
         img_neighbors_enters.append("image")
             .attr("xlink:href", d => d.url)
-            .attr("x", (d, i) => img_padding+(i%neighbor_row_num)*(grid_size+grid_offset) + (i%neighbor_row_num===0?0:8))
+            .attr("x", (d, i) => img_padding+(i%neighbor_row_num)*(grid_size+grid_offset) + (i%neighbor_row_num===0?0:neighbor_border))
             .attr("y", (d, i) => legend_height + img_padding+Math.floor(i/neighbor_row_num)*(grid_size+grid_offset))
             .attr("width", grid_size)
             .attr("height", grid_size)
@@ -314,7 +322,7 @@ let ImageLayout = function (container){
             .on("mouseout", (d, i) => i%neighbor_row_num===0? GraphView.mouse_out_image():null);
 
         img_neighbors_enters.append("rect")
-            .attr("x", (d, i) => img_padding+(i%neighbor_row_num)*(grid_size+grid_offset)-2 + (i%neighbor_row_num===0?0:8))
+            .attr("x", (d, i) => img_padding+(i%neighbor_row_num)*(grid_size+grid_offset)-2 + (i%neighbor_row_num===0?0:neighbor_border))
             .attr("y", (d, i) => legend_height + img_padding+Math.floor(i/neighbor_row_num)*(grid_size+grid_offset)-2)
             .attr("width", grid_size+4)
             .attr("height", grid_size+4)
@@ -418,8 +426,8 @@ let ImageLayout = function (container){
                 .attr("opacity", 1)
                 .on("end", resolve);
             img_neighbors.select("#img-neighbor-boundary")
-                .attr("x1", img_padding+(grid_size+grid_offset)-1)
-                .attr("x2", img_padding+(grid_size+grid_offset)-1)
+                .attr("x1", img_padding+(grid_size+grid_offset)-5+neighbor_border/2)
+                .attr("x2", img_padding+(grid_size+grid_offset)-5+neighbor_border/2)
                 .attr("y1", img_padding+legend_height)
                 .attr("y2", legend_height + img_padding+Math.floor((img_neighbors_ids.length-1)/(k_num+1)+1)*(grid_size+grid_offset)-9)
         })
