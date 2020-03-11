@@ -769,14 +769,14 @@ DataLoaderClass = function () {
 
     that.change_glyphs = function(glyphs){
         that.state.glyphs = glyphs;
-        that.state.rescale = false;
-        let show_ids = [];
-        for(let node_id of Object.keys(that.state.nodes).map(d => parseInt(d))){
-            if(that.state.visible_items[node_id] === true){
-                show_ids.push(node_id);
-            }
-        }
-        that.get_dist_view(show_ids);
+        // that.state.rescale = false;
+        // let show_ids = [];
+        // for(let node_id of Object.keys(that.state.nodes).map(d => parseInt(d))){
+        //     if(that.state.visible_items[node_id] === true){
+        //         show_ids.push(node_id);
+        //     }
+        // }
+        // that.get_dist_view(show_ids);
         that.update_graph_view();
     };
 

@@ -96,6 +96,13 @@ let ImageLayout = function (container){
 
     that.component_update = async function(state) {
         console.log("image component update:", state);
+        let new_ids = state.img_grid_urls.map(d => d.id);
+        let old_ids = img_grid_urls.map(d => d.id);
+        new_ids.sort((a, b) => a-b);
+        old_ids.sort((a, b) => a-b);
+        if(new_ids+'' === old_ids+'') return ;
+
+
         await that._update_data(state);
         if(img_url !== undefined && img_url !== null){
             detail_pos = -1;

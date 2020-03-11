@@ -689,12 +689,12 @@ let FilterLayout = function (container) {
                                     visible_items[id] = true;
                                 }
                                 if(change) {
-                                    if(type === "uncertainty"){
-                                        that.update_glyph_showing_items();
-                                    }
-                                    else {
-                                        that.update_widget_showing_items(d);
-                                    }
+                                    // if(type === "uncertainty"){
+                                    //     that.update_glyph_showing_items();
+                                    // }
+                                    // else {
+                                    //     that.update_widget_showing_items(d);
+                                    // }
                                     range[0] = i;
 
                                 }
@@ -705,17 +705,24 @@ let FilterLayout = function (container) {
                                     visible_items[id] = false;
                             }
                             if(change) {
-                                if(type === "uncertainty"){
-                                    that.update_glyph_showing_items();
-                                }
-                                else {
-                                    that.update_widget_showing_items(d);
-                                }
+                                // if(type === "uncertainty"){
+                                //     that.update_glyph_showing_items();
+                                // }
+                                // else {
+                                //     that.update_widget_showing_items(d);
+                                // }
                                 range[0] = i+1;
 
                             }
                             return 0.5
                         })
+                    }).on("end", function () {
+                        if(type === "uncertainty"){
+                                        that.update_glyph_showing_items();
+                                    }
+                                    else {
+                                        that.update_widget_showing_items(d);
+                                    }
                     }));
             end_drag.call(d3.drag()
                     .on("drag", function () {
