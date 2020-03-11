@@ -60,6 +60,17 @@ let EditLayout = function(){
     that.update_click_menu = function(container, type){
         if(type === "node"){
             let menu = [];
+            menu.push({
+                // title: 'Label As',
+                name: 'Label As:',
+                color: '',
+                className: "iw-mnotSelected label-as",
+                fun: function () {
+                    console.log("label as", d);
+                    // let label = -1;
+                    // that.editing(label);
+                }
+            });
             label_names.forEach(function(d, i){
                 let sm = {
                         title:d,

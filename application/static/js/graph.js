@@ -459,6 +459,7 @@ let GraphLayout = function (container) {
             nodes_in_group.enter()
                 .append("circle")
                 .attr("id", d => "id-" + d.id)
+                .attr("cursor", "default")
                 .attr("class", "node-dot")
                 .attr("cx", d => that.center_scale_x(d.x))
                 .attr("cy", d => that.center_scale_y(d.y))
@@ -502,6 +503,7 @@ let GraphLayout = function (container) {
             golds_in_group.enter()
                 .append("path")
                 .attr("id", d => "gold-" + d.id)
+                .attr("cursor", "default")
                 .attr("d", d => star_path(star_outer_r * that.zoom_scale, star_inner_r * that.zoom_scale, that.center_scale_x(d.x), that.center_scale_y(d.y)))
                 .attr("fill", function (d) {
                     let added_idx = add_labeled_nodes.indexOf(d.id);
@@ -572,7 +574,7 @@ let GraphLayout = function (container) {
             path_in_group.enter()
                 .append("path")
                 .attr("class", "propagation-path")
-                .attr("stroke-width", 2.0 * that.zoom_scale)
+                .attr("cursor", "default")
                 .attr("stroke", "none")
                 .attr("fill", d => "url(#path"  + d[0].id + "-" + d[1].id + ")")
                 .attr("opacity", 0)

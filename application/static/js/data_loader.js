@@ -88,7 +88,7 @@ DataLoaderClass = function () {
             "within":0,
             "between":0
         },
-        edge_type_range: [],
+        edge_type_range: ["between"],
         //hierarchy info
         hierarchy:null,
         last_level:0,
@@ -612,7 +612,7 @@ DataLoaderClass = function () {
         }
         // // edited by Changjian
         that.set_filter_range([20, 19], label_range, [0, 19], [0,19],
-            [1,19], []);
+            [1,19], ["between"]);
         that.update_filter_view();
 
         //update view
