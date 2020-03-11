@@ -20,7 +20,7 @@ let GraphLayout = function (container) {
     let star_outer_r = 15;
     let path_width_scale = 1.75;
     let path_begin_width = 2*path_width_scale;
-    let path_end_width = 0;
+    let path_end_width = 0.4;
     let path_mid_width = (path_begin_width+path_end_width)/2;
     let bundling_force_S = 0.02;
     let bundling_elect_scale = 6;
@@ -127,6 +127,53 @@ let GraphLayout = function (container) {
 
         // init zoom
         transform_plg.set_zoom();
+
+        // init legend
+        that._draw_legend();
+    };
+
+    that._draw_legend = function() {
+        let legend_group = that.svg.append("g").attr("id", "legend-group");
+        // draw rect
+        legend_group.append("rect")
+            .attr("x", 0)
+            .attr("y", 0)
+            .attr("width", 350)
+            .attr("height", 65)
+            .attr("stroke", "none")
+            .attr("fill", "white");
+        legend_group.append("rect")
+            .attr("x", 40)
+            .attr("y", 35)
+            .attr("width", 310)
+            .attr("height", 30)
+            .attr("stroke", "black")
+            .attr("stroke-width", 1)
+            .attr("rx", 5)
+            .attr("ry", 5)
+            .attr("fill", "none");
+        // draw tapered
+        let tapered_group = legend_group.append("g").attr("id", "tapered-legend");
+        let tapered_path = "M 50 45 L 200 50 L 50 55 Z";
+        let arrow_path = "M 230 50 L 280 50 L 330 50 ";
+        tapered_group.append("path")
+            .attr("d", tapered_path)
+            .attr("fill", "rgb(127, 127, 127)")
+            .attr("stroke", "none");
+        tapered_group.append("text")
+            .attr("x", 210)
+            .attr("y", 57)
+            .attr("font-weight", 400)
+            .attr("font-size", 20)
+            .attr("text-anchor", "start")
+            .text("=");
+        tapered_group.append("path")
+            .attr("d", arrow_path)
+            .attr("marker-end", d => "url(#arrow-gray)")
+            .attr("stroke", "rgb(127, 127, 127)")
+            .attr("stroke-width", 2);
+
+
     };
 
     that.set_data_manager = function(new_data_manager) {

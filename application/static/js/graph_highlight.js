@@ -17,7 +17,7 @@ let GraphHighlight = function (parent) {
 
     let path_width_scale = 1.75;
     let path_begin_width = 2*path_width_scale;
-    let path_end_width = 0;
+    let path_end_width = 0.4;
     let path_mid_width = (path_begin_width+path_end_width)/2;
 
     that._init = function () {
