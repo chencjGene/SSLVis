@@ -4,6 +4,7 @@ import json
 
 from .case_base import CaseBase
 from ..utils.config_utils import config
+from ..utils.helper_utils import pickle_save_data, pickle_load_data
 
 class CaseSTL(CaseBase):
     def __init__(self):
@@ -40,6 +41,8 @@ class CaseSTL(CaseBase):
             all_labeled_idxs = self.model.data.labeled_idx
             labeled_y = self.model.data.y[all_labeled_idxs]
             cat_idxs = all_labeled_idxs[labeled_y == 3]
+            pickle_save_data(os.path.join(self.model.selected_dir, "step-5-add-data.pkl"), cat_idxs)
+            cat_idxs = pickle_load_data(os.path.join(self.model.selected_dir, "step-5-add-data.pkl"))
             self.model.add_data(cat_idxs, 3)
             self.model._training(rebuild=False, evaluate=True, simplifying=False)
             self.model._influence_matrix(rebuild=True)

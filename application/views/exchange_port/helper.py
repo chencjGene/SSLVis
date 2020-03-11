@@ -22,6 +22,9 @@ def get_graph(filter_threshold=None, wh = 1):
 def local_update_k(data):
     return exchange_port.local_update_k(data)
 
+def add_data(data):
+    return exchange_port.add_data(data)
+
 def get_manifest(): 
     return exchange_port.get_manifest()
 

@@ -126,6 +126,16 @@ class ExchangePortClass(object):
         # return self.fisheye(self.current_ids, data["area"], data["level"], data["wh"])
         # return jsonify(res)
 
+    def add_data(self, data):
+        self.model.add_more_similar_data(data)
+        graph = self.anchor.get_nodes(data["wh"])
+        res = {
+            "graph": graph,
+            "area": data["area"],
+            "level": data["level"]
+        }
+        return jsonify(res)
+
     def get_loss(self):
         loss = self.model.get_loss()
         return jsonify(loss.tolist())

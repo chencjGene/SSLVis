@@ -28,6 +28,7 @@ DataLoaderClass = function () {
     that.set_k_url = "/graph/SetK";
     that.home_graph_url = "/graph/home";
     that.add_new_categories_url = "/graph/NewCategories";
+    that.add_data_url = "/graph/AddData";
 
     // Request nodes
     that.k_node = null;
@@ -45,6 +46,7 @@ DataLoaderClass = function () {
     that.set_history_node = null;
     that.retrain_node = null;
     that.add_new_categories_node = null;
+    that.add_data_node = null;
 
     // views
     that.graph_view = null;
@@ -224,6 +226,34 @@ DataLoaderClass = function () {
         that.add_new_categories_node.set_data(data);
         that.add_new_categories_node.notify();
     };
+
+    that.add_data = function(data_num){
+        // let show_ids = that.get_show_ids();
+        // let data = {
+        //     show_ids,
+        //     data_num
+        // }
+        let params = "?dataset=" + that.dataset;
+        that.add_data_node = new request_node(that.add_data_url + params, 
+            that.add_data_handler(function(must_show_nodes, area, level){
+                let show_ids = that.get_show_ids();
+                that.get_dist_view(show_ids);
+                that.update_graph_view();
+                that.get_history();
+            }), "json", "POST");
+            
+        data = {show_ids};
+        selected_idxs = that.graph_view.get_highlights();
+        data["selected_idxs"] = selected_idxs;
+        let level = that.graph_view.get_level();
+        let area = that.state.area;
+        data["area"] = area;
+        data["level"] = level;
+        data["wh"] = that.graph_view.get_wh();
+
+        that.add_data_node.set_data(data);
+        that.add_data_node.notify();
+    }
 
     that.update_edit_state = function(data, mode){
         console.log("update_edit_state", data, mode);
@@ -815,6 +845,16 @@ DataLoaderClass = function () {
     that.highlight_nodes = function(nodes_id){
         that.graph_view.highlight(nodes_id);
     };
+
+    that.get_show_ids = function(){
+        let show_ids = [];
+        for(let node_id of Object.keys(that.state.nodes).map(d => parseInt(d))){
+            if(that.state.visible_items[node_id] === true){
+                show_ids.push(node_id);
+            }
+        }
+        return show_ids;
+    }
 
     that.init = function () {
         that._init();

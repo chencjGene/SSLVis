@@ -699,6 +699,13 @@ class SSLModel(object):
         self._training()
         return self.data.return_state()
 
+    def add_more_similar_data(self, data):
+        if self.dataname.lower() == config.stl.lower():
+            cat_idxs = pickle_load_data(os.path.join(self.model.selected_dir, "step-5-add-data.pkl"))
+            self.model.add_data(cat_idxs, 3)
+        else:
+            None
+
     def add_data(self, added_idxs, cls):
         self.data.add_data(added_idxs, self.get_pred_labels(), cls)
 

@@ -204,6 +204,34 @@ DataLoaderClass.prototype.local_update_k_handler = function(callback){
     return _local_update_k_handler;
 };
 
+DataLoaderClass.prototype.add_data_handler = function(callback){
+    let that = this;
+    
+    function _add_data_handler(data){
+        console.log("add_data_handler", data);
+        let complete_graph = data.graph.graph.nodes;
+        that.state.complete_graph = complete_graph;
+        let hierarchy = data.graph.hierarchy;
+        // TODO: process hierarchy
+        for (let i = 0; i < hierarchy.length - 1; i++){
+            let index = hierarchy[i].index;
+            let next = hierarchy[i].next;
+
+            let next_index = hierarchy[i + 1].index;
+            for (let j = 0; j < next.length; j++){
+                next[j] = next[j].map(d => next_index[d]);
+            }
+        }
+        that.state.hierarchy = hierarchy;
+        let must_show_nodes = Object.keys(that.state.nodes).map(d => parseInt(d));
+        let area = data.area;
+        let level = data.level;
+
+        if (callback) callback(must_show_nodes, area, level);
+    }
+    return _add_data_handler;
+}
+
 DataLoaderClass.prototype.update_history_handler = function(callback){
     let that = this;
 
