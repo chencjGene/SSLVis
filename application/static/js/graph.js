@@ -1304,6 +1304,26 @@ let GraphLayout = function (container) {
          nodes_in_group.attr("opacity", d => that.opacity(d.id))
     };
 
+    that.highlight_nodes = function(nodes_id) {
+        if(typeof nodes_id === "number"){
+            nodes_id = [nodes_id];
+        }
+        let node_dict = {};
+        for(let id of nodes_id){
+            node_dict[id] = true;
+        }
+        nodes_in_group.attr("opacity", function (d) {
+            if(node_dict[d.id] === true){
+                return that.opacity(d.id);
+            }
+            else return 0.3;
+        })
+    };
+
+    that.remove_node_highlight = function() {
+         nodes_in_group.attr("opacity", d => that.opacity(d.id))
+    };
+
     // debug
     that.update_path_width_scale = async function(scale) {
         path_width_scale = scale;

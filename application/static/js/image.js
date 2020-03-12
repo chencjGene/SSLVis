@@ -41,7 +41,7 @@ let ImageLayout = function (container){
     let img_grid_urls = [];
     let img_neighbors_ids = [];
     let show_neighbor_mode = false;
-    let k_num = 7;
+    let k_num = 3;
     let current_mode = "grid";
 
     let data_manager = null;
@@ -169,10 +169,10 @@ let ImageLayout = function (container){
         }
 
         if(show_neighbor_mode){
-            await that.clear_show_grid_data();
+            that.clear_show_grid_data();
         }
         else {
-            await that.clear_show_neighbors_data();
+            that.clear_show_neighbors_data();
         }
         that._create();
         that._update();
@@ -286,11 +286,11 @@ let ImageLayout = function (container){
             .attr("fill-opacity", 0)
             .on("mouseenter", function (d) {
                 if(!show_neighbor_mode)
-                    GraphView.mouse_on_image(d.id)
+                    GraphView.highlight_nodes(d.id)
             } )
             .on("mouseout", function (d) {
                 if(!show_neighbor_mode)
-                    GraphView.mouse_out_image()
+                    GraphView.remove_node_highlight()
             })
             .on("click", function (d, i) {
                 if(!show_neighbor_mode)
