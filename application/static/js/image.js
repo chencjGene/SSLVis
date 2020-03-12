@@ -28,6 +28,7 @@ let ImageLayout = function (container){
     let longAnimationDuration = 500;
     let neighbor_border = 20;
     let shortAnimationDuration = 10;
+    let max_height = 520;
     let get_neighbors_url = "/info/neighbors";
     let get_label_url = "/graph/label";
     let get_entropy_url = "/graph/entropy";
@@ -41,7 +42,7 @@ let ImageLayout = function (container){
     let img_grid_urls = [];
     let img_neighbors_ids = [];
     let show_neighbor_mode = false;
-    let k_num = 7;
+    let k_num = 3;
     let current_mode = "grid";
 
     let data_manager = null;
@@ -152,27 +153,35 @@ let ImageLayout = function (container){
     that._update_view =async function() {
         let neighbor_row_num = k_num+1;
         layout_width = parseFloat(svg.attr("width")) - 20;
-        img_width = layout_width-img_padding * 2;
-        let img_size = img_width>img_height?img_height:img_width;
+        // img_width = layout_width-img_padding * 2;
+        let img_size = 250;
+        let container_height = -1;
         if(show_neighbor_mode){
-            svg.attr("height", legend_height + img_padding*2+Math.floor((img_neighbors_ids.length-1)/x_grid_num+1)*(grid_size+grid_offset)+img_size);
-            svg.attr("width", img_padding*2 + (neighbor_row_num)*(grid_size+grid_offset)-2 + (i%neighbor_row_num===0?0:8))
+            let height = legend_height + img_padding*2+Math.floor((img_neighbors_ids.length-1)/x_grid_num+1)*(grid_size+grid_offset)+img_size;
+            container_height = Math.min(height, max_height);
+            svg.attr("height", height);
+            svg.attr("width", img_padding*2 + (neighbor_row_num)*(grid_size+grid_offset)-2 + (i%neighbor_row_num===0?0:8));
             $("#info-div").css("width", "100%");
         }
         else {
 
             svg.attr("width", origin_layout_width);
             layout_width = parseFloat(svg.attr("width")) - 20;
-            img_width = layout_width-img_padding * 2;
-            img_size = img_width>img_height?img_height:img_width;
-            svg.attr("height", img_padding*2+Math.floor((img_grid_urls.length-1)/x_grid_num+1)*(grid_size+grid_offset)+img_size);
+            // img_width = layout_width-img_padding * 2;
+            // img_size = img_width>img_height?img_height:img_width;
+            let height = img_padding*2+Math.floor((img_grid_urls.length-1)/x_grid_num+1)*(grid_size+grid_offset)+img_size;
+            container_height = Math.min(height, max_height);
+            svg.attr("height", height);
         }
+        $(".info-svg-div").css("height", container_height+"px");
+        $("#image-row .content-container").css("height", (container_height+30)+"px");
+
 
         if(show_neighbor_mode){
-            await that.clear_show_grid_data();
+            that.clear_show_grid_data();
         }
         else {
-            await that.clear_show_neighbors_data();
+            that.clear_show_neighbors_data();
         }
         that._create();
         that._update();
@@ -189,7 +198,7 @@ let ImageLayout = function (container){
                 console.log("show detail:", img_url);
                 layout_width = parseFloat(svg.attr("width"));
                 let img_width = x_grid_num*(grid_size+grid_offset)-grid_offset-img_padding*2;
-                let img_size = img_width>img_height?img_height:img_width;
+                let img_size = 250;
                 let x_padding = (layout_width-img_size)/2;
                 if (detail_pos === -1) {
                     detail_pos = i;
@@ -286,11 +295,11 @@ let ImageLayout = function (container){
             .attr("fill-opacity", 0)
             .on("mouseenter", function (d) {
                 if(!show_neighbor_mode)
-                    GraphView.mouse_on_image(d.id)
+                    GraphView.highlight_nodes(d.id)
             } )
             .on("mouseout", function (d) {
                 if(!show_neighbor_mode)
-                    GraphView.mouse_out_image()
+                    GraphView.remove_node_highlight()
             })
             .on("click", function (d, i) {
                 if(!show_neighbor_mode)
@@ -352,7 +361,7 @@ let ImageLayout = function (container){
     };
 
     that._update = function() {
-        let img_size = img_width>img_height?img_height:img_width;
+        let img_size = 250;
         img_grids_g.selectAll("image")
             .attr("xlink:href", d => d.url);
 

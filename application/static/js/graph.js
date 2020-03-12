@@ -786,16 +786,10 @@ let GraphLayout = function (container) {
                 })
                 .on("mouseover", function (d) {
                             console.log(d);
-                            d3.select(this).attr("d", function (d) {
-                                return bezier_tapered(d[3][0], d[3][1], d[3][2], path_begin_width * that.zoom_scale * 3,
-                        path_mid_width * that.zoom_scale * 3, path_end_width * that.zoom_scale * 3);
-                            });
+                            that.highlight_paths(d[0].id+","+d[1].id);
                         })
                 .on("mouseout", function (d) {
-                        d3.select(this).attr("d", function (d) {
-                                return bezier_tapered(d[3][0], d[3][1], d[3][2], path_begin_width * that.zoom_scale,
-                        path_mid_width * that.zoom_scale, path_end_width * that.zoom_scale);
-                            });
+                        that.remove_path_highlight();
                     })
                 .on("mousedown", function (d) {
                     console.log("mousedown", d);
@@ -1290,19 +1284,68 @@ let GraphLayout = function (container) {
         return transform_plg.get_transform();
     };
 
-    that.highlight_edges = function(edge_data) {
-        let edge_keys = [];
-        for(let edge of edge_data){
-            let key = edge[0]+','+edge[1];
-            edge_keys.push(key)
+    that.highlight_paths = function(path_keys) {
+        let highlight_nodes = {};
+        if(typeof path_keys === "string"){
+            path_keys = [path_keys];
         }
-        path_in_group.attr("stroke-width", function (d) {
+        path_in_group.attr("opacity", function (d) {
             let key = d[0].id+","+d[1].id;
-            if(edge_keys.indexOf(key) > -1){
-                return 4.0 * that.zoom_scale
+
+            if(path_keys.indexOf(key) > -1) {
+                highlight_nodes[d[0].id] = true;
+                highlight_nodes[d[1].id] = true;
+                return that.opacity_path(d)
             }
-            else return 2.0 * that.zoom_scale
+            else return 0.3;
+        });
+        nodes_in_group.attr("opacity", function (d) {
+            if(highlight_nodes[d.id] === true){
+                return that.opacity(d.id);
+            }
+            else return 0.3;
+        });
+        golds_in_group.attr("opacity", function (d) {
+            if(highlight_nodes[d.id] === true){
+                return that.opacity(d.id);
+            }
+            else return 0.3;
+        });
+    };
+
+    that.remove_path_highlight = function() {
+        path_in_group.attr("opacity", function (d) {
+            return that.opacity_path(d)
+        });
+         nodes_in_group.attr("opacity", d => that.opacity(d.id));
+         golds_in_group.attr("opacity", d => that.opacity(d.id));
+    };
+
+    that.highlight_nodes = function(nodes_id) {
+        if(typeof nodes_id === "number"){
+            nodes_id = [nodes_id];
+        }
+        let node_dict = {};
+        for(let id of nodes_id){
+            node_dict[id] = true;
+        }
+        nodes_in_group.attr("opacity", function (d) {
+            if(node_dict[d.id] === true){
+                return that.opacity(d.id);
+            }
+            else return 0.3;
+        });
+        golds_in_group.attr("opacity", function (d) {
+            if(node_dict[d.id] === true){
+                return that.opacity(d.id);
+            }
+            else return 0.3;
         })
+    };
+
+    that.remove_node_highlight = function() {
+         nodes_in_group.attr("opacity", d => that.opacity(d.id));
+         golds_in_group.attr("opacity", d => that.opacity(d.id));
     };
 
     // debug
