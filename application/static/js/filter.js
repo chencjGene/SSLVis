@@ -189,8 +189,8 @@ let FilterLayout = function (container) {
     that._update_view = function() {
         that._draw_widget(uncertainty_widget_data, uncertainty_svg, "uncertainty", uncertainty_widget_range, uncertain_items);
         that.label_scented_widget();
-        that._draw_widget(indegree_widget_data, indegree_svg, "indegree", indegree_widget_range, indegree_items);
-        that._draw_widget(outdegree_widget_data, outdegree_svg, "outdegree", outdegree_widget_range, outdegree_items);
+        // that._draw_widget(indegree_widget_data, indegree_svg, "indegree", indegree_widget_range, indegree_items);
+        // that._draw_widget(outdegree_widget_data, outdegree_svg, "outdegree", outdegree_widget_range, outdegree_items);
         that.draw_edge_influence_widget(influence_widget_data, edgeInfluence_svg, "influence", influence_widget_range);
         that.draw_edge_type_widget(edgetype_data, edgeType_svg, "edgetype", edgetype_range);
 
@@ -592,6 +592,7 @@ let FilterLayout = function (container) {
         let container_height = widget_height;
         let x = d3.scaleBand().rangeRound([container_width*0.1, container_width*0.9], .05).paddingInner(0.05).domain(d3.range(bar_cnt));
         let y = d3.scaleLinear().range([container_height*  0.7, container_height*0.05]).domain([0, 1]);
+        let drag_interval = x.step();
 
         //draw bar chart
         if(container.select("#current-"+type+"-rects").size() === 0){
@@ -599,6 +600,33 @@ let FilterLayout = function (container) {
                 .attr("id", "current-"+type+"-rects");
         }
         let rects = container.select("#current-"+type+"-rects").selectAll("rect").data(distribution);
+        // draw x-axis
+        if(container.select("#current-"+type+"-axis").size() === 0){
+            container.append("g")
+                .attr("id","current-"+type+"-axis-out")
+                .append("line")
+                .attr("x1", container_width*0.1)
+                .attr("y1", container_height*  0.7)
+                .attr("x2", container_width*0.9)
+                .attr("y2", container_height*  0.7)
+                .attr("stroke", "rgb(227,231,235)")
+                .attr("stroke-linecap", "round")
+                .attr("transform", "translate(0, 5)")
+                .attr("stroke-width", 3);
+
+            container.append("g")
+                .attr("id","current-"+type+"-axis-in")
+                .append("line")
+                .attr("x1", container_width*0.1+range[0]*drag_interval-2)
+                .attr("y1", container_height*  0.7)
+                .attr("x2", container_width*0.1+(range[1]+1)*drag_interval+2)
+                .attr("y2", container_height*  0.7)
+                .attr("stroke", "rgb(166,166,166)")
+                .attr("stroke-linecap", "round")
+                .attr("transform", "translate(0, 5)")
+                .attr("stroke-width", 3);
+        }
+
         if(container.select("#current-"+type+"-texts").size() === 0){
              let textsg = container.append("g")
                 .attr("id", "current-"+type+"-texts");
@@ -616,6 +644,7 @@ let FilterLayout = function (container) {
                  .text("1")
         }
         let textsg = container.select("#current-"+type+"-texts");
+
         //create
         rects
             .enter()
@@ -646,28 +675,17 @@ let FilterLayout = function (container) {
             .attr("opacity", 0)
             .remove();
 
-        // draw x-axis
-        if(container.select("#current-"+type+"-axis").size() === 0){
-            container.append("g")
-                .attr("id","current-"+type+"-axis")
-                .append("line")
-                .attr("x1", container_width*0.1)
-                .attr("y1", container_height*  0.7)
-                .attr("x2", container_width*0.9)
-                .attr("y2", container_height*  0.7)
-                .attr("stroke", "black")
-                .attr("stroke-width", 1);
-        }
+
 
         //draw dragble
         let draggable_item_path = "M0 -6 L6 6 L-6 6 Z";
-        let drag_interval = x.step();
         let start_drag = null;
         let end_drag = null;
         let start_text = null;
         let end_text = null;
         let start_drag_g = null;
         let end_drag_g = null;
+
         if(container.select(".start-drag").size() === 0){
             start_drag_g = textsg.append("g");
             end_drag_g = textsg.append("g");
@@ -675,24 +693,40 @@ let FilterLayout = function (container) {
                 .attr("class", "start-drag")
                 .attr("d", draggable_item_path)
                 .attr("fill", "rgb(127, 127, 127)");
-            start_text = start_drag_g.append("text")
+            start_text = start_drag_g.append("g")
                 .attr("class","start-text")
+                .attr("opacity", 0);
+            start_text.append("path")
+                .attr("transform", "translate(0,-5)")
+                .attr("fill", "none")
+                .attr("stroke", "black")
+                .attr("stroke-width", 1)
+                .attr("d", "M0 0 L 4 -4 L 15 -4 L 15 -20 L -15 -20 L -15 -4 L -4 -4 Z");
+            start_text.append("text")
                 .attr("x",0)
-                .attr("y", 19)
+                .attr("y", -13)
                 .attr("text-anchor", "middle")
                 .text(range[0]/20);
             start_drag_g.attr("transform", "translate("+(container_width*0.1+range[0]*drag_interval-2)+","+(container_height*0.75)+")");
+
             end_drag = end_drag_g.append("path")
                 .attr("class", "end-drag")
                 .attr("d", draggable_item_path)
                 .attr("fill", "rgb(127, 127, 127)");
-            end_text = end_drag_g.append("text")
+            end_text = end_drag_g.append("g")
                 .attr("class","end-text")
+                .attr("opacity", 0);
+            end_text.append("path")
+                .attr("transform", "translate(0,-5)")
+                .attr("fill", "none")
+                .attr("stroke", "black")
+                .attr("stroke-width", 1)
+                .attr("d", "M0 0 L 4 -4 L 15 -4 L 15 -20 L -15 -20 L -15 -4 L -4 -4 Z");
+            end_text.append("text")
                 .attr("x",0)
-                .attr("y", 19)
+                .attr("y", -13)
                 .attr("text-anchor", "middle")
                 .text((range[1]+1)/20);
-
             end_drag_g.attr("transform", "translate("+(container_width*0.1+(range[1]+1)*drag_interval+2)+","+(container_height*0.75)+")");
         }
         else {
@@ -704,8 +738,8 @@ let FilterLayout = function (container) {
             });
             start_text = container.select(".start-text");
             end_text = container.select(".end-text");
-            start_text.text(range[0]/20);
-            end_text.text((range[1]+1)/20);
+            start_text.select("text").text(range[0]/20);
+            end_text.select("text").text((range[1]+1)/20);
             start_drag_g.transition()
                 .duration(AnimationDuration)
                 .attr("transform", "translate("+(container_width*0.1+range[0]*drag_interval-2)+","+(container_height*0.75)+")");
@@ -713,8 +747,15 @@ let FilterLayout = function (container) {
                 .duration(AnimationDuration)
                 .attr("transform", "translate("+(container_width*0.1+(range[1]+1)*drag_interval+2)+","+(container_height*0.75)+")");
         }
+
+
+
+        container.select("#current-"+type+"-axis-in").select("line").attr("x1", container_width*0.1+range[0]*drag_interval-2).attr("x2", container_width*0.1+(range[1]+1)*drag_interval+2);
+
         start_drag.call(d3.drag()
                     .on("drag", function () {
+                        start_text.attr("opacity", 1);
+                        end_text.attr("opacity", 1);
                         let x = d3.mouse(container.node())[0];
                         let drag_btn = d3.select(this);
                         let drag_btn_g = d3.select(this.parentNode);
@@ -724,6 +765,7 @@ let FilterLayout = function (container) {
                         max_x = parseFloat(end_pos);
                         if((x<=min_x)||(x>=max_x)) return;
                         drag_btn_g.attr("transform", "translate("+(x)+","+(container_height*0.75)+")");
+                        container.select("#current-"+type+"-axis-in").select("line").attr("x1", x);
                         container.selectAll("rect").attr("opacity", function (d, i) {
                             let change = false;
                             let rect = d3.select(this);
@@ -743,8 +785,8 @@ let FilterLayout = function (container) {
                                     //     that.update_widget_showing_items(d);
                                     // }
                                     range[0] = i;
-                                    start_text.text(range[0]/20);
-                                    end_text.text((range[1]+1)/20);
+                                    start_text.select("text").text(range[0]/20);
+                                    end_text.select("text").text((range[1]+1)/20);
                                 }
                                 return 1
                             }
@@ -760,13 +802,15 @@ let FilterLayout = function (container) {
                                 //     that.update_widget_showing_items(d);
                                 // }
                                 range[0] = i+1;
-                                start_text.text(range[0]/20);
-                                end_text.text((range[1]+1)/20);
+                                start_text.select("text").text(range[0]/20);
+                                end_text.select("text").text((range[1]+1)/20);
 
                             }
                             return 0.5
                         })
                     }).on("end", function () {
+                        start_text.attr("opacity", 0);
+                        end_text.attr("opacity", 0);
                         if(type === "uncertainty"){
                                         that.update_glyph_showing_items();
                                     }
@@ -774,8 +818,10 @@ let FilterLayout = function (container) {
                                         that.update_widget_showing_items(d);
                                     }
                     }));
-            end_drag.call(d3.drag()
+        end_drag.call(d3.drag()
                     .on("drag", function () {
+                        start_text.attr("opacity", 1);
+                        end_text.attr("opacity", 1);
                         let x = d3.mouse(container.node())[0];
                         let drag_btn = d3.select(this);
                         let drag_btn_g = d3.select(this.parentNode);
@@ -785,7 +831,7 @@ let FilterLayout = function (container) {
                         min_x = parseFloat(end_pos);
                         if((x<=min_x)||(x>=max_x)) return;
                         drag_btn_g.attr("transform", "translate("+(x)+","+(container_height*0.75)+")");
-
+                        container.select("#current-"+type+"-axis-in").select("line").attr("x2", x);
                         container.selectAll("rect").attr("opacity", function (d, i) {
                             let change = false;
                             let rect = d3.select(this);
@@ -805,8 +851,8 @@ let FilterLayout = function (container) {
                                     //     that.update_widget_showing_items(d);
                                     // }
                                     range[1] = i;
-                                    start_text.text(range[0]/20);
-                                    end_text.text((range[1]+1)/20);
+                                    start_text.select("text").text(range[0]/20);
+                                    end_text.select("text").text((range[1]+1)/20);
                                 }
                                 return 1
                             }
@@ -822,20 +868,38 @@ let FilterLayout = function (container) {
                                 //     that.update_widget_showing_items(d);
                                 // }
                                 range[1] = i-1;
-                                start_text.text(range[0]/20);
-                                end_text.text((range[1]+1)/20);
+                                start_text.select("text").text(range[0]/20);
+                                end_text.select("text").text((range[1]+1)/20);
                             }
                             return 0.5
                         })
                     })
                     .on("end", function () {
+                        start_text.attr("opacity", 0);
+                        end_text.attr("opacity", 0);
                         if(type === "uncertainty"){
                                         that.update_glyph_showing_items();
                                     }
                                     else {
                                         that.update_widget_showing_items(d);
                                     }
-                    }))
+                    }));
+        start_drag.on("mouseover", function () {
+            start_text.attr("opacity", 1);
+                        end_text.attr("opacity", 1);
+        })
+            .on("mouseout", function () {
+                start_text.attr("opacity", 0);
+                        end_text.attr("opacity", 0);
+            });
+        end_drag.on("mouseover", function () {
+            start_text.attr("opacity", 1);
+                        end_text.attr("opacity", 1);
+        })
+            .on("mouseout", function () {
+                start_text.attr("opacity", 0);
+                        end_text.attr("opacity", 0);
+            });
     };
 
     that.get_visible_items = function() {
@@ -864,6 +928,7 @@ let FilterLayout = function (container) {
         let container_height = widget_height;
         let x = d3.scaleBand().rangeRound([container_width*0.1, container_width*0.9], .05).paddingInner(0.05).domain(d3.range(bar_cnt));
         let y = d3.scaleLinear().range([container_height*  0.7, container_height*0.05]).domain([0, 1]);
+        let drag_interval = x.step();
 
         //draw bar chart
         if(container.select("#current-"+type+"-rects").size() === 0){
@@ -871,6 +936,33 @@ let FilterLayout = function (container) {
                 .attr("id", "current-"+type+"-rects");
         }
         let rects = container.select("#current-"+type+"-rects").selectAll("rect").data(distribution);
+        // draw x-axis
+        if(container.select("#current-"+type+"-axis").size() === 0){
+            container.append("g")
+                .attr("id","current-"+type+"-axis-out")
+                .append("line")
+                .attr("x1", container_width*0.1)
+                .attr("y1", container_height*  0.7)
+                .attr("x2", container_width*0.9)
+                .attr("y2", container_height*  0.7)
+                .attr("stroke", "rgb(227,231,235)")
+                .attr("stroke-linecap", "round")
+                .attr("transform", "translate(0, 5)")
+                .attr("stroke-width", 3);
+
+            container.append("g")
+                .attr("id","current-"+type+"-axis-in")
+                .append("line")
+                .attr("x1", container_width*0.1+range[0]*drag_interval-2)
+                .attr("y1", container_height*  0.7)
+                .attr("x2", container_width*0.1+(range[1]+1)*drag_interval+2)
+                .attr("y2", container_height*  0.7)
+                .attr("stroke", "rgb(166,166,166)")
+                .attr("stroke-linecap", "round")
+                .attr("transform", "translate(0, 5)")
+                .attr("stroke-width", 3);
+        }
+
         if(container.select("#current-"+type+"-texts").size() === 0){
              let textsg = container.append("g")
                 .attr("id", "current-"+type+"-texts");
@@ -934,22 +1026,9 @@ let FilterLayout = function (container) {
             .attr("opacity", 0)
             .remove();
 
-        // draw x-axis
-        if(container.select("#current-"+type+"-axis").size() === 0){
-            container.append("g")
-                .attr("id","current-"+type+"-axis")
-                .append("line")
-                .attr("x1", container_width*0.1)
-                .attr("y1", container_height*  0.7)
-                .attr("x2", container_width*0.9)
-                .attr("y2", container_height*  0.7)
-                .attr("stroke", "black")
-                .attr("stroke-width", 1);
-        }
-
         //draw dragble
         let draggable_item_path = "M0 -6 L6 6 L-6 6 Z";
-        let drag_interval = x.step();
+
         let start_drag = null;
         let end_drag = null;
         let start_text = null;
@@ -963,24 +1042,40 @@ let FilterLayout = function (container) {
                 .attr("class", "start-drag")
                 .attr("d", draggable_item_path)
                 .attr("fill", "rgb(127, 127, 127)");
-            start_text = start_drag_g.append("text")
+            start_text = start_drag_g.append("g")
                 .attr("class","start-text")
+                .attr("opacity", 0);
+            start_text.append("path")
+                .attr("transform", "translate(0,-5)")
+                .attr("fill", "none")
+                .attr("stroke", "black")
+                .attr("stroke-width", 1)
+                .attr("d", "M0 0 L 4 -4 L 15 -4 L 15 -20 L -15 -20 L -15 -4 L -4 -4 Z");
+            start_text.append("text")
                 .attr("x",0)
-                .attr("y", 19)
+                .attr("y", -13)
                 .attr("text-anchor", "middle")
                 .text(range[0]/20);
             start_drag_g.attr("transform", "translate("+(container_width*0.1+range[0]*drag_interval-2)+","+(container_height*0.75)+")");
+
             end_drag = end_drag_g.append("path")
                 .attr("class", "end-drag")
                 .attr("d", draggable_item_path)
                 .attr("fill", "rgb(127, 127, 127)");
-            end_text = end_drag_g.append("text")
+            end_text = end_drag_g.append("g")
                 .attr("class","end-text")
+                .attr("opacity", 0);
+            end_text.append("path")
+                .attr("transform", "translate(0,-5)")
+                .attr("fill", "none")
+                .attr("stroke", "black")
+                .attr("stroke-width", 1)
+                .attr("d", "M0 0 L 4 -4 L 15 -4 L 15 -20 L -15 -20 L -15 -4 L -4 -4 Z");
+            end_text.append("text")
                 .attr("x",0)
-                .attr("y", 19)
+                .attr("y", -13)
                 .attr("text-anchor", "middle")
                 .text((range[1]+1)/20);
-
             end_drag_g.attr("transform", "translate("+(container_width*0.1+(range[1]+1)*drag_interval+2)+","+(container_height*0.75)+")");
         }
         else {
@@ -992,8 +1087,8 @@ let FilterLayout = function (container) {
             });
             start_text = container.select(".start-text");
             end_text = container.select(".end-text");
-            start_text.text(range[0]/20);
-            end_text.text((range[1]+1)/20);
+            start_text.select("text").text(range[0]/20);
+            end_text.select("text").text((range[1]+1)/20);
             start_drag_g.transition()
                 .duration(AnimationDuration)
                 .attr("transform", "translate("+(container_width*0.1+range[0]*drag_interval-2)+","+(container_height*0.75)+")");
@@ -1003,6 +1098,8 @@ let FilterLayout = function (container) {
         }
         start_drag.call(d3.drag()
                     .on("drag", function () {
+                        start_text.attr("opacity", 1);
+                        end_text.attr("opacity", 1);
                         let x = d3.mouse(container.node())[0];
                         let drag_btn = d3.select(this);
                         let drag_btn_g = d3.select(this.parentNode);
@@ -1012,6 +1109,7 @@ let FilterLayout = function (container) {
                         max_x = parseFloat(end_pos);
                         if((x<=min_x)||(x>=max_x)) return;
                         drag_btn_g.attr("transform", "translate("+(x)+","+(container_height*0.75)+")");
+                        container.select("#current-"+type+"-axis-in").select("line").attr("x1", x);
                         container.selectAll("rect").attr("opacity", function (d, i) {
                             let change = false;
                             let rect = d3.select(this);
@@ -1024,8 +1122,8 @@ let FilterLayout = function (container) {
 
                                     range[0] = i;
                                     // data_manager.update_edge_filter(range[0], range[1]);
-                                    start_text.text(range[0]/20);
-                                    end_text.text((range[1]+1)/20);
+                                    start_text.select("text").text(range[0]/20);
+                                    end_text.select("text").text((range[1]+1)/20);
                                 }
                                 return 1
                             }
@@ -1033,17 +1131,21 @@ let FilterLayout = function (container) {
                             if(change) {
 
                                 range[0] = i+1;
-                                start_text.text(range[0]/20);
-                                end_text.text((range[1]+1)/20);
+                                start_text.select("text").text(range[0]/20);
+                                    end_text.select("text").text((range[1]+1)/20);
                             }
                             return 0.5
                         })
                     })
                     .on("end", function () {
+                        start_text.attr("opacity", 0);
+                        end_text.attr("opacity", 0);
                         data_manager.update_edge_filter(range[0], range[1]);
                     }));
             end_drag.call(d3.drag()
                     .on("drag", function () {
+                        start_text.attr("opacity", 1);
+                        end_text.attr("opacity", 1);
                         let x = d3.mouse(container.node())[0];
                         let drag_btn = d3.select(this);
                         let drag_btn_g = d3.select(this.parentNode);
@@ -1053,6 +1155,7 @@ let FilterLayout = function (container) {
                         min_x = parseFloat(end_pos);
                         if((x<=min_x)||(x>=max_x)) return;
                         drag_btn_g.attr("transform", "translate("+(x)+","+(container_height*0.75)+")");
+                        container.select("#current-"+type+"-axis-in").select("line").attr("x2", x);
 
                         container.selectAll("rect").attr("opacity", function (d, i) {
                             let change = false;
@@ -1064,24 +1167,42 @@ let FilterLayout = function (container) {
                                 if(rect.attr("opacity")!=1)change = true;
                                 if(change) {
                                     range[1] = i;
-                                    start_text.text(range[0]/20);
-                                    end_text.text((range[1]+1)/20);
+                                    start_text.select("text").text(range[0]/20);
+                                    end_text.select("text").text((range[1]+1)/20);
                                 }
                                 return 1
                             }
                             if(rect.attr("opacity")!=0.5)change = true;
                             if(change) {
                                 range[1] = i-1;
-                                start_text.text(range[0]/20);
-                                end_text.text((range[1]+1)/20);
+                                start_text.select("text").text(range[0]/20);
+                                    end_text.select("text").text((range[1]+1)/20);
                                 // data_manager.update_edge_filter(range[0], range[1]);
                             }
                             return 0.5
                         })
                     })
                     .on("end", function () {
+                        start_text.attr("opacity", 0);
+                        end_text.attr("opacity", 0);
                         data_manager.update_edge_filter(range[0], range[1]);
-                    }))
+                    }));
+            start_drag.on("mouseover", function () {
+                start_text.attr("opacity", 1);
+                            end_text.attr("opacity", 1);
+            })
+            .on("mouseout", function () {
+                start_text.attr("opacity", 0);
+                        end_text.attr("opacity", 0);
+            });
+        end_drag.on("mouseover", function () {
+            start_text.attr("opacity", 1);
+                        end_text.attr("opacity", 1);
+        })
+            .on("mouseout", function () {
+                start_text.attr("opacity", 0);
+                        end_text.attr("opacity", 0);
+            });
     };
 
     that.draw_edge_type_widget = function(distribution, container, type, range){

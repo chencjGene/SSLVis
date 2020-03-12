@@ -265,7 +265,7 @@ label.field.focused .psuedo_select ul {
 }
 
 .encoding-container,
-.slider-container {
+.mslider-container {
   margin: 10px;
   display: flex;
   height: 60px;
@@ -440,4 +440,62 @@ label.field.focused .psuedo_select ul {
         -webkit-transform: rotate(0deg);
         transform: rotate(0deg);
     }
+}
+
+.d3-tip {
+  line-height: 1;
+  font-weight: bold;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  border-radius: 2px;
+}
+
+/* Creates a small triangle extender for the tooltip */
+.d3-tip:after {
+  box-sizing: border-box;
+  display: inline;
+  font-size: 10px;
+  width: 100%;
+  line-height: 1;
+  color: rgba(0, 0, 0, 0.8);
+  content: "\25BC";
+  position: absolute;
+  text-align: center;
+}
+
+/* Style northward tooltips differently */
+.d3-tip.n:after {
+  margin: -1px 0 0 0;
+  top: 100%;
+  left: 0;
+}
+
+.tooltip-container {
+	 width: 80%;
+	 margin: 0 auto;
+}
+ .tooltip-container .tooltip-box {
+	 background-size: contain;
+	 overflow: hidden;
+	 background: #fff;
+	 border-radius: 15px;
+	 box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.28);
+	 margin: 5px 5px 0px 5px;
+	 padding: 10px;
+}
+ .tooltip-container .tooltip-box img {
+	 width: 100%;
+	 border-radius: 9px;
+}
+ .tooltip-container .tooltip {
+	 width: 20%;
+	 margin: 0 auto;
+	 text-align: center;
+	 overflow-y: hidden;
+}
+ .tooltip-container .tooltip svg {
+	 position: relative;
+	 width: 100%;
+	 z-index: 10;
 }
