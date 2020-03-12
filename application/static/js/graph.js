@@ -493,8 +493,8 @@ let GraphLayout = function (container) {
                 .attr("d", function (d) {
                     return "M {0} {1} L {2} {3} L {4} {5} Z".format(
                         0, -13 * that.zoom_scale,
-                        6* that.zoom_scale, -13 * that.zoom_scale - 10* that.zoom_scale,
-                        -6* that.zoom_scale, -13 * that.zoom_scale - 10* that.zoom_scale
+                        4.5* that.zoom_scale, -13 * that.zoom_scale - 7.5* that.zoom_scale,
+                        -4.5* that.zoom_scale, -13 * that.zoom_scale - 7.5* that.zoom_scale
                     )
                 })
                 .attr("transform", function (d) {
@@ -507,8 +507,8 @@ let GraphLayout = function (container) {
                 .attr("d", function (d) {
                     return "M {0} {1} L {2} {3} L {4} {5} Z".format(
                         0, -13 * that.zoom_scale,
-                        6* that.zoom_scale, -13 * that.zoom_scale - 10* that.zoom_scale,
-                        -6* that.zoom_scale, -13 * that.zoom_scale - 10* that.zoom_scale
+                        4.5* that.zoom_scale, -13 * that.zoom_scale - 7.5* that.zoom_scale,
+                        -4.5* that.zoom_scale, -13 * that.zoom_scale - 7.5* that.zoom_scale
                     )
                 })
                 .attr("transform", function (d) {
@@ -694,8 +694,8 @@ let GraphLayout = function (container) {
                 .attr("d", function (d) {
                     return "M {0} {1} L {2} {3} L {4} {5} Z".format(
                         0, -13 * that.zoom_scale,
-                        6* that.zoom_scale, -13 * that.zoom_scale - 10* that.zoom_scale,
-                        -6* that.zoom_scale, -13 * that.zoom_scale - 10* that.zoom_scale
+                        4.5* that.zoom_scale, -13 * that.zoom_scale - 7.5* that.zoom_scale,
+                        -4.5* that.zoom_scale, -13 * that.zoom_scale - 7.5* that.zoom_scale
                     )
                 })
                 .attr("transform", function (d) {
@@ -710,8 +710,8 @@ let GraphLayout = function (container) {
                 .attr("d", function (d) {
                     return "M {0} {1} L {2} {3} L {4} {5} Z".format(
                         0, -13 * that.zoom_scale,
-                        6* that.zoom_scale, -13 * that.zoom_scale - 10* that.zoom_scale,
-                        -6* that.zoom_scale, -13 * that.zoom_scale - 10* that.zoom_scale
+                        4.5* that.zoom_scale, -13 * that.zoom_scale - 7.5* that.zoom_scale,
+                        -4.5* that.zoom_scale, -13 * that.zoom_scale - 7.5* that.zoom_scale
                     )
                 })
                 .attr("transform", function (d) {
@@ -1014,8 +1014,8 @@ let GraphLayout = function (container) {
                 .attr("d", function (d) {
                     return "M {0} {1} L {2} {3} L {4} {5} Z".format(
                         0, -13 * that.zoom_scale,
-                        6* that.zoom_scale, -13 * that.zoom_scale - 10* that.zoom_scale,
-                        -6* that.zoom_scale, -13 * that.zoom_scale - 10* that.zoom_scale
+                        4.5* that.zoom_scale, -13 * that.zoom_scale - 7.5* that.zoom_scale,
+                        -4.5* that.zoom_scale, -13 * that.zoom_scale - 7.5* that.zoom_scale
                     )
                 })
                 .attr("transform", function (d) {
@@ -1028,8 +1028,8 @@ let GraphLayout = function (container) {
                 .attr("d", function (d) {
                     return "M {0} {1} L {2} {3} L {4} {5} Z".format(
                         0, -13 * that.zoom_scale,
-                        6* that.zoom_scale, -13 * that.zoom_scale - 10* that.zoom_scale,
-                        -6* that.zoom_scale, -13 * that.zoom_scale - 10* that.zoom_scale
+                        4.5* that.zoom_scale, -13 * that.zoom_scale - 7.5* that.zoom_scale,
+                        -4.5* that.zoom_scale, -13 * that.zoom_scale - 7.5* that.zoom_scale
                     )
                 })
                 .attr("transform", function (d) {
@@ -1090,8 +1090,8 @@ let GraphLayout = function (container) {
                 .attr("d", function (d) {
                     return "M {0} {1} L {2} {3} L {4} {5} Z".format(
                         0, -13 * that.zoom_scale,
-                        6* that.zoom_scale, -13 * that.zoom_scale - 10* that.zoom_scale,
-                        -6* that.zoom_scale, -13 * that.zoom_scale - 10* that.zoom_scale
+                        4.5* that.zoom_scale, -13 * that.zoom_scale - 7.5* that.zoom_scale,
+                        -4.5* that.zoom_scale, -13 * that.zoom_scale - 7.5* that.zoom_scale
                     )
                 })
                 .attr("transform", function (d) {
@@ -1104,8 +1104,8 @@ let GraphLayout = function (container) {
                 .attr("d", function (d) {
                     return "M {0} {1} L {2} {3} L {4} {5} Z".format(
                         0, -13 * that.zoom_scale,
-                        6* that.zoom_scale, -13 * that.zoom_scale - 10* that.zoom_scale,
-                        -6* that.zoom_scale, -13 * that.zoom_scale - 10* that.zoom_scale
+                        4.5* that.zoom_scale, -13 * that.zoom_scale - 7.5* that.zoom_scale,
+                        -4.5* that.zoom_scale, -13 * that.zoom_scale - 7.5* that.zoom_scale
                     )
                 })
                 .attr("transform", function (d) {
