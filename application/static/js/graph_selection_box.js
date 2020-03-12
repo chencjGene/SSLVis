@@ -127,7 +127,13 @@ GraphLayout.prototype._create_selection_box = function(){
         .append("g")
         .attr("class", "selection-box")
         .attr("transform", d => "translate("+(d.x)+","+ (d.y) +")")
-        .call(drag);
+        .call(drag)        
+        .on("mousedown", function (d) {
+            console.log("mousedown", d);
+            // that.data_manager.edit_view.update_click_menu($('#graph-view-svg'), "box");
+            that.data_manager.update_edit_state(d, "box");
+            d3.event.stopPropagation();
+        });
     sg.append("rect")
         .attr("class", "box")
         .attr("width", d => d.width)
@@ -200,14 +206,7 @@ GraphLayout.prototype._create_selection_box = function(){
                 .classed("cross-line", false);
             })
             .on("click", function(d){
-                for(let i = 0; i < that.selection_box.length; i++){
-                    if (that.selection_box[i].id === d.id){
-                        that.selection_box.splice(i, 1);
-                        break;
-                    }
-                }
-                that._remove_selection_box();
-                that.show_edges();
+                that.data_manager.delete_box(d.id);
             })
     cross_group.append("line")
             .attr("id", "cross-line-1")
@@ -399,6 +398,18 @@ GraphLayout.prototype._update_snapshot = function(){
 GraphLayout.prototype._remove_snapshot = function(){
 
 };
+
+GraphLayout.prototype.delete_box = function(id){
+    let that = this;
+    for(let i = 0; i < that.selection_box.length; i++){
+        if (that.selection_box[i].id === id){
+            that.selection_box.splice(i, 1);
+            break;
+        }
+    }
+    that._remove_selection_box();
+    that.show_edges();
+}
 
 GraphLayout.prototype.get_path = function(){
     let that = this;

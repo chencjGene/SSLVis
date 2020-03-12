@@ -51,6 +51,7 @@ let EditLayout = function(){
         that.update_click_menu($('#graph-tsne-point-g'), "node");
         that.update_click_menu($('#graph-path-g'), "edge");
         // that.update_click_menu($('#grid-group'), 1);
+        that.update_click_menu($('#graph-selection-g'), "box");
     };
 
     that.clean_click_menu = function(){
@@ -58,6 +59,7 @@ let EditLayout = function(){
     };
 
     that.update_click_menu = function(container, type){
+        console.log("update_click_menu");
         if(type === "node"){
             let menu = [];
             menu.push({
@@ -161,7 +163,26 @@ let EditLayout = function(){
                 container.contextMenu(click_edge_menu, mouseup_menu_settings);
             }
         }
+        else if(type === "box"){
+            console.log("update box menu");
+            menu = [];
+            menu.push({
+                title: 'Delete',
+                name: 'Delete',
+                color: '',
+                className: "iw-mnotSelected add-menu-item",
+                fun: function (d) {
+                    console.log("delete add edge menu", focus_data, focus_mode);
+                    // that.editing();
+                    that.data_manager.delete_box(focus_data.id);
+                }
+            });
+            click_edge_menu = menu;
+            if (menu.length > 0) {
+                container.contextMenu(click_edge_menu, mouseup_menu_settings);
+            }
 
+        }
 
 
 

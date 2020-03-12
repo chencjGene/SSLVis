@@ -883,6 +883,10 @@ DataLoaderClass = function () {
         return show_ids;
     }
 
+    that.delete_box = function(id){
+        that.graph_view.delete_box(id);
+    }
+
     that.init = function () {
         that._init();
     }.call();
