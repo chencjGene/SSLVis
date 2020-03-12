@@ -257,7 +257,7 @@ let GraphLayout = function (container) {
         // }
 
         //iter
-        iter = Object.values(nodes)[0].label.length-1;
+        iter = that.data_manager.iter;
     };
 
     that.setIter = async function (newiter) {
@@ -955,6 +955,7 @@ let GraphLayout = function (container) {
 
     that.maintain_size = function (transform_event, animation = false) {
         that.zoom_scale = 1.0 / transform_event.k;
+        transform_plg.set_zoom_slider_value(transform_event.k);
         if(animation){
             nodes_in_group
             .transition()

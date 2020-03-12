@@ -13,10 +13,14 @@ let GraphTransform = function (parent) {
     let send_zoom_request = [];
     let AnimationDuration = 10;
     let zoom_maintain_status = [];
+    let zoom_slider = null;
+    let zoom_text = null;
 
 
     that._init = function () {
         that.set_view(parent);
+        zoom_slider = d3.select("#zoom-slider").select("input");
+        zoom_text = d3.select("#zoom-slider").select("p");
     };
 
     that.set_view = function (new_parent) {
@@ -25,6 +29,7 @@ let GraphTransform = function (parent) {
 
     that.apply_transform = function(transform){
         view.main_group.attr("transform", transform);
+        that.set_zoom_slider_value(transform.k);
     };
 
     that.get_transform = function() {
@@ -117,9 +122,54 @@ let GraphTransform = function (parent) {
         console.log("zoom end", d3.event.transform.x, d3.event.transform.y,d3.event.transform.k)
     };
 
+    that.set_zoom_slider_value = function(v) {
+        console.log(v);
+        zoom_slider.property("value", v);
+        zoom_text.html((Math.round(v*100)-17)+"%");
+    };
+
     that.set_zoom = function () {
+        function slider_value_change(transform){
+
+              that.apply_transform(transform);
+              view.maintain_size(transform);
+              let target_level = current_level;
+              let current_level_scale = Math.pow(2, target_level);
+              while (transform.k > 2 * current_level_scale) {
+                current_level_scale *= 2;
+                target_level += 1;
+            }
+              while (transform.k < current_level_scale / 1.5 && target_level > 0) {
+                    current_level_scale /= 2;
+                    target_level -= 1;
+                }
+              current_level = target_level;
+              view.width = $('#graph-view-svg').width();
+              view.height = $('#graph-view-svg').height();
+              let start_x = view.center_scale_x_reverse(-transform.x /transform.k);
+              let start_y = view.center_scale_y_reverse(-transform.y / transform.k);
+              let end_x = view.center_scale_x_reverse((view.width - transform.x) / transform.k);
+              let end_y = view.center_scale_y_reverse((view.height - transform.y) / transform.k);
+
+              let area = {
+                  'x': start_x,
+                  'y': start_y,
+                  'width': end_x - start_x,
+                  'height': end_y - start_y
+              };
+              let send_zoom_idx = send_zoom_cnt++;
+              send_zoom_request[send_zoom_idx] = true;
+
+              setTimeout(function () {
+                  if(send_zoom_request[send_zoom_idx+1] === undefined){
+                                console.log(send_zoom_idx);
+                                console.log("recv:", area, target_level);
+                                // transform = d3.event.transform;
+                                view.data_manager.zoom_graph_view_notify(area, target_level);
+                            }}, 500);
+        };
         zoom = d3.zoom()
-            .scaleExtent([0.6, 128])
+            .scaleExtent([0.6, 20])
             .on('start', function () {
                 // d3.selectAll(".iw-contextMenu").style("display", "none");
                 // focus_node_change_switch = true;
@@ -130,6 +180,43 @@ let GraphTransform = function (parent) {
         // view.svg.on(".drag", null);
         //     view.svg.on(".dragend", null); //disabled by changjian
         view.svg.call(zoom);
+        zoom_slider.attr("value", 1)
+          .attr("min", zoom.scaleExtent()[0])
+          .attr("max", zoom.scaleExtent()[1])
+          .attr("step", (zoom.scaleExtent()[1] - zoom.scaleExtent()[0]) / 100)
+          .on("input", function () {
+              let v = zoom_slider.property("value");
+              transform.k = v;
+              slider_value_change(transform);
+          });
+        $("#zoom-slider-add")
+            .on("mouseover", function () {
+                $("#zoom-slider-add").css("background", "rgb(198,198,198)");
+            })
+            .on("mouseout", function () {
+                $("#zoom-slider-add").css("background", "white");
+            })
+            .on("click", function () {
+            transform.k += 0.1;
+            if(transform.k > zoom.scaleExtent()[1]){
+                transform.k = zoom.scaleExtent()[1];
+            }
+            slider_value_change(transform);
+        });
+        $("#zoom-slider-minus")
+            .on("mouseover", function () {
+                $("#zoom-slider-minus").css("background", "rgb(198,198,198)");
+            })
+            .on("mouseout", function () {
+                $("#zoom-slider-minus").css("background", "white");
+            })
+            .on("click", function () {
+            transform.k -= 0.1;
+            if(transform.k < zoom.scaleExtent()[0]){
+                transform.k = zoom.scaleExtent()[0];
+            }
+            slider_value_change(transform);
+        })
     };
 
     that.remove_zoom = function() {
