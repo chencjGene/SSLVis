@@ -243,7 +243,7 @@ let DistLayout = function (container) {
         for (let i = 0; i < label_names.length; i++){
             that.flow_text.push({"id": i});
             let text_data = that.flow_text[i];
-            text_data.link = {"link": {}};
+            // text_data.link = {};
             text_data.h = -1;
             consist_links.forEach(d => {
                 if(d.source_class === i && d.value > text_data.h){
@@ -375,12 +375,12 @@ let DistLayout = function (container) {
             .attr("class", "flow-text")
             .attr("font-size", 14)
             .attr("text-anchor", "middle")
-            .attr("x", d => (d.link.source.x1 + d.link.target.x0) / 2)
-            .attr("y", d => (d.link.source.y0 + d.link.source.y1 
-                + d.link.target.y0 + d.link.target.y1) / 4 + 7)
+            .attr("x", d => d.link ? (d.link.source.x1 + d.link.target.x0) / 2 : 0)
+            .attr("y", d => d.link ? (d.link.source.y0 + d.link.source.y1 
+                + d.link.target.y0 + d.link.target.y1) / 4 + 5 : 0)
             .text((d,i) => label_names[i])
             .style("fill", "white")
-            .style("opacity", d => d.link.width > 14 ? 1 : 0)
+            .style("opacity", d => d.link ? (d.link.width > 14 ? 1 : 0) : 0)
 
         // create slider
         that._create_slider();
@@ -698,11 +698,23 @@ let DistLayout = function (container) {
         
         flow_text_group.selectAll(".flow-text")
             .data(that.flow_text, d => d.id)
-            .attr("x", d => (d.link.source.x1 + d.link.target.x0) / 2)
-            .attr("y", d => (d.link.source.y0 + d.link.source.y1 + 
-                d.link.target.y0 + d.link.target.y1) / 4 + 7)
+            .attr("x", d => d.link ? (d.link.source.x1 + d.link.target.x0) / 2 : 0)
+            .attr("y", d => d.link ? (d.link.source.y0 + d.link.source.y1 
+                + d.link.target.y0 + d.link.target.y1) / 4 + 5 : 0)
             .text((d,i) => label_names[i])
-            .style("opacity", d => d.link.width > 14 ? 1 : 0);
+            .style("opacity", d => d.link ? (d.link.width > 14 ? 1 : 0) : 0)
+            // .attr("x", d => (d.link.source.x1 + d.link.target.x0) / 2)
+            // .attr("y", d => (d.link.source.y0 + d.link.source.y1 + 
+            //     d.link.target.y0 + d.link.target.y1) / 4 + 5)
+            // .text((d,i) => label_names[i])
+            // .style("opacity", d => d.link.width > 14 ? 1 : 0);
+
+
+            .attr("x", d => d.link ? (d.link.source.x1 + d.link.target.x0) / 2 : 0)
+            .attr("y", d => d.link ? (d.link.source.y0 + d.link.source.y1 
+                + d.link.target.y0 + d.link.target.y1) / 4 + 5 : 0)
+            .text((d,i) => label_names[i])
+            .style("opacity", d => d.link ? (d.link.width > 14 ? 1 : 0) : 0)
 
         // update slider
         that._update_slider();
