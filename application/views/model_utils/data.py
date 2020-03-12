@@ -428,6 +428,7 @@ class GraphData(Data):
             "affinity_matrix": self.affinity_matrix.copy(),
             "train_idx": self.get_train_idx(),
             "train_y": self.get_train_label(),
+            "selected_labeled_idx": self.selected_labeled_idx,
             "state": self.current_state,
             "pred": pred
         }
@@ -504,6 +505,10 @@ class GraphData(Data):
     def change_state(self, id):
         state = self.state_data[id]["state"]
         self.current_state = state
+        data = self.state_data[self.current_state.name]
+        self.affinity_matrix = data["affinity_matrix"]
+        self.train_idx = data["train_idx"]
+        self.selected_labeled_idx = data["selected_labeled_idx"]
         self.print_state()
         return self.return_state()
 

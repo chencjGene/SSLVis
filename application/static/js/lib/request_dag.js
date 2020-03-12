@@ -75,6 +75,10 @@ var request_node = function (url, callback, type, method, headers, children, par
         return this;
     };
 
+    this.clean_dependence = function(){
+        myParents = [];
+    };
+
     this.notify = function () {
         for (var i = 0; i < myParents.length; i ++) {
             if (!myParents[i].ready()) {

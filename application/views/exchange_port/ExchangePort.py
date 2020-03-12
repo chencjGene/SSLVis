@@ -262,9 +262,19 @@ class ExchangePortClass(object):
         history_data = self.model.get_history()
         return jsonify(history_data)
     
-    def set_history(self, id):
-        history_data = self.model.set_history(id)
-        return jsonify(history_data)
+    def set_history(self, data):
+        history_data = self.model.set_history(data["id"])
+        res = self.anchor.get_nodes(1)
+        graph = res["graph"]
+        for id in graph["nodes"]:
+            self.current_ids.append(int(id))
+        data = {
+            "history": history_data,
+            "graph": res,
+            "area": data["area"],
+            "level": data["level"]
+        }
+        return jsonify(data)
 
     def retrain(self):
         res = self.model.retrain()
