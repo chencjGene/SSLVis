@@ -82,8 +82,8 @@ let GraphLayout = function (container) {
     that.snapshot_edge = [];
     let edge_filter_threshold = 0;
     that.focus_nodes = [];
-    that.multi_step_in = 2;
-    that.multi_step_out = 1;
+    that.multi_step_in = 0;
+    that.multi_step_out = 0;
     let path_line = d3.line()
 			.x(function(d){ return d.x; })
                         .y(function(d){ return d.y; })
@@ -102,6 +102,16 @@ let GraphLayout = function (container) {
     let transform_plg = null;
     let highlight_plg = null;
     let if_lasso = false;
+
+    that.set_step_in = function(n){
+        that.multi_step_in = n;
+        that.data_manager.update_graph_view();
+    }
+
+    that.set_step_out = function(n){
+        that.multi_step_out = n;
+        that.data_manager.update_graph_view();
+    }
 
     that._init = function () {
         // container init
