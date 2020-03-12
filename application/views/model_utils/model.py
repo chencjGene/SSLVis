@@ -109,7 +109,7 @@ class SSLModel(object):
         self.propagation_path_from = None
         self.propagation_path_to = None
 
-    def _training(self, rebuild=True, evaluate=False, simplifying=True):
+    def _training(self, rebuild=True, evaluate=False, simplifying=True, record=True):
         self._clean_buffer()
         affinity_matrix = self.data.get_graph(self.n_neighbor, rebuild=rebuild)
         laplacian = build_laplacian_graph(affinity_matrix)
@@ -169,7 +169,8 @@ class SSLModel(object):
             # self.adaptive_evaluation_v2()
 
         # record_state
-        self.data.record_state(self.pred_dist)
+        if record:
+            self.data.record_state(self.pred_dist)
 
         logger.info("_training finished!!!!!!!!")
 
@@ -693,7 +694,9 @@ class SSLModel(object):
         return self.data.return_state()
     
     def set_history(self, id):
-        return self.data.change_state(id)
+        state = self.data.change_state(id)
+        self._training(rebuild=False, simplifying=False, evaluate=True, record=False)
+        return state
 
     def retrain(self):
         self._training()

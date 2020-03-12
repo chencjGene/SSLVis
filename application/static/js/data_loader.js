@@ -380,9 +380,29 @@ DataLoaderClass = function () {
     that.set_history = function(id){
         let params = "?dataset=" + that.dataset;
         that.set_history_node = new request_node(that.set_history_url + params,
-            function(){}, "json", "POST");
+            that.set_history_handler(function(must_show_nodes, area, level){
+                that.state.is_zoom = false;
+                that.fetch_nodes(area, level, must_show_nodes);
+
+                let show_ids = [];
+                for(let node_id of Object.keys(that.state.nodes).map(d => parseInt(d))){
+                    if(that.state.visible_items[node_id] === true){
+                        show_ids.push(node_id);
+                    }
+                }
+                that.get_dist_view(show_ids);
+                that.update_graph_view();
+            }), "json", "POST");
         let data = {"id": id};
+        let level = that.graph_view.get_level();
+        let area = that.state.area;
+        data["area"] = area;
+        data["level"] = level;
+        data["wh"] = that.graph_view.get_wh();
         that.set_history_node.set_data(data);
+        // that.graph_node.clean_dependence();
+        // that.graph_node.depend_on(that.set_history_node);
+        // that.graph_node.set_pending();
         that.set_history_node.notify();
     };
 

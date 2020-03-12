@@ -18,8 +18,9 @@ def app_get_history():
 @history.route("/history/SetHistory", methods=["POST", "GET"])
 def app_set_history():
     data = json.loads(request.data)
-    id = data["id"]
-    return set_history(id)
+    # id = data["id"]
+    return set_history(data)
+    
 
 @history.route("/history/Retrain", methods=["POST", "GET"])
 def app_retrain():

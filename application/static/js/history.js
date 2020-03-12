@@ -19,6 +19,7 @@ let HistoryLayout = function (container) {
     let dist_width = layout_width * 0.1;
     let data_manager = null;
     let legend_height = 70;
+    let gray_color = "#A9A9A9";
 
     that.svg = container.select("#history-view").select("svg");
     that.line_group = that.svg.append("g").attr("id", "line");
@@ -149,12 +150,8 @@ let HistoryLayout = function (container) {
             .attr("cy", cell_height * 0.5)
             .attr("r", 10)
             .style("fill", d => d.id === that.focus_id ? 
-                "rgb(127, 127, 127)" : "rgb(222, 222, 222)")
-            .on("click", function(d){
-                that.focus_id = d.id;
-                data_manager.set_history(that.focus_id);
-                that._update();
-            })
+                "rgb(127, 127, 127)" : "rgb(222, 222, 222)");
+            
         that.cells.append("text")
             .attr("class", "action-id")
             .attr("text-anchor", "middle")
@@ -204,6 +201,30 @@ let HistoryLayout = function (container) {
             .attr("text-anchor", "start")
             .text(d => d.margin);
 
+        let icon_g = that.cells.append("g")
+            .attr("class", "reset-icon")
+            .attr("transform", "translate(" + (text_center + 40) + ", " + (cell_height * 0.5 - 8) + ")")
+            .on("click", function(d){
+                that.focus_id = d.id;
+                data_manager.set_history(that.focus_id);
+                that._update();
+            });
+        
+        icon_g.append("rect")
+            .attr("x", 2)
+            .attr("y", 2)
+            .attr("width", 15)
+            .attr("height", 15)
+            .style("fill", "white")
+            .style("fill-opacity", 0);
+        icon_g
+            .append("path")
+            .attr("d", "M9.354 1.646a.5.5 0 00-.708 0l-2.5 2.5a.5.5 0 000 .708l2.5 2.5a.5.5 0 10.708-.708L7.207 4.5l2.147-2.146a.5.5 0 000-.708z")
+            .attr("fill", "gray");
+        icon_g
+            .append("path")
+            .attr("d", "M10 4.5A5.5 5.5 0 114.5 10a.5.5 0 00-1 0 6.5 6.5 0 103.25-5.63l.5.865A5.472 5.472 0 0110 4.5z")
+            .attr("fill", "gray");
 
         // //draw line
         that.line_group.selectAll("path")

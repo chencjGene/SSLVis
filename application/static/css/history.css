@@ -34,9 +34,12 @@
 }
 
 .action-circle {
-    cursor: pointer;
 }
 
 .action-id {
     pointer-events: none;
+}
+
+.reset-icon{
+    cursor: pointer;
 }
