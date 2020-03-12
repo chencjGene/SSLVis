@@ -206,6 +206,8 @@ let EditLayout = function(){
             let source = focus_data[0];
             let target = focus_data[1];
             edit_state.deleted_edges.push([source.id, target.id]);
+            that.data_manager.graph_view.remove_path_highlight();
+
         }
         else if (focus_mode === "add edge"){
 

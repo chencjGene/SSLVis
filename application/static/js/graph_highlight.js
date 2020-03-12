@@ -283,11 +283,7 @@ let GraphHighlight = function (parent) {
         selection
             .on('mousedown', function(){
                 view.main_group.select("#select-edge_path").remove();
-                d3.selectAll(".propagation-path")
-                    .attr("d", function (d) {
-                        return bezier_tapered(d[3][0], d[3][1], d[3][2], path_begin_width * view.zoom_scale,
-                        path_mid_width * view.zoom_scale, path_end_width * view.zoom_scale);
-                    });
+                 view.remove_path_highlight();
                 keep = true;
                 xy0 = d3.mouse(view.main_group.node());
                 path = view.main_group
@@ -313,15 +309,14 @@ let GraphHighlight = function (parent) {
                 let path_keys = [];
                 view.main_group.select("#select-edge_path").remove();
                 for(let path of highlight_paths){
-                    path.attr("d", function (d) {
-                        return bezier_tapered(d[3][0], d[3][1], d[3][2], path_begin_width * view.zoom_scale * 3,
-                        path_mid_width * view.zoom_scale * 3, path_end_width * view.zoom_scale * 3);
-                    });
                     let key = path.datum();
                     path_keys.push([key[0], key[1]]);
                 }
                 if(path_keys.length === 0){
                     view.data_manager.edit_view.remove_menu($("#graph-view-svg"))
+                }
+                else {
+                    view.highlight_paths(path_keys.map(d => d[0].id+","+d[1].id));
                 }
                 view.data_manager.update_edit_state(path_keys, "delete edge");
                 console.log("find paths:", path_keys)
