@@ -1294,14 +1294,21 @@ let GraphLayout = function (container) {
                 return that.opacity(d.id);
             }
             else return 0.3;
-        })
+        });
+        golds_in_group.attr("opacity", function (d) {
+            if(highlight_nodes[d.id] === true){
+                return that.opacity(d.id);
+            }
+            else return 0.3;
+        });
     };
 
     that.remove_path_highlight = function() {
         path_in_group.attr("opacity", function (d) {
             return that.opacity_path(d)
         });
-         nodes_in_group.attr("opacity", d => that.opacity(d.id))
+         nodes_in_group.attr("opacity", d => that.opacity(d.id));
+         golds_in_group.attr("opacity", d => that.opacity(d.id));
     };
 
     that.highlight_nodes = function(nodes_id) {
@@ -1317,11 +1324,18 @@ let GraphLayout = function (container) {
                 return that.opacity(d.id);
             }
             else return 0.3;
+        });
+        golds_in_group.attr("opacity", function (d) {
+            if(node_dict[d.id] === true){
+                return that.opacity(d.id);
+            }
+            else return 0.3;
         })
     };
 
     that.remove_node_highlight = function() {
-         nodes_in_group.attr("opacity", d => that.opacity(d.id))
+         nodes_in_group.attr("opacity", d => that.opacity(d.id));
+         golds_in_group.attr("opacity", d => that.opacity(d.id));
     };
 
     // debug

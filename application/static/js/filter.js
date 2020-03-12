@@ -601,7 +601,7 @@ let FilterLayout = function (container) {
         }
         let rects = container.select("#current-"+type+"-rects").selectAll("rect").data(distribution);
         // draw x-axis
-        if(container.select("#current-"+type+"-axis").size() === 0){
+        if(container.select("#current-"+type+"-axis-in").size() === 0){
             container.append("g")
                 .attr("id","current-"+type+"-axis-out")
                 .append("line")
@@ -937,7 +937,7 @@ let FilterLayout = function (container) {
         }
         let rects = container.select("#current-"+type+"-rects").selectAll("rect").data(distribution);
         // draw x-axis
-        if(container.select("#current-"+type+"-axis").size() === 0){
+        if(container.select("#current-"+type+"-axis-in").size() === 0){
             container.append("g")
                 .attr("id","current-"+type+"-axis-out")
                 .append("line")

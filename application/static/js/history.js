@@ -9,6 +9,7 @@ let HistoryLayout = function (container) {
     let margin_horizontal = 5;
     let layout_width = width - margin_horizontal * 2;
     let layout_height = height * 0.8;
+    let max_height = 500;
     let title_height = 30;
     let action_id_center = layout_width * 0.15;
     let cell_center = layout_width * 0.5;
@@ -258,6 +259,13 @@ let HistoryLayout = function (container) {
                     + ", " + (that.legend_height + 8) + ") rotate(30)";
             })
             .style("opacity", 1);
+
+        let new_height = Math.min(that.legend_height + 78, max_height);
+        that.svg.attr("height", that.legend_height + 78);
+        $("#history-view").css("height", new_height+"px");
+        $("#history-row").css("height", (new_height+83)+"px");
+        $("#history-row .content-container").css("height", (new_height+40)+"px");
+
         
     };
 
