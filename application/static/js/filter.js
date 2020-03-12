@@ -14,7 +14,8 @@ let FilterLayout = function (container) {
     let AnimationDuration = 1000;
     let color_unlabel = UnlabeledColor;
     let color_label = CategoryColor;
-
+    let checkbox_width = 14;
+    let checkbox_r = 3.5;
     // svg
     let uncertainty_svg = null;
     let label_svg = null;
@@ -222,7 +223,12 @@ let FilterLayout = function (container) {
         let container_width = widget_width;
         let container_height = widget_height;
         // container.selectAll("*").remove();
-        let x = d3.scaleBand().rangeRound([container_width*0.1, container_width*0.9], .05).paddingInner(0.05).domain(d3.range(label_cnt));
+        let paddinginner_len = (container_width * 0.8 - 14*label_distribution.length)/((label_distribution.length-1));
+        let paddinginner = paddinginner_len/(14 + paddinginner_len);
+        console.log("padding inner", paddinginner);
+        let paddingoutter = 0;
+        if(label_distribution.length < 10) paddingoutter = 0.4;
+        let x = d3.scaleBand().rangeRound([container_width*0.1, container_width*0.9], .05).paddingInner(paddinginner).paddingOuter(paddingoutter).domain(d3.range(label_cnt));
         let y = d3.scaleLinear().range([container_height*  0.7, container_height*0.05]).domain([0, 1]);
         // draw rect
 
@@ -335,8 +341,9 @@ let FilterLayout = function (container) {
         }
         // draw checkbox
         if(container.select(".current-label-checkbox").size() === 0){
-            let bandwidth = x.bandwidth()*0.7;
-            let offset = x.bandwidth()*0.15;
+            let bandwidth = checkbox_width;
+            let xoffset = (x.bandwidth()-bandwidth)/2;
+            let yoffset = x.bandwidth()*0.15;
             let groups = container
                 .selectAll(".current-label-checkbox")
                 .data(Object.values(label_rect))
@@ -346,7 +353,7 @@ let FilterLayout = function (container) {
                 .each(function (d, i) {
                     label_rect[i].checkbox = d3.select(this);
                 })
-                .attr("transform", (d, i) => "translate("+(x(label_rect[i].label)+offset)+","+(container_height*  0.7+offset)+")")
+                .attr("transform", (d, i) => "translate("+(x(label_rect[i].label)+xoffset)+","+(container_height*  0.7+yoffset)+")")
                 .on("mouseover", function (d, i) {
                     let rect = label_rect[i].rect;
                     let checkbox = label_rect[i].checkbox;
@@ -386,18 +393,18 @@ let FilterLayout = function (container) {
             groups.append("rect")
                 .attr("x", 0)
                 .attr("y", 0)
-                .attr("width", bandwidth)
-                .attr("height", bandwidth)
-                .attr("rx", bandwidth / 4)
-                .attr("ry", bandwidth / 4)
+                .attr("width", checkbox_width)
+                .attr("height", checkbox_width)
+                .attr("rx", checkbox_r)
+                .attr("ry", checkbox_r)
                 .attr("fill", (d,i) => label_rect[i].rect.attr("opacity")==1 ? (i===0?color_unlabel:color_label[i-1]) : "white")
                 .attr("stroke", (d,i) => (i===0?color_unlabel:color_label[i-1]));
             groups.append("text")
                 .style("stroke", "white")
                 .style("fill", "white")
                 .attr("text-anchor", "middle")
-                .attr("x", bandwidth / 2)
-                .attr("y", bandwidth / 2 + 6)
+                .attr("x", checkbox_width/2)
+                .attr("y", checkbox_width/2 + 5)
                 .text("\u2714");
 
 
@@ -533,11 +540,11 @@ let FilterLayout = function (container) {
             .attr("text-anchor", "start")
             .attr("font-size", 15)
             .attr("fill", FontColor)
-            .attr("x", 0)
+            .attr("x", x.bandwidth()*0.4)
             .attr("y", 0)
             .attr("transform", function(d, i){
                 let xcor=x(i);
-                let ycor=container_height*  0.7+27;
+                let ycor=container_height*  0.7+23;
                 return "translate(" + (xcor)
                     + ", " + ycor + ") rotate(30)";
             })
@@ -611,8 +618,8 @@ let FilterLayout = function (container) {
                 .attr("y2", container_height*  0.7)
                 .attr("stroke", "rgb(227,231,235)")
                 .attr("stroke-linecap", "round")
-                .attr("transform", "translate(0, 5)")
-                .attr("stroke-width", 3);
+                .attr("transform", "translate(0, 0)")
+                .attr("stroke-width", 5);
 
             container.append("g")
                 .attr("id","current-"+type+"-axis-in")
@@ -623,8 +630,8 @@ let FilterLayout = function (container) {
                 .attr("y2", container_height*  0.7)
                 .attr("stroke", "rgb(166,166,166)")
                 .attr("stroke-linecap", "round")
-                .attr("transform", "translate(0, 5)")
-                .attr("stroke-width", 3);
+                .attr("transform", "translate(0, 0)")
+                .attr("stroke-width", 5);
         }
 
         if(container.select("#current-"+type+"-texts").size() === 0){
@@ -947,8 +954,8 @@ let FilterLayout = function (container) {
                 .attr("y2", container_height*  0.7)
                 .attr("stroke", "rgb(227,231,235)")
                 .attr("stroke-linecap", "round")
-                .attr("transform", "translate(0, 5)")
-                .attr("stroke-width", 3);
+                .attr("transform", "translate(0, 0)")
+                .attr("stroke-width", 5);
 
             container.append("g")
                 .attr("id","current-"+type+"-axis-in")
@@ -959,8 +966,8 @@ let FilterLayout = function (container) {
                 .attr("y2", container_height*  0.7)
                 .attr("stroke", "rgb(166,166,166)")
                 .attr("stroke-linecap", "round")
-                .attr("transform", "translate(0, 5)")
-                .attr("stroke-width", 3);
+                .attr("transform", "translate(0, 0)")
+                .attr("stroke-width", 5);
         }
 
         if(container.select("#current-"+type+"-texts").size() === 0){
