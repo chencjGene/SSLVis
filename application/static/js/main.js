@@ -26,7 +26,9 @@ function set_up() {
     DataLoader.set_view(HistoryView, "history");
     DataLoader.set_view(FilterView, "filter");
     DataLoader.set_view(EditView, "edit");
-    DataLoader.set_view(SettingView, "setting")
+    DataLoader.set_view(SettingView, "setting");
+
+    document.oncontextmenu = function(){return false;};  
 }
 
 function clean_dom() {
