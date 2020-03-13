@@ -662,9 +662,10 @@ DataLoaderClass = function () {
             label_range.push(i);
         }
         // // edited by Changjian
-        that.set_filter_range([20, 19], label_range, [0, 19], [0,19],
+        that.set_filter_range([19, 19], label_range, [0, 19], [0,19],
             [1,19], ["between"]);
         that.update_filter_view();
+        that.state.glyphs = that.state.uncertainty_widget_data[that.state.uncertainty_widget_data.length - 1];
 
         //update view
         let show_ids = [];

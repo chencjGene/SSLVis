@@ -26,7 +26,7 @@ let ImageLayout = function (container){
     let legend_height = 25;
     let AnimationDuration = 500;
     let longAnimationDuration = 500;
-    let neighbor_border = 20;
+    let neighbor_border = 10;
     let shortAnimationDuration = 10;
     let max_height = 520;
     let get_neighbors_url = "/info/neighbors";
@@ -42,7 +42,7 @@ let ImageLayout = function (container){
     let img_grid_urls = [];
     let img_neighbors_ids = [];
     let show_neighbor_mode = false;
-    let k_num = 3;
+    let k_num = 4;
     let current_mode = "grid";
 
     let data_manager = null;
@@ -173,8 +173,8 @@ let ImageLayout = function (container){
             container_height = Math.min(height, max_height);
             svg.attr("height", height);
         }
-        $(".info-svg-div").css("height", container_height+"px");
-        $("#image-row .content-container").css("height", (container_height+30)+"px");
+        // $(".info-svg-div").css("height", container_height+"px");
+        // $("#image-row .content-container").css("height", (container_height+30)+"px");
 
 
         if(show_neighbor_mode){
@@ -326,9 +326,7 @@ let ImageLayout = function (container){
             .attr("x", (d, i) => img_padding+(i%neighbor_row_num)*(grid_size+grid_offset) + (i%neighbor_row_num===0?0:neighbor_border))
             .attr("y", (d, i) => legend_height + img_padding+Math.floor(i/neighbor_row_num)*(grid_size+grid_offset))
             .attr("width", grid_size)
-            .attr("height", grid_size)
-            .on("mouseover", (d, i) => i%neighbor_row_num===0? GraphView.mouse_on_image(d.id):null)
-            .on("mouseout", (d, i) => i%neighbor_row_num===0? GraphView.mouse_out_image():null);
+            .attr("height", grid_size);
 
         img_neighbors_enters.append("rect")
             .attr("x", (d, i) => img_padding+(i%neighbor_row_num)*(grid_size+grid_offset)-2 + (i%neighbor_row_num===0?0:neighbor_border))
@@ -341,14 +339,6 @@ let ImageLayout = function (container){
                     else return color_label[d.label[iter]];
             })
             .attr("fill-opacity", 0)
-            .on("mouseenter", function (d) {
-                if(show_neighbor_mode)
-                    GraphView.mouse_on_image(d.id)
-            } )
-            .on("mouseout", function (d) {
-                if(show_neighbor_mode)
-                    GraphView.mouse_out_image()
-            })
             .on("click", function (d, i) {
                 // that._show_detail(d, i);
                 // return color_unlabel;
