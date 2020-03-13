@@ -115,12 +115,14 @@ class ExchangePortClass(object):
 
     def local_update_k(self, data):
         # self.model.local_update(data["selected_idxs"], local_k=3)
-        self.model.local_search_k(data["selected_idxs"], list(range(data["range"][0], data["range"][1]+1)), data["selected_categories"])
+        _, best_k = self.model.local_search_k(data["selected_idxs"], list(range(data["range"][0], data["range"][1]+1)), data["selected_categories"])
+        best_k = int(best_k)
         graph = self.anchor.get_nodes(data["wh"])
         res = {
             "graph": graph,
             "area": data["area"],
-            "level": data["level"]
+            "level": data["level"],
+            "best_k": best_k
         }
         return jsonify(res)
         # return self.fisheye(self.current_ids, data["area"], data["level"], data["wh"])

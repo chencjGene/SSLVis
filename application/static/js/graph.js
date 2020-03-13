@@ -631,11 +631,13 @@ let GraphLayout = function (container) {
                 })
                 .on("click", function (d) {
                     // check if hided
+                    d3.event.stopPropagation();
                     if(visible_items[d.id] === false) return;
+                    that.data_manager.highlight_nodes([d.id]);
                     //  that.highlight([d.id]);
                     // that.focus_nodes = [d];
                     // that.show_edges();
-                    that.highlight([d.id]);
+                    // that.highlight([d.id]);
                 })
                 .transition()
                 .duration(AnimationDuration)
@@ -666,6 +668,7 @@ let GraphLayout = function (container) {
                 })
                 .on("click", function (d) {
                     // check if hided
+                    d3.event.stopPropagation();
                     if(visible_items[d.id] === false) return;
                      that.highlight([d.id]);
                 })
@@ -1223,6 +1226,7 @@ let GraphLayout = function (container) {
 
     that.highlight = function(ids) {
         // highlight_plg.highlight(nodes, ids);
+        highlights = ids.map(d => DataLoader.state.complete_graph[d]);
         that.focus_nodes = ids.map(d => DataLoader.state.complete_graph[d]);
         that.show_edges();
     };

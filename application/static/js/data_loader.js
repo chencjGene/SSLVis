@@ -84,6 +84,8 @@ DataLoaderClass = function () {
         outdegree_widget_range: [-1, -1],
         influence_widget_data: null,
         influence_widget_range: [-1, -1],
+        consistency_widget_data: null,
+        consistency_widget_range: [-1, -1],
         edge_type_data: {
             "in":0,
             "out":0,
@@ -284,7 +286,10 @@ DataLoaderClass = function () {
     that.local_update_k = function(){
         let params = "?dataset=" + that.dataset;
         that.local_update_k_node = new request_node(that.local_update_k_url + params,
-            that.local_update_k_handler(function(must_show_nodes, area, level){
+            that.local_update_k_handler(function(must_show_nodes, area, level, best_k){
+                console.log("best k", best_k);
+                $(".best-k-text").attr("hidden", false);
+                $(".best-k-text").html("Best k: "+best_k);
                 that.state.is_zoom = false;
                 that.fetch_nodes(area, level, must_show_nodes);
 
@@ -450,6 +455,8 @@ DataLoaderClass = function () {
         that.state.outdegree_widget_range = state.outdegree_widget_range;
         that.state.influence_widget_data = state.influence_widget_data;
         that.state.influence_widget_range = state.influence_widget_range;
+        that.state.consistency_widget_data = state.consistency_widget_data;
+        that.state.consistency_widget_range = state.consistency_widget_range;
         that.update_filter_view();
     };
 
@@ -467,6 +474,8 @@ DataLoaderClass = function () {
             "outdegree_widget_range":that.state.outdegree_widget_range,
             "influence_widget_data":that.state.influence_widget_data,
             "influence_widget_range":that.state.influence_widget_range,
+            "consistency_widget_data":that.state.consistency_widget_data,
+            "consistency_widget_range":that.state.consistency_widget_range,
             "edgetype_data":that.state.edge_type_data,
             "edgetype_range":that.state.edge_type_range
         });
@@ -561,6 +570,25 @@ DataLoaderClass = function () {
             distribution_box.push(node_id);
         }
 
+        // consistency interval
+        let min_consistency = 0;
+        let max_consistency = 6;
+        let consistency_cnt = max_consistency-min_consistency+1;
+        function consistency_interval_idx(consistency){
+            return consistency>=max_consistency?max_consistency:consistency;
+        }
+        let consistency_distribution = [];
+        for(let i=0; i<consistency_cnt; i++) consistency_distribution.push([]);
+        for(let node_id of Object.keys(nodes).map(d => parseInt(d))){
+            if(nodes[node_id] === undefined){
+                console.log("no node:", node_id);
+                continue
+            }
+            let consistency = nodes[node_id].consistency;
+            let distribution_box = consistency_distribution[consistency_interval_idx(consistency)];
+            distribution_box.push(node_id);
+        }
+
         let min_influence = 0;
         let max_influence = 1;
         let influence_cnt = 20;
@@ -589,13 +617,14 @@ DataLoaderClass = function () {
         that.state.indegree_widget_data = indegree_distribution;
         that.state.outdegree_widget_data = outdegree_distribution;
         that.state.influence_widget_data = influence_distribution;
+        that.state.consistency_widget_data = consistency_distribution;
     };
 
     that.setIter = function (iter) {
         that.iter = iter;
         that.set_filter_data(that.state.nodes);
         let ranges = that.filter_view.get_ranges();
-        that.set_filter_range(ranges[0], ranges[1], ranges[2], ranges[3], ranges[4], ranges[5]);
+        that.set_filter_range(ranges[0], ranges[1], ranges[2], ranges[3], ranges[4], ranges[5], ranges[6]);
         that.update_filter_view();
         that.state.visible_items = that.filter_view.get_visible_items();
         that.state.glyphs = that.filter_view.get_glyph_items();
@@ -609,20 +638,21 @@ DataLoaderClass = function () {
     that.update_edge_type_bar = function(data){
         console.log("update edge type bar");
         let ranges = that.filter_view.get_ranges();
-        that.set_filter_range(ranges[0], ranges[1], ranges[2], ranges[3], ranges[4], ranges[5]);
+        that.set_filter_range(ranges[0], ranges[1], ranges[2], ranges[3], ranges[4], ranges[5], ranges[6]);
         that.state.edge_type_data = data;
         // that.state.edge_type_range = range;
         that.update_filter_view();
 
     };
 
-    that.set_filter_range = function (uncertainty_range, label_range, indegree_range, outdegree_range, influence_range, edgetype_range){
+    that.set_filter_range = function (uncertainty_range, label_range, indegree_range, outdegree_range, influence_range, edgetype_range, consistency_range){
         that.state.uncertainty_widget_range = uncertainty_range;
         that.state.label_widget_range = label_range;
         that.state.indegree_widget_range = indegree_range;
         that.state.outdegree_widget_range = outdegree_range;
         that.state.influence_widget_range = influence_range;
         that.state.edge_type_range = edgetype_range;
+        that.state.consistency_widget_range = consistency_range;
     };
 
     that.update_edge_filter = function(min_threshold, max_threshold) {
@@ -665,7 +695,7 @@ DataLoaderClass = function () {
         }
         // // edited by Changjian
         that.set_filter_range([19, 19], label_range, [0, 19], [0,19],
-            [1,19], ["between"]);
+            [1,19], ["between"], [0, 6]);
         that.update_filter_view();
         that.state.glyphs = that.state.uncertainty_widget_data[that.state.uncertainty_widget_data.length - 1];
 
@@ -718,7 +748,7 @@ DataLoaderClass = function () {
             label_range.push(i);
         }
         that.set_filter_range([20, 19], label_range, [0, 19], [0,19],
-            [1,19], []);
+            [1,19], [], [0,6]);
         // that.set_filter_range([18, 19], label_range, [0, 19], [0,19]);
         that.update_filter_view();
         // update dist view
@@ -745,7 +775,7 @@ DataLoaderClass = function () {
     that.zoom_graph_view = function() {
         that.set_filter_data(that.state.nodes);
         let ranges = that.filter_view.get_ranges();
-        that.set_filter_range(ranges[0], ranges[1], ranges[2], ranges[3], ranges[4], ranges[5]);
+        that.set_filter_range(ranges[0], ranges[1], ranges[2], ranges[3], ranges[4], ranges[5], ranges[6]);
         that.update_filter_view();
         that.state.visible_items = that.filter_view.get_visible_items();
         that.state.glyphs = that.filter_view.get_glyph_items();
@@ -873,7 +903,10 @@ DataLoaderClass = function () {
 
     // highlight nodes:
     that.highlight_nodes = function(nodes_id){
-        that.graph_view.highlight(nodes_id);
+        that.state.highlights = nodes_id;
+        that.state.focus_idxs = nodes_id;
+        // that.state.highlights = that.state.focus_idxs;
+        that.update_graph_view();
     };
 
     that.get_show_ids = function(){

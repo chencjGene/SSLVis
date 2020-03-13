@@ -310,7 +310,7 @@ class SSLModel(object):
         neighbors = self.data.get_neighbors()
         affinity_matrix = self.data.get_graph()
         affinity_matrix.setdiag(0)
-        affinity_matrix, pred = local_search_k(k_list, self.n_neighbor, 
+        affinity_matrix, pred, best_k = local_search_k(k_list, self.n_neighbor,
             selected_idxs, self.unnorm_dist, affinity_matrix, 
             train_y, neighbors, train_gt)
         # logger.info("searched affinity_matrix diff: {}".format(
@@ -325,7 +325,14 @@ class SSLModel(object):
         self.data.affinity_matrix = self.data.correct_unconnected_nodes(affinity_matrix)
         # self.data.affinity_matrix = affinity_matrix
         self._training(rebuild=False, evaluate=evaluate, simplifying=simplifying)
-        return pred
+        return pred, best_k
+
+    def get_train_neighbors_consistency(self, n_neighbor = 6):
+        neighbors = self.data.get_neighbors()[:,:n_neighbor]
+        labels = self.get_pred_labels()
+        neighbor_labels = labels[neighbors]
+        return n_neighbor-np.count_nonzero(np.subtract(neighbor_labels.T , labels), axis=0)
+
 
     def get_path_to_label(self, process_data, influence_matrix):
         iternum = process_data.shape[0]

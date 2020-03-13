@@ -224,7 +224,7 @@ def local_search_k(k_list, n_neighbors, selected_idxs, F, initial_affinity_matri
             best_affinity_matrix = affinity_matrix
             best_pred = pred
     print("best local k:", best_k, "best_ent", min_ent, "original_ent", original_ent)
-    return best_affinity_matrix, best_pred
+    return best_affinity_matrix, best_pred, best_k
 
 def add_edge():
     None

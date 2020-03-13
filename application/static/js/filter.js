@@ -23,6 +23,7 @@ let FilterLayout = function (container) {
     let outdegree_svg = null;
     let edgeInfluence_svg = null;
     let edgeType_svg = null;
+    let consistency_svg = null;
 
     //data
     let label_widget_data = null;
@@ -35,6 +36,8 @@ let FilterLayout = function (container) {
     let outdegree_widget_range = [-1, -1];
     let influence_widget_data = null;
     let influence_widget_range = [-1,-1];
+    let consistency_widget_data = null;
+    let consistency_widget_range = [-1, -1];
     let edgetype_data = null;
     let edgetype_range = [];
     let label_names = [];
@@ -45,16 +48,7 @@ let FilterLayout = function (container) {
     let uncertain_items = {};
     let indegree_items = {};
     let outdegree_items = {};
-
-    //drag
-    let uncertainty_start_drag = null;
-    let uncertainty_end_drag = null;
-    let indegree_start_drag = null;
-    let indegree_end_drag = null;
-    let outdegree_start_drag = null;
-    let outdegree_end_drag = null;
-    let influence_start_drag = null;
-    let influence_end_drag = null;
+    let consistency_items = {};
 
     let edge_type_icons = {
         "in":null,
@@ -85,6 +79,7 @@ let FilterLayout = function (container) {
         outdegree_svg = container.select("#current-outdegree-svg");
         edgeInfluence_svg = container.select("#current-edgeinfluence-svg");
         edgeType_svg = container.select("#current-edgetype-svg");
+        consistency_svg = container.select("#current-consistency-svg");
 
         widget_width = parseInt($("#current-uncertainty-svg").width());
         widget_height = parseInt($("#current-uncertainty-svg").height());
@@ -122,6 +117,8 @@ let FilterLayout = function (container) {
         outdegree_widget_range = state.outdegree_widget_range;
         influence_widget_data = state.influence_widget_data;
         influence_widget_range = state.influence_widget_range;
+        consistency_widget_data = state.consistency_widget_data;
+        consistency_widget_range = state.consistency_widget_range;
         edgetype_data = state.edgetype_data;
         edgetype_range = state.edgetype_range;
 
@@ -131,6 +128,7 @@ let FilterLayout = function (container) {
         indegree_items = {};
         outdegree_items = {};
         control_items = {};
+        consistency_items = {};
         for(let i=0; i< uncertainty_widget_data.length; i++){
             if(i<uncertainty_widget_range[0] || i>uncertainty_widget_range[1]){
                 for(let node_id of uncertainty_widget_data[i]){
@@ -167,6 +165,18 @@ let FilterLayout = function (container) {
                 }
             }
         }
+        for(let i=0; i< consistency_widget_data.length; i++){
+            if(i<consistency_widget_range[0] || i>consistency_widget_range[1]){
+                for(let node_id of consistency_widget_data[i]){
+                    consistency_items[node_id] = false;
+                }
+            }
+            else {
+                for(let node_id of consistency_widget_data[i]){
+                    consistency_items[node_id] = true;
+                }
+            }
+        }
         for(let i=0; i< label_widget_data.length; i++){
             if(label_widget_range.indexOf(i)===-1){
                 for(let node_id of label_widget_data[i]){
@@ -182,13 +192,14 @@ let FilterLayout = function (container) {
         for(let node_bins of uncertainty_widget_data){
             for(let node_id of node_bins){
                 control_items[node_id] = label_items[node_id]&&
-                    indegree_items[node_id]&&outdegree_items[node_id];
+                    indegree_items[node_id]&&outdegree_items[node_id] && consistency_items[node_id];
             }
         }
     };
 
     that._update_view = function() {
         that._draw_widget(uncertainty_widget_data, uncertainty_svg, "uncertainty", uncertainty_widget_range, uncertain_items);
+        that._draw_widget(consistency_widget_data, consistency_svg, "consistency", consistency_widget_range, consistency_items);
         that.label_scented_widget();
         // that._draw_widget(indegree_widget_data, indegree_svg, "indegree", indegree_widget_range, indegree_items);
         // that._draw_widget(outdegree_widget_data, outdegree_svg, "outdegree", outdegree_widget_range, outdegree_items);
@@ -555,11 +566,11 @@ let FilterLayout = function (container) {
             });
     };
 
-    that.update_widget_showing_items = function(ids) {
+    that.update_widget_showing_items = function() {
         let remove_nodes = [];
         let add_nodes = [];
-        for(let node_id of ids){
-            let new_flag = label_items[node_id]&&indegree_items[node_id]&&outdegree_items[node_id];
+        for(let node_id of Object.keys(control_items)){
+            let new_flag = label_items[node_id]&&indegree_items[node_id]&&outdegree_items[node_id]&&consistency_items[node_id];
             if(new_flag === true && control_items[node_id] === false){
                 add_nodes.push(node_id);
                 control_items[node_id] = new_flag;
@@ -597,7 +608,9 @@ let FilterLayout = function (container) {
         // draw
         let container_width = widget_width;
         let container_height = widget_height;
-        let x = d3.scaleBand().rangeRound([container_width*0.1, container_width*0.9], .05).paddingInner(0.05).domain(d3.range(bar_cnt));
+        let paddinginner_len = (container_width * 0.8 - 11*distribution.length)/((distribution.length-1));
+        let paddinginner = paddinginner_len/(11 + paddinginner_len);
+        let x = d3.scaleBand().rangeRound([container_width*0.1, container_width*0.9], .05).paddingInner(paddinginner).domain(d3.range(bar_cnt));
         let y = d3.scaleLinear().range([container_height*  0.7, container_height*0.05]).domain([0, 1]);
         let drag_interval = x.step();
 
@@ -626,7 +639,7 @@ let FilterLayout = function (container) {
                 .append("line")
                 .attr("x1", container_width*0.1+range[0]*drag_interval-2)
                 .attr("y1", container_height*  0.7)
-                .attr("x2", container_width*0.1+(range[1]+1)*drag_interval+2)
+                .attr("x2", Math.min(container_width*0.1+(range[1]+1)*drag_interval+2, container_width*0.9))
                 .attr("y2", container_height*  0.7)
                 .attr("stroke", "rgb(166,166,166)")
                 .attr("stroke-linecap", "round")
@@ -648,7 +661,7 @@ let FilterLayout = function (container) {
                  .attr("x", container_width*0.9+5)
                  .attr("y", container_height* 0.7+10)
                  .attr("text-anchor", "start")
-                 .text("1")
+                 .text(type === "consistency" ? 6 : 1);
         }
         let textsg = container.select("#current-"+type+"-texts");
 
@@ -713,7 +726,7 @@ let FilterLayout = function (container) {
                 .attr("x",0)
                 .attr("y", -13)
                 .attr("text-anchor", "middle")
-                .text(range[0]/20);
+                .text(type==="consistency"?range[0]:range[0]/20);
             start_drag_g.attr("transform", "translate("+(container_width*0.1+range[0]*drag_interval-2)+","+(container_height*0.75)+")");
 
             end_drag = end_drag_g.append("path")
@@ -733,8 +746,8 @@ let FilterLayout = function (container) {
                 .attr("x",0)
                 .attr("y", -13)
                 .attr("text-anchor", "middle")
-                .text((range[1]+1)/20);
-            end_drag_g.attr("transform", "translate("+(container_width*0.1+(range[1]+1)*drag_interval+2)+","+(container_height*0.75)+")");
+                .text(type==="consistency"?range[1]:(range[1]+1)/20);
+            end_drag_g.attr("transform", "translate("+(Math.min(container_width*0.1+(range[1]+1)*drag_interval+2, container_width*0.9))+","+(container_height*0.75)+")");
         }
         else {
             start_drag = container.select(".start-drag").each(function () {
@@ -745,19 +758,19 @@ let FilterLayout = function (container) {
             });
             start_text = container.select(".start-text");
             end_text = container.select(".end-text");
-            start_text.select("text").text(range[0]/20);
-            end_text.select("text").text((range[1]+1)/20);
+            start_text.select("text").text(type==="consistency"?range[0]:range[0]/20);
+            end_text.select("text").text(type==="consistency"?range[1]:(range[1]+1)/20);
             start_drag_g.transition()
                 .duration(AnimationDuration)
                 .attr("transform", "translate("+(container_width*0.1+range[0]*drag_interval-2)+","+(container_height*0.75)+")");
             end_drag_g.transition()
                 .duration(AnimationDuration)
-                .attr("transform", "translate("+(container_width*0.1+(range[1]+1)*drag_interval+2)+","+(container_height*0.75)+")");
+                .attr("transform", "translate("+(Math.min(container_width*0.1+(range[1]+1)*drag_interval+2, container_width*0.9))+","+(container_height*0.75)+")");
         }
 
 
 
-        container.select("#current-"+type+"-axis-in").select("line").attr("x1", container_width*0.1+range[0]*drag_interval-2).attr("x2", container_width*0.1+(range[1]+1)*drag_interval+2);
+        container.select("#current-"+type+"-axis-in").select("line").attr("x1", container_width*0.1+range[0]*drag_interval-2).attr("x2", Math.min(container_width*0.1+(range[1]+1)*drag_interval+2, container_width*0.9));
 
         start_drag.call(d3.drag()
                     .on("drag", function () {
@@ -792,8 +805,8 @@ let FilterLayout = function (container) {
                                     //     that.update_widget_showing_items(d);
                                     // }
                                     range[0] = i;
-                                    start_text.select("text").text(range[0]/20);
-                                    end_text.select("text").text((range[1]+1)/20);
+                                    start_text.select("text").text(type==="consistency"?range[0]: range[0]/20);
+                                    end_text.select("text").text(type==="consistency"?range[1]: (range[1]+1)/20);
                                 }
                                 return 1
                             }
@@ -809,8 +822,8 @@ let FilterLayout = function (container) {
                                 //     that.update_widget_showing_items(d);
                                 // }
                                 range[0] = i+1;
-                                start_text.select("text").text(range[0]/20);
-                                end_text.select("text").text((range[1]+1)/20);
+                                start_text.select("text").text(type==="consistency"?range[0]: range[0]/20);
+                                    end_text.select("text").text(type==="consistency"?range[1]: (range[1]+1)/20);
 
                             }
                             return 0.5
@@ -822,7 +835,7 @@ let FilterLayout = function (container) {
                                         that.update_glyph_showing_items();
                                     }
                                     else {
-                                        that.update_widget_showing_items(d);
+                                        that.update_widget_showing_items();
                                     }
                     }));
         end_drag.call(d3.drag()
@@ -858,8 +871,8 @@ let FilterLayout = function (container) {
                                     //     that.update_widget_showing_items(d);
                                     // }
                                     range[1] = i;
-                                    start_text.select("text").text(range[0]/20);
-                                    end_text.select("text").text((range[1]+1)/20);
+                                    start_text.select("text").text(type==="consistency"?range[0]: range[0]/20);
+                                    end_text.select("text").text(type==="consistency"?range[1]: (range[1]+1)/20);
                                 }
                                 return 1
                             }
@@ -875,8 +888,8 @@ let FilterLayout = function (container) {
                                 //     that.update_widget_showing_items(d);
                                 // }
                                 range[1] = i-1;
-                                start_text.select("text").text(range[0]/20);
-                                end_text.select("text").text((range[1]+1)/20);
+                                start_text.select("text").text(type==="consistency"?range[0]: range[0]/20);
+                                end_text.select("text").text(type==="consistency"?range[1]: (range[1]+1)/20);
                             }
                             return 0.5
                         })
@@ -888,7 +901,7 @@ let FilterLayout = function (container) {
                                         that.update_glyph_showing_items();
                                     }
                                     else {
-                                        that.update_widget_showing_items(d);
+                                        that.update_widget_showing_items();
                                     }
                     }));
         start_drag.on("mouseover", function () {
@@ -918,7 +931,7 @@ let FilterLayout = function (container) {
     };
 
     that.get_ranges = function() {
-        return [uncertainty_widget_range, label_widget_range, indegree_widget_range, outdegree_widget_range, influence_widget_range, edgetype_range]
+        return [uncertainty_widget_range, label_widget_range, indegree_widget_range, outdegree_widget_range, influence_widget_range, edgetype_range, consistency_widget_range]
     };
 
     that.draw_edge_influence_widget = function(distribution, container, type, range){

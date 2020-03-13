@@ -472,6 +472,7 @@ class Anchors:
         influence_matrix.data /= influence_matrix.data.max()
         ground_truth = self.model.data.get_full_train_ground_truth()
         samples_truth = ground_truth[selection]
+        consistency = self.model.get_train_neighbors_consistency(n_neighbor=6).tolist()
         if self.data_degree is None:
             self.data_degree = self.model.get_in_out_degree(self.data.get_graph())
         degree = self.data_degree
@@ -505,6 +506,7 @@ class Anchors:
                 "in_degree": int(degree[m[id]][1]),
                 "out_degree": int(degree[m[id]][0]),
                 "entropy": float(self.entropy[m[id]]),
+                "consistency": int(consistency[m[id]]),
                 "from_weight":[],
                 "to_weight":[]
             }

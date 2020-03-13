@@ -418,7 +418,7 @@ class GraphData(Data):
         return neighbors_model
 
     def get_neighbors(self):
-        return self.neighbors
+        return self.neighbors[self.rest_idxs]
 
     def record_state(self, pred):
         new_state = Node(self.state_idx, parent=self.current_state)

@@ -198,8 +198,9 @@ DataLoaderClass.prototype.local_update_k_handler = function(callback){
         let must_show_nodes = Object.keys(that.state.nodes).map(d => parseInt(d));
         let area = data.area;
         let level = data.level;
+        let best_k = data.best_k;
 
-        if(callback) callback(must_show_nodes, area, level);
+        if(callback) callback(must_show_nodes, area, level, best_k);
     }
     return _local_update_k_handler;
 };
