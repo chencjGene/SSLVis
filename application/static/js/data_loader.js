@@ -421,10 +421,12 @@ DataLoaderClass = function () {
     that.get_selected_flows = function(path_id){
         that.dist_view.click_id = path_id;
         that.selected_flows_node = new request_node(that.selected_flows_urls,
-            that.selected_flows_handler(function(){
+            that.selected_flows_handler(async function(){
 
-                that.update_graph_view();
-                that.highlight_nodes(that.state.focus_idxs);
+                // that.update_graph_view();
+                that.state.highlights = that.state.focus_idxs;
+                // that.highlight_nodes(that.state.focus_idxs);
+                await that.update_graph_view();
                 that.update_dist_view();
             }), "json", "POST");
         that.selected_flows_node.set_data({path_id});
@@ -678,9 +680,9 @@ DataLoaderClass = function () {
         that.update_graph_view();
     };
 
-    that.update_graph_view = function() {
+    that.update_graph_view = async function() {
         console.log("update graph view");
-        that.graph_view.component_update({
+        await that.graph_view.component_update({
             "nodes":that.state.nodes,
             "path":that.state.path,
             "is_show_path":that.state.is_show_path,
