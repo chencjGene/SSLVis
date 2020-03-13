@@ -144,7 +144,10 @@ let HistoryLayout = function (container) {
             .attr("width", cell_width)
             .attr("height", cell_height - 1)
             .style("fill", "white")
-            .style("fill-opacity", 0);
+            .style("fill-opacity", 0)
+            .on("click", function(d){
+                data_manager.highlight_nodes(d.change_idx);
+            })
         that.cells.append("circle")
             .attr("class", "action-circle")
             .attr("cx", action_id_center)
