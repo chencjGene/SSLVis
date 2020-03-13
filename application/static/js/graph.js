@@ -38,7 +38,7 @@ let GraphLayout = function (container) {
     let path_curve = 1;
     let unccertainty_line_stroke_width = 2;
     let uncertainty_hat_fill = "rgb(127, 127, 127)";
-    let uncertainty_glyph_radius = 7;
+    let uncertainty_glyph_radius = 9;
     let uncertainty_glyph_hat = 3;
 
     // draw containter
@@ -872,8 +872,11 @@ let GraphLayout = function (container) {
     };
 
     that.r = function(id) {
-        if( highlights.indexOf(id) > -1 || glyphs.indexOf(id) > -1){
+        if( highlights.indexOf(id) > -1){
             return 5 * that.zoom_scale;
+        }
+        else if(glyphs.indexOf(id) > -1){
+            return 7 * that.zoom_scale;
         }
         return 3.5 * that.zoom_scale
         

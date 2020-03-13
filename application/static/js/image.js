@@ -178,18 +178,26 @@ let ImageLayout = function (container){
 
 
         if(show_neighbor_mode){
-            console.log("visible");
-            $("#image-row .simplebar-horizontal").css("visibility", "visible");
             that.clear_show_grid_data();
         }
         else {
-            console.log("hidden");
-            $("#image-row .simplebar-horizontal").css("visibility", "hidden");
             that.clear_show_neighbors_data();
         }
         that._create();
         that._update();
         that._remove();
+        if(show_neighbor_mode){
+            console.log("visible");
+            setTimeout(function () {
+                $("#image-row .simplebar-horizontal").css("visibility", "visible");
+            }, 500);
+        }
+        else {
+            console.log("hidden");
+            setTimeout(function () {
+                $("#image-row .simplebar-horizontal").css("visibility", "hidden");
+            }, 500);
+        }
     };
 
     that._show_detail = function (d, i) {
