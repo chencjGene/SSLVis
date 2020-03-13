@@ -38,6 +38,8 @@ let GraphLayout = function (container) {
     let path_curve = 1;
     let unccertainty_line_stroke_width = 2;
     let uncertainty_hat_fill = "rgb(127, 127, 127)";
+    let uncertainty_glyph_radius = 7;
+    let uncertainty_glyph_hat = 3;
 
     // draw containter
     let path_group = null;
@@ -193,6 +195,10 @@ let GraphLayout = function (container) {
 
     that.set_data_manager = function(new_data_manager) {
         that.data_manager = new_data_manager;
+        that.svg.on("click", function () {
+            console.log("click svg");
+            that.data_manager.highlight_nodes([]);
+        })
     };
 
     that.component_update = async function(state) {
@@ -492,21 +498,23 @@ let GraphLayout = function (container) {
                     let uncertainty = d.entropy;
                     let angle = Math.PI/2*uncertainty;
                     let arc = d3.arc()
-                        .innerRadius(13 * that.zoom_scale)
-                        .outerRadius(13 * that.zoom_scale)
+                        .innerRadius(uncertainty_glyph_radius * that.zoom_scale)
+                        .outerRadius(uncertainty_glyph_radius * that.zoom_scale)
                         .startAngle(-angle)
                         .endAngle(angle);
                     return arc();
                 })
-                .attr("stroke", "black")
+                .attr("stroke", function (d) {
+                    return d.label[iter]===-1?color_unlabel:color_label[d.label[iter]];
+                })
                 .attr("stroke-width", unccertainty_line_stroke_width * that.zoom_scale);
             glyph_in_group
                 .selectAll(".uncertainty-value-hat-left")
                 .attr("d", function (d) {
                     return "M {0} {1} L {2} {3} L {4} {5} Z".format(
-                        0, -13 * that.zoom_scale,
-                        4.5* that.zoom_scale, -13 * that.zoom_scale - 7.5* that.zoom_scale,
-                        -4.5* that.zoom_scale, -13 * that.zoom_scale - 7.5* that.zoom_scale
+                        0, -uncertainty_glyph_radius * that.zoom_scale,
+                        uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale,
+                        -uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale
                     )
                 })
                 .attr("transform", function (d) {
@@ -518,9 +526,9 @@ let GraphLayout = function (container) {
                 .selectAll(".uncertainty-value-hat-right")
                 .attr("d", function (d) {
                     return "M {0} {1} L {2} {3} L {4} {5} Z".format(
-                        0, -13 * that.zoom_scale,
-                        4.5* that.zoom_scale, -13 * that.zoom_scale - 7.5* that.zoom_scale,
-                        -4.5* that.zoom_scale, -13 * that.zoom_scale - 7.5* that.zoom_scale
+                        0, -uncertainty_glyph_radius * that.zoom_scale,
+                        uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale,
+                        -uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale
                     )
                 })
                 .attr("transform", function (d) {
@@ -677,13 +685,13 @@ let GraphLayout = function (container) {
                 })
                 .attr("transform", d =>"translate("+that.center_scale_x(d.x)+","+that.center_scale_y(d.y)+")")
                 .attr("opacity", 0);
-            glyphgs.selectAll("path")
-                .data(d => pie(d.score[iter]))
-                .enter()
-                .append("path")
-                .attr("class", "glyph-path")
-                .attr("d", arc)
-                .attr("fill", (d,i) => color_label[i]);
+            // glyphgs.selectAll("path")
+            //     .data(d => pie(d.score[iter]))
+            //     .enter()
+            //     .append("path")
+            //     .attr("class", "glyph-path")
+            //     .attr("d", arc)
+            //     .attr("fill", (d,i) => color_label[i]);
             let uncertainty_values = glyphgs
                 .append("g")
                 .attr("class", "uncertainty-value");
@@ -693,21 +701,23 @@ let GraphLayout = function (container) {
                     let uncertainty = d.entropy;
                     let angle = Math.PI/2*uncertainty;
                     let arc = d3.arc()
-                        .innerRadius(13 * that.zoom_scale)
-                        .outerRadius(13 * that.zoom_scale)
+                        .innerRadius(uncertainty_glyph_radius * that.zoom_scale)
+                        .outerRadius(uncertainty_glyph_radius * that.zoom_scale)
                         .startAngle(-angle)
                         .endAngle(angle);
                     return arc();
                 })
-                .attr("stroke", "black")
+                .attr("stroke", function (d) {
+                    return d.label[iter]===-1?color_unlabel:color_label[d.label[iter]];
+                })
                 .attr("stroke-width", unccertainty_line_stroke_width * that.zoom_scale);
             uncertainty_values.append("path")
                 .attr("class", "uncertainty-value-hat-left")
                 .attr("d", function (d) {
                     return "M {0} {1} L {2} {3} L {4} {5} Z".format(
-                        0, -13 * that.zoom_scale,
-                        4.5* that.zoom_scale, -13 * that.zoom_scale - 7.5* that.zoom_scale,
-                        -4.5* that.zoom_scale, -13 * that.zoom_scale - 7.5* that.zoom_scale
+                        0, -uncertainty_glyph_radius * that.zoom_scale,
+                        uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale,
+                        -uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale
                     )
                 })
                 .attr("transform", function (d) {
@@ -716,14 +726,16 @@ let GraphLayout = function (container) {
                     return "rotate({0})".format(-angle);
                 })
                 .attr("stroke", "none")
-                .attr("fill", uncertainty_hat_fill);
+                .attr("fill", function (d) {
+                    return d.label[iter]===-1?color_unlabel:color_label[d.label[iter]];
+                });
             uncertainty_values.append("path")
                 .attr("class", "uncertainty-value-hat-right")
                 .attr("d", function (d) {
                     return "M {0} {1} L {2} {3} L {4} {5} Z".format(
-                        0, -13 * that.zoom_scale,
-                        4.5* that.zoom_scale, -13 * that.zoom_scale - 7.5* that.zoom_scale,
-                        -4.5* that.zoom_scale, -13 * that.zoom_scale - 7.5* that.zoom_scale
+                        0, -uncertainty_glyph_radius * that.zoom_scale,
+                        uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale,
+                        -uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale
                     )
                 })
                 .attr("transform", function (d) {
@@ -732,7 +744,9 @@ let GraphLayout = function (container) {
                     return "rotate({0})".format(angle);
                 })
                 .attr("stroke", "none")
-                .attr("fill", uncertainty_hat_fill);
+                .attr("fill", function (d) {
+                    return d.label[iter]===-1?color_unlabel:color_label[d.label[iter]];
+                });
 
 
             glyphgs
@@ -853,7 +867,7 @@ let GraphLayout = function (container) {
     };
 
     that.r = function(id) {
-        if( highlights.indexOf(id) > -1){
+        if( highlights.indexOf(id) > -1 || glyphs.indexOf(id) > -1){
             return 5 * that.zoom_scale;
         }
         return 3.5 * that.zoom_scale
@@ -1031,8 +1045,8 @@ let GraphLayout = function (container) {
                     let uncertainty = d.entropy;
                     let angle = Math.PI/2*uncertainty;
                     let arc = d3.arc()
-                        .innerRadius(13 * that.zoom_scale)
-                        .outerRadius(13 * that.zoom_scale)
+                        .innerRadius(uncertainty_glyph_radius * that.zoom_scale)
+                        .outerRadius(uncertainty_glyph_radius * that.zoom_scale)
                         .startAngle(-angle)
                         .endAngle(angle);
                     return arc();
@@ -1042,9 +1056,9 @@ let GraphLayout = function (container) {
                 .selectAll(".uncertainty-value-hat-left")
                 .attr("d", function (d) {
                     return "M {0} {1} L {2} {3} L {4} {5} Z".format(
-                        0, -13 * that.zoom_scale,
-                        4.5* that.zoom_scale, -13 * that.zoom_scale - 7.5* that.zoom_scale,
-                        -4.5* that.zoom_scale, -13 * that.zoom_scale - 7.5* that.zoom_scale
+                        0, -uncertainty_glyph_radius * that.zoom_scale,
+                        uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale,
+                        -uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale
                     )
                 })
                 .attr("transform", function (d) {
@@ -1056,9 +1070,9 @@ let GraphLayout = function (container) {
                 .selectAll(".uncertainty-value-hat-right")
                 .attr("d", function (d) {
                     return "M {0} {1} L {2} {3} L {4} {5} Z".format(
-                        0, -13 * that.zoom_scale,
-                        4.5* that.zoom_scale, -13 * that.zoom_scale - 7.5* that.zoom_scale,
-                        -4.5* that.zoom_scale, -13 * that.zoom_scale - 7.5* that.zoom_scale
+                        0, -uncertainty_glyph_radius * that.zoom_scale,
+                        uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale,
+                        -uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale
                     )
                 })
                 .attr("transform", function (d) {
@@ -1107,8 +1121,8 @@ let GraphLayout = function (container) {
                     let uncertainty = d.entropy;
                     let angle = Math.PI/2*uncertainty;
                     let arc = d3.arc()
-                        .innerRadius(13 * that.zoom_scale)
-                        .outerRadius(13 * that.zoom_scale)
+                        .innerRadius(uncertainty_glyph_radius * that.zoom_scale)
+                        .outerRadius(uncertainty_glyph_radius * that.zoom_scale)
                         .startAngle(-angle)
                         .endAngle(angle);
                     return arc();
@@ -1118,9 +1132,9 @@ let GraphLayout = function (container) {
                 .selectAll(".uncertainty-value-hat-left")
                 .attr("d", function (d) {
                     return "M {0} {1} L {2} {3} L {4} {5} Z".format(
-                        0, -13 * that.zoom_scale,
-                        4.5* that.zoom_scale, -13 * that.zoom_scale - 7.5* that.zoom_scale,
-                        -4.5* that.zoom_scale, -13 * that.zoom_scale - 7.5* that.zoom_scale
+                        0, -uncertainty_glyph_radius * that.zoom_scale,
+                        uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale,
+                        -uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale
                     )
                 })
                 .attr("transform", function (d) {
@@ -1132,9 +1146,9 @@ let GraphLayout = function (container) {
                 .selectAll(".uncertainty-value-hat-right")
                 .attr("d", function (d) {
                     return "M {0} {1} L {2} {3} L {4} {5} Z".format(
-                        0, -13 * that.zoom_scale,
-                        4.5* that.zoom_scale, -13 * that.zoom_scale - 7.5* that.zoom_scale,
-                        -4.5* that.zoom_scale, -13 * that.zoom_scale - 7.5* that.zoom_scale
+                        0, -uncertainty_glyph_radius * that.zoom_scale,
+                        uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale,
+                        -uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale
                     )
                 })
                 .attr("transform", function (d) {
@@ -1390,6 +1404,12 @@ let GraphLayout = function (container) {
         bundling_elect_scale = elect;
         await that._update_view();
     };
+
+    that.update_uncertainty_radius = async function(radius, hat) {
+        uncertainty_glyph_radius = radius;
+        uncertainty_glyph_hat = hat;
+        await that._update_view()
+    }
 
     // that.get_area = function(){
     //     return transform_plg.get_area();

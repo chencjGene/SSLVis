@@ -116,6 +116,11 @@ let GraphTransform = function (parent) {
                 }, 500);
 
         }
+        // else if (transform !== null && d3.event.transform.k === transform.k
+        //     && Math.abs(d3.event.transform.x - transform.x) < 1
+        //     && Math.abs(d3.event.transform.y - transform.y) < 1) {
+        //     view.data_manager.highlight_nodes([])
+        // }
         // else {
             transform = d3.event.transform;
         // }
