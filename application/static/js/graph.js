@@ -50,6 +50,7 @@ let GraphLayout = function (container) {
     let glyph_in_group = null;
     let legend_group = null;
     let img_in_group = null;
+    let tmp_show_imgs = null;
     that.selection_group = null;
     that.snapshot_group = null;
 
@@ -127,6 +128,7 @@ let GraphLayout = function (container) {
         that.label_group = that.main_group.append("g").attr("id", "graph-label-g");
         that.selection_group = that.main_group.append("g").attr("id", "graph-selection-g");
         that.snapshot_group = that.svg.append("g").attr("id", "snapshot-group");
+        tmp_show_imgs = that.main_group.append("g").attr("id", "tmp-graph-label-g");
         that.width = $('#graph-view-svg').width();
         that.height = $('#graph-view-svg').height();
 
@@ -787,9 +789,31 @@ let GraphLayout = function (container) {
                 .on("mouseover", function (d) {
                             console.log(d);
                             that.highlight_paths(d[0].id+","+d[1].id);
+                            let imgs = label_layout([d[0], d[1]], [d], that.zoom_scale);
+                            console.log("imgs ", imgs);
+                            tmp_show_imgs.selectAll("*").remove();
+                            tmp_show_imgs.selectAll("image").data(imgs).enter()
+                                .append("image")
+                                .attr("class", "label-image")
+                                .attr("xlink:href", d => d.url)
+                                .attr("x", function(d){
+                                    if (d.quad === 1 || d.quad === 2){
+                                        return that.center_scale_x(d.node.x)  - d.w * that.scale * that.zoom_scale;
+                                    }
+                                    return that.center_scale_x(d.node.x);
+                                })
+                                .attr("y", function(d){
+                                    if (d.quad === 2 || d.quad === 3){
+                                        return that.center_scale_y(d.node.y)  - d.h * that.scale * that.zoom_scale;
+                                    }
+                                    return that.center_scale_y(d.node.y);
+                                })
+                                .attr("width", d => d.h * that.scale * that.zoom_scale)
+                                .attr("height", d => d.h * that.scale * that.zoom_scale);
                         })
                 .on("mouseout", function (d) {
                         that.remove_path_highlight();
+                        tmp_show_imgs.selectAll("*").remove();
                     })
                 .on("mousedown", function (d) {
                     console.log("mousedown", d);
@@ -820,7 +844,7 @@ let GraphLayout = function (container) {
                 .attr("height", d => d.h * that.scale * that.zoom_scale);
 
             if((nodes_in_group.enter().size() === 0) && (golds_in_group.enter().size() === 0)
-                && (glyph_in_group.enter().size() === 0) &&(path_in_group.enter().size() === 0)){
+                && (glyph_in_group.enter().size() === 0) &&(path_in_group.enter().size() === 0) && (img_in_group.enter().size() === 0)){
                 console.log("no create");
                 resolve();
             }
