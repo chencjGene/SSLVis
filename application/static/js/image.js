@@ -33,16 +33,16 @@ let ImageLayout = function (container){
     let get_label_url = "/graph/label";
     let get_entropy_url = "/graph/entropy";
     let x_grid_num = parseInt((layout_width-5)/(grid_offset+grid_size));
-    let color_unlabel = "#A9A9A9";
-    let color_label = d3.schemeCategory10;
-    color_label[7] = "#ffdb45";
+    let color_unlabel = UnlabeledColor;
+    let color_label = CategoryColor;
     console.log("Image view", "layout width", layout_width, "layout height", layout_height);
+    let showing_image = true;
 
     let img_url = null;
     let img_grid_urls = [];
     let img_neighbors_ids = [];
     let show_neighbor_mode = false;
-    let k_num = 4;
+    let k_num = 6;
     let current_mode = "grid";
 
     let data_manager = null;
@@ -113,12 +113,12 @@ let ImageLayout = function (container){
         else {
             that._show_detail(null, -1);
         }
-        that._update_view();
+        await that._update_view();
     };
 
     that._update_data = async function(state) {
         // console.log("image layout data:", state);
-        if(state.img_grid_urls.length === 1){
+        if(state.img_grid_urls.length < 0 ){
             img_url = state.img_grid_urls[0];
             while (img_grid_urls.length>0) img_grid_urls.pop();
         }
@@ -178,9 +178,13 @@ let ImageLayout = function (container){
 
 
         if(show_neighbor_mode){
+            console.log("visible");
+            $("#image-row .simplebar-horizontal").css("visibility", "visible");
             that.clear_show_grid_data();
         }
         else {
+            console.log("hidden");
+            $("#image-row .simplebar-horizontal").css("visibility", "hidden");
             that.clear_show_neighbors_data();
         }
         that._create();
@@ -192,8 +196,10 @@ let ImageLayout = function (container){
         if(i===-1){
             detail_pos = -1;
             detail_group.style("opacity", 0);
+            showing_image = false;
             return;
         }
+        showing_image = true;
                 img_url = d;
                 console.log("show detail:", img_url);
                 layout_width = parseFloat(svg.attr("width"));
@@ -411,9 +417,14 @@ let ImageLayout = function (container){
 
     that.clear_show_grid_data = function(){
         return new Promise((resolve, reject) => {
+
             layout_width = parseFloat(svg.attr("width")) - 20;
             img_width = layout_width-img_padding * 2;
             let img_size = img_width>img_height?img_height:img_width;
+            detail_group
+                .transition()
+                .duration(AnimationDuration)
+                .style("opacity", 0);
             img_grids
                 .transition()
                 .duration(AnimationDuration)
@@ -434,6 +445,12 @@ let ImageLayout = function (container){
 
     that.clear_show_neighbors_data = function() {
         return new Promise((resolve, reject) => {
+            if(showing_image) {
+                detail_group
+                .transition()
+                .duration(AnimationDuration)
+                .style("opacity", 1);
+            }
             img_neighbors
                 .transition()
                 .duration(AnimationDuration)

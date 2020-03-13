@@ -44,7 +44,7 @@ body {
     width: 62%;
 }
 
-.simplebar-horizontal {
+#history-row .simplebar-horizontal {
     visibility: hidden !important;
 }
 

@@ -196,8 +196,10 @@ let GraphLayout = function (container) {
     that.set_data_manager = function(new_data_manager) {
         that.data_manager = new_data_manager;
         that.svg.on("click", function () {
-            console.log("click svg");
-            that.data_manager.highlight_nodes([]);
+            if($("#lasso-btn").css("background-color") !== "rgb(255, 255, 255)"){
+                that.data_manager.highlight_nodes([]);
+            }
+
         })
     };
 

@@ -510,6 +510,7 @@ GraphLayout.prototype.show_edges = function(modes){
     // that.set_path();
     that.data_manager.state.path = that.all_path;
     that.data_manager.state.highlights = that.highlights;
+    console.log("selection box highlights:", that.highlights);
     that.data_manager.update_graph_view();
     // that.update_snapshot();
 };
