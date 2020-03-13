@@ -451,6 +451,7 @@ class GraphData(Data):
             margin = round(margin, 3)
             # get changes
             dist = [0, 0, 0, 0]
+            change_idx = np.array([])
             pre_data_state = data["state"].parent
             if pre_data_state.name != "root":
                 pre_data = self.state_data[pre_data_state.name]
@@ -477,6 +478,7 @@ class GraphData(Data):
                 label = data["pred"].argmax(axis=1)
                 label[data["pred"].max(axis=1) == 0] = -1
                 dist[3] = sum(label[:min_len] != pre_label[:min_len])
+                change_idx = np.array(range(min_len))[label[:min_len]!=pre_label[:min_len]]
             dist = [int(k) for k in dist]
             # update max_count
             if max(dist) > max_count:
@@ -487,7 +489,8 @@ class GraphData(Data):
                 "dist": dist,
                 "margin": margin,
                 "children": children_idx,
-                "id": i
+                "id": i,
+                "change_idx": change_idx.tolist()
             })
 
         # update dist

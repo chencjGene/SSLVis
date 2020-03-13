@@ -22,6 +22,10 @@ class CaseSTL(CaseBase):
         
             # self._init_model(k=k, evaluate=True, simplifying=simplifying)
             self.model._training(rebuild=False, evaluate=False, simplifying=False)
+        
+        # if step >= 1.4:
+        #     self.model.data.label_instance([5146, 2339], [4, 6])
+        #     self.model._training(rebuild=False, evaluate=False, simplifying=False)
 
         categories = [1 for i in range(10)]
         if step >= 2:
