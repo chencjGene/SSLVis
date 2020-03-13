@@ -268,7 +268,7 @@ let HistoryLayout = function (container) {
         $("#history-view").css("height", new_height+"px");
         $("#history-row").css("height", (new_height+83)+"px");
         $("#history-row .content-container").css("height", (new_height+40)+"px");
-        let image_height = 500+520-new_height;
+        let image_height = 500+525-new_height;
         $(".info-svg-div").css("height", image_height+"px");
         $("#image-row .content-container").css("height", (image_height+30)+"px");
 
