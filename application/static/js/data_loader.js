@@ -161,6 +161,7 @@ DataLoaderClass = function () {
                 that.state.is_zoom = false;
                 that.add_data_to_high_level(that.labeled_idxs, that.state.hierarchy);
                 that.fetch_nodes(area, level, must_show_nodes);
+                that.iter =Math.min(Object.values(that.state.nodes)[0].label.length-1, that.iter);
                 let show_ids = [];
                 for(let node_id of Object.keys(that.state.nodes).map(d => parseInt(d))){
                     if(that.state.visible_items[node_id] === true){
