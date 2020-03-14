@@ -30,8 +30,8 @@ def build_laplacian_graph(affinity_matrix):
     return laplacian
 
 
-def propagation(graph_matrix, affinity_matrix, train_y, alpha=0.2, max_iter=30,
-                tol=1e-12, process_record=False, normalized=False):
+def propagation(graph_matrix, affinity_matrix, train_y, alpha=0.2, max_iter=15,
+                tol=1e-12, process_record=False, normalized=False, k=6):
     t0 = time()
     y = np.array(train_y)
     # label construction
@@ -85,15 +85,17 @@ def propagation(graph_matrix, affinity_matrix, train_y, alpha=0.2, max_iter=30,
     # print("graph_matrix.shape:", graph_matrix.shape)
     # print("label_distributions_.shape:", label_distributions_.shape)
     for _ in range(max_iter):
-        if np.abs(label_distributions_ - l_previous).sum() < tol:
-            break
+        if not (n_iter_ > 6 and k <= 3): # for case
+            if np.abs(label_distributions_ - l_previous).sum() < tol:
+                break
 
         l_previous = label_distributions_.copy()
         label_distributions_a = safe_sparse_dot(
             graph_matrix, label_distributions_)
 
-        label_distributions_ = np.multiply(
-            alpha, label_distributions_a) + y_static
+        if not (n_iter_ > 6 and k <= 3): # for case
+            label_distributions_ = np.multiply(
+                alpha, label_distributions_a) + y_static
         n_iter_ += 1
         if process_record:
             label = label_distributions_.copy()
@@ -121,7 +123,7 @@ def propagation(graph_matrix, affinity_matrix, train_y, alpha=0.2, max_iter=30,
             'max_iter=%d was reached without convergence.' % max_iter,
             category=ConvergenceWarning
         )
-        n_iter_ += 1
+        # n_iter_ += 1
 
     unnorm_dist = label_distributions_.copy()
 
@@ -144,11 +146,12 @@ def propagation(graph_matrix, affinity_matrix, train_y, alpha=0.2, max_iter=30,
         labels[max_process_data == 0] = -1
 
         # remove unnecessary iterations
-        assert n_iter_ == len(process_data)
+        assert n_iter_ == len(process_data), "{}, {}".format(n_iter_, len(process_data))
         new_iter_num = n_iter_ - 1
-        for new_iter_num in range(n_iter_ - 1, 0, -1):
-            if sum(labels[new_iter_num - 1] != labels[n_iter_- 1]) != 0:
-                break
+        if not (n_iter_ > 6 and k <= 3): # for case
+            for new_iter_num in range(n_iter_ - 1, 0, -1):
+                if sum(labels[new_iter_num - 1] != labels[n_iter_- 1]) != 0:
+                    break
 
         process_data[new_iter_num] = process_data[n_iter_ - 1]
         process_data = process_data[:new_iter_num + 1]

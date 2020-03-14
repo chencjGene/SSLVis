@@ -119,7 +119,7 @@ class SSLModel(object):
         pred_dist, loss, ent, process_data, unnorm_dist = \
             self._propagation(laplacian, affinity_matrix, train_y,
                               alpha=self.alpha, process_record=True,
-                              normalized=True)
+                              normalized=True, k=self.n_neighbor)
         # labels = [int(np.argmax(process_data[j][id])) if np.max(process_data[j][id]) > 1e-4 else -1 for j in
         #           range(iter_num)]
         iter = len(loss)
@@ -176,6 +176,7 @@ class SSLModel(object):
 
     def _influence_matrix(self, rebuild = False):
         if self.influence_matrix is not None and (not DEBUG) and (not rebuild):
+            self.influence_matrix.data[np.isnan(self.influence_matrix.data)] = 0
             return
         affinity_matrix = self.data.get_graph(self.n_neighbor)
         laplacian = build_laplacian_graph(affinity_matrix)
@@ -187,6 +188,7 @@ class SSLModel(object):
         if os.path.exists(influence_matrix_path) and (not DEBUG) and (not rebuild):
             logger.info("influence_matrix exist!!!")
             self.influence_matrix = pickle_load_data(influence_matrix_path)
+            self.influence_matrix.data[np.isnan(self.influence_matrix.data)] = 0
             return
         logger.info("influence matrix  "
                     "do not exist, preprocessing!")
@@ -195,6 +197,7 @@ class SSLModel(object):
                                    laplacian, self.alpha, train_y, self.n_iters)
         if not rebuild:
             pickle_save_data(influence_matrix_path, self.influence_matrix)
+        self.influence_matrix.data[np.isnan(self.influence_matrix.data)] = 0
         return
 
     def fetch_simplify_influence_matrix(self):
