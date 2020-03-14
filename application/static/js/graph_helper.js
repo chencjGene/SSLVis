@@ -35,3 +35,11 @@ GraphLayout.prototype.get_top_k_uncertainty = function(nodes, k) {
 GraphLayout.prototype.transform_weight = function (weight) {
     return Math.pow(weight, 1/7)
 };
+
+GraphLayout.prototype.get_average_consistency = function (nodes, nodes_id) {
+    let node_num = nodes_id.length;
+    let consistency_sum = nodes_id.reduce(function (acc, cur) {
+        return acc + nodes[cur].consistency;
+    }, 0);
+    return node_num===0?0:consistency_sum/node_num;
+};

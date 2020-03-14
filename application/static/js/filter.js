@@ -210,6 +210,7 @@ let FilterLayout = function (container) {
     };
 
     that.label_scented_widget = function() {
+        let i = 0;
         // label interval
         let min_label_id = -1;
         let max_label_id = data_manager.state.label_names.length-1;
@@ -221,10 +222,16 @@ let FilterLayout = function (container) {
 
         // label distribution
         let label_distribution = label_widget_data;
+        for(let distribute of label_distribution){
+            distribute.avg_consistency = data_manager.graph_view.get_average_consistency(data_manager.state.nodes, distribute);
+            console.log("label",i,"consistency",distribute.avg_consistency);
+            distribute.avg_consistency = Math.pow(distribute.avg_consistency, 3);
+            i++;
+        }
         let max_len = 0;
         for(let label_ary of label_distribution){
-            if(max_len < label_ary.length){
-                max_len = label_ary.length;
+            if(max_len < label_ary.avg_consistency){
+                max_len = label_ary.avg_consistency;
             }
         }
 
@@ -248,6 +255,7 @@ let FilterLayout = function (container) {
                 .attr("id", "current-label-rects");
         }
         let rects = container.select("#current-label-rects").selectAll("rect").data(label_distribution);
+
         rects
             .enter()
             .append("rect")
@@ -255,9 +263,9 @@ let FilterLayout = function (container) {
             .style("fill", (d, i) => i===0?color_unlabel:color_label[i-1])
             .attr("x", function(d, i) { return x(i); })
             .attr("width", x.bandwidth())
-            .attr("y", function(d, i) { return y(d.length/max_len); })
+            .attr("y", function(d, i) { return y(d.avg_consistency/max_len); })
             .attr("height", function(d) {
-              return container_height*  0.7 - y(d.length/max_len);
+              return container_height*  0.7 - y(d.avg_consistency/max_len);
           })
             .attr("opacity", (d, i) => (label_widget_range.indexOf(i) > -1)?1:0.2)
             .on("mouseover", function (d, i) {
@@ -329,9 +337,9 @@ let FilterLayout = function (container) {
         });
         rects.transition()
             .duration(AnimationDuration)
-            .attr("y", function(d, i) { return y(d.length/max_len); })
+            .attr("y", function(d, i) { return y(d.avg_consistency/max_len); })
             .attr("height", function(d) {
-                  return container_height*  0.7 - y(d.length/max_len);
+                  return container_height*  0.7 - y(d.avg_consistency/max_len);
               })
             .attr("opacity", (d, i) => (label_widget_range.indexOf(i) > -1)?1:0.2);
         rects.exit()
