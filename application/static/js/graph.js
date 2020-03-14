@@ -249,6 +249,7 @@ let GraphLayout = function (container) {
         nodes = delRepeatDictArr(nodes);
 
         that.linked_nodes = [];
+        imgs = [];
         if (that.focus_nodes.length === 1 && that.selection_box.length === 0){
             // get multiple connected path
             let new_path = get_multiple_connected_path(that.focus_nodes[0], that.data_manager.state.complete_graph,

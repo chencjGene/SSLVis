@@ -59,6 +59,8 @@ DataLoaderClass = function () {
 
     that.iter = -1;
 
+    that.labeled_idxs = [];
+
     // Data storage
     that.state = {
         // manifest_data: null,
@@ -157,6 +159,7 @@ DataLoaderClass = function () {
         that.update_delete_and_change_label_node = new request_node(that.update_delete_and_change_label_url + params,
             that.update_delete_and_change_label_handler(function(must_show_nodes, area, level){
                 that.state.is_zoom = false;
+                that.add_data_to_high_level(that.labeled_idxs, that.state.hierarchy);
                 that.fetch_nodes(area, level, must_show_nodes);
                 let show_ids = [];
                 for(let node_id of Object.keys(that.state.nodes).map(d => parseInt(d))){
@@ -205,6 +208,7 @@ DataLoaderClass = function () {
         data["area"] = area;
         data["level"] = level;
         data["wh"] = that.graph_view.get_wh();
+        that.labeled_idxs = edit_state.labeled_idxs;
         that.update_delete_and_change_label_node.set_data(data);
         that.update_delete_and_change_label_node.notify();
     };

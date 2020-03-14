@@ -60,6 +60,9 @@ class Data(object):
         self.X = processed_data[config.X_name]
         self.y = processed_data[config.y_name]
         self.y = np.array(self.y).astype(int)
+        if self.dataname == "oct":
+            # wrong label
+            self.y[564] = 3
         self.train_idx = processed_data[config.train_idx_name]
         self.valid_idx = processed_data[config.valid_idx_name]
         self.test_idx = processed_data[config.test_idx_name]
