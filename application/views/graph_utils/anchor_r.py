@@ -99,7 +99,11 @@ class Anchors:
     def init_train_x_tsne(self):
         logger.info("begin tsne init")
         train_x = self.data.get_full_train_X()
+        train_y = self.data.get_train_label()
         train_y_final = self.get_pred_labels()
+        np.save("train_x.npy", train_x)
+        np.save("train_y_final.npy", train_y_final)
+        np.save("train_y.npy", train_y)
         # self.tsne = IncrementalTSNE(n_components=2, verbose=True, init="random",
         #                                 early_exaggeration=1).fit_transform(train_x, labels=train_y_final,
         #                                                                 label_alpha=0.3)

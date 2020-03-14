@@ -121,3 +121,23 @@ DataLoaderClass.prototype.get_home = function () {
     that.state.nodes = graph;
     that.state.area = that.get_data_area(null, graph);
 };
+
+DataLoaderClass.prototype.add_data_to_high_level = function (nodes_id, hierarchy) {
+    let max_level = hierarchy.length;
+    let nodes_next = nodes_id.map(d => [d]);
+    for(let level = max_level-2; level >= 0; level--){
+        let level_idx = hierarchy[level].index;
+        let level_next = hierarchy[level].next;
+        for(let node_id_num=0; node_id_num < nodes_id.length; node_id_num++){
+            let node_id = nodes_id[node_id_num];
+            let node_idx = level_idx.indexOf(node_id);
+            if(node_idx > -1){
+                nodes_next[node_id_num] = level_next[node_idx];
+            }
+            else {
+                level_idx.push(node_id);
+                level_next.push(nodes_next[node_id_num]);
+            }
+        }
+    }
+};
