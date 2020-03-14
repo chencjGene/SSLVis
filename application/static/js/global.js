@@ -43,16 +43,17 @@ let SettingView = null;
 //     "#17becf",
 //     "#8c564b"
 // ];
-let CategoryColor = ["#1f77b4",
+let CategoryColor = [
+    "#1f77b4",
     "#ff7f0e",
     "#2ca02c",
     "#d62728",
-    "#9467bd",
+    "#17becf", // change
     "#8c564b",
     "#e377c2",
     "#ffdb45",
     "#bcbd22",
-    "#17becf",
+    "#9467bd", // change
     "#a6cee3",
     "#b2df8a"];
 
