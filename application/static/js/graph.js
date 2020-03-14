@@ -196,9 +196,11 @@ let GraphLayout = function (container) {
     that.set_data_manager = function(new_data_manager) {
         that.data_manager = new_data_manager;
         that.svg.on("click", function () {
-            if($("#lasso-btn").css("background-color") !== "rgb(255, 255, 255)"){
-                that.data_manager.highlight_nodes([]);
-            }
+            // if($("#lasso-btn").css("background-color") !== "rgb(255, 255, 255)"){
+                // that.data_manager.highlight_nodes([]);
+                console.log("click svg");
+                that.highlight([]);
+            // }
 
         })
     };
@@ -246,6 +248,7 @@ let GraphLayout = function (container) {
         nodes = nodes.concat(that.focus_nodes);
         nodes = delRepeatDictArr(nodes);
 
+        that.linked_nodes = [];
         if (that.focus_nodes.length === 1 && that.selection_box.length === 0){
             // get multiple connected path
             let new_path = get_multiple_connected_path(that.focus_nodes[0], that.data_manager.state.complete_graph,
@@ -253,7 +256,6 @@ let GraphLayout = function (container) {
             path = path.concat(new_path);
             path = delRepeatPath(path);
 
-            that.linked_nodes = [];
             path.forEach(d => {
                 that.linked_nodes.push(d[0]);
                 that.linked_nodes.push(d[1]);
@@ -635,11 +637,11 @@ let GraphLayout = function (container) {
                     // check if hided
                     d3.event.stopPropagation();
                     if(visible_items[d.id] === false) return;
-                    that.data_manager.highlight_nodes([d.id]);
+                    // that.data_manager.highlight_nodes([d.id]);
                     //  that.highlight([d.id]);
                     // that.focus_nodes = [d];
                     // that.show_edges();
-                    // that.highlight([d.id]);
+                    that.highlight([d.id]);
                 })
                 .transition()
                 .duration(AnimationDuration)
