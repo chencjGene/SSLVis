@@ -60,6 +60,7 @@ DataLoaderClass = function () {
     that.iter = -1;
 
     that.labeled_idxs = [];
+    that.dataname = "";
 
     // Data storage
     that.state = {
@@ -143,6 +144,7 @@ DataLoaderClass = function () {
         let params = "?dataset=" + that.dataset;
         that.manifest_node = new request_node(that.manifest_url + params,
             that.get_manifest_handler(function(){
+                that.dataname = $("#img_category span").html().split("-")[0];
                 that.update_control_info();
                 that.update_edit_info();
                 that.update_setting_view();
@@ -508,7 +510,7 @@ DataLoaderClass = function () {
             let scores = nodes[node_id].score[iter];
             let sort_score = JSON.parse(JSON.stringify(scores));
             sort_score.sort(function(a,b){return parseFloat(a)-parseFloat(b)});
-            let uncertainty = nodes[node_id].entropy;
+            let uncertainty = that.graph_view.get_uncertainty(nodes[node_id], that.dataname);
             // change certainty to uncertainty
             let distribution_box = certainty_distribution[uncertainty_interval_idx(uncertainty)];
             distribution_box.push(node_id);

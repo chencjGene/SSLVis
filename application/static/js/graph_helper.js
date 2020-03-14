@@ -1,5 +1,13 @@
-GraphLayout.prototype.get_uncertainty = function(node) {
-    return node.entropy;
+GraphLayout.prototype.get_uncertainty = function(node, dataname) {
+    if(dataname === "stl"){
+        return Math.pow(node.entropy, 1/1.5);
+    }
+    else if(dataname === "oct") {
+        return Math.pow(node.entropy, 1/5);
+    }
+    else {
+        return node.entropy;
+    }
     // let scores = node.score[node.score.length-1];
     // let sort_score = JSON.parse(JSON.stringify(scores));
     // sort_score.sort(function(a,b){return parseFloat(a)-parseFloat(b)});
