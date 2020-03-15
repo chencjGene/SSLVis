@@ -31,6 +31,10 @@ let DistLayout = function (container) {
     let slider_hump_length = 20;
     let slider_y_shift = height - 38;
     let slider_height = 6;
+    let AnimationDuration = 500;
+    let create_ani = AnimationDuration;
+    let update_ani = AnimationDuration;
+    let remove_ani = AnimationDuration;
 
     console.log("Dist view", "layout width", layout_width, "layout height", layout_height);
     if (layout_width < 0) {
@@ -111,10 +115,10 @@ let DistLayout = function (container) {
         data_manager = _data_manager;
     };
 
-    that.component_update = function (state) {
+    that.component_update = function (state, selected_flows) {
         console.log("loss component update");
         that._update_data(state);
-        that._update_view();
+        that._update_view(selected_flows);
     };
 
     that._init_view = function () {
@@ -208,7 +212,8 @@ let DistLayout = function (container) {
                             "value": flow[j][k],
                             "source_class": j,
                             "target_class": k,
-                            "level": i
+                            "level": i,
+                            "uid": "gc" + i + "-" + j + "-" + (i + 1) + "-" + k
                         })
                     }
                 }
@@ -322,10 +327,17 @@ let DistLayout = function (container) {
         data_manager.setIter(newiter);
     };
 
-    that._update_view = function () {
-        that._create();
-        that._update();
-        that._remove();
+    that._update_view = function (selected_flows) {
+        if(!selected_flows){
+            that._create();
+            that._update();
+            that._remove();
+        }
+        else{
+            that._create_selected_flows();
+            that._update_selected_flows();
+            that._remove_selected_flows();
+        }
         
         if(that.click_id){
             that._focus_link([]);
@@ -347,6 +359,7 @@ let DistLayout = function (container) {
             .attr("height", d => d.y1 - d.y0)
             .attr("width", d => d.x1 - d.x0)
             .style("fill", d => d.color)
+            .style("fill-opacity", 0)
             .on("click", function(d){
                 that.click_id = "node-" + d.name;
                 that.click_id = JSON.parse(JSON.stringify(that.click_id));
@@ -367,7 +380,6 @@ let DistLayout = function (container) {
         const gradient = links_g.append("linearGradient")
             .attr("gradientUnits", "userSpaceOnUse")
             .attr("id", function (d) {
-                d.uid = "gc" + d.source.name + "-" + d.target.name;
                 return d.uid;
             })
             .attr("x1", d => d.source.x1)
@@ -387,7 +399,7 @@ let DistLayout = function (container) {
                 }
                 return Math.max(...[1.5, d.width]);
             })
-            .attr("stroke-opacity", 0.4)
+            .attr("stroke-opacity", 0)
             .style("fill-opacity", 0)
             .on("mouseover", function(d){
                 if (that.click_id) return;
@@ -502,17 +514,17 @@ let DistLayout = function (container) {
     that._focus_node = function(_d_list){
         // console.log("_focus_node:", _d_list);
         d3.selectAll(".dist-node")
-            .attr("fill-opacity", 0.2);
+            .style("fill-opacity", 0.2);
         for(let i = 0; i < _d_list.length; i++){
             let _d = _d_list[i];
             d3.select("#node-" + _d.name)
-                .attr("fill-opacity", 1);
+                .style("fill-opacity", 1);
         }
     };
 
     that._unfocus_node = function(d){
         d3.selectAll(".dist-node")
-            .attr("fill-opacity", 1);
+            .style("fill-opacity", 1);
     };
 
     that._pinked_highlight = function(){
@@ -743,29 +755,36 @@ let DistLayout = function (container) {
         node_group
             .selectAll(".dist-node")
             .data(nodes, d => d.name)
+            .transition()
+            .duration(update_ani)
+            .delay(remove_ani)
             .attr("x", d => d.x0)
             .attr("y", d => d.y0)
             .attr("height", d => d.y1 - d.y0)
             .attr("width", d => d.x1 - d.x0)
-            .style("fill", d => d.color);
+            .style("fill", d => d.color)
+            .style("fill-opacity", 1);
 
         // update links
         let links_g = link_group.selectAll(".dist-link")
-            .data(links, d => "link-" + d.source.name + "-" + d.target.name);
-        const gradient = links_g.append("linearGradient")
-            .attr("gradientUnits", "userSpaceOnUse")
-            .attr("id", function (d) {
-                d.uid = "gc" + d.source.name + "-" + d.target.name;
-                return d.uid;
-            })
-            .attr("x1", d => d.source.x1)
-            .attr("x2", d => d.target.x0);
-        gradient.append("stop")
-            .attr("offset", "0%")
-            .attr("stop-color", d => d.source.color);
-        gradient.append("stop")
-            .attr("offset", "100%")
-            .attr("stop-color", d => d.target.color);
+            .data(links, d => "link-" + d.source.name + "-" + d.target.name)
+            .transition()
+            .duration(update_ani)
+            .delay(remove_ani);
+        // const gradient = links_g.append("linearGradient")
+        //     .attr("gradientUnits", "userSpaceOnUse")
+        //     .attr("id", function (d) {
+        //         d.uid = "gc" + d.source.name + "-" + d.target.name;
+        //         return d.uid;
+        //     })
+        //     .attr("x1", d => d.source.x1)
+        //     .attr("x2", d => d.target.x0);
+        // gradient.append("stop")
+        //     .attr("offset", "0%")
+        //     .attr("stop-color", d => d.source.color);
+        // gradient.append("stop")
+        //     .attr("offset", "100%")
+        //     .attr("stop-color", d => d.target.color);
         links_g.select("path")
             .attr("d", d3.sankeyLinkHorizontal())
             .attr("stroke", d => "url(#" + d.uid + ")")
@@ -781,6 +800,9 @@ let DistLayout = function (container) {
         
         flow_text_group.selectAll(".flow-text")
             .data(that.flow_text, d => d.id)
+            .transition()
+            .duration(update_ani)
+            .delay(remove_ani)
             .attr("x", d => d.link ? (d.link.source.x1 + d.link.target.x0) / 2 : 0)
             .attr("y", d => d.link ? (d.link.source.y0 + d.link.source.y1 
                 + d.link.target.y0 + d.link.target.y1) / 4 + 5 : 0)
@@ -883,11 +905,19 @@ let DistLayout = function (container) {
             .selectAll(".dist-node")
             .data(nodes, d => d.name)
             .exit()
+            .transition()
+            .duration(remove_ani)
+            .style("fill-opacity", 0)
             .remove();
-        link_group.selectAll(".dist-link")
+        let link_exit = link_group.selectAll(".dist-link")
             .data(links, d => "link-" + d.source.name + "-" + d.target.name)
             .exit()
-            .remove();
+            .transition()
+            .duration(remove_ani);
+        link_exit
+            .select("path")
+            .attr("stroke-opacity", 0);
+        link_exit.remove();
         // remove slider
         that._remove_slider();
 
