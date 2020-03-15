@@ -369,7 +369,7 @@ DataLoaderClass = function () {
 
     };
 
-    that.update_dist_view = function(){
+    that.update_dist_view = function(selected_flows){
         console.log("update loss view");
         that.dist_view.component_update({
             "label_sums": that.state.label_sums,
@@ -377,7 +377,7 @@ DataLoaderClass = function () {
             "selected_flows": that.state.selected_flows,
             "label_names": that.state.label_names,
             "dist_mode": that.state.dist_mode
-        });
+        }, selected_flows);
         //TODO:
         that.update_setting_view();
     };
@@ -439,7 +439,7 @@ DataLoaderClass = function () {
                 that.state.highlights = that.state.focus_idxs;
                 // that.highlight_nodes(that.state.focus_idxs);
                 await that.update_graph_view();
-                that.update_dist_view();
+                that.update_dist_view(true);
             }), "json", "POST");
         that.selected_flows_node.set_data({path_id});
         that.selected_flows_node.notify();
