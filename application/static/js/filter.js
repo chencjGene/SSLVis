@@ -40,7 +40,7 @@ let FilterLayout = function (container) {
     let consistency_widget_data = null;
     let consistency_widget_range = [-1, -1];
     let kdegree_widget_data = null;
-    let kdegree_widget_range = [-1, -1];
+    let kdegree_widget_range = [0, 0];
     let edgetype_data = null;
     let edgetype_range = [];
     let label_names = [];
@@ -211,7 +211,8 @@ let FilterLayout = function (container) {
         that.label_scented_widget();
         // that._draw_widget(indegree_widget_data, indegree_svg, "indegree", indegree_widget_range, indegree_items);
         // that._draw_widget(outdegree_widget_data, outdegree_svg, "outdegree", outdegree_widget_range, outdegree_items);
-        that._draw_widget(kdegree_widget_data, kdegree_svg, "kdegree", kdegree_widget_range, kdegree_items);
+        // that._draw_widget(kdegree_widget_data, kdegree_svg, "kdegree", kdegree_widget_range, kdegree_items);
+        that._draw_degree_widget(kdegree_widget_data, kdegree_svg, kdegree_widget_range);
         that.draw_edge_influence_widget(influence_widget_data, edgeInfluence_svg, "influence", influence_widget_range);
         that.draw_edge_type_widget(edgetype_data, edgeType_svg, "edgetype", edgetype_range);
 
@@ -933,6 +934,329 @@ let FilterLayout = function (container) {
                                     else {
                                         that.update_widget_showing_items();
                                     }
+                    }));
+        start_drag.on("mouseover", function () {
+            start_text.attr("opacity", 1);
+                        end_text.attr("opacity", 1);
+        })
+            .on("mouseout", function () {
+                start_text.attr("opacity", 0);
+                        end_text.attr("opacity", 0);
+            });
+        end_drag.on("mouseover", function () {
+            start_text.attr("opacity", 1);
+                        end_text.attr("opacity", 1);
+        })
+            .on("mouseout", function () {
+                start_text.attr("opacity", 0);
+                        end_text.attr("opacity", 0);
+            });
+    };
+
+    that._draw_degree_widget = function(distribution, container, range){
+        let type = "kdegree";
+        let min_xv = -range[0];
+        let max_xv = range[1];
+        let mrange = [range[0], range[1]];
+        // distribution
+        let max_len = 0;
+        let bar_cnt = distribution.length;
+        for(let node_ary of distribution){
+            if(max_len < node_ary){
+                max_len = node_ary;
+            }
+        }
+        if(max_len === 0) max_len = 1;
+        // draw
+        let container_width = widget_width;
+        let container_height = widget_height;
+        let paddinginner_len = (container_width * 0.8 - 11*distribution.length)/((distribution.length-1));
+        let paddinginner = paddinginner_len/(11 + paddinginner_len);
+        let x = d3.scaleBand().rangeRound([container_width*0.1, container_width*0.9], .05).paddingInner(paddinginner).domain(d3.range(bar_cnt));
+        let y = d3.scaleLinear().range([container_height*  0.7, container_height*0.05]).domain([0, 1]);
+        let drag_interval = x.step();
+        let x_0_min = x(min_xv);
+        let x_0_max = x(min_xv)+x.bandwidth();
+
+        //draw bar chart
+        if(container.select("#current-"+type+"-rects").size() === 0){
+            container.append("g")
+                .attr("id", "current-"+type+"-rects");
+        }
+        let rects = container.select("#current-"+type+"-rects").selectAll("rect").data(distribution);
+        // draw x-axis
+        if(container.select("#current-"+type+"-axis-in").size() === 0){
+            container.append("g")
+                .attr("id","current-"+type+"-axis-out")
+                .append("line")
+                .attr("x1", container_width*0.1)
+                .attr("y1", container_height*  0.7)
+                .attr("x2", container_width*0.9)
+                .attr("y2", container_height*  0.7)
+                .attr("stroke", "rgb(227,231,235)")
+                .attr("stroke-linecap", "round")
+                .attr("transform", "translate(0, 0)")
+                .attr("stroke-width", 5);
+
+            container.append("g")
+                .attr("id","current-"+type+"-axis-in")
+                .append("line")
+                .attr("x1", container_width*0.1+range[0]*drag_interval-2)
+                .attr("y1", container_height*  0.7)
+                .attr("x2", Math.min(container_width*0.1+(range[1]+1)*drag_interval+2, container_width*0.9))
+                .attr("y2", container_height*  0.7)
+                .attr("stroke", "rgb(166,166,166)")
+                .attr("stroke-linecap", "round")
+                .attr("transform", "translate(0, 0)")
+                .attr("stroke-width", 5);
+        }
+
+        if(container.select("#current-"+type+"-texts").size() === 0){
+             let textsg = container.append("g")
+                .attr("id", "current-"+type+"-texts");
+             textsg.append("text")
+                 .attr("id", "current-"+type+"-texts-start")
+                 .attr("x", container_width*0.1-5)
+                 .attr("y", container_height* 0.7+10)
+                 .attr("text-anchor", "end")
+                 .text(range[0]);
+             textsg.append("text")
+                 .attr("id", "current-"+type+"-texts-end")
+                 .attr("x", container_width*0.9+5)
+                 .attr("y", container_height* 0.7+10)
+                 .attr("text-anchor", "start")
+                 .text(range[1]);
+        }
+        else {
+            let textsg = container.select("#current-"+type+"-texts");
+            textsg.select("#current-"+type+"-texts-start")
+                .text(range[0]);
+            textsg.select("#current-"+type+"-texts-end")
+                .text(range[1]);
+        }
+        let textsg = container.select("#current-"+type+"-texts");
+
+        //create
+        rects
+            .enter()
+            .append("rect")
+            .attr("class", "widget-bar-chart")
+            .style("fill", "rgb(127, 127, 127)")
+            .attr("x", function(d, i) { return x(i); })
+            .attr("width", x.bandwidth())
+            .attr("y", function(d, i) { return y(d/max_len); })
+            .attr("height", function(d) {
+                return container_height*  0.7 - y(d/max_len);
+            })
+            .attr("opacity", 1);
+        //update
+        rects.transition()
+            .duration(AnimationDuration)
+            .attr("x", function(d, i) { return x(i); })
+            .attr("width", x.bandwidth())
+            .attr("y", function(d, i) { return y(d/max_len); })
+            .attr("height", function(d) {
+                return container_height*  0.7 - y(d/max_len);
+            })
+            .attr("opacity", 1);
+        //remove
+        rects.exit()
+            .transition()
+            .duration(AnimationDuration)
+            .attr("opacity", 0)
+            .remove();
+
+
+
+        //draw dragble
+        let draggable_item_path = "M0 -6 L6 6 L-6 6 Z";
+        let start_drag = null;
+        let end_drag = null;
+        let start_text = null;
+        let end_text = null;
+        let start_drag_g = null;
+        let end_drag_g = null;
+
+        if(container.select(".start-drag").size() === 0){
+            start_drag_g = textsg.append("g");
+            end_drag_g = textsg.append("g");
+            start_drag = start_drag_g.append("path")
+                .attr("class", "start-drag")
+                .attr("d", draggable_item_path)
+                .attr("fill", "rgb(127, 127, 127)");
+            start_text = start_drag_g.append("g")
+                .attr("class","start-text")
+                .attr("opacity", 0);
+            start_text.append("path")
+                .attr("transform", "translate(0,-5)")
+                .attr("fill", "none")
+                .attr("stroke", "black")
+                .attr("stroke-width", 1)
+                .attr("d", "M0 0 L 4 -4 L 15 -4 L 15 -20 L -15 -20 L -15 -4 L -4 -4 Z");
+            start_text.append("text")
+                .attr("x",0)
+                .attr("y", -13)
+                .attr("text-anchor", "middle")
+                .text((type==="consistency"||type==="kdegree")?range[0]:range[0]/20);
+            start_drag_g.attr("transform", "translate("+(container_width*0.1+(range[0]+min_xv)*drag_interval-2)+","+(container_height*0.75)+")");
+
+            end_drag = end_drag_g.append("path")
+                .attr("class", "end-drag")
+                .attr("d", draggable_item_path)
+                .attr("fill", "rgb(127, 127, 127)");
+            end_text = end_drag_g.append("g")
+                .attr("class","end-text")
+                .attr("opacity", 0);
+            end_text.append("path")
+                .attr("transform", "translate(0,-5)")
+                .attr("fill", "none")
+                .attr("stroke", "black")
+                .attr("stroke-width", 1)
+                .attr("d", "M0 0 L 4 -4 L 15 -4 L 15 -20 L -15 -20 L -15 -4 L -4 -4 Z");
+            end_text.append("text")
+                .attr("x",0)
+                .attr("y", -13)
+                .attr("text-anchor", "middle")
+                .text((type==="consistency"||type==="kdegree")?range[1]:(range[1]+1)/20);
+            end_drag_g.attr("transform", "translate("+(Math.min(container_width*0.1+(range[1]+min_xv+1)*drag_interval+2, container_width*0.9))+","+(container_height*0.75)+")");
+        }
+        else {
+            start_drag = container.select(".start-drag").each(function () {
+                start_drag_g = d3.select(this.parentNode);
+            });
+            end_drag = container.select(".end-drag").each(function () {
+                end_drag_g = d3.select(this.parentNode);
+            });
+            start_text = container.select(".start-text");
+            end_text = container.select(".end-text");
+            start_text.select("text").text((type==="consistency"||type==="kdegree")?range[0]:range[0]/20);
+            end_text.select("text").text((type==="consistency"||type==="kdegree")?range[1]:(range[1]+1)/20);
+            start_drag_g.transition()
+                .duration(AnimationDuration)
+                .attr("transform", "translate("+(container_width*0.1+(range[0]+min_xv)*drag_interval-2)+","+(container_height*0.75)+")");
+            end_drag_g.transition()
+                .duration(AnimationDuration)
+                .attr("transform", "translate("+(Math.min(container_width*0.1+(range[1]+min_xv+1)*drag_interval+2, container_width*0.9))+","+(container_height*0.75)+")");
+        }
+
+
+
+        container.select("#current-"+type+"-axis-in").select("line").attr("x1", container_width*0.1+(range[0]+min_xv)*drag_interval-2)
+            .attr("x2", Math.min(container_width*0.1+(range[1]+min_xv+1)*drag_interval+2, container_width*0.9));
+
+        start_drag.call(d3.drag()
+                    .on("drag", function () {
+                        start_text.attr("opacity", 1);
+                        end_text.attr("opacity", 1);
+                        let x = d3.mouse(container.node())[0];
+                        let drag_btn = d3.select(this);
+                        let drag_btn_g = d3.select(this.parentNode);
+                        let min_x = container_width*0.09;
+                        let max_x = -1;
+                        let end_pos = end_drag_g.attr("transform").slice(end_drag_g.attr("transform").indexOf("(")+1, end_drag_g.attr("transform").indexOf(","));
+                        max_x = parseFloat(end_pos);
+                        if((x<=min_x)||(x>=max_x)||(x>=x_0_min)) return;
+                        drag_btn_g.attr("transform", "translate("+(x)+","+(container_height*0.75)+")");
+                        container.select("#current-"+type+"-axis-in").select("line").attr("x1", x);
+                        container.selectAll("rect").attr("opacity", function (d, i) {
+                            let change = false;
+                            let rect = d3.select(this);
+                            let rect_x = parseFloat(rect.attr("x"));
+                            let rect_width = parseFloat(rect.attr("width"));
+                            if((rect_x>=x)&&(rect_x+rect_width<=max_x)){
+                                // in control
+                                if(rect.attr("opacity")!=1)change = true;
+
+                                if(change) {
+                                    // if(type === "uncertainty"){
+                                    //     that.update_glyph_showing_items();
+                                    // }
+                                    // else {
+                                    //     that.update_widget_showing_items(d);
+                                    // }
+                                    mrange[0] = i-min_xv;
+                                    start_text.select("text").text(mrange[0]);
+                                    end_text.select("text").text(mrange[1]);
+                                }
+                                return 1
+                            }
+                            if(rect.attr("opacity")!=0.5)change = true;
+                            if(change) {
+                                // if(type === "uncertainty"){
+                                //     that.update_glyph_showing_items();
+                                // }
+                                // else {
+                                //     that.update_widget_showing_items(d);
+                                // }
+                                mrange[0] = i+1-min_xv;
+                                start_text.select("text").text(mrange[0]);
+                                    end_text.select("text").text(mrange[1]);
+
+
+                            }
+                            return 0.5
+                        })
+                    }).on("end", function () {
+                        start_text.attr("opacity", 0);
+                        end_text.attr("opacity", 0);
+                        data_manager.graph_view.set_step_in(-mrange[0]);
+                    }));
+        end_drag.call(d3.drag()
+                    .on("drag", function () {
+                        start_text.attr("opacity", 1);
+                        end_text.attr("opacity", 1);
+                        let x = d3.mouse(container.node())[0];
+                        let drag_btn = d3.select(this);
+                        let drag_btn_g = d3.select(this.parentNode);
+                        let max_x = container_width*0.91;
+                        let min_x = -1;
+                        let end_pos = start_drag_g.attr("transform").slice(start_drag_g.attr("transform").indexOf("(")+1, start_drag_g.attr("transform").indexOf(","));
+                        min_x = parseFloat(end_pos);
+                        if((x<=min_x)||(x>=max_x)||(x<=x_0_max)) return;
+                        drag_btn_g.attr("transform", "translate("+(x)+","+(container_height*0.75)+")");
+                        container.select("#current-"+type+"-axis-in").select("line").attr("x2", x);
+                        container.selectAll("rect").attr("opacity", function (d, i) {
+                            let change = false;
+                            let rect = d3.select(this);
+                            let rect_x = parseFloat(rect.attr("x"));
+                            let rect_width = parseFloat(rect.attr("width"));
+                            if((rect_x>=min_x)&&(rect_x+rect_width<=x)){
+                                // in control
+                                if(rect.attr("opacity")!=1)change = true;
+                                if(change) {
+                                    // if(type === "uncertainty"){
+                                    //     that.update_glyph_showing_items();
+                                    // }
+                                    // else {
+                                    //     that.update_widget_showing_items(d);
+                                    // }
+                                    mrange[1] = i-min_xv;
+                                    start_text.select("text").text(mrange[0]);
+                                    end_text.select("text").text(mrange[1]);
+
+                                }
+                                return 1
+                            }
+                            if(rect.attr("opacity")!=0.5)change = true;
+                            if(change) {
+                                // if(type === "uncertainty"){
+                                //     that.update_glyph_showing_items();
+                                // }
+                                // else {
+                                //     that.update_widget_showing_items(d);
+                                // }
+                                mrange[1] = i-1-min_xv;
+                                start_text.select("text").text(mrange[0]);
+                                    end_text.select("text").text(mrange[1]);
+                            }
+                            return 0.5
+                        })
+                    })
+                    .on("end", function () {
+                        start_text.attr("opacity", 0);
+                        end_text.attr("opacity", 0);
+                        data_manager.graph_view.set_step_out(mrange[1]);
+
                     }));
         start_drag.on("mouseover", function () {
             start_text.attr("opacity", 1);

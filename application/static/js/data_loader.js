@@ -89,8 +89,8 @@ DataLoaderClass = function () {
         influence_widget_range: [-1, -1],
         consistency_widget_data: null,
         consistency_widget_range: [-1, -1],
-        kdegree_widget_data: null,
-        kdegree_widget_range: [-1, -1],
+        kdegree_widget_data: [1,2,3,4,5,6],
+        kdegree_widget_range: [-3, 2],
         edge_type_data: {
             "in":0,
             "out":0,
@@ -625,13 +625,6 @@ DataLoaderClass = function () {
             // distribution_box.push(node_id);
         }
 
-        let kdegree_distribution = [
-            [0,1,2,3,4,5],
-            [6,7,8,9],
-            [10,11],
-            [12],
-            [13]
-        ];
 
         that.state.uncertainty_widget_data = certainty_distribution;
         that.state.label_widget_data = label_distribution;
@@ -639,7 +632,14 @@ DataLoaderClass = function () {
         that.state.outdegree_widget_data = outdegree_distribution;
         that.state.influence_widget_data = influence_distribution;
         that.state.consistency_widget_data = consistency_distribution;
-        that.state.kdegree_widget_data = kdegree_distribution;
+    };
+
+    that.set_propagation_filter_data = function(data, max_in, max_out) {
+        let ranges = that.filter_view.get_ranges();
+        that.set_filter_range(ranges[0], ranges[1], ranges[2], ranges[3], ranges[4], ranges[5], ranges[6], ranges[7]);
+        that.state.kdegree_widget_data = data;
+        that.state.kdegree_widget_range = [-max_in, max_out];
+        that.update_filter_view();
     };
 
     that.setIter = function (iter) {
@@ -718,7 +718,7 @@ DataLoaderClass = function () {
         }
         // // edited by Changjian
         that.set_filter_range([19, 19], label_range, [0, 19], [0,19],
-            [1,19], ["between"], [0, 6], [0, that.state.kdegree_widget_data.length-1]);
+            [1,19], ["between"], [0, 6], that.state.kdegree_widget_range);
         that.update_filter_view();
         that.state.glyphs = that.state.uncertainty_widget_data[that.state.uncertainty_widget_data.length - 1];
 
@@ -771,7 +771,7 @@ DataLoaderClass = function () {
             label_range.push(i);
         }
         that.set_filter_range([19, 19], label_range, [0, 19], [0,19],
-            [1,19], [], [0,6], [0, that.state.kdegree_widget_data.length-1]);
+            [1,19], [], [0,6], that.state.kdegree_widget_range);
         // that.set_filter_range([18, 19], label_range, [0, 19], [0,19]);
         that.update_filter_view();
         // update dist view
