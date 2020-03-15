@@ -36,9 +36,10 @@ let GraphLayout = function (container) {
     let remove_ani = AnimationDuration * 0.1;
     let pathGenerator = d3.line().curve(d3.curveCardinal.tension(0.5));
     let path_curve = 1;
+    let uncertainty_type = 4;
     let unccertainty_line_stroke_width = 2;
     let uncertainty_hat_fill = "rgb(127, 127, 127)";
-    let uncertainty_glyph_radius = 9;
+    let uncertainty_glyph_radius = 9+4;
     let uncertainty_glyph_hat = 3;
 
     // draw containter
@@ -271,6 +272,34 @@ let GraphLayout = function (container) {
         highlights = highlights.concat(that.linked_nodes.map(d => d.id));
         highlights = highlights.delRepeat();
 
+        // show path when no highlights
+        if(highlights.length === 0){
+            path = [];
+            let golds = nodes.filter(d => d.label[0] > -1 || add_labeled_nodes.indexOf(d.id) > -1);
+            for(let gold_node of golds){
+                for(let i=0; i<gold_node.to.length; i++){
+                    let source_id = gold_node.id;
+                    let target_id = gold_node.to[i];
+                    let edge_weight = gold_node.to_weight[i];
+                    if(state.nodes[target_id] !== undefined && source_id !== target_id){
+                        let target = state.nodes[target_id];
+                        path.push([gold_node, target, edge_weight]);
+                    }
+                }
+            }
+        }
+
+        // remove path of length 0
+        let tmp_path = [];
+        for(let one_path of path){
+            let source = one_path[0];
+            let target = one_path[1];
+            if((source.x !== target.x) || (source.y !== target.y)){
+                tmp_path.push(one_path)
+            }
+        }
+        path = tmp_path;
+
         // }
         // glyphs
         // glyphs = that.get_top_k_uncertainty(nodes, 20);
@@ -349,7 +378,11 @@ let GraphLayout = function (container) {
             if (that.focus_nodes.length === 1 && that.selection_box.length === 0){
                 imgs = label_layout(that.linked_nodes, path_ary, that.zoom_scale);
             }
-
+            for(let path of path_ary){
+                if(path[3] === undefined){
+                    console.log("get")
+                }
+            }
             console.log("path_ary", path_ary);
             console.log("bundling res", path_ary);
             nodes_in_group = nodes_group.selectAll("circle")
@@ -489,58 +522,7 @@ let GraphLayout = function (container) {
                 .attr("transform", d =>"translate("+that.center_scale_x(d.x)+","+that.center_scale_y(d.y)+")")
                 .attr("opacity", d => that.opacity(d.id))
                 .on("end", resolve);
-            glyph_in_group.selectAll(".glyph-path")
-                .transition()
-                .duration(AnimationDuration)
-                .attr("d", arc)
-                .attr("fill", (d,i) => color_label[i]);
-            glyph_in_group
-                .selectAll(".uncertainty-value")
-                .select("path")
-                .transition()
-                .duration(AnimationDuration)
-                .attr("d", function (d) {
-                    let uncertainty = d.entropy;
-                    let angle = Math.PI/2*uncertainty;
-                    let arc = d3.arc()
-                        .innerRadius(uncertainty_glyph_radius * that.zoom_scale)
-                        .outerRadius(uncertainty_glyph_radius * that.zoom_scale)
-                        .startAngle(-angle)
-                        .endAngle(angle);
-                    return arc();
-                })
-                .attr("stroke", function (d) {
-                    return d.label[iter]===-1?color_unlabel:color_label[d.label[iter]];
-                })
-                .attr("stroke-width", unccertainty_line_stroke_width * that.zoom_scale);
-            glyph_in_group
-                .selectAll(".uncertainty-value-hat-left")
-                .attr("d", function (d) {
-                    return "M {0} {1} L {2} {3} L {4} {5} Z".format(
-                        0, -uncertainty_glyph_radius * that.zoom_scale,
-                        uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale,
-                        -uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale
-                    )
-                })
-                .attr("transform", function (d) {
-                    let uncertainty = d.entropy;
-                    let angle = 90*uncertainty;
-                    return "rotate({0})".format(-angle);
-                });
-            glyph_in_group
-                .selectAll(".uncertainty-value-hat-right")
-                .attr("d", function (d) {
-                    return "M {0} {1} L {2} {3} L {4} {5} Z".format(
-                        0, -uncertainty_glyph_radius * that.zoom_scale,
-                        uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale,
-                        -uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale
-                    )
-                })
-                .attr("transform", function (d) {
-                    let uncertainty = d.entropy;
-                    let angle = 90*uncertainty;
-                    return "rotate({0})".format(angle);
-                });
+            that.uncertainty_glyph_update();
 
 
             path_in_group
@@ -700,62 +682,8 @@ let GraphLayout = function (container) {
             //     .attr("class", "glyph-path")
             //     .attr("d", arc)
             //     .attr("fill", (d,i) => color_label[i]);
-            let uncertainty_values = glyphgs
-                .append("g")
-                .attr("class", "uncertainty-value");
-            uncertainty_values.append("path")
-                .attr("class", "uncertainty-value-path")
-                .attr("d", function (d) {
-                    let uncertainty = d.entropy;
-                    let angle = Math.PI/2*uncertainty;
-                    let arc = d3.arc()
-                        .innerRadius(uncertainty_glyph_radius * that.zoom_scale)
-                        .outerRadius(uncertainty_glyph_radius * that.zoom_scale)
-                        .startAngle(-angle)
-                        .endAngle(angle);
-                    return arc();
-                })
-                .attr("stroke", function (d) {
-                    return d.label[iter]===-1?color_unlabel:color_label[d.label[iter]];
-                })
-                .attr("stroke-width", unccertainty_line_stroke_width * that.zoom_scale);
-            uncertainty_values.append("path")
-                .attr("class", "uncertainty-value-hat-left")
-                .attr("d", function (d) {
-                    return "M {0} {1} L {2} {3} L {4} {5} Z".format(
-                        0, -uncertainty_glyph_radius * that.zoom_scale,
-                        uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale,
-                        -uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale
-                    )
-                })
-                .attr("transform", function (d) {
-                    let uncertainty = d.entropy;
-                    let angle = 90*uncertainty;
-                    return "rotate({0})".format(-angle);
-                })
-                .attr("stroke", "none")
-                .attr("fill", function (d) {
-                    return d.label[iter]===-1?color_unlabel:color_label[d.label[iter]];
-                });
-            uncertainty_values.append("path")
-                .attr("class", "uncertainty-value-hat-right")
-                .attr("d", function (d) {
-                    return "M {0} {1} L {2} {3} L {4} {5} Z".format(
-                        0, -uncertainty_glyph_radius * that.zoom_scale,
-                        uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale,
-                        -uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale
-                    )
-                })
-                .attr("transform", function (d) {
-                    let uncertainty = d.entropy;
-                    let angle = 90*uncertainty;
-                    return "rotate({0})".format(angle);
-                })
-                .attr("stroke", "none")
-                .attr("fill", function (d) {
-                    return d.label[iter]===-1?color_unlabel:color_label[d.label[iter]];
-                });
 
+            that.uncertainty_glyph_create(glyphgs);
 
             glyphgs
                 .transition()
@@ -839,7 +767,7 @@ let GraphLayout = function (container) {
                     })
                 .on("mousedown", function (d) {
                     console.log("mousedown", d);
-                    that.data_manager.update_edit_state(d, "delete edge");
+                    that.data_manager.update_edit_state([d], "delete edge");
                 })
                 .transition()
                 .duration(AnimationDuration)
@@ -878,7 +806,7 @@ let GraphLayout = function (container) {
         if( highlights.indexOf(id) > -1){
             return 5 * that.zoom_scale;
         }
-        else if(glyphs.indexOf(id) > -1){
+        else if(glyphs.indexOf(id) > -1 && uncertainty_type >1){
             return 7 * that.zoom_scale;
         }
         return 3.5 * that.zoom_scale
@@ -1044,53 +972,12 @@ let GraphLayout = function (container) {
                     return path.toString();
             })
             .attr("stroke-width", 1.7 * that.zoom_scale);
-        let arc = d3.arc().outerRadius(11 * that.zoom_scale).innerRadius(7 * that.zoom_scale);
-        glyph_in_group.selectAll(".glyph-path")
-            .transition()
-            .duration(AnimationDuration)
-            .attr("d", arc);
         glyph_in_group
-                .selectAll(".uncertainty-value")
-                .select("path")
-                .attr("d", function (d) {
-                    let uncertainty = d.entropy;
-                    let angle = Math.PI/2*uncertainty;
-                    let arc = d3.arc()
-                        .innerRadius(uncertainty_glyph_radius * that.zoom_scale)
-                        .outerRadius(uncertainty_glyph_radius * that.zoom_scale)
-                        .startAngle(-angle)
-                        .endAngle(angle);
-                    return arc();
-                })
-                .attr("stroke-width", unccertainty_line_stroke_width * that.zoom_scale);
-            glyph_in_group
-                .selectAll(".uncertainty-value-hat-left")
-                .attr("d", function (d) {
-                    return "M {0} {1} L {2} {3} L {4} {5} Z".format(
-                        0, -uncertainty_glyph_radius * that.zoom_scale,
-                        uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale,
-                        -uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale
-                    )
-                })
-                .attr("transform", function (d) {
-                    let uncertainty = d.entropy;
-                    let angle = 90*uncertainty;
-                    return "rotate({0})".format(-angle);
-                });
-            glyph_in_group
-                .selectAll(".uncertainty-value-hat-right")
-                .attr("d", function (d) {
-                    return "M {0} {1} L {2} {3} L {4} {5} Z".format(
-                        0, -uncertainty_glyph_radius * that.zoom_scale,
-                        uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale,
-                        -uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale
-                    )
-                })
-                .attr("transform", function (d) {
-                    let uncertainty = d.entropy;
-                    let angle = 90*uncertainty;
-                    return "rotate({0})".format(angle);
-                });
+                .transition()
+                .duration(AnimationDuration)
+                .attr("transform", d =>"translate("+that.center_scale_x(d.x)+","+that.center_scale_y(d.y)+")")
+                .attr("opacity", d => that.opacity(d.id));
+            that.uncertainty_glyph_update();
         }
         else {
             nodes_in_group
@@ -1122,51 +1009,12 @@ let GraphLayout = function (container) {
                     return path.toString();
             })
             .attr("stroke-width", 1.7 * that.zoom_scale);
-        let arc = d3.arc().outerRadius(11 * that.zoom_scale).innerRadius(7 * that.zoom_scale);
-        glyph_in_group.selectAll(".glyph-path")
-            .attr("d", arc);
         glyph_in_group
-                .selectAll(".uncertainty-value")
-                .select("path")
-                .attr("d", function (d) {
-                    let uncertainty = d.entropy;
-                    let angle = Math.PI/2*uncertainty;
-                    let arc = d3.arc()
-                        .innerRadius(uncertainty_glyph_radius * that.zoom_scale)
-                        .outerRadius(uncertainty_glyph_radius * that.zoom_scale)
-                        .startAngle(-angle)
-                        .endAngle(angle);
-                    return arc();
-                })
-                .attr("stroke-width", unccertainty_line_stroke_width * that.zoom_scale);
-        glyph_in_group
-                .selectAll(".uncertainty-value-hat-left")
-                .attr("d", function (d) {
-                    return "M {0} {1} L {2} {3} L {4} {5} Z".format(
-                        0, -uncertainty_glyph_radius * that.zoom_scale,
-                        uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale,
-                        -uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale
-                    )
-                })
-                .attr("transform", function (d) {
-                    let uncertainty = d.entropy;
-                    let angle = 90*uncertainty;
-                    return "rotate({0})".format(angle);
-                });
-            glyph_in_group
-                .selectAll(".uncertainty-value-hat-right")
-                .attr("d", function (d) {
-                    return "M {0} {1} L {2} {3} L {4} {5} Z".format(
-                        0, -uncertainty_glyph_radius * that.zoom_scale,
-                        uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale,
-                        -uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale
-                    )
-                })
-                .attr("transform", function (d) {
-                    let uncertainty = d.entropy;
-                    let angle = 90*uncertainty;
-                    return "rotate({0})".format(-angle);
-                });
+                .transition()
+                .duration(AnimationDuration)
+                .attr("transform", d =>"translate("+that.center_scale_x(d.x)+","+that.center_scale_y(d.y)+")")
+                .attr("opacity", d => that.opacity(d.id));
+            that.uncertainty_glyph_update();
         img_in_group
         .attr("x", function(d){
             if (d.quad === 1 || d.quad === 2){
@@ -1398,6 +1246,403 @@ let GraphLayout = function (container) {
          golds_in_group.attr("opacity", d => that.opacity(d.id));
     };
 
+    that.uncertainty_glyph_create = function(glyphgs) {
+        if(uncertainty_type === 1){
+            let pie = d3.pie().value(d => d);
+            let arc = d3.arc().outerRadius(11 * that.zoom_scale).innerRadius(7 * that.zoom_scale);
+            glyphgs.selectAll("path")
+                .data(d => pie(d.score[iter]))
+                .enter()
+                .append("path")
+                .attr("d", arc)
+                .attr("fill", (d,i) => color_label[i]);
+        }
+        else if(uncertainty_type === 2){
+            let uncertainty_values = glyphgs
+                .append("g")
+                .attr("class", "uncertainty-value");
+            uncertainty_values.append("path")
+                .attr("class", "uncertainty-value-path")
+                .attr("d", function (d) {
+                    let uncertainty = d.entropy;
+                    let angle = Math.PI/2*uncertainty;
+                    let arc = d3.arc()
+                        .innerRadius(uncertainty_glyph_radius * that.zoom_scale)
+                        .outerRadius(uncertainty_glyph_radius * that.zoom_scale)
+                        .startAngle(-angle)
+                        .endAngle(angle);
+                    return arc();
+                })
+                .attr("stroke", function (d) {
+                    return d.label[iter]===-1?color_unlabel:color_label[d.label[iter]];
+                })
+                .attr("stroke-width", unccertainty_line_stroke_width * that.zoom_scale);
+            uncertainty_values.append("path")
+                .attr("class", "uncertainty-value-hat-left")
+                .attr("d", function (d) {
+                    return "M {0} {1} L {2} {3} L {4} {5} Z".format(
+                        0, -uncertainty_glyph_radius * that.zoom_scale,
+                        uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale,
+                        -uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale
+                    )
+                })
+                .attr("transform", function (d) {
+                    let uncertainty = d.entropy;
+                    let angle = 90*uncertainty;
+                    return "rotate({0})".format(-angle);
+                })
+                .attr("stroke", "none")
+                .attr("fill", function (d) {
+                    return d.label[iter]===-1?color_unlabel:color_label[d.label[iter]];
+                });
+            uncertainty_values.append("path")
+                .attr("class", "uncertainty-value-hat-right")
+                .attr("d", function (d) {
+                    return "M {0} {1} L {2} {3} L {4} {5} Z".format(
+                        0, -uncertainty_glyph_radius * that.zoom_scale,
+                        uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale,
+                        -uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale
+                    )
+                })
+                .attr("transform", function (d) {
+                    let uncertainty = d.entropy;
+                    let angle = 90*uncertainty;
+                    return "rotate({0})".format(angle);
+                })
+                .attr("stroke", "none")
+                .attr("fill", function (d) {
+                    return d.label[iter]===-1?color_unlabel:color_label[d.label[iter]];
+                });
+        }
+        else if(uncertainty_type === 3){
+            let pie = d3.pie().value(d => d);
+            // let arc = d3.arc().outerRadius(11 * that.zoom_scale).innerRadius(7 * that.zoom_scale);
+            // glyphgs.selectAll("path")
+            //     .data(function (d) {
+            //         let data = pie(d.score[iter]);
+            //         for(let one_arc of data){
+            //             one_arc.startAngle = one_arc.startAngle/2 - Math.PI/2;
+            //             one_arc.endAngle = one_arc.endAngle/2 - Math.PI/2;
+            //         }
+            //         return data
+            //     })
+            //     .enter()
+            //     .append("path")
+            //     .attr("d", arc)
+            //     .attr("fill", (d,i) => color_label[i]);
+
+            let arc = d3.arc().innerRadius((uncertainty_glyph_radius-4) * that.zoom_scale)
+                        .outerRadius((uncertainty_glyph_radius) * that.zoom_scale);
+            let uncertainty_values = glyphgs
+                .append("g")
+                .attr("class", "uncertainty-value");
+            uncertainty_values.selectAll("path")
+                .data(function (d) {
+                    let data = pie(d.score[iter]);
+                    let uncertainty = d.entropy;
+                    let angle = Math.PI/2*uncertainty;
+                    let scale = angle/Math.PI;
+                    for(let one_arc of data){
+                        one_arc.startAngle = one_arc.startAngle*scale - angle;
+                        one_arc.endAngle = one_arc.endAngle*scale - angle;
+                    }
+                    return data
+                })
+                .enter()
+                .append("path")
+                .attr("class", "uncertainty-value-path")
+                .attr("d", function (d) {
+                    return arc(d);
+                    // let uncertainty = d.entropy;
+                    // let angle = Math.PI/2*uncertainty;
+                    // let arc = d3.arc()
+                    //     .innerRadius(uncertainty_glyph_radius * that.zoom_scale)
+                    //     .outerRadius(uncertainty_glyph_radius * that.zoom_scale)
+                    //     .startAngle(-angle)
+                    //     .endAngle(angle);
+                    // return arc();
+                })
+                .attr("fill", (d,i) => color_label[i]);
+                // .attr("stroke", function (d) {
+                //     return d.label[iter]===-1?color_unlabel:color_label[d.label[iter]];
+                // })
+                // .attr("stroke-width", unccertainty_line_stroke_width * that.zoom_scale);
+
+            uncertainty_values.append("path")
+                .attr("class", "uncertainty-value-hat-left")
+                .attr("d", function (d) {
+                    return "M {0} {1} L {2} {3} L {4} {5} Z".format(
+                        0, -uncertainty_glyph_radius * that.zoom_scale,
+                        uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale,
+                        -uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale
+                    )
+                })
+                .attr("transform", function (d) {
+                    let uncertainty = d.entropy;
+                    let angle = 90*uncertainty;
+                    return "rotate({0})".format(-angle);
+                })
+                .attr("stroke", "none")
+                .attr("fill", function (d) {
+                    return d.label[iter]===-1?color_unlabel:color_label[d.label[iter]];
+                });
+            uncertainty_values.append("path")
+                .attr("class", "uncertainty-value-hat-right")
+                .attr("d", function (d) {
+                    return "M {0} {1} L {2} {3} L {4} {5} Z".format(
+                        0, -uncertainty_glyph_radius * that.zoom_scale,
+                        uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale,
+                        -uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale
+                    )
+                })
+                .attr("transform", function (d) {
+                    let uncertainty = d.entropy;
+                    let angle = 90*uncertainty;
+                    return "rotate({0})".format(angle);
+                })
+                .attr("stroke", "none")
+                .attr("fill", function (d) {
+                    return d.label[iter]===-1?color_unlabel:color_label[d.label[iter]];
+                });
+        }
+        else if(uncertainty_type === 4){
+            let pie = d3.pie().value(d => d);
+            // let arc = d3.arc().outerRadius(11 * that.zoom_scale).innerRadius(7 * that.zoom_scale);
+            // glyphgs.selectAll("path")
+            //     .data(function (d) {
+            //         let data = pie(d.score[iter]);
+            //         for(let one_arc of data){
+            //             one_arc.startAngle = one_arc.startAngle/2 - Math.PI/2;
+            //             one_arc.endAngle = one_arc.endAngle/2 - Math.PI/2;
+            //         }
+            //         return data
+            //     })
+            //     .enter()
+            //     .append("path")
+            //     .attr("d", arc)
+            //     .attr("fill", (d,i) => color_label[i]);
+
+            let arc = d3.arc().innerRadius((uncertainty_glyph_radius-4) * that.zoom_scale)
+                        .outerRadius((uncertainty_glyph_radius) * that.zoom_scale);
+            let uncertainty_values = glyphgs
+                .append("g")
+                .attr("class", "uncertainty-value");
+            uncertainty_values.selectAll("path")
+                .data(function (d) {
+                    let data = pie(d.score[iter]);
+                    // let uncertainty = d.entropy;
+                    // let angle = Math.PI/2*uncertainty;
+                    // let scale = angle/Math.PI;
+                    for(let one_arc of data){
+                        one_arc.startAngle = one_arc.startAngle/2 - Math.PI/2;
+                        one_arc.endAngle = one_arc.endAngle/2 - Math.PI/2;
+                    }
+                    return data
+                })
+                .enter()
+                .append("path")
+                .attr("class", "uncertainty-value-path")
+                .attr("d", function (d) {
+                    return arc(d);
+                    // let uncertainty = d.entropy;
+                    // let angle = Math.PI/2*uncertainty;
+                    // let arc = d3.arc()
+                    //     .innerRadius(uncertainty_glyph_radius * that.zoom_scale)
+                    //     .outerRadius(uncertainty_glyph_radius * that.zoom_scale)
+                    //     .startAngle(-angle)
+                    //     .endAngle(angle);
+                    // return arc();
+                })
+                .attr("fill", (d,i) => color_label[i]);
+                // .attr("stroke", function (d) {
+                //     return d.label[iter]===-1?color_unlabel:color_label[d.label[iter]];
+                // })
+                // .attr("stroke-width", unccertainty_line_stroke_width * that.zoom_scale);
+
+            uncertainty_values.append("path")
+                .attr("class", "uncertainty-value-hat-left")
+                .attr("d", function (d) {
+                    return "M {0} {1} L {2} {3} L {4} {5} Z".format(
+                        0, -uncertainty_glyph_radius * that.zoom_scale,
+                        uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale,
+                        -uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale
+                    )
+                })
+                .attr("transform", function (d) {
+                    let uncertainty = d.entropy;
+                    let angle = 90*uncertainty;
+                    return "rotate({0})".format(-angle);
+                })
+                .attr("stroke", "none")
+                .attr("fill", function (d) {
+                    return d.label[iter]===-1?color_unlabel:color_label[d.label[iter]];
+                });
+            uncertainty_values.append("path")
+                .attr("class", "uncertainty-value-hat-right")
+                .attr("d", function (d) {
+                    return "M {0} {1} L {2} {3} L {4} {5} Z".format(
+                        0, -uncertainty_glyph_radius * that.zoom_scale,
+                        uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale,
+                        -uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale
+                    )
+                })
+                .attr("transform", function (d) {
+                    let uncertainty = d.entropy;
+                    let angle = 90*uncertainty;
+                    return "rotate({0})".format(angle);
+                })
+                .attr("stroke", "none")
+                .attr("fill", function (d) {
+                    return d.label[iter]===-1?color_unlabel:color_label[d.label[iter]];
+                });
+        }
+    };
+
+    that.uncertainty_glyph_update = function() {
+        if(uncertainty_type === 1){
+            let pie = d3.pie().value(d => d);
+            let arc = d3.arc().outerRadius(11 * that.zoom_scale).innerRadius(7 * that.zoom_scale);
+            glyph_in_group.selectAll("path")
+                .append("path")
+                .attr("d", arc)
+                .attr("fill", (d,i) => color_label[i]);
+        }
+        else if(uncertainty_type === 2){
+            let pie = d3.pie().value(d => d);
+            let arc = d3.arc().outerRadius(11 * that.zoom_scale).innerRadius(7 * that.zoom_scale);
+            glyph_in_group.selectAll(".glyph-path")
+                    .attr("d", arc)
+                    .attr("fill", (d,i) => color_label[i]);
+            glyph_in_group
+                    .selectAll(".uncertainty-value")
+                    .select("path")
+                    .attr("d", function (d) {
+                        let uncertainty = d.entropy;
+                        let angle = Math.PI/2*uncertainty;
+                        let arc = d3.arc()
+                            .innerRadius(uncertainty_glyph_radius * that.zoom_scale)
+                            .outerRadius(uncertainty_glyph_radius * that.zoom_scale)
+                            .startAngle(-angle)
+                            .endAngle(angle);
+                        return arc();
+                    })
+                    .attr("stroke", function (d) {
+                        return d.label[iter]===-1?color_unlabel:color_label[d.label[iter]];
+                    })
+                    .attr("stroke-width", unccertainty_line_stroke_width * that.zoom_scale);
+            glyph_in_group
+                    .selectAll(".uncertainty-value-hat-left")
+                    .attr("d", function (d) {
+                        return "M {0} {1} L {2} {3} L {4} {5} Z".format(
+                            0, -uncertainty_glyph_radius * that.zoom_scale,
+                            uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale,
+                            -uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale
+                        )
+                    })
+                    .attr("transform", function (d) {
+                        let uncertainty = d.entropy;
+                        let angle = 90*uncertainty;
+                        return "rotate({0})".format(-angle);
+                    });
+            glyph_in_group
+                    .selectAll(".uncertainty-value-hat-right")
+                    .attr("d", function (d) {
+                        return "M {0} {1} L {2} {3} L {4} {5} Z".format(
+                            0, -uncertainty_glyph_radius * that.zoom_scale,
+                            uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale,
+                            -uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale
+                        )
+                    })
+                    .attr("transform", function (d) {
+                        let uncertainty = d.entropy;
+                        let angle = 90*uncertainty;
+                        return "rotate({0})".format(angle);
+                    });
+        }
+        else if(uncertainty_type === 3){
+            let arc = d3.arc().innerRadius((uncertainty_glyph_radius-4) * that.zoom_scale)
+                        .outerRadius((uncertainty_glyph_radius) * that.zoom_scale);
+            // let uncertainty_values = glyphgs
+            //     .append("g")
+            //     .attr("class", "uncertainty-value");
+             glyph_in_group
+                    .selectAll(".uncertainty-value-path")
+                    .attr("d", function (d) {
+                        return arc(d);
+                    });
+
+            glyph_in_group
+                    .selectAll(".uncertainty-value-hat-left")
+                    .attr("d", function (d) {
+                        return "M {0} {1} L {2} {3} L {4} {5} Z".format(
+                            0, -uncertainty_glyph_radius * that.zoom_scale,
+                            uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale,
+                            -uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale
+                        )
+                    })
+                    .attr("transform", function (d) {
+                        let uncertainty = d.entropy;
+                        let angle = 90*uncertainty;
+                        return "rotate({0})".format(-angle);
+                    });
+            glyph_in_group
+                    .selectAll(".uncertainty-value-hat-right")
+                    .attr("d", function (d) {
+                        return "M {0} {1} L {2} {3} L {4} {5} Z".format(
+                            0, -uncertainty_glyph_radius * that.zoom_scale,
+                            uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale,
+                            -uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale
+                        )
+                    })
+                    .attr("transform", function (d) {
+                        let uncertainty = d.entropy;
+                        let angle = 90*uncertainty;
+                        return "rotate({0})".format(angle);
+                    });
+        }
+        else if(uncertainty_type === 4){
+            let arc = d3.arc().innerRadius((uncertainty_glyph_radius-4) * that.zoom_scale)
+                        .outerRadius((uncertainty_glyph_radius) * that.zoom_scale);
+            // let uncertainty_values = glyphgs
+            //     .append("g")
+            //     .attr("class", "uncertainty-value");
+             glyph_in_group
+                    .selectAll(".uncertainty-value-path")
+                    .attr("d", function (d) {
+                        return arc(d);
+                    });
+
+            glyph_in_group
+                    .selectAll(".uncertainty-value-hat-left")
+                    .attr("d", function (d) {
+                        return "M {0} {1} L {2} {3} L {4} {5} Z".format(
+                            0, -uncertainty_glyph_radius * that.zoom_scale,
+                            uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale,
+                            -uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale
+                        )
+                    })
+                    .attr("transform", function (d) {
+                        let uncertainty = d.entropy;
+                        let angle = 90*uncertainty;
+                        return "rotate({0})".format(-angle);
+                    });
+            glyph_in_group
+                    .selectAll(".uncertainty-value-hat-right")
+                    .attr("d", function (d) {
+                        return "M {0} {1} L {2} {3} L {4} {5} Z".format(
+                            0, -uncertainty_glyph_radius * that.zoom_scale,
+                            uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale,
+                            -uncertainty_glyph_hat* that.zoom_scale, -uncertainty_glyph_radius * that.zoom_scale - uncertainty_glyph_hat*1.7* that.zoom_scale
+                        )
+                    })
+                    .attr("transform", function (d) {
+                        let uncertainty = d.entropy;
+                        let angle = 90*uncertainty;
+                        return "rotate({0})".format(angle);
+                    });
+        }
+    };
+
     // debug
     that.update_path_width_scale = async function(scale) {
         path_width_scale = scale;
@@ -1421,7 +1666,16 @@ let GraphLayout = function (container) {
         uncertainty_glyph_radius = radius;
         uncertainty_glyph_hat = hat;
         await that._update_view()
-    }
+    };
+
+    that.update_uncertainty_type = async function(type) {
+        uncertainty_type = type;
+        uncertainty_glyph_radius = type===2?9:13;
+        d3.selectAll(".pie-chart").remove();
+        await that._update_view();
+    };
+
+
 
     // that.get_area = function(){
     //     return transform_plg.get_area();

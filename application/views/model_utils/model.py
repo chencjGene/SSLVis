@@ -296,6 +296,7 @@ class SSLModel(object):
             return False
 
     def local_search_k(self, selected_idxs, k_list=None, selected_categories=None, simplifying=True, evaluate=True):
+        self.data.actions = ["local-update"]
         m = self.data.get_new_id_map()
         selected_idxs = [m[id] for id in selected_idxs if id not in self.data.get_removed_idxs()]
         if k_list is None:
