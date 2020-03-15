@@ -24,6 +24,7 @@ let FilterLayout = function (container) {
     let edgeInfluence_svg = null;
     let edgeType_svg = null;
     let consistency_svg = null;
+    let kdegree_svg = null;
 
     //data
     let label_widget_data = null;
@@ -38,6 +39,8 @@ let FilterLayout = function (container) {
     let influence_widget_range = [-1,-1];
     let consistency_widget_data = null;
     let consistency_widget_range = [-1, -1];
+    let kdegree_widget_data = null;
+    let kdegree_widget_range = [-1, -1];
     let edgetype_data = null;
     let edgetype_range = [];
     let label_names = [];
@@ -49,6 +52,7 @@ let FilterLayout = function (container) {
     let indegree_items = {};
     let outdegree_items = {};
     let consistency_items = {};
+    let kdegree_items = {};
 
     let edge_type_icons = {
         "in":null,
@@ -80,6 +84,7 @@ let FilterLayout = function (container) {
         edgeInfluence_svg = container.select("#current-edgeinfluence-svg");
         edgeType_svg = container.select("#current-edgetype-svg");
         consistency_svg = container.select("#current-consistency-svg");
+        kdegree_svg = container.select("#current-kdegree-svg");
 
         widget_width = parseInt($("#current-uncertainty-svg").width());
         widget_height = parseInt($("#current-uncertainty-svg").height());
@@ -121,8 +126,11 @@ let FilterLayout = function (container) {
         consistency_widget_range = state.consistency_widget_range;
         edgetype_data = state.edgetype_data;
         edgetype_range = state.edgetype_range;
+        kdegree_widget_data = state.kdegree_widget_data;
+        kdegree_widget_range = state.kdegree_widget_range;
 
         // init flags
+        kdegree_items = {};
         uncertain_items = {};
         label_items = {};
         indegree_items = {};
@@ -203,6 +211,7 @@ let FilterLayout = function (container) {
         that.label_scented_widget();
         // that._draw_widget(indegree_widget_data, indegree_svg, "indegree", indegree_widget_range, indegree_items);
         // that._draw_widget(outdegree_widget_data, outdegree_svg, "outdegree", outdegree_widget_range, outdegree_items);
+        that._draw_widget(kdegree_widget_data, kdegree_svg, "kdegree", kdegree_widget_range, kdegree_items);
         that.draw_edge_influence_widget(influence_widget_data, edgeInfluence_svg, "influence", influence_widget_range);
         that.draw_edge_type_widget(edgetype_data, edgeType_svg, "edgetype", edgetype_range);
 
@@ -663,13 +672,26 @@ let FilterLayout = function (container) {
                  .attr("x", container_width*0.1-5)
                  .attr("y", container_height* 0.7+10)
                  .attr("text-anchor", "end")
-                 .text("0");
+                 .text(0);
              textsg.append("text")
                  .attr("id", "current-"+type+"-texts-end")
                  .attr("x", container_width*0.9+5)
                  .attr("y", container_height* 0.7+10)
                  .attr("text-anchor", "start")
-                 .text(type === "consistency" ? 6 : 1);
+                 .text(function () {
+                    if(type === "consistency") return 6;
+                    if(type === "kdegree") return kdegree_widget_data.length-1;
+                    return 1;
+                 });
+        }
+        else {
+            let textsg = container.select("#current-"+type+"-texts");
+            textsg.select("#current-"+type+"-texts-end")
+                .text(function () {
+                    if(type === "consistency") return 6;
+                    if(type === "kdegree") return kdegree_widget_data.length-1;
+                    return 1;
+                 });
         }
         let textsg = container.select("#current-"+type+"-texts");
 
@@ -734,7 +756,7 @@ let FilterLayout = function (container) {
                 .attr("x",0)
                 .attr("y", -13)
                 .attr("text-anchor", "middle")
-                .text(type==="consistency"?range[0]:range[0]/20);
+                .text((type==="consistency"||type==="kdegree")?range[0]:range[0]/20);
             start_drag_g.attr("transform", "translate("+(container_width*0.1+range[0]*drag_interval-2)+","+(container_height*0.75)+")");
 
             end_drag = end_drag_g.append("path")
@@ -754,7 +776,7 @@ let FilterLayout = function (container) {
                 .attr("x",0)
                 .attr("y", -13)
                 .attr("text-anchor", "middle")
-                .text(type==="consistency"?range[1]:(range[1]+1)/20);
+                .text((type==="consistency"||type==="kdegree")?range[1]:(range[1]+1)/20);
             end_drag_g.attr("transform", "translate("+(Math.min(container_width*0.1+(range[1]+1)*drag_interval+2, container_width*0.9))+","+(container_height*0.75)+")");
         }
         else {
@@ -766,8 +788,8 @@ let FilterLayout = function (container) {
             });
             start_text = container.select(".start-text");
             end_text = container.select(".end-text");
-            start_text.select("text").text(type==="consistency"?range[0]:range[0]/20);
-            end_text.select("text").text(type==="consistency"?range[1]:(range[1]+1)/20);
+            start_text.select("text").text((type==="consistency"||type==="kdegree")?range[0]:range[0]/20);
+            end_text.select("text").text((type==="consistency"||type==="kdegree")?range[1]:(range[1]+1)/20);
             start_drag_g.transition()
                 .duration(AnimationDuration)
                 .attr("transform", "translate("+(container_width*0.1+range[0]*drag_interval-2)+","+(container_height*0.75)+")");
@@ -813,8 +835,8 @@ let FilterLayout = function (container) {
                                     //     that.update_widget_showing_items(d);
                                     // }
                                     range[0] = i;
-                                    start_text.select("text").text(type==="consistency"?range[0]: range[0]/20);
-                                    end_text.select("text").text(type==="consistency"?range[1]: (range[1]+1)/20);
+                                    start_text.select("text").text((type==="consistency"||type==="kdegree")?range[0]: range[0]/20);
+                                    end_text.select("text").text((type==="consistency"||type==="kdegree")?range[1]: (range[1]+1)/20);
                                 }
                                 return 1
                             }
@@ -830,8 +852,8 @@ let FilterLayout = function (container) {
                                 //     that.update_widget_showing_items(d);
                                 // }
                                 range[0] = i+1;
-                                start_text.select("text").text(type==="consistency"?range[0]: range[0]/20);
-                                    end_text.select("text").text(type==="consistency"?range[1]: (range[1]+1)/20);
+                                start_text.select("text").text((type==="consistency"||type==="kdegree")?range[0]: range[0]/20);
+                                    end_text.select("text").text((type==="consistency"||type==="kdegree")?range[1]: (range[1]+1)/20);
 
                             }
                             return 0.5
@@ -879,8 +901,8 @@ let FilterLayout = function (container) {
                                     //     that.update_widget_showing_items(d);
                                     // }
                                     range[1] = i;
-                                    start_text.select("text").text(type==="consistency"?range[0]: range[0]/20);
-                                    end_text.select("text").text(type==="consistency"?range[1]: (range[1]+1)/20);
+                                    start_text.select("text").text((type==="consistency"||type==="kdegree")?range[0]: range[0]/20);
+                                    end_text.select("text").text((type==="consistency"||type==="kdegree")?range[1]: (range[1]+1)/20);
                                 }
                                 return 1
                             }
@@ -896,8 +918,8 @@ let FilterLayout = function (container) {
                                 //     that.update_widget_showing_items(d);
                                 // }
                                 range[1] = i-1;
-                                start_text.select("text").text(type==="consistency"?range[0]: range[0]/20);
-                                end_text.select("text").text(type==="consistency"?range[1]: (range[1]+1)/20);
+                                start_text.select("text").text((type==="consistency"||type==="kdegree")?range[0]: range[0]/20);
+                                end_text.select("text").text((type==="consistency"||type==="kdegree")?range[1]: (range[1]+1)/20);
                             }
                             return 0.5
                         })
