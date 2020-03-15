@@ -11,13 +11,15 @@ let HistoryLayout = function (container) {
     let layout_height = height * 0.8;
     let max_height = 500;
     let title_height = 30;
-    let action_id_center = layout_width * 0.15;
+    let action_id_center = layout_width * 0.13;
     let cell_center = layout_width * 0.5;
-    let text_center = layout_width * 0.75;
+    let text_center = layout_width * 0.77;
     let cell_height = 60;
     let cell_width = layout_width;
-    let dist_start = cell_center - layout_width * 0.2;
-    let dist_width = layout_width * 0.1;
+    let action_width = 30;
+    let dist_start = cell_center - layout_width * 0.2 + action_width+60;
+    let action_begin = cell_center - layout_width * 0.2;
+    let dist_width = layout_width * 0.05;
     let data_manager = null;
     let legend_height = 70;
     let gray_color = "#A9A9A9";
@@ -147,7 +149,7 @@ let HistoryLayout = function (container) {
             .style("fill-opacity", 0)
             .on("click", function(d){
                 data_manager.highlight_nodes(d.change_idx);
-            })
+            });
         that.cells.append("circle")
             .attr("class", "action-circle")
             .attr("cx", action_id_center)
@@ -155,6 +157,23 @@ let HistoryLayout = function (container) {
             .attr("r", 10)
             .style("fill", d => d.id === that.focus_id ? 
                 "rgb(127, 127, 127)" : "rgb(222, 222, 222)");
+
+        let history = that.cells.append("g")
+            .attr("class", "action-type-g");
+        history.selectAll("use")
+            .data(d => d.actions)
+            .enter()
+            .append("use")
+            .attr("xlink:href", d => "#action-"+d)
+            .attr("x", function (d, i) {
+                return action_begin+20
+            })
+            .attr("y", function (d) {
+                return cell_height - 30;
+            })
+            .attr("width", 20)
+            .attr("height", 20);
+
             
         that.cells.append("text")
             .attr("class", "action-id")

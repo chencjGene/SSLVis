@@ -767,7 +767,7 @@ let GraphLayout = function (container) {
                     })
                 .on("mousedown", function (d) {
                     console.log("mousedown", d);
-                    that.data_manager.update_edit_state(d, "delete edge");
+                    that.data_manager.update_edit_state([d], "delete edge");
                 })
                 .transition()
                 .duration(AnimationDuration)

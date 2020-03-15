@@ -70,6 +70,7 @@ class Data(object):
         self.unlabeled_idx = processed_data[config.unlabeled_idx_name]
         self.class_names = processed_data[config.class_name] #+["lizard", "snake"]
         self.add_info = processed_data[config.add_info_name]
+        self.actions = []
 
         if self.selected_labeled_num is None and self.selected_total_num is None:
             self.selected_labeled_num = self.add_info.get("default_selected_labeled_num", None)
@@ -200,11 +201,15 @@ class Data(object):
         return self.y[np.array(self.test_idx)].copy().astype(int)
 
     def remove_instance(self, idxs):
+        if len(idxs) > 0:
+            self.actions.append("deleted_idxs")
         self.rest_idxs = [i for i in self.rest_idxs if i not in idxs]
         self.removed_idxs += idxs
         logger.info("rest data: {}".format(len(self.rest_idxs)))
 
     def label_instance(self, idxs, labels):
+        if len(idxs) > 0:
+            self.actions.append("labeling")
         for i in range(len(idxs)):
             idx = idxs[i]
             label = labels[i]
@@ -433,7 +438,8 @@ class GraphData(Data):
             "train_y": self.get_train_label(),
             "selected_labeled_idx": self.selected_labeled_idx,
             "state": self.current_state,
-            "pred": pred
+            "pred": pred,
+            "actions": self.actions
         }
         self.print_state()
 
@@ -493,7 +499,8 @@ class GraphData(Data):
                 "margin": margin,
                 "children": children_idx,
                 "id": i,
-                "change_idx": change_idx.tolist()
+                "change_idx": change_idx.tolist(),
+                "actions": data["actions"]
             })
 
         # update dist
@@ -525,17 +532,21 @@ class GraphData(Data):
         None
 
     def remove_edge(self, removed_edges):
+        if len(removed_edges) > 0:
+            self.actions.append("remove-edge")
         for edges in removed_edges:
             s, e = edges
             self.affinity_matrix[s, e] = 0
             self.affinity_matrix[e, s] = 0
 
     def editing_data(self, data):
+        self.actions = []
         self.remove_instance(data["deleted_idxs"])
         self.label_instance(data["labeled_idxs"], data["labels"])
         self.remove_edge(data["deleted_edges"])
 
     def add_data(self, added_idxs, train_pred, cls):
+        self.actions = ["add-unlabeled"]
         added_idxs = np.array(added_idxs).reshape(-1)
         self.train_idx = np.hstack((self.train_idx, added_idxs))
         self.rest_idxs = np.array(range(len(self.train_idx)))
