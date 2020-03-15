@@ -44,6 +44,7 @@ let DistLayout = function (container) {
     let slider_group = null;
     let legend_group = null;
     let selected_link_group = null;
+    let selected_node_group = null;
 
     let data_manager = null;
 
@@ -51,6 +52,7 @@ let DistLayout = function (container) {
     let nodes = null;
     let links = null;
     let selected_links = null;
+    let selected_nodes = null;
     let label_names = null;
     let dist_mode = null;
     let colors = [UnlabeledColor].concat(CategoryColor);
@@ -86,6 +88,9 @@ let DistLayout = function (container) {
             .attr("transform", "translate(" + 0 + ", " + 10 + ")");
         selected_link_group = svg.append("g")
             .attr("id", "selected_link_group")
+            .attr("transform", "translate(" + 0 + ", " + 10 + ")");
+        selected_node_group = svg.append("g")
+            .attr("id", "selected_node_group")
             .attr("transform", "translate(" + 0 + ", " + 10 + ")");
         slider_group = svg.append("g")
             .attr("id", "slider_group")
@@ -137,12 +142,14 @@ let DistLayout = function (container) {
         let flows = JSON.parse(JSON.stringify(state.flows));
         let original_flows = JSON.parse(JSON.stringify(state.flows));
         let selected_flows = state.selected_flows || null; 
+        that.original_flows = original_flows;
+        that.selected_flows = selected_flows;
         console.log("selected_flows", selected_flows);
         let class_num = label_sums[0].length;
 
         // scale
         let scale_func = function (v) {
-            return Math.pow(v, 0.6);
+            return Math.pow(v, 0.8);
         };
 
         for (let j = 0; j < class_num; j++) {
@@ -222,7 +229,10 @@ let DistLayout = function (container) {
         });
         nodes = res.nodes;
         links = dist_mode ? res.links : res.links.filter(d => d.source_class !== d.target_class);
-        
+        // for debug
+        that.nodes = nodes;
+        that.links = links;
+
         // get flow text
         let consist_links = res.links.filter(d => d.source_class === d.target_class);
         let change_links = res.links.filter(d => d.source_class !== d.target_class);
@@ -254,7 +264,9 @@ let DistLayout = function (container) {
         }
 
         // for selected_flows
-        selected_links = []
+        selected_links = [];
+        selected_nodes = [];
+        nodes.forEach(d => {d.source_s_links = []; d.target_s_links = [];});
         for (let i = 0; i < (total_iters - 1); i++){
             for (let j = 0; j < class_num; j++) {
                 for (let k = 0; k < class_num; k++) {
@@ -263,13 +275,38 @@ let DistLayout = function (container) {
                         let _link = links.filter(d => d.names === name)[0];
                         // console.log(name, _link);
                         _link.selected_width = _link.width * selected_flows[i][j][k] / 
-                            original_flows[i][j][k]
+                            original_flows[i][j][k];
                         selected_links.push(_link);
+                        selected_nodes.push(_link.source);
+                        selected_nodes.push(_link.target);
+                        _link.source.source_s_links.push(_link);
+                        _link.target.target_s_links.push(_link);
                     }
                 }
             }
         }
-        console.log("selected_links", selected_links);
+        selected_nodes = delRepeatDictArr(selected_nodes);
+        selected_nodes.forEach(d => {
+            if (d.source_s_links.length > 0){
+                d.selected_height = d.source_s_links.map(d => d.selected_width).reduce((a,b) => a+=b);
+            }
+            else{
+                d.selected_height = d.target_s_links.map(d => d.selected_width).reduce((a,b) => a+=b);
+            }
+            d.s_y = (d.y0 + d.y1) / 2 - d.selected_height / 2;
+            let start_y = d.s_y;
+            for (let i = 0; i < d.source_s_links.length; i++){
+                d.source_s_links[i].s_y0 = start_y + d.source_s_links[i].selected_width / 2;
+                start_y = d.source_s_links[i].selected_width + start_y;
+            }
+            start_y = d.s_y;
+            for (let i = 0; i < d.target_s_links.length; i++){
+                d.target_s_links[i].s_y1 = start_y + d.target_s_links[i].selected_width / 2;
+                start_y = d.target_s_links[i].selected_width + start_y;
+            }
+        });
+        that.selected_links = selected_links;
+        that.selected_nodes = selected_nodes;
 
         // slider
         slider_delta = slider_width / (total_iters - 1);
@@ -292,6 +329,7 @@ let DistLayout = function (container) {
         
         if(that.click_id){
             that._focus_link([]);
+            that._focus_node([]);
         }
     };
 
@@ -315,6 +353,8 @@ let DistLayout = function (container) {
                 console.log("click_id", d);
                 d3.event.stopPropagation();
                 data_manager.get_selected_flows(that.click_id);
+                // that._focus_node([]);
+                // that._focus_link([]);
             })
 
         // create links
@@ -341,7 +381,12 @@ let DistLayout = function (container) {
         links_g.append("path")
             .attr("d", d3.sankeyLinkHorizontal())
             .attr("stroke", d => "url(#" + d.uid + ")")
-            .attr("stroke-width", d => Math.max(...[1.5, d.width]))
+            .attr("stroke-width", function(d){
+                if (d.source_class === 0 || d.target_class === 0){
+                    return d.width;
+                }
+                return Math.max(...[1.5, d.width]);
+            })
             .attr("stroke-opacity", 0.4)
             .style("fill-opacity", 0)
             .on("mouseover", function(d){
@@ -397,7 +442,7 @@ let DistLayout = function (container) {
         // console.log("focus_link", that.click_id);
         d3.selectAll(".dist-link")
             .selectAll("path")
-            .attr("stroke-opacity", 0.1);
+            .attr("stroke-opacity", 0.05);
         for(let i = 0; i < _d_list.length; i++){
             let _d = _d_list[i];
             d3.selectAll("#" + "link-" + _d.source.name + "-" + _d.target.name)
@@ -429,13 +474,23 @@ let DistLayout = function (container) {
             // }
             d3.selectAll(".dist-link")
             .selectAll("path")
-            .attr("stroke-width", d => Math.max(...[1.5, d.width]))
-            .attr("stroke-opacity", 0.1);
+            .attr("stroke-width", function(d){
+                if (d.source_class === 0 || d.target_class === 0){
+                    return d.width;
+                }
+                return Math.max(...[1.5, d.width]);
+            })
+            .attr("stroke-opacity", 0.05);
         }
         else{
             d3.selectAll(".dist-link")
                 .selectAll("path")
-                .attr("stroke-width", d => Math.max(...[1.5, d.width]))
+                .attr("stroke-width", function(d){
+                    if (d.source_class === 0 || d.target_class === 0){
+                        return d.width;
+                    }
+                    return Math.max(...[1.5, d.width]);
+                })
                 .attr("stroke-opacity", 0.4);
         }
         // d3.selectAll(".dist-link")
@@ -447,7 +502,7 @@ let DistLayout = function (container) {
     that._focus_node = function(_d_list){
         // console.log("_focus_node:", _d_list);
         d3.selectAll(".dist-node")
-            .attr("fill-opacity", 0.7);
+            .attr("fill-opacity", 0.2);
         for(let i = 0; i < _d_list.length; i++){
             let _d = _d_list[i];
             d3.select("#node-" + _d.name)
@@ -471,6 +526,10 @@ let DistLayout = function (container) {
             console.log("click area other than path!!");
             that.click_id = null;
             that._unfocus_link();
+            that._unfocus_node();
+            selected_links = [];
+            selected_nodes = [];
+            that._update_view();
         }
     };
 
@@ -496,11 +555,30 @@ let DistLayout = function (container) {
             .attr("offset", "100%")
             .attr("stop-color", d => d.target.color);
         selected_links_g.append("path")
-            .attr("d", d3.sankeyLinkHorizontal())
+            .attr("d", d3.SelectedSankeyLinkHorizontal())
             .attr("stroke", d => "url(#" + d.uid + ")")
-            .attr("stroke-width", d => Math.max(...[1.5, d.selected_width]))
-            .attr("stroke-opacity", 0.4)
-            .style("fill-opacity", 0)
+            .attr("stroke-width", function(d){
+                if (d.source_class === 0 && (d.target_class === 0 || d.target_class === 1)){
+                    return d.selected_width;
+                }
+                return Math.max(...[1.5, d.selected_width]);
+            })
+            .attr("stroke-opacity", 0.6)
+            .style("fill-opacity", 0);
+
+        
+        selected_node_group
+            .selectAll(".dist-s-node")
+            .data(selected_nodes, d => d.name)
+            .enter()
+            .append("rect")
+            .attr("class", "dist-s-node")
+            .attr("id", d => "node-" + d.name)
+            .attr("x", d => d.x0)
+            .attr("y", d => d.s_y)
+            .attr("height", d => Math.max(...[1, d.selected_height]))
+            .attr("width", d => d.x1 - d.x0)
+            .style("fill", d => d.color);
     }
 
     that._create_slider = function(){        
@@ -691,7 +769,12 @@ let DistLayout = function (container) {
         links_g.select("path")
             .attr("d", d3.sankeyLinkHorizontal())
             .attr("stroke", d => "url(#" + d.uid + ")")
-            .attr("stroke-width", d => Math.max(...[1.5, d.width]))
+            .attr("stroke-width", function(d){
+                if (d.source_class === 0 || d.target_class === 0){
+                    return d.width;
+                }
+                return Math.max(...[1.5, d.width]);
+            })
             .attr("stroke-opacity", 0.4)
             .style("fill-opacity", 0);
 
@@ -778,7 +861,21 @@ let DistLayout = function (container) {
             .data(selected_links, d => "s-link-" + d.source.name + "-" + d.target.name);
     
         selected_links_g.select("path")
-            .attr("stroke-width", d => Math.max(...[1.5, d.selected_width]));
+            .attr("stroke-width", function(d){
+                if (d.source_class === 0 && (d.target_class === 0 || d.target_class === 1)){
+                    return d.selected_width;
+                }
+                return Math.max(...[1.5, d.selected_width]);
+            });
+
+        selected_node_group
+            .selectAll(".dist-s-node")
+            .data(selected_nodes, d => d.name)
+            .attr("x", d => d.x0)
+            .attr("y", d => d.s_y)
+            .attr("height", d => Math.max(...[1, d.selected_height]))
+            .attr("width", d => d.x1 - d.x0)
+            .style("fill", d => d.color);
     }
 
     that._remove = function () {
@@ -812,6 +909,11 @@ let DistLayout = function (container) {
     that._remove_selected_flows = function(){
         selected_link_group.selectAll(".dist-s-link")
             .data(selected_links, d => "s-link-" + d.source.name + "-" + d.target.name)
+            .exit()
+            .remove();
+        selected_node_group
+            .selectAll(".dist-s-node")
+            .data(selected_nodes, d => d.name)
             .exit()
             .remove();
     }

@@ -671,7 +671,7 @@ let GraphLayout = function (container) {
                 .attr("class", "pie-chart")
                 .each(function (d) {
                     let node = d3.select(this);
-                    d.piechart = node;
+                    // d.piechart = node;
                 })
                 .attr("transform", d =>"translate("+that.center_scale_x(d.x)+","+that.center_scale_y(d.y)+")")
                 .attr("opacity", 0);

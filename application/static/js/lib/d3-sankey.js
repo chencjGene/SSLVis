@@ -413,11 +413,26 @@ function sankeyLinkHorizontal() {
       .target(horizontalTarget);
 }
 
+function SelectedHorizontalSource(d) {
+  return [d.source.x1, d.s_y0];
+}
+
+function SelectedHorizontalTarget(d) {
+  return [d.target.x0, d.s_y1];
+}
+
+function SelectedSankeyLinkHorizontal() {
+  return d3Shape.linkHorizontal()
+      .source(SelectedHorizontalSource)
+      .target(SelectedHorizontalTarget);
+}
+
 exports.sankey = Sankey;
 exports.sankeyCenter = center;
 exports.sankeyJustify = justify;
 exports.sankeyLeft = left;
 exports.sankeyLinkHorizontal = sankeyLinkHorizontal;
+exports.SelectedSankeyLinkHorizontal = SelectedSankeyLinkHorizontal;
 exports.sankeyRight = right;
 
 Object.defineProperty(exports, '__esModule', { value: true });
