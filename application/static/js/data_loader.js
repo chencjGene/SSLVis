@@ -754,7 +754,7 @@ DataLoaderClass = function () {
         for(let i=0; i<=that.state.label_names.length; i++){
             label_range.push(i);
         }
-        that.set_filter_range([20, 19], label_range, [0, 19], [0,19],
+        that.set_filter_range([19, 19], label_range, [0, 19], [0,19],
             [1,19], [], [0,6]);
         // that.set_filter_range([18, 19], label_range, [0, 19], [0,19]);
         that.update_filter_view();
