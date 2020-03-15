@@ -63,6 +63,7 @@ class Data(object):
         if self.dataname == "oct":
             # wrong label
             self.y[564] = 3
+        
         self.train_idx = processed_data[config.train_idx_name]
         self.valid_idx = processed_data[config.valid_idx_name]
         self.test_idx = processed_data[config.test_idx_name]
@@ -132,6 +133,7 @@ class Data(object):
             "train_idx": train_idx
         }
         pickle_save_data(idx_info_path, idx_info)
+
 
     def case_set_rest_idxs(self):
         gt = self.get_train_ground_truth()
