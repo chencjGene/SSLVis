@@ -610,15 +610,44 @@ let GraphLayout = function (container) {
                         y:that.center_scale_y(d.y)
                     };
                     // let overlap nodes disappear
-                    nodes_in_group.attr("opacity", function (dd) {
+                    // nodes_in_group.attr("opacity", function (dd) {
+                    //     let target = {
+                    //         x: that.center_scale_x(dd.x),
+                    //         y: that.center_scale_y(dd.y)
+                    //     };
+                    //     if(dd.id !== d.id && (that.get_distance(source, target)*that.zoom_scale < 4)){
+                    //         return 0
+                    //     }
+                    //     return that.opacity(dd)
+                    // })
+                    // let overlap nodes
+                    let magnity = 5;
+                    let max_r = 15;
+                    nodes_in_group.each(function (dd) {
+                        if(d.id === dd.id) return;
+
                         let target = {
                             x: that.center_scale_x(dd.x),
                             y: that.center_scale_y(dd.y)
                         };
-                        if(dd.id !== d.id && (that.get_distance(source, target)*that.zoom_scale < 4)){
-                            return 0
+                        let distance = that.get_distance(source, target);
+                        if(distance*that.zoom_scale < max_r){
+                            let target_node = d3.select(this);
+                            let alpha = distance/max_r;
+                            let scale = (magnity + 1) * alpha / (magnity * alpha + 1);
+                            scale = Math.max(8 / max_r, scale);
+                            if(dd.x === d.x || dd.y === d.y){
+                                target.x += 0.1;
+                                target.y += 0.1;
+                            }
+                            let new_x = source.x + scale * max_r * (target.x-source.x) / distance;
+                            let new_y = source.y + scale * max_r * (target.y-source.y) / distance;
+                            target_node
+                                .transition()
+                                .duration(500)
+                                .attr("cx", new_x)
+                                .attr("cy", new_y);
                         }
-                        return that.opacity(dd)
                     })
 
                 })
@@ -627,7 +656,10 @@ let GraphLayout = function (container) {
                     if(visible_items[d.id] === false) return;
                     let node = d3.select(this);
                     node.attr("r", d => that.r(d.id));
-                    nodes_in_group.attr("opacity", that.opacity);
+                    nodes_in_group.transition()
+                                .duration(500)
+                                .attr("cx", d => that.center_scale_x(d.x))
+                                .attr("cy", d => that.center_scale_y(d.y));
                 })
                 .on("mousedown", function(d){
                     console.log("mousedown", d.id);
