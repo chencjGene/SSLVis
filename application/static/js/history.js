@@ -23,6 +23,10 @@ let HistoryLayout = function (container) {
     let data_manager = null;
     let legend_height = 70;
     let gray_color = "#A9A9A9";
+    let AnimationDuration = 500;
+    let create_ani = AnimationDuration;
+    let update_ani = AnimationDuration;
+    let remove_ani = AnimationDuration * 0;
 
     that.svg = container.select("#history-view").select("svg");
     that.line_group = that.svg.append("g").attr("id", "line");
@@ -130,16 +134,23 @@ let HistoryLayout = function (container) {
         // create cells
         console.log("history_data", that.history_data);
         that.cells = that.cell_group.selectAll("g.cell")
-            .data(that.history_data, d => d.id)
+            .data(that.history_data, d => d.id);
+        let cells = that.cells
             .enter()
             .append("g")
             .attr("class", "cell")
             .attr("id", d => "id-" + d.id)
             .attr("transform", 
                 (_,i) => "translate(" + 0 + ", " + i * cell_height + ")")
+            .style("opacity", 0);
+        cells
             .on("mouseover", that.highlight)
-            .on("mouseout", that.delighlight);
-        that.cells.append("rect")
+            .on("mouseout", that.delighlight)
+            .transition()
+            .duration(create_ani)
+            .delay(remove_ani + update_ani)
+            .style("opacity", 1);
+        cells.append("rect")
             .attr("class", "background")
             .attr("x", 0)
             .attr("y", 1)
@@ -150,7 +161,7 @@ let HistoryLayout = function (container) {
             .on("click", function(d){
                 data_manager.highlight_nodes(d.change_idx);
             });
-        that.cells.append("circle")
+        cells.append("circle")
             .attr("class", "action-circle")
             .attr("cx", action_id_center)
             .attr("cy", cell_height * 0.5)
@@ -175,21 +186,21 @@ let HistoryLayout = function (container) {
             .attr("height", 20);
 
             
-        that.cells.append("text")
+        cells.append("text")
             .attr("class", "action-id")
             .attr("text-anchor", "middle")
             .attr("font-size", "12px")
             .attr("x", action_id_center)
             .attr("y", cell_height * 0.5 + 4.5)
             .text(d => d.id);
-        that.cells.append("rect")
+        cells.append("rect")
             .attr("class", ".bottom-line")
             .attr("x", action_id_center + margin_horizontal)
             .attr("y", cell_height)
             .attr("width", cell_width - action_id_center - margin_horizontal * 6)
             .attr("height", 1)
             .style("fill", "rgb(222,222,222)");
-        that.cells.selectAll("rect.change")
+        cells.selectAll("rect.change")
             .data(d=>d.height)
             .enter()
             .append("rect")
@@ -199,7 +210,7 @@ let HistoryLayout = function (container) {
             .attr("width", dist_width * 0.95)
             .attr("height", d => d)
             .style("fill", node_color);
-        that.cells.selectAll("text.text-change")
+        cells.selectAll("text.text-change")
             .data(d => zip([d.unnorm_dist, d.height]))
             .enter()
             .append("text")
@@ -213,7 +224,7 @@ let HistoryLayout = function (container) {
             //     let text = d3.select(this);
             //     set_font(text);
             // });
-        that.cells.append("text")
+        cells.append("text")
             .attr("font-family", '"Helvetica Neue", Helvetica, Arial, sans-serif')
             .attr("font-size", "12px")
             .attr("font-weight", 700)
@@ -250,8 +261,9 @@ let HistoryLayout = function (container) {
             .attr("fill", "gray");
 
         // //draw line
-        that.line_group.selectAll("path")
-            .data(that.line_data, d => d.id)
+        that.lines = that.line_group.selectAll("path")
+            .data(that.line_data, d => d.id);
+        that.lines
             .enter()
             .append("path")
             .attr("stroke-width", 2.0)
@@ -259,23 +271,35 @@ let HistoryLayout = function (container) {
             .attr("stroke", node_color)
             .style("stroke", "rgb(222, 222, 222)")
             .attr("d", d => d.path)
+            .style("opacity", 0)
+            .transition()
+            .duration(create_ani)
+            .delay(remove_ani + update_ani)
+            .style("opacity", 1);
     };
 
     that._update =  function() {
         // update cells
-        that.cells = that.cell_group.selectAll("g.cell")
-            .data(that.history_data, d => d.id)
+        that.cells
+            .transition()
+            .duration(update_ani)
+            .delay(remove_ani)
             .attr("transform", (_,i) => "translate(" + 0 + ", " + i * cell_height + ")");
         that.cells.select("circle")
             .style("fill", d => d.id === that.focus_id ?
                 "rgb(127, 127, 127)" : "rgb(222, 222, 222)");
 
         // update lines
-        that.line_group.selectAll("path")
-            .data(that.line_data, d => d.id)
+        that.lines
+            .transition()
+            .duration(update_ani)
+            .delay(remove_ani)
             .attr("d",d => d.path)
 
         that.legend_group.selectAll("text.legend")
+            .transition()
+            .duration(update_ani)
+            .delay(remove_ani)
             .attr("transform", function(d, i){
                 return "translate(" + (dist_start + (i + 0.5) * dist_width )
                     + ", " + (that.legend_height + 8) + ") rotate(30)";
@@ -296,14 +320,12 @@ let HistoryLayout = function (container) {
 
     that._remove = function() {
         // remove cells
-        that.cells = that.cell_group.selectAll("g.cell")
-            .data(that.history_data, d => d.id)
+        that.cells
             .exit()
             .remove();
 
         // remove lines
-        that.line_group.selectAll("path")
-        .data(that.line_data, d => d.id)
+        that.lines
         .exit()
         .remove();
 
