@@ -961,7 +961,7 @@ let FilterLayout = function (container) {
     };
 
     that.get_ranges = function() {
-        return [uncertainty_widget_range, label_widget_range, indegree_widget_range, outdegree_widget_range, influence_widget_range, edgetype_range, consistency_widget_range]
+        return [uncertainty_widget_range, label_widget_range, indegree_widget_range, outdegree_widget_range, influence_widget_range, edgetype_range, consistency_widget_range, kdegree_widget_range]
     };
 
     that.draw_edge_influence_widget = function(distribution, container, type, range){

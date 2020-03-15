@@ -605,12 +605,29 @@ let GraphLayout = function (container) {
                     }
                     let node = d3.select(this);
                     node.attr("r", 5 * that.zoom_scale);
+                    let source = {
+                        x:that.center_scale_x(d.x),
+                        y:that.center_scale_y(d.y)
+                    };
+                    // let overlap nodes disappear
+                    nodes_in_group.attr("opacity", function (dd) {
+                        let target = {
+                            x: that.center_scale_x(dd.x),
+                            y: that.center_scale_y(dd.y)
+                        };
+                        if(dd.id !== d.id && (that.get_distance(source, target)*that.zoom_scale < 4)){
+                            return 0
+                        }
+                        return that.opacity(dd)
+                    })
+
                 })
                 .on("mouseout", function (d) {
                     // check if hided
                     if(visible_items[d.id] === false) return;
                     let node = d3.select(this);
                     node.attr("r", d => that.r(d.id));
+                    nodes_in_group.attr("opacity", that.opacity);
                 })
                 .on("mousedown", function(d){
                     console.log("mousedown", d.id);

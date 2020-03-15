@@ -43,3 +43,7 @@ GraphLayout.prototype.get_average_consistency = function (nodes, nodes_id) {
     }, 0);
     return node_num===0?0:consistency_sum/node_num;
 };
+
+GraphLayout.prototype.get_distance = function (source, target) {
+    return Math.sqrt(Math.pow(source.x-target.x, 2)+ Math.pow(source.y-target.y, 2));
+};
