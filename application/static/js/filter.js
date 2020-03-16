@@ -985,6 +985,8 @@ let FilterLayout = function (container) {
         let drag_interval = x.step();
         let x_0_min = x(min_xv);
         let x_0_max = x(min_xv)+x.bandwidth();
+        let x_0_minband = x(min_xv)+x.bandwidth()/2-x.step()/2;
+        let x_0_maxband = x(min_xv)+x.bandwidth()/2+x.step()/2;
         // draw marker
         if(container.select("marker").size() === 0){
             container.append("marker")
@@ -1217,7 +1219,7 @@ let FilterLayout = function (container) {
                         let max_x = -1;
                         let end_pos = end_drag_g.attr("transform").slice(end_drag_g.attr("transform").indexOf("(")+1, end_drag_g.attr("transform").indexOf(","));
                         max_x = parseFloat(end_pos);
-                        if((x<=min_x)||(x>=max_x)||(x>=x_0_min)) return;
+                        if((x<=min_x)||(x>=max_x)||(x>=x_0_minband)) return;
                         drag_btn_g.attr("transform", "translate("+(x)+","+(container_height*0.75)+")");
                         container.select("#current-"+type+"-axis-in").select("line").attr("x1", x);
                         container.selectAll("rect").attr("opacity", function (d, i) {
@@ -1274,7 +1276,7 @@ let FilterLayout = function (container) {
                         let min_x = -1;
                         let end_pos = start_drag_g.attr("transform").slice(start_drag_g.attr("transform").indexOf("(")+1, start_drag_g.attr("transform").indexOf(","));
                         min_x = parseFloat(end_pos);
-                        if((x<=min_x)||(x>=max_x)||(x<=x_0_max)) return;
+                        if((x<=min_x)||(x>=max_x)||(x<=x_0_maxband)) return;
                         drag_btn_g.attr("transform", "translate("+(x)+","+(container_height*0.75)+")");
                         container.select("#current-"+type+"-axis-in").select("line").attr("x2", x);
                         container.selectAll("rect").attr("opacity", function (d, i) {
