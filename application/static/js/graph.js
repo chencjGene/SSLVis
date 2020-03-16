@@ -1176,11 +1176,11 @@ let GraphLayout = function (container) {
         transform_plg.fetch_points(select_ids, new_nodes, type, data);
     };
 
-    that.highlight = function(ids) {
+    that.highlight = async function(ids) {
         // highlight_plg.highlight(nodes, ids);
         highlights = ids.map(d => DataLoader.state.complete_graph[d]);
         that.focus_nodes = ids.map(d => DataLoader.state.complete_graph[d]);
-        that.show_edges();
+        await that.show_edges();
     };
 
     that.get_highlights = function() {
