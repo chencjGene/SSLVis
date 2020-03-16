@@ -169,7 +169,7 @@ let HistoryLayout = function (container) {
             .style("fill", d => d.id === that.focus_id ? 
                 "rgb(127, 127, 127)" : "rgb(222, 222, 222)");
 
-        let history = that.cells.append("g")
+        let history = cells.append("g")
             .attr("class", "action-type-g");
         history.selectAll("use")
             .data(d => d.actions)

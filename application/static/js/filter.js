@@ -1042,16 +1042,22 @@ let FilterLayout = function (container) {
         if(container.select(".current-"+type+"-arrow-in").size() === 0) {
             container.append("path")
                 .attr("class", "current-"+type+"-arrow-in")
-                .attr("d", "M {0} {1} L {2} {3} L {4} {5}".format(container_width*0.1, container_height*  0.85, (container_width*0.1 + x_0_min)/2,  container_height*  0.85, x_0_min,  container_height*  0.85))
+                .attr("d", "M {0} {1} L {2} {3} L {4} {5}".format(container_width*0.1, container_height*  0.85, (container_width*0.1 + x_0_min)/2,  container_height*  0.85, x_0_min-5,  container_height*  0.85))
                 .attr("marker-end", d => "url(#arrow-gray)")
                 .attr("stroke", "rgb(127,127,127)")
                 .attr("stroke-width", 1);
             container.append("path")
                 .attr("class", "current-"+type+"-arrow-out")
-                .attr("d", "M {0} {1} L {2} {3} L {4} {5}".format(x_0_max,  container_height*  0.85, (container_width*0.9 + x_0_max)/2,  container_height*  0.85, container_width*0.9, container_height*  0.85))
+                .attr("d", "M {0} {1} L {2} {3} L {4} {5}".format(x_0_max+5,  container_height*  0.85, (container_width*0.9 + x_0_max)/2,  container_height*  0.85, container_width*0.9, container_height*  0.85))
                 .attr("marker-end", d => "url(#arrow-gray)")
                 .attr("stroke", "rgb(127,127,127)")
-                .attr("stroke-width", 1)
+                .attr("stroke-width", 1);
+            container.append("circle")
+                 .attr("id", "current-"+type+"-arrow-mid")
+                 .attr("cx", (x_0_min+x_0_max)/2)
+                 .attr("cy", container_height*  0.85)
+                 .attr("r", 6)
+                 .attr("fill", UnlabeledColor);
 
         }
         else {
@@ -1059,12 +1065,14 @@ let FilterLayout = function (container) {
                 .select(".current-"+type+"-arrow-in")
                 .transition()
                 .duration(AnimationDuration)
-                .attr("d", "M {0} {1} L {2} {3} L {4} {5}".format(container_width*0.1, container_height*  0.85, (container_width*0.1 + x_0_min)/2,  container_height*  0.85, x_0_min,  container_height*  0.85))
+                .attr("d", "M {0} {1} L {2} {3} L {4} {5}".format(container_width*0.1, container_height*  0.85, (container_width*0.1 + x_0_min)/2,  container_height*  0.85, x_0_min-5,  container_height*  0.85))
             container
                 .select(".current-"+type+"-arrow-out")
                 .transition()
                 .duration(AnimationDuration)
-                .attr("d", "M {0} {1} L {2} {3} L {4} {5}".format(x_0_max,  container_height*  0.85, (container_width*0.9 + x_0_max)/2,  container_height*  0.85, container_width*0.9, container_height*  0.85))
+                .attr("d", "M {0} {1} L {2} {3} L {4} {5}".format(x_0_max+5,  container_height*  0.85, (container_width*0.9 + x_0_max)/2,  container_height*  0.85, container_width*0.9, container_height*  0.85))
+            container.select("#current-"+type+"-arrow-mid")
+                .attr("cx", (x_0_min+x_0_max)/2);
         }
 
         if(container.select("#current-"+type+"-texts").size() === 0){
@@ -1086,6 +1094,7 @@ let FilterLayout = function (container) {
                  .attr("fill", "rgb(127,127,127)")
                  .attr("text-anchor", "middle")
                  .text("out");
+
         }
         else {
             let textsg = container.select("#current-"+type+"-texts");
@@ -1097,6 +1106,7 @@ let FilterLayout = function (container) {
                 .attr("x", (container_width*0.9 + x_0_max)/2)
                 .attr("y", container_height*  0.95)
                 .text("out");
+
         }
         let textsg = container.select("#current-"+type+"-texts");
 

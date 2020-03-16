@@ -30,7 +30,7 @@ let GraphLayout = function (container) {
     let color_unlabel = UnlabeledColor;
     let color_label = CategoryColor;
     let edge_color = UnlabeledColor;
-    let AnimationDuration = 100;
+    let AnimationDuration = 300;
     let create_ani = AnimationDuration;
     let update_ani = AnimationDuration;
     let remove_ani = AnimationDuration * 0.1;
@@ -223,7 +223,15 @@ let GraphLayout = function (container) {
         area = state.area;
         rescale = state.rescale;
         visible_items = state.visible_items;
+        let old_glyphs = JSON.parse(JSON.stringify(glyphs));
         glyphs = state.glyphs;
+        let old_tmp_glyphs = [];
+        for(let glyph_id of glyphs){
+            if(old_glyphs.indexOf(glyph_id) > -1){
+                old_tmp_glyphs.push(glyph_id);
+            }
+        }
+        old_glyphs = old_tmp_glyphs;
         aggregate = state.aggregate;
         rect_nodes = state.rect_nodes;
         edge_filter_threshold = state.edge_filter_threshold;
@@ -289,14 +297,17 @@ let GraphLayout = function (container) {
             path = [];
             let golds = nodes.filter(d => d.label[0] > -1 || add_labeled_nodes.indexOf(d.id) > -1);
             for(let gold_node of golds){
+                let gold_node_cnt = 0;
                 for(let i=0; i<gold_node.to.length; i++){
                     let source_id = gold_node.id;
                     let target_id = gold_node.to[i];
                     let edge_weight = gold_node.to_weight[i];
-                    if(state.nodes[target_id] !== undefined && source_id !== target_id){
+                    if(state.nodes[target_id] !== undefined && source_id !== target_id && edge_weight >= edge_filter_threshold[0] && edge_weight <= edge_filter_threshold[1]){
                         let target = state.nodes[target_id];
                         path.push([gold_node, target, edge_weight]);
+                        gold_node_cnt++;
                     }
+                    if(gold_node_cnt === 2) break;
                 }
             }
         }
@@ -317,7 +328,7 @@ let GraphLayout = function (container) {
             glyphs = glyphs.filter(d => highlights.indexOf(d) > 0)
         }
         // remove glyphs overlap
-        let tmp_glyphs = [];
+        let tmp_glyphs = old_glyphs;
         for(let glyph_id of glyphs){
             let glyph_node = state.nodes[glyph_id];
             let source = {
@@ -503,8 +514,8 @@ let GraphLayout = function (container) {
                 .transition()
                 .duration(remove_ani)
                 .attr("opacity", 0)
-                .remove()
-                .on("end", resolve);
+                .on("end", resolve)
+                .remove();
 
             path_in_group.exit()
                 .transition()
@@ -558,11 +569,9 @@ let GraphLayout = function (container) {
                 .attr("d", d => star_path(star_outer_r * that.zoom_scale, star_inner_r * that.zoom_scale, that.center_scale_x(d.x), that.center_scale_y(d.y)))
                 .on("end", resolve);
 
-            let pie = d3.pie().value(d => d);
-            let arc = d3.arc().outerRadius(11 * that.zoom_scale).innerRadius(7 * that.zoom_scale);
             glyph_in_group
-                .transition()
-                .duration(AnimationDuration)
+                // .transition()
+                // .duration(AnimationDuration)
                 .attr("transform", d =>"translate("+that.center_scale_x(d.x)+","+that.center_scale_y(d.y)+")")
                 .attr("opacity", d => that.opacity(d.id))
                 .on("end", resolve);
@@ -920,10 +929,20 @@ let GraphLayout = function (container) {
             return 0.0
         }
         else {
-            if(highlights.length === 0){
+            if(highlights.length === 0 && glyphs.length > 10){
                 if(visible_items[id] === false){
                     return 0;
                 }
+                if(glyphs.indexOf(id) > -1){
+                    return 1
+                }
+                return 0.3
+            }
+            else if(highlights.length === 0){
+                if(visible_items[id] === false){
+                    return 0;
+                }
+
                 return 1
             }
             else {
@@ -991,6 +1010,9 @@ let GraphLayout = function (container) {
         // if deleted:
         if(delete_edges.indexOf(key) > -1){
             return 0
+        }
+        if(highlights.length === 0 && glyphs.length > 10){
+            return 0.3
         }
         return 1;
     };
@@ -1591,6 +1613,47 @@ let GraphLayout = function (container) {
                 .attr("fill", function (d) {
                     return d.label[iter]===-1?color_unlabel:color_label[d.label[iter]];
                 });
+            uncertainty_values.append("circle")
+                .attr("cursor", "default")
+                .attr("class", "node-dot")
+                .attr("cx", 0)
+                .attr("cy", 0)
+                .attr("r", d => that.r(d.id))
+                .attr("opacity", d => that.opacity(d.id))
+                .attr("fill", function (d) {
+                    return d.label[iter]===-1?color_unlabel:color_label[d.label[iter]];
+                })
+                .on("mouseover", function (d) {
+                    // check if hided
+                    if(visible_items[d.id] === false) return;
+                    if((path_nodes[d.id]!==undefined)){
+                        return
+                    }
+                    let node = d3.select(this);
+                    node.attr("r", (glyphs.indexOf(d.id)>-1?9:5) * that.zoom_scale);
+
+                })
+                .on("mouseout", function (d) {
+                    // check if hided
+                    if(visible_items[d.id] === false) return;
+                    let node = d3.select(this);
+                    node.attr("r", d => that.r(d.id));
+                    return;
+                })
+                .on("mousedown", function(d){
+                    console.log("mousedown", d.id);
+                    that.data_manager.update_edit_state(d.id, "instance");
+                })
+                .on("click", function (d) {
+                    // check if hided
+                    d3.event.stopPropagation();
+                    if(visible_items[d.id] === false) return;
+                    // that.data_manager.highlight_nodes([d.id]);
+                    //  that.highlight([d.id]);
+                    // that.focus_nodes = [d];
+                    // that.show_edges();
+                    that.highlight([d.id]);
+                })
         }
     };
 
@@ -1704,12 +1767,16 @@ let GraphLayout = function (container) {
             //     .attr("class", "uncertainty-value");
              glyph_in_group
                     .selectAll(".uncertainty-value-path")
+                    //  .transition()
+                    // .duration(AnimationDuration)
                     .attr("d", function (d) {
                         return arc(d);
                     });
 
             glyph_in_group
                     .selectAll(".uncertainty-value-hat-left")
+                    // .transition()
+                    // .duration(AnimationDuration)
                     .attr("d", function (d) {
                         return "M {0} {1} L {2} {3} L {4} {5} Z".format(
                             0, -uncertainty_glyph_radius * that.zoom_scale,
@@ -1724,6 +1791,8 @@ let GraphLayout = function (container) {
                     });
             glyph_in_group
                     .selectAll(".uncertainty-value-hat-right")
+                    // .transition()
+                    // .duration(AnimationDuration)
                     .attr("d", function (d) {
                         return "M {0} {1} L {2} {3} L {4} {5} Z".format(
                             0, -uncertainty_glyph_radius * that.zoom_scale,
@@ -1736,6 +1805,16 @@ let GraphLayout = function (container) {
                         let angle = 90*uncertainty;
                         return "rotate({0})".format(angle);
                     });
+
+            glyph_in_group
+                .selectAll(".node-dot")
+                .attr("fill", function (d) {
+                    return d.label[iter]===-1?color_unlabel:color_label[d.label[iter]];
+                })
+                .attr("opacity", d => that.opacity(d.id))
+                .attr("r", d => that.r(d.id))
+                .attr("cx", 0)
+                .attr("cy", 0)
         }
     };
 
