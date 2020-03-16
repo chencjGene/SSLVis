@@ -507,6 +507,7 @@ GraphLayout.prototype.show_edges = function(modes){
         edge_type_range.push(i); 
     }
     that.data_manager.update_edge_type_bar(edge_type_data);
+    that.data_manager.set_propagation_filter_data(that.step_count[2], that.step_count[0], that.step_count[1]);
     // that.set_path();
     that.data_manager.state.path = that.all_path;
     that.data_manager.state.highlights = that.highlights;

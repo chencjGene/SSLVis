@@ -546,6 +546,66 @@ function label_layout(nodes, path, zoom_scale){
     return imgs;
 };
 
+function get_multiple_connected_static(node, all_graph, threshold){
+    // in step
+    // Object.value(all_graph).forEach(d => d.visited = false);
+    for (let i in all_graph){
+        all_graph[i].visited = false;
+    }
+    in_step_count = [];
+    candi_queue = [node];
+    for(let i = 0; i < 100; i++){
+        new_queue = [];
+        if(candi_queue.length === 0) break;
+        in_step_count.push(candi_queue.length);
+        for (let j = 0; j < candi_queue.length; j++){
+            let n = candi_queue[j];
+            let from_list = n.from;
+            let from_weight = n.from_weight;
+            for (let k = 0; k < from_list.length; k++){
+                if (all_graph[from_list[k]].visited === true) continue;
+                if (from_weight[k] > threshold[0] && from_weight[k]< threshold[1]){
+                    new_queue.push(all_graph[from_list[k]]);
+                    all_graph[from_list[k]].visited = true;
+                }
+            }
+        }
+        candi_queue = new_queue;
+    }
+    in_step_count = in_step_count.slice(1);
+    if (in_step_count.length === 0) in_step_count = [0];
+
+    // out step
+    out_step_count = [];
+    candi_queue = [node];
+    for(let i = 0; i < 100; i++){
+        new_queue = [];
+        if(candi_queue.length === 0) break;
+        out_step_count.push(candi_queue.length);
+        for (let j = 0; j < candi_queue.length; j++){
+            let n = candi_queue[j];
+            if (n.visited = true) continue;
+            let to_list = n.to;
+            let to_weight = n.to_weight;
+            for (let k = 0; k < to_list.length; k++){
+                if (to_weight[k] > threshold[0] && to_weight[k]< threshold[1]){
+                    new_queue.push(all_graph[to_list[k]]);
+                }
+            }
+            n.visited = true;
+        }
+        candi_queue = new_queue;
+    }
+    out_step_count = out_step_count.slice(1);
+    if (out_step_count.length === 0) out_step_count = [0];
+    console.log("in step, out step", in_step_count, out_step_count);
+    min_step = in_step_count.length;
+    out_step = out_step_count.length;
+    total_step = in_step_count.reverse().concat([1].concat(out_step_count));
+    
+    return [min_step, out_step, total_step]
+}
+
 function get_multiple_connected_path(node, all_graph, in_step, out_step, threshold){
     let path = [];
     // all_graph = DataLoader.state.complete_graph;
