@@ -438,9 +438,10 @@ DataLoaderClass = function () {
             that.selected_flows_handler(async function(){
 
                 // that.update_graph_view();
-                that.state.highlights = that.state.focus_idxs;
+                // that.state.highlights = that.state.focus_idxs;
                 // that.highlight_nodes(that.state.focus_idxs);
-                await that.update_graph_view();
+                // await that.update_graph_view();
+                that.graph_view.highlight(that.state.focus_idxs);
                 that.update_dist_view(true);
             }), "json", "POST");
         that.selected_flows_node.set_data({path_id});

@@ -496,7 +496,7 @@ GraphLayout.prototype.get_path = function(){
     return [path, highlights];
 }
 
-GraphLayout.prototype.show_edges = function(modes){
+GraphLayout.prototype.show_edges = async function(modes){
     let that = this;
     that.get_path();
     let edge_type_data = {};
@@ -507,11 +507,12 @@ GraphLayout.prototype.show_edges = function(modes){
         edge_type_range.push(i); 
     }
     that.data_manager.update_edge_type_bar(edge_type_data);
-    that.data_manager.set_propagation_filter_data(that.step_count[2], that.step_count[0], that.step_count[1]);
     // that.set_path();
     that.data_manager.state.path = that.all_path;
     that.data_manager.state.highlights = that.highlights;
     console.log("selection box highlights:", that.highlights);
-    that.data_manager.update_graph_view();
+    await that.data_manager.update_graph_view();
+    that.data_manager.set_propagation_filter_data(that.step_count[2], that.step_count[0], that.step_count[1]);
+    
     // that.update_snapshot();
 };

@@ -86,8 +86,8 @@ let GraphLayout = function (container) {
     that.snapshot_edge = [];
     let edge_filter_threshold = 0;
     that.focus_nodes = [];
-    that.multi_step_in = 5;
-    that.multi_step_out = 5;
+    that.multi_step_in = 0;
+    that.multi_step_out = 0;
     that.step_count = [0, 0, [0]];
     let path_line = d3.line()
 			.x(function(d){ return d.x; })
@@ -250,22 +250,7 @@ let GraphLayout = function (container) {
         nodes = nodes.concat(that.focus_nodes);
         nodes = delRepeatDictArr(nodes);
 
-        // get step_count randomly
-        in_step_count = [0, 0, 0, 0, 0];
-        out_step_count = [0, 0, 0, 0, 0];
-        highlight_nodes = highlights.map(d => that.data_manager.state.complete_graph[d]);
-        for (let i = 0; i < highlight_nodes.length; i++){
-            // in step
-            let from_list = highlight_nodes[i].from;
-            for(let j = 0; j < from_list.length; j++){
-                in_step_count[dist_100(from_list[j])] += 1;
-            }
-            let to_list = highlight_nodes[i].to;
-            for(let j = 0; j < to_list.length; j++){
-                out_step_count[dist_100(to_list[j])] += 1;
-            }
-        }
-        that.step_count = [5, 5, in_step_count.reverse().concat([1].concat(out_step_count))];
+        that.step_count =highlights.length === 0 ? [0, 0, [0]] : get_step_count_statistic(highlights, that.data_manager.state.complete_graph);
 
         that.linked_nodes = [];
         imgs = [];
@@ -287,6 +272,9 @@ let GraphLayout = function (container) {
             that.linked_nodes = delRepeatDictArr(that.linked_nodes);
             nodes = nodes.concat(that.linked_nodes);
             nodes = delRepeatDictArr(nodes);
+        }
+        else if (that.selection_box.length === 0){
+
         }
 
         
@@ -398,6 +386,9 @@ let GraphLayout = function (container) {
             that.path_ary = path_ary;
             if (that.focus_nodes.length === 1 && that.selection_box.length === 0){
                 imgs = label_layout(that.linked_nodes, path_ary, that.zoom_scale);
+            }
+            else if (that.selection_box.length === 0){
+                imgs = label_layout(that.focus_nodes, [], that.zoom_scale);
             }
             for(let path of path_ary){
                 if(path[3] === undefined){

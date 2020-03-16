@@ -513,6 +513,16 @@ function label_layout(nodes, path, zoom_scale){
                     break;
                 }
             }
+            if (nodes[i].quad[j] < 0) continue;
+            for (let k = 0; k < nodes.length; k++){
+                if (k === i) continue;
+                let x = nodes[k].x;
+                let y = nodes[k].y;
+                if (x > (rect.x - padding) && x < (rect.x + rect.w + padding) && y > (rect.y - padding) && y < (rect.y + rect.h + padding)){
+                    nodes[i].quad[j] = -1;
+                    break;
+                }
+            }
         }
     }
 
@@ -623,6 +633,26 @@ function get_multiple_connected_static(node, all_graph, threshold){
     total_step = in_step_count.reverse().concat([1].concat(out_step_count));
     
     return [min_step, out_step, total_step]
+}
+
+function get_step_count_statistic(highlights, all_graph){
+        // get step_count randomly
+        in_step_count = [0, 0, 0, 0, 0];
+        out_step_count = [0, 0, 0, 0, 0];
+        highlight_nodes = highlights.map(d => all_graph[d]);
+        for (let i = 0; i < highlight_nodes.length; i++){
+            // in step
+            let from_list = highlight_nodes[i].from;
+            for(let j = 0; j < from_list.length; j++){
+                in_step_count[dist_100(from_list[j])] += 1;
+            }
+            let to_list = highlight_nodes[i].to;
+            for(let j = 0; j < to_list.length; j++){
+                out_step_count[dist_100(to_list[j])] += 1;
+            }
+        }
+        return [5, 5, in_step_count.reverse().concat([1].concat(out_step_count))];
+    
 }
 
 function get_multiple_connected_path(node, all_graph, in_step, out_step, threshold){
