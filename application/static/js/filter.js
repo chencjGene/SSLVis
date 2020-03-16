@@ -98,6 +98,8 @@ let FilterLayout = function (container) {
         edge_type_checkboxes["out"] = container.select("#out-checkbox");
         edge_type_checkboxes["within"] = container.select("#within-checkbox");
         edge_type_checkboxes["between"] = container.select("#between-checkbox");
+
+
     };
 
     that.set_data_manager = function(new_data_manager) {
@@ -221,6 +223,8 @@ let FilterLayout = function (container) {
         that.draw_edge_type_widget(edgetype_data, edgeType_svg, "edgetype", edgetype_range);
 
         set_font(that.container.selectAll("text"));
+        kdegree_svg.select("#current-kdegree-texts-start").attr("font-size", "12px").attr("fill", "rgb(127,127,127)");
+        kdegree_svg.select("#current-kdegree-texts-end").attr("font-size", "12px").attr("fill", "rgb(127,127,127)");
     };
 
     that.label_scented_widget = function() {
@@ -981,6 +985,23 @@ let FilterLayout = function (container) {
         let drag_interval = x.step();
         let x_0_min = x(min_xv);
         let x_0_max = x(min_xv)+x.bandwidth();
+        // draw marker
+        if(container.select("marker").size() === 0){
+            container.append("marker")
+                .attr("id", "arrow-gray")
+                .attr("refX", 2)
+                .attr("refY", 2)
+                .attr("markerWidth", 30)
+                .attr("markerHeight", 30)
+                .attr("orient", "auto")
+                .attr("markerUnits", "strokeWidth")
+                .append("path")
+                .attr("d", "M-1,16 L15,8 L-1,0")
+                .attr("stroke", "rgb(127,127,127)")
+                .attr("fill", "transparent")
+                .attr("opacity", 1)
+                .attr("stroke-width", 1);
+        }
 
         //draw bar chart
         if(container.select("#current-"+type+"-rects").size() === 0){
@@ -1015,28 +1036,65 @@ let FilterLayout = function (container) {
                 .attr("stroke-width", 5);
         }
 
+        // draw in out arrow
+        if(container.select(".current-"+type+"-arrow-in").size() === 0) {
+            container.append("path")
+                .attr("class", "current-"+type+"-arrow-in")
+                .attr("d", "M {0} {1} L {2} {3} L {4} {5}".format(container_width*0.1, container_height*  0.85, (container_width*0.1 + x_0_min)/2,  container_height*  0.85, x_0_min,  container_height*  0.85))
+                .attr("marker-end", d => "url(#arrow-gray)")
+                .attr("stroke", "rgb(127,127,127)")
+                .attr("stroke-width", 1);
+            container.append("path")
+                .attr("class", "current-"+type+"-arrow-out")
+                .attr("d", "M {0} {1} L {2} {3} L {4} {5}".format(x_0_max,  container_height*  0.85, (container_width*0.9 + x_0_max)/2,  container_height*  0.85, container_width*0.9, container_height*  0.85))
+                .attr("marker-end", d => "url(#arrow-gray)")
+                .attr("stroke", "rgb(127,127,127)")
+                .attr("stroke-width", 1)
+
+        }
+        else {
+            container
+                .select(".current-"+type+"-arrow-in")
+                .transition()
+                .duration(AnimationDuration)
+                .attr("d", "M {0} {1} L {2} {3} L {4} {5}".format(container_width*0.1, container_height*  0.85, (container_width*0.1 + x_0_min)/2,  container_height*  0.85, x_0_min,  container_height*  0.85))
+            container
+                .select(".current-"+type+"-arrow-out")
+                .transition()
+                .duration(AnimationDuration)
+                .attr("d", "M {0} {1} L {2} {3} L {4} {5}".format(x_0_max,  container_height*  0.85, (container_width*0.9 + x_0_max)/2,  container_height*  0.85, container_width*0.9, container_height*  0.85))
+        }
+
         if(container.select("#current-"+type+"-texts").size() === 0){
              let textsg = container.append("g")
                 .attr("id", "current-"+type+"-texts");
              textsg.append("text")
                  .attr("id", "current-"+type+"-texts-start")
-                 .attr("x", container_width*0.1-5)
-                 .attr("y", container_height* 0.7+10)
-                 .attr("text-anchor", "end")
-                 .text(range[0]);
+                 .attr("x", (container_width*0.1 + x_0_min)/2)
+                 .attr("y", container_height*  0.95)
+                 .attr("font-size", "12px")
+                 .attr("fill", "rgb(127,127,127)")
+                 .attr("text-anchor", "middle")
+                 .text("in");
              textsg.append("text")
                  .attr("id", "current-"+type+"-texts-end")
-                 .attr("x", container_width*0.9+5)
-                 .attr("y", container_height* 0.7+10)
-                 .attr("text-anchor", "start")
-                 .text(range[1]);
+                 .attr("x", (container_width*0.9 + x_0_max)/2)
+                 .attr("y", container_height*  0.95)
+                 .attr("font-size", "12px")
+                 .attr("fill", "rgb(127,127,127)")
+                 .attr("text-anchor", "middle")
+                 .text("out");
         }
         else {
             let textsg = container.select("#current-"+type+"-texts");
             textsg.select("#current-"+type+"-texts-start")
-                .text(range[0]);
+                .attr("x", (container_width*0.1 + x_0_min)/2)
+                .attr("y", container_height*  0.95)
+                .text("in");
             textsg.select("#current-"+type+"-texts-end")
-                .text(range[1]);
+                .attr("x", (container_width*0.9 + x_0_max)/2)
+                .attr("y", container_height*  0.95)
+                .text("out");
         }
         let textsg = container.select("#current-"+type+"-texts");
 
@@ -1101,7 +1159,7 @@ let FilterLayout = function (container) {
                 .attr("x",0)
                 .attr("y", -13)
                 .attr("text-anchor", "middle")
-                .text((type==="consistency"||type==="kdegree")?range[0]:range[0]/20);
+                .text("in:"+(-range[0]));
             start_drag_g.attr("transform", "translate("+(container_width*0.1+(range[0]+min_xv)*drag_interval-2)+","+(container_height*0.75)+")");
 
             end_drag = end_drag_g.append("path")
@@ -1116,12 +1174,12 @@ let FilterLayout = function (container) {
                 .attr("fill", "none")
                 .attr("stroke", "black")
                 .attr("stroke-width", 1)
-                .attr("d", "M0 0 L 4 -4 L 15 -4 L 15 -20 L -15 -20 L -15 -4 L -4 -4 Z");
+                .attr("d", "M0 0 L 4 -4 L 19 -4 L 19 -20 L -19 -20 L -19 -4 L -4 -4 Z");
             end_text.append("text")
                 .attr("x",0)
                 .attr("y", -13)
                 .attr("text-anchor", "middle")
-                .text((type==="consistency"||type==="kdegree")?range[1]:(range[1]+1)/20);
+                .text("out:"+range[1]);
             end_drag_g.attr("transform", "translate("+(Math.min(container_width*0.1+(range[1]+min_xv+1)*drag_interval+2, container_width*0.9))+","+(container_height*0.75)+")");
         }
         else {
@@ -1133,8 +1191,8 @@ let FilterLayout = function (container) {
             });
             start_text = container.select(".start-text");
             end_text = container.select(".end-text");
-            start_text.select("text").text((type==="consistency"||type==="kdegree")?range[0]:range[0]/20);
-            end_text.select("text").text((type==="consistency"||type==="kdegree")?range[1]:(range[1]+1)/20);
+            start_text.select("text").text("in:"+(-range[0]));
+            end_text.select("text").text("out:"+range[1]);
             start_drag_g.transition()
                 .duration(AnimationDuration)
                 .attr("transform", "translate("+(container_width*0.1+(range[0]+min_xv)*drag_interval-2)+","+(container_height*0.75)+")");
@@ -1179,8 +1237,8 @@ let FilterLayout = function (container) {
                                     //     that.update_widget_showing_items(d);
                                     // }
                                     mrange[0] = i-min_xv;
-                                    start_text.select("text").text(mrange[0]);
-                                    end_text.select("text").text(mrange[1]);
+                                    start_text.select("text").text("in:"+(-mrange[0]));
+                                    end_text.select("text").text("out:"+mrange[1]);
                                 }
                                 return 1
                             }
@@ -1193,8 +1251,8 @@ let FilterLayout = function (container) {
                                 //     that.update_widget_showing_items(d);
                                 // }
                                 mrange[0] = i+1-min_xv;
-                                start_text.select("text").text(mrange[0]);
-                                    end_text.select("text").text(mrange[1]);
+                                start_text.select("text").text("in:"+(-mrange[0]));
+                                    end_text.select("text").text("out:"+mrange[1]);
 
 
                             }
@@ -1235,8 +1293,8 @@ let FilterLayout = function (container) {
                                     //     that.update_widget_showing_items(d);
                                     // }
                                     mrange[1] = i-min_xv;
-                                    start_text.select("text").text(mrange[0]);
-                                    end_text.select("text").text(mrange[1]);
+                                    start_text.select("text").text("in:"+(-mrange[0]));
+                                    end_text.select("text").text("out:"+mrange[1]);
 
                                 }
                                 return 1
@@ -1250,8 +1308,8 @@ let FilterLayout = function (container) {
                                 //     that.update_widget_showing_items(d);
                                 // }
                                 mrange[1] = i-1-min_xv;
-                                start_text.select("text").text(mrange[0]);
-                                    end_text.select("text").text(mrange[1]);
+                                start_text.select("text").text("in:"+(-mrange[0]));
+                                    end_text.select("text").text("out:"+mrange[1]);
                             }
                             return 0.5
                         })
