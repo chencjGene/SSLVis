@@ -32,6 +32,7 @@ function change_dist_mode(){
 }
 
 function reset_spinner(){
+    console.log("reset spinner");
     d3.select("#localk-button").select("use").attr("xlink:href", "#static-localk-icon");
     d3.select("#setk-button").select("use").attr("xlink:href", "#static-setk-icon");
     d3.select("#loaddataset-button").select("use").attr("xlink:href", "#static-upload-icon");

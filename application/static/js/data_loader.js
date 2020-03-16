@@ -736,6 +736,7 @@ DataLoaderClass = function () {
 
     that.update_graph_view = async function() {
         console.log("update graph view");
+        reset_spinner();
         await that.graph_view.component_update({
             "nodes":that.state.nodes,
             "path":that.state.path,
@@ -751,7 +752,7 @@ DataLoaderClass = function () {
             "edge_type_range": that.state.edge_type_range,
             "edit_state": that.state.edit_state
         });
-        reset_spinner();
+
     };
 
     that.graph_home_callback = function() {
