@@ -457,6 +457,10 @@ function quadrant(center, point){
 
 
 function label_layout(nodes, path, zoom_scale){
+    // let img_width = 12 * zoom_scale;
+    // let img_height = 12  * zoom_scale;
+    // let padding = 0  * zoom_scale;
+    
     let img_width = 6 * zoom_scale;
     let img_height = 6  * zoom_scale;
     let padding = 1  * zoom_scale;
@@ -505,6 +509,10 @@ function label_layout(nodes, path, zoom_scale){
         if (nodes[i].quad === undefined){
             nodes[i].quad = [0, 0, 0, 0]; // 0 for candidate; 1 for taken; -1 for forbidden
         }
+        let m = Math.max(...nodes[i].quad);
+        if (m < 1){
+            nodes[i].quad = [0, 0, 0, 0];
+        }
         for (let j = 0; j < 4; j++){
             let rect = return_rect(nodes[i], j);
             for (let k = 0; k < path.length; k++){
@@ -536,7 +544,8 @@ function label_layout(nodes, path, zoom_scale){
         }
     }
     nodes.sort( (a,b) => b.placed - a.placed);
-
+    // nodes.sort( (a,b) => (b.id===9867) - (a.id===9867));
+    // console.log("label layout nodes", nodes);
     // path.forEach(d => {
     //     let src = d[0];
     //     let tgt = d[1];
@@ -651,7 +660,7 @@ function get_step_count_statistic(highlights, all_graph){
                 out_step_count[dist_100(to_list[j])] += 1;
             }
         }
-        return [5, 5, in_step_count.reverse().concat([1].concat(out_step_count))];
+        return [5, 5, in_step_count.reverse().concat([highlights.length].concat(out_step_count))];
     
 }
 
