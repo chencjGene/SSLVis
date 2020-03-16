@@ -250,6 +250,22 @@ let GraphLayout = function (container) {
         nodes = nodes.concat(that.focus_nodes);
         nodes = delRepeatDictArr(nodes);
 
+        // get step_count randomly
+        in_step_count = [0, 0, 0, 0, 0];
+        out_step_count = [0, 0, 0, 0, 0];
+        for (let i = 0; i < nodes.length; i++){
+            // in step
+            let from_list = nodes[i].from;
+            for(let j = 0; j < from_list.length; j++){
+                in_step_count[dist_100(from_list[j])] += 1;
+            }
+            let to_list = nodes[i].to;
+            for(let j = 0; j < to_list.length; j++){
+                out_step_count[dist_100(to_list[j])] += 1;
+            }
+        }
+        that.step_count = [5, 5, in_step_count.concat([1].concat(out_step_count))];
+
         that.linked_nodes = [];
         imgs = [];
         if (that.focus_nodes.length === 1 && that.selection_box.length === 0){

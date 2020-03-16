@@ -128,6 +128,25 @@ let twoD_sum = function(mat){
     return sum;
 };
 
+let dist_100 = function(n){
+    n = n % 100;
+    if (n < 50){
+        return 0;
+    }
+    else if (n < 70){
+        return 1;
+    }
+    else if (n < 85){
+        return 2;
+    }
+    else if (n < 95){
+        return 3;
+    }
+    else{
+        return 4;
+    }
+}
+
 let oneD_sum = function(vec){
     let sum = 0;
     for (let i = 0; i < vec.length; i++){
