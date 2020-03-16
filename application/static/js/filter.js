@@ -128,6 +128,10 @@ let FilterLayout = function (container) {
         edgetype_range = state.edgetype_range;
         kdegree_widget_data = state.kdegree_widget_data;
         kdegree_widget_range = state.kdegree_widget_range;
+        if(kdegree_widget_data.length === 1){
+            kdegree_widget_data = [0,kdegree_widget_data[0], 0];
+            kdegree_widget_range = [-1,1];
+        }
 
         // init flags
         kdegree_items = {};
