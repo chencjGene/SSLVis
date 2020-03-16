@@ -234,6 +234,9 @@ let GraphLayout = function (container) {
         add_labeled_label = state.edit_state.labels;
         delete_edges = state.edit_state.deleted_edges.map(d => d[0]+","+d[1]);
 
+        // rescale
+        if(rescale) that._center_tsne(nodes);
+
         
         for (let type of edge_type_range){
             let path_in_this_type = all_path[type]
@@ -309,6 +312,37 @@ let GraphLayout = function (container) {
         }
         path = tmp_path;
 
+        // remove glyps not in highligth
+        if(highlights.length > 0){
+            glyphs = glyphs.filter(d => highlights.indexOf(d) > 0)
+        }
+        // remove glyphs overlap
+        let tmp_glyphs = [];
+        for(let glyph_id of glyphs){
+            let glyph_node = state.nodes[glyph_id];
+            let source = {
+                x: that.center_scale_x(glyph_node.x),
+                y: that.center_scale_y(glyph_node.y)
+            };
+            let overlap = false;
+            for(let remain_glyph_id of tmp_glyphs){
+                let remain_glyph_node = state.nodes[remain_glyph_id];
+                let target = {
+                    x: that.center_scale_x(remain_glyph_node.x),
+                    y: that.center_scale_y(remain_glyph_node.y)
+                };
+                let distance = that.get_distance(source, target);
+                if(distance < (uncertainty_glyph_radius*2) * that.zoom_scale ){
+                    overlap = true;
+                    break;
+                }
+            }
+            if(!overlap){
+                tmp_glyphs.push(glyph_id);
+            }
+        }
+        glyphs = tmp_glyphs;
+
         // }
         // glyphs
         // glyphs = that.get_top_k_uncertainty(nodes, 20);
@@ -334,8 +368,6 @@ let GraphLayout = function (container) {
 
     that._update_view = function() {
         return new Promise(async function (resolve, reject) {
-            // rescale
-            if(rescale) that._center_tsne(nodes);
             //
             // let nodes_ary = Object.values(nodes);
             let nodes_ary = nodes;
@@ -616,7 +648,8 @@ let GraphLayout = function (container) {
                         return
                     }
                     let node = d3.select(this);
-                    node.attr("r", 5 * that.zoom_scale);
+                    node.attr("r", (glyphs.indexOf(d.id)>-1?9:5) * that.zoom_scale);
+                    return;
                     let source = {
                         x:that.center_scale_x(d.x),
                         y:that.center_scale_y(d.y)
@@ -668,6 +701,7 @@ let GraphLayout = function (container) {
                     if(visible_items[d.id] === false) return;
                     let node = d3.select(this);
                     node.attr("r", d => that.r(d.id));
+                    return;
                     nodes_in_group.transition()
                                 .duration(500)
                                 .attr("cx", d => that.center_scale_x(d.x))
@@ -864,11 +898,12 @@ let GraphLayout = function (container) {
     };
 
     that.r = function(id) {
-        if( highlights.indexOf(id) > -1){
-            return 5 * that.zoom_scale;
-        }
-        else if(glyphs.indexOf(id) > -1 && uncertainty_type >1){
+
+        if(glyphs.indexOf(id) > -1 && uncertainty_type >1){
             return 7 * that.zoom_scale;
+        }
+        else if( highlights.indexOf(id) > -1){
+            return 5 * that.zoom_scale;
         }
         return 3.5 * that.zoom_scale
         
