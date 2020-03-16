@@ -198,11 +198,11 @@ let GraphLayout = function (container) {
     that.set_data_manager = function(new_data_manager) {
         that.data_manager = new_data_manager;
         that.svg.on("click", function () {
-            // if($("#lasso-btn").css("background-color") !== "rgb(255, 255, 255)"){
+            if($("#select-edge-btn").css("background-color") === "rgb(255, 255, 255)"){
                 // that.data_manager.highlight_nodes([]);
                 console.log("click svg");
                 that.highlight([]);
-            // }
+            }
 
         })
     };
@@ -871,7 +871,7 @@ let GraphLayout = function (container) {
                     })
                 .on("mousedown", function (d) {
                     console.log("mousedown", d);
-                    that.data_manager.update_edit_state([d], "delete edge");
+                    that.data_manager.update_edit_state(d, "delete edge");
                 })
                 .transition()
                 .duration(AnimationDuration)

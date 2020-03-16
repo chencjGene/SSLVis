@@ -1028,9 +1028,9 @@ let FilterLayout = function (container) {
             container.append("g")
                 .attr("id","current-"+type+"-axis-in")
                 .append("line")
-                .attr("x1", container_width*0.1+range[0]*drag_interval-2)
+                .attr("x1", x_0_minband)
                 .attr("y1", container_height*  0.7)
-                .attr("x2", Math.min(container_width*0.1+(range[1]+1)*drag_interval+2, container_width*0.9))
+                .attr("x2", x_0_maxband)
                 .attr("y2", container_height*  0.7)
                 .attr("stroke", "rgb(166,166,166)")
                 .attr("stroke-linecap", "round")
@@ -1122,7 +1122,7 @@ let FilterLayout = function (container) {
             .attr("height", function(d) {
                 return container_height*  0.7 - y(d/max_len);
             })
-            .attr("opacity", 1);
+            .attr("opacity", (d,i) => i=== min_xv?1:0.5);
         //update
         rects.transition()
             .duration(AnimationDuration)
@@ -1132,7 +1132,7 @@ let FilterLayout = function (container) {
             .attr("height", function(d) {
                 return container_height*  0.7 - y(d/max_len);
             })
-            .attr("opacity", 1);
+            .attr("opacity", (d,i) => i=== min_xv?1:0.5);
         //remove
         rects.exit()
             .transition()
@@ -1172,7 +1172,7 @@ let FilterLayout = function (container) {
                 .attr("y", -13)
                 .attr("text-anchor", "middle")
                 .text("in:"+(-range[0]));
-            start_drag_g.attr("transform", "translate("+(container_width*0.1+(range[0]+min_xv)*drag_interval-2)+","+(container_height*0.75)+")");
+            start_drag_g.attr("transform", "translate("+(x_0_minband)+","+(container_height*0.75)+")");
 
             end_drag = end_drag_g.append("path")
                 .attr("class", "end-drag")
@@ -1192,7 +1192,7 @@ let FilterLayout = function (container) {
                 .attr("y", -13)
                 .attr("text-anchor", "middle")
                 .text("out:"+range[1]);
-            end_drag_g.attr("transform", "translate("+(Math.min(container_width*0.1+(range[1]+min_xv+1)*drag_interval+2, container_width*0.9))+","+(container_height*0.75)+")");
+            end_drag_g.attr("transform", "translate("+(x_0_maxband)+","+(container_height*0.75)+")");
         }
         else {
             start_drag = container.select(".start-drag").each(function () {
@@ -1207,16 +1207,16 @@ let FilterLayout = function (container) {
             end_text.select("text").text("out:"+range[1]);
             start_drag_g.transition()
                 .duration(AnimationDuration)
-                .attr("transform", "translate("+(container_width*0.1+(range[0]+min_xv)*drag_interval-2)+","+(container_height*0.75)+")");
+                .attr("transform", "translate("+(x_0_minband)+","+(container_height*0.75)+")");
             end_drag_g.transition()
                 .duration(AnimationDuration)
-                .attr("transform", "translate("+(Math.min(container_width*0.1+(range[1]+min_xv+1)*drag_interval+2, container_width*0.9))+","+(container_height*0.75)+")");
+                .attr("transform", "translate("+(x_0_maxband)+","+(container_height*0.75)+")");
         }
 
 
 
-        container.select("#current-"+type+"-axis-in").select("line").attr("x1", container_width*0.1+(range[0]+min_xv)*drag_interval-2)
-            .attr("x2", Math.min(container_width*0.1+(range[1]+min_xv+1)*drag_interval+2, container_width*0.9));
+        container.select("#current-"+type+"-axis-in").select("line").attr("x1", x_0_minband)
+            .attr("x2", x_0_maxband);
 
         start_drag.call(d3.drag()
                     .on("drag", function () {

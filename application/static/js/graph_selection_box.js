@@ -116,8 +116,8 @@ GraphLayout.prototype._create_selection_box = function(){
                 d.y = d3.event.y;
                 that._update_selection_box();
             })
-            .on("end", function(){
-                that.show_edges();
+            .on("end", async function(){
+                await that.show_edges();
             });
     let transform = that.get_transform();
     console.log("get transform:", transform);
@@ -165,8 +165,8 @@ GraphLayout.prototype._create_selection_box = function(){
                 d.height= event[1] - d.y;
 
                 that._update_selection_box();
-        })).on("end", function(){
-            that.show_edges();
+        })).on("end", async function(){
+            await that.show_edges();
         });
     resize_box_group.append("rect")
         .attr("class", "resize-rect")
@@ -205,8 +205,8 @@ GraphLayout.prototype._create_selection_box = function(){
                 .classed("cross-line-hide", true)
                 .classed("cross-line", false);
             })
-            .on("click", function(d){
-                that.data_manager.delete_box(d.id);
+            .on("click", async function(d){
+                await that.data_manager.delete_box(d.id);
             })
     cross_group.append("line")
             .attr("id", "cross-line-1")
@@ -348,9 +348,9 @@ GraphLayout.prototype.set_rect_selection = function(){
             that._update_selection_box();
         })
     })
-    .on("mouseup", function(){
+    .on("mouseup", async function(){
         that.svg.on("mousemove", null);
-        that.show_edges();
+        await that.show_edges();
         that.highlight_plg.reset_selection();
     })
 };
@@ -399,7 +399,7 @@ GraphLayout.prototype._remove_snapshot = function(){
 
 };
 
-GraphLayout.prototype.delete_box = function(id){
+GraphLayout.prototype.delete_box = async function(id){
     let that = this;
     for(let i = 0; i < that.selection_box.length; i++){
         if (that.selection_box[i].id === id){
@@ -408,7 +408,7 @@ GraphLayout.prototype.delete_box = function(id){
         }
     }
     that._remove_selection_box();
-    that.show_edges();
+    await that.show_edges();
 }
 
 GraphLayout.prototype.get_path = function(){

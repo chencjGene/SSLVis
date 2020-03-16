@@ -171,10 +171,10 @@ let EditLayout = function(){
                 name: 'Delete',
                 color: '',
                 className: "iw-mnotSelected add-menu-item",
-                fun: function (d) {
+                fun: async function (d) {
                     console.log("delete add edge menu", focus_data, focus_mode);
                     // that.editing();
-                    that.data_manager.delete_box(focus_data.id);
+                    await that.data_manager.delete_box(focus_data.id);
                 }
             });
             click_edge_menu = menu;
