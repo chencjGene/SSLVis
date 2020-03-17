@@ -179,7 +179,7 @@ DataLoaderClass.prototype.set_influence_filter = function(callback){
 DataLoaderClass.prototype.local_update_k_handler = function(callback){
     let that = this;
 
-    function _local_update_k_handler(data){
+    async function _local_update_k_handler(data){
         console.log("local_update_k_handler", data);
         let complete_graph = data.graph.graph.nodes;
         that.state.complete_graph = complete_graph;
@@ -200,7 +200,7 @@ DataLoaderClass.prototype.local_update_k_handler = function(callback){
         let level = data.level;
         let best_k = data.best_k;
 
-        if(callback) callback(must_show_nodes, area, level, best_k);
+        if(callback) await callback(must_show_nodes, area, level, best_k);
     }
     return _local_update_k_handler;
 };

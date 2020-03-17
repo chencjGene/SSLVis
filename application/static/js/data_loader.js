@@ -131,7 +131,9 @@ DataLoaderClass = function () {
             labeled_idxs: [],
             labels: [],
             deleted_edges: []
-        }
+        },
+        // info view:
+        re_fetch: false,
     };
 
     // Define topological structure of data retrieval
@@ -180,7 +182,9 @@ DataLoaderClass = function () {
 
 
                 that.get_dist_view(show_ids);
+                that.state.re_fetch = true;
                 that.update_graph_view();
+                that.state.re_fetch = false;
                 that.get_history();
                 d3.select("#refresh-btn").select("use").attr("xlink:href", "#static-update-icon");
             }), "json", "POST");
@@ -302,7 +306,7 @@ DataLoaderClass = function () {
     that.local_update_k = function(){
         let params = "?dataset=" + that.dataset;
         that.local_update_k_node = new request_node(that.local_update_k_url + params,
-            that.local_update_k_handler(function(must_show_nodes, area, level, best_k){
+            that.local_update_k_handler(async function(must_show_nodes, area, level, best_k){
                 console.log("best k", best_k);
                 $(".best-k-text").attr("hidden", false);
                 $(".best-k-text").html("Best k: "+best_k);
@@ -315,14 +319,17 @@ DataLoaderClass = function () {
                         show_ids.push(node_id);
                     }
                 }
-                that.get_dist_view(show_ids);
 
                 that.set_filter_data(that.state.nodes);
                 let ranges = that.filter_view.get_ranges();
                 that.set_filter_range(ranges[0], ranges[1], ranges[2], ranges[3], ranges[4], ranges[5], ranges[6], ranges[7]);
-                that.update_filter_view();
+                await that.update_filter_view();
 
-                that.update_graph_view();
+                that.state.re_fetch = true;
+                await that.update_graph_view();
+                that.state.re_fetch = false;
+                that.get_dist_view(show_ids);
+
                 that.get_history();
             }), "json", "POST");
         // let data = {selected_idxs};
@@ -362,7 +369,8 @@ DataLoaderClass = function () {
             })
         }
         await that.image_view.component_update({
-            "img_grid_urls": that.state.img_grid_urls
+            "img_grid_urls": that.state.img_grid_urls,
+            "re_fetch": that.state.re_fetch
         })
     };
 

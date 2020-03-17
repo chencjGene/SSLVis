@@ -101,7 +101,7 @@ let ImageLayout = function (container){
         let old_ids = img_grid_urls.map(d => d.id);
         new_ids.sort((a, b) => a-b);
         old_ids.sort((a, b) => a-b);
-        if(new_ids+'' === old_ids+'') return ;
+        if(new_ids+'' === old_ids+'' && (!state.re_fetch)) return ;
 
 
         await that._update_data(state);
