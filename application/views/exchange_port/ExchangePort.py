@@ -112,6 +112,7 @@ class ExchangePortClass(object):
         for id in graph["nodes"]:
             self.current_ids.append(int(id))
         res = jsonify(res)
+        self.local_update_step = 0
         logger.info("jsonify done")
         return res
 
