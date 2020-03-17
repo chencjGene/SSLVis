@@ -274,7 +274,7 @@ f: {
 				min: 1,
 				max: 9,
 				range: true, 
-				value: [2,3]
+				value: [1,4]
 			});
 		$("#setk-button").on("click", function(slideEvt){
 			d3.select(this).select("use").attr("xlink:href", "#animate-setk-icon")
