@@ -482,8 +482,7 @@ class Anchors:
         degree = self.data_degree
         m = self.data.get_new_id_map()
         m_reverse = self.data.get_new_map_reverse()
-        if self.entropy is None:
-            self.entropy = self.get_entropy()
+        self.entropy = self.get_entropy()
         # selection = [m[i] for i in selection]
         def mapfunc(id):
             return int(m_reverse[id])

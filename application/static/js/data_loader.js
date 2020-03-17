@@ -172,6 +172,13 @@ DataLoaderClass = function () {
                         show_ids.push(node_id);
                     }
                 }
+
+                that.set_filter_data(that.state.nodes);
+                let ranges = that.filter_view.get_ranges();
+                that.set_filter_range(ranges[0], ranges[1], ranges[2], ranges[3], ranges[4], ranges[5], ranges[6], ranges[7]);
+                that.update_filter_view();
+
+
                 that.get_dist_view(show_ids);
                 that.update_graph_view();
                 that.get_history();
@@ -309,6 +316,12 @@ DataLoaderClass = function () {
                     }
                 }
                 that.get_dist_view(show_ids);
+
+                that.set_filter_data(that.state.nodes);
+                let ranges = that.filter_view.get_ranges();
+                that.set_filter_range(ranges[0], ranges[1], ranges[2], ranges[3], ranges[4], ranges[5], ranges[6], ranges[7]);
+                that.update_filter_view();
+
                 that.update_graph_view();
                 that.get_history();
             }), "json", "POST");

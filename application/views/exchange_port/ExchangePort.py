@@ -25,6 +25,8 @@ class ExchangePortClass(object):
         self.running = False
         self.current_ids = []
         self.anchor = Anchors()
+        self.video_debug = True
+        self.local_update_step = 0
         if self.dataname is None:
             self.model = None
         else:
@@ -115,7 +117,19 @@ class ExchangePortClass(object):
 
     def local_update_k(self, data):
         # self.model.local_update(data["selected_idxs"], local_k=3)
-        _, best_k = self.model.local_search_k(data["selected_idxs"], list(range(data["range"][0], data["range"][1]+1)), data["selected_categories"])
+        if self.video_debug:
+            assert self.local_update_step <2
+            categories = [1 for i in range(10)]
+            if self.local_update_step == 0:
+                c = json.loads(open(os.path.join(self.model.selected_dir, "local_1_idxs.txt"), "r").read().strip("\n"))
+                _, best_k = self.model.local_search_k(c, [1, 2, 3, 4], categories, simplifying=False, evaluate=True)
+                self.local_update_step += 1
+            else:
+                e = json.loads(open(os.path.join(self.model.selected_dir, "local_2_idxs.txt"), "r").read().strip("\n"))
+                _, best_k = self.model.local_search_k(e, [1, 2, 3, 4], categories, simplifying=True, evaluate=True)
+                self.local_update_step += 1
+        else:
+            _, best_k = self.model.local_search_k(data["selected_idxs"], list(range(data["range"][0], data["range"][1]+1)), data["selected_categories"])
         best_k = int(best_k)
         graph = self.anchor.get_nodes(data["wh"])
         res = {

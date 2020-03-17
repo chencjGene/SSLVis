@@ -47,6 +47,7 @@ let GraphLayout = function (container) {
     let nodes_group = null;
     let golds_group = null;
     let glyph_group = null;
+    let gradient_group = null;
     let path_in_group = null;
     let nodes_in_group = null;
     let golds_in_group = null;
@@ -54,6 +55,7 @@ let GraphLayout = function (container) {
     let legend_group = null;
     let img_in_group = null;
     let tmp_show_imgs = null;
+    let gradient_in_group = null;
     that.selection_group = null;
     that.snapshot_group = null;
 
@@ -124,6 +126,7 @@ let GraphLayout = function (container) {
             .attr("width", that.width)
             .attr("height", that.height);
         that.main_group = that.svg.append('g').attr('id', 'main_group');
+        gradient_group = that.main_group.append('defs').attr("id", "gradient-group");
         legend_group = that.main_group.append("g").attr("id", "legend-group-g");
         path_group = that.main_group.append("g").attr("id", "graph-path-g");
         nodes_group = that.main_group.append("g").attr("id", "graph-tsne-point-g");
@@ -198,7 +201,7 @@ let GraphLayout = function (container) {
     that.set_data_manager = function(new_data_manager) {
         that.data_manager = new_data_manager;
         that.svg.on("click", function () {
-            if($("#select-edge-btn").css("background-color") === "rgb(255, 255, 255)"){
+            if($("#select-edge-btn").css("background-color") === "rgba(0, 0, 0, 0)" || $("#select-edge-btn").css("background-color") === "rgb(255, 255, 255)"){
                 // that.data_manager.highlight_nodes([]);
                 console.log("click svg");
                 that.highlight([]);
@@ -295,7 +298,7 @@ let GraphLayout = function (container) {
         // show path when no highlights
         if(highlights.length === 0){
             path = [];
-            let golds = nodes.filter(d => d.label[0] > -1 || add_labeled_nodes.indexOf(d.id) > -1);
+            let golds = nodes.filter(d => d.label[0] > -1);
             for(let gold_node of golds){
                 let gold_node_cnt = 0;
                 for(let i=0; i<gold_node.to.length; i++){
@@ -450,6 +453,8 @@ let GraphLayout = function (container) {
                 .data(path_ary, d => d[0].id+","+d[1].id);
             img_in_group = that.label_group.selectAll("image")
                 .data(imgs, d => d.node.id);
+            gradient_in_group = gradient_group.selectAll("linearGradient")
+                .data(path_ary, d => d[0].id+","+d[1].id);
                 
             //
             // that.show_select_rect();
@@ -467,6 +472,7 @@ let GraphLayout = function (container) {
             golds_in_group = golds_group.selectAll("path");
             glyph_in_group = glyph_group.selectAll(".pie-chart");
             path_in_group = path_group.selectAll("path");
+            gradient_in_group = gradient_group.selectAll("linearGradient");
 
             if(highlight_plg.if_lasso()){
                 highlight_plg.set_lasso();
@@ -514,6 +520,12 @@ let GraphLayout = function (container) {
                 .transition()
                 .duration(remove_ani)
                 .attr("opacity", 0)
+                .on("end", resolve)
+                .remove();
+
+            gradient_in_group.exit()
+                .transition()
+                .duration(remove_ani)
                 .on("end", resolve)
                 .remove();
 
@@ -577,6 +589,18 @@ let GraphLayout = function (container) {
                 .on("end", resolve);
             that.uncertainty_glyph_update();
 
+            gradient_in_group
+                .attr("x1", d => that.center_scale_x(d[0].x))
+                .attr("y1", d => that.center_scale_y(d[0].y))
+                .attr("x2", d => that.center_scale_x(d[1].x))
+                .attr("y2", d => that.center_scale_y(d[1].y))
+                .each(function (d) {
+                    let linearGradient = d3.select(this);
+                    linearGradient.select(".stop-1")
+                        .attr("stop-color", d[0].label[iter]===-1?color_unlabel:color_label[d[0].label[iter]]);
+                    linearGradient.select(".stop-2")
+                        .attr("stop-color", d[1].label[iter]===-1?color_unlabel:color_label[d[1].label[iter]]);
+                });
 
             path_in_group
                 .attr("stroke-width", 2.0 * that.zoom_scale)
@@ -795,7 +819,7 @@ let GraphLayout = function (container) {
                 .attr("opacity", d => that.opacity(d.id))
                 .on("end", resolve);
 
-            const gradient = path_in_group.enter()
+            let gradient = gradient_in_group.enter()
                 .append("linearGradient")
                 .attr("gradientUnits", "userSpaceOnUse")
                 .attr("id", d => "path" + d[0].id + "-" + d[1].id)
@@ -804,9 +828,11 @@ let GraphLayout = function (container) {
                 .attr("x2", d => that.center_scale_x(d[1].x))
                 .attr("y2", d => that.center_scale_y(d[1].y));
             gradient.append("stop")
+                .attr("class", "stop-1")
                 .attr("offset", "0%")
                 .attr("stop-color", d => d[0].label[iter]===-1?color_unlabel:color_label[d[0].label[iter]]);
             gradient.append("stop")
+                .attr("class", "stop-2")
                 .attr("offset", "100%")
                 .attr("stop-color", d => d[1].label[iter]===-1?color_unlabel:color_label[d[1].label[iter]]);
 
@@ -1224,6 +1250,8 @@ let GraphLayout = function (container) {
                 .data([], d => d[0].id+","+d[1].id);
             img_in_group = that.label_group.selectAll("image")
                 .data(imgs, d => d.id);
+            gradient_in_group = gradient_group.selectAll("linearGradient")
+                .data([], d => d[0].id+","+d[1].id);
             await that._remove();
     };
 
