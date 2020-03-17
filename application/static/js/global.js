@@ -44,18 +44,18 @@ let SettingView = null;
 //     "#8c564b"
 // ];
 let CategoryColor = [
-    "#1f77b4",
-    "#ff7f0e",
-    "#2ca02c",
-    "#d62728",
-    "#17becf", // change
     "#8c564b",
+    "#ff7f0e",
+    "#17becf",
+    "#d62728",
+    "#1f77b4",
+    "#2ca02c",
     "#e377c2",
     "#ffdb45",
     "#bcbd22",
-    "#9467bd", // change
-    "#a6cee3",
-    "#b2df8a"];
+    "#9467bd"]
+    // "#a6cee3",
+    // "#b2df8a"];
 
 // let CategoryColor = ["#a6cee3",
 //     "#1f78b4",

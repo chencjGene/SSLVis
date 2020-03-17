@@ -213,7 +213,8 @@ let DistLayout = function (container) {
                             "source_class": j,
                             "target_class": k,
                             "level": i,
-                            "uid": "gc" + i + "-" + j + "-" + (i + 1) + "-" + k
+                            "uid": "gc" + i + "-" + j + "-" + (i + 1) + "-" + k,
+                            "suid": "gc-s" + i + "-" + j + "-" + (i + 1) + "-" + k,
                         })
                     }
                 }
@@ -555,8 +556,7 @@ let DistLayout = function (container) {
         const selected_gradient = selected_links_g.append("linearGradient")
             .attr("gradientUnits", "userSpaceOnUse")
             .attr("id", function (d) {
-                d.uid = "gc-s-" + d.source.name + "-" + d.target.name;
-                return d.uid;
+                return d.suid;
             })
             .attr("x1", d => d.source.x1)
             .attr("x2", d => d.target.x0);
@@ -568,7 +568,7 @@ let DistLayout = function (container) {
             .attr("stop-color", d => d.target.color);
         selected_links_g.append("path")
             .attr("d", d3.SelectedSankeyLinkHorizontal())
-            .attr("stroke", d => "url(#" + d.uid + ")")
+            .attr("stroke", d => "url(#" + d.suid + ")")
             .attr("stroke-width", function(d){
                 if (d.source_class === 0 && (d.target_class === 0 || d.target_class === 1)){
                     return d.selected_width;
