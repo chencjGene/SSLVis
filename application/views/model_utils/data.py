@@ -534,6 +534,12 @@ class GraphData(Data):
         None
 
     def remove_edge(self, removed_edges):
+        # DEBUG: for video case:
+        if len(removed_edges) == 1 and removed_edges[0][0] == 1623 and removed_edges[0][1] == 2574:
+            removed_edges.append([8630, 9140])
+            removed_edges.append([3475, 9140])
+        print("removed edges:", removed_edges)
+
         if len(removed_edges) > 0:
             self.actions.append("remove-edge")
         for edges in removed_edges:

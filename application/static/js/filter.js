@@ -980,13 +980,15 @@ let FilterLayout = function (container) {
         let container_height = widget_height;
         let paddinginner_len = (container_width * 0.8 - 11*distribution.length)/((distribution.length-1));
         let paddinginner = paddinginner_len/(11 + paddinginner_len);
-        let x = d3.scaleBand().rangeRound([container_width*0.1, container_width*0.9], .05).paddingInner(paddinginner).domain(d3.range(bar_cnt));
+        let x = d3.scaleBand().rangeRound([container_width*0.1, container_width*0.9], .05).paddingInner(paddinginner).paddingOuter(0.1).domain(d3.range(bar_cnt));
         let y = d3.scaleLinear().range([container_height*  0.7, container_height*0.05]).domain([0, 1]);
         let drag_interval = x.step();
         let x_0_min = x(min_xv);
         let x_0_max = x(min_xv)+x.bandwidth();
         let x_0_minband = x(min_xv)+x.bandwidth()/2-x.step()/2;
         let x_0_maxband = x(min_xv)+x.bandwidth()/2+x.step()/2;
+        let bandwidth = x.bandwidth();
+        let step = x.step();
         // draw marker
         if(container.select("marker").size() === 0){
             container.append("marker")
@@ -1122,7 +1124,7 @@ let FilterLayout = function (container) {
             .attr("height", function(d) {
                 return container_height*  0.7 - y(d/max_len);
             })
-            .attr("opacity", (d,i) => i=== min_xv?1:0.5);
+            .attr("opacity", (d,i) => Math.abs(i - min_xv)<=0?1:0.5);
         //update
         rects.transition()
             .duration(AnimationDuration)
@@ -1132,7 +1134,7 @@ let FilterLayout = function (container) {
             .attr("height", function(d) {
                 return container_height*  0.7 - y(d/max_len);
             })
-            .attr("opacity", (d,i) => i=== min_xv?1:0.5);
+            .attr("opacity", (d,i) => Math.abs(i - min_xv)<=0?1:0.5);
         //remove
         rects.exit()
             .transition()
@@ -1171,7 +1173,7 @@ let FilterLayout = function (container) {
                 .attr("x",0)
                 .attr("y", -13)
                 .attr("text-anchor", "middle")
-                .text("in:"+(-range[0]));
+                .text("in:"+(0));
             start_drag_g.attr("transform", "translate("+(x_0_minband)+","+(container_height*0.75)+")");
 
             end_drag = end_drag_g.append("path")
@@ -1191,7 +1193,7 @@ let FilterLayout = function (container) {
                 .attr("x",0)
                 .attr("y", -13)
                 .attr("text-anchor", "middle")
-                .text("out:"+range[1]);
+                .text("out:"+0);
             end_drag_g.attr("transform", "translate("+(x_0_maxband)+","+(container_height*0.75)+")");
         }
         else {
@@ -1203,8 +1205,8 @@ let FilterLayout = function (container) {
             });
             start_text = container.select(".start-text");
             end_text = container.select(".end-text");
-            start_text.select("text").text("in:"+(-range[0]));
-            end_text.select("text").text("out:"+range[1]);
+            start_text.select("text").text("in:"+(0));
+            end_text.select("text").text("out:"+0);
             start_drag_g.transition()
                 .duration(AnimationDuration)
                 .attr("transform", "translate("+(x_0_minband)+","+(container_height*0.75)+")");

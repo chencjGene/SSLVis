@@ -89,8 +89,8 @@ DataLoaderClass = function () {
         influence_widget_range: [-1, -1],
         consistency_widget_data: null,
         consistency_widget_range: [-1, -1],
-        kdegree_widget_data: [1,2,3,4,5,6],
-        kdegree_widget_range: [-3, 2],
+        kdegree_widget_data: [0,0,0],
+        kdegree_widget_range: [-1,1],
         edge_type_data: {
             "in":0,
             "out":0,

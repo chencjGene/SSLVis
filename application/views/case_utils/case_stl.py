@@ -12,10 +12,12 @@ class CaseSTL(CaseBase):
         super(CaseSTL, self).__init__(dataname)
 
     def run(self, k=6, evaluate=True, simplifying=False, step=None):
+        self.model.data.actions = []
         if step is None:
             step = self.base_config["step"]
         self._init_model(k=k, evaluate=evaluate, simplifying=simplifying)
         if step >= 1:
+            self.model.data.actions = []
             self.model.data.label_instance(
                 json.loads(open(os.path.join(self.model.selected_dir, "dog_idxs.txt"), "r").read().strip("\n")), [5, 5])
             self.model.data.label_instance([697], [5])
@@ -29,15 +31,18 @@ class CaseSTL(CaseBase):
 
         categories = [1 for i in range(10)]
         if step >= 2:
+            self.model.data.actions = []
             c = json.loads(open(os.path.join(self.model.selected_dir, "local_1_idxs.txt"), "r").read().strip("\n"))
             self.model.local_search_k(c, [1, 2, 3, 4], categories, simplifying=False, evaluate=True)
 
         if step >= 3:
+            self.model.data.actions = []
             e = json.loads(open(os.path.join(self.model.selected_dir, "local_2_idxs.txt"), "r").read().strip("\n"))
             self.model.local_search_k(e, [1, 2, 3, 4], categories, simplifying=True, evaluate=True)
         
         if step >= 4:
-            edge_list = [[31,1156], [31, 1864], [31, 4525], [31, 10133], [31, 11113]]
+            edge_list = [[1623, 2574]]
+            self.model.data.actions = []
             self.model.data.remove_edge(edge_list)
             self.model._training(rebuild=False, evaluate=True, simplifying=False)
 
