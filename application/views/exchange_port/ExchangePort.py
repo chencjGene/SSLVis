@@ -122,11 +122,11 @@ class ExchangePortClass(object):
             assert self.local_update_step <2
             categories = [1 for i in range(10)]
             if self.local_update_step == 0:
-                c = json.loads(open(os.path.join(self.model.selected_dir, "local_1_idxs.txt"), "r").read().strip("\n"))
+                c = json.loads(open(os.path.join(self.model.selected_dir, "local_2_idxs.txt"), "r").read().strip("\n"))
                 _, best_k = self.model.local_search_k(c, [1, 2, 3, 4], categories, simplifying=False, evaluate=True)
                 self.local_update_step += 1
             else:
-                e = json.loads(open(os.path.join(self.model.selected_dir, "local_2_idxs.txt"), "r").read().strip("\n"))
+                e = json.loads(open(os.path.join(self.model.selected_dir, "local_1_idxs.txt"), "r").read().strip("\n"))
                 _, best_k = self.model.local_search_k(e, [1, 2, 3, 4], categories, simplifying=True, evaluate=True)
                 self.local_update_step += 1
         else:
