@@ -92,6 +92,16 @@ class Data(object):
             idx_info = pickle_load_data(idx_info_path)
             self.train_idx = idx_info["train_idx"]
             self.selected_labeled_idx = idx_info["selected_labeled_idx"]
+            if self.dataname == "stl":
+                # relabel:
+                removed_idx = self.train_idx[39]
+                added_idx = self.train_idx[9081]
+                tmp_labeled_idx = [added_idx]
+                for old_idx in self.selected_labeled_idx:
+                    if old_idx != removed_idx:
+                        tmp_labeled_idx.append(old_idx)
+                self.selected_labeled_idx = np.array(tmp_labeled_idx)
+
             self.rest_idxs = np.array(range(len(self.train_idx)))
             return
         #

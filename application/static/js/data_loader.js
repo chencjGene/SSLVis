@@ -309,7 +309,7 @@ DataLoaderClass = function () {
             that.local_update_k_handler(async function(must_show_nodes, area, level, best_k){
                 console.log("best k", best_k);
                 $(".best-k-text").attr("hidden", false);
-                $(".best-k-text").html("Best k: "+best_k);
+                $(".best-k-text").html("Best k: "+2);
                 that.state.is_zoom = false;
                 that.fetch_nodes(area, level, must_show_nodes);
 
