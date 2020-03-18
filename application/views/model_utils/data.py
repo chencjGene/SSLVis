@@ -94,11 +94,11 @@ class Data(object):
             self.selected_labeled_idx = idx_info["selected_labeled_idx"]
             if self.dataname == "stl":
                 # relabel:
-                removed_idx = self.train_idx[39]
-                added_idx = self.train_idx[9081]
-                tmp_labeled_idx = [added_idx]
+                removed_idx = [self.train_idx[39], self.train_idx[33]]
+                added_idx = [self.train_idx[9081], self.train_idx[7427]]
+                tmp_labeled_idx = added_idx
                 for old_idx in self.selected_labeled_idx:
-                    if old_idx != removed_idx:
+                    if old_idx not in removed_idx:
                         tmp_labeled_idx.append(old_idx)
                 self.selected_labeled_idx = np.array(tmp_labeled_idx)
 
