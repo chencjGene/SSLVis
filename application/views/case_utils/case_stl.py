@@ -19,9 +19,8 @@ class CaseSTL(CaseBase):
         if step >= 1:
             self.model.data.actions = []
             self.model.data.label_instance(
-                json.loads(open(os.path.join(self.model.selected_dir, "dog_idxs.txt"), "r").read().strip("\n")), [5, 5])
-            self.model.data.label_instance([697], [5])
-        
+                json.loads(open(os.path.join(self.model.selected_dir, "dog_idxs.txt"), "r").read().strip("\n")), [5, 5, 5])
+
             # self._init_model(k=k, evaluate=True, simplifying=simplifying)
             self.model._training(rebuild=False, evaluate=False, simplifying=False)
         
@@ -41,7 +40,7 @@ class CaseSTL(CaseBase):
             self.model.local_search_k(e, [1, 2, 3, 4], categories, simplifying=True, evaluate=True)
         
         if step >= 4:
-            edge_list = [[1623, 2574]]
+            edge_list = [[1609, 2555]]
             self.model.data.actions = []
             self.model.data.remove_edge(edge_list)
             self.model._training(rebuild=False, evaluate=True, simplifying=False)
