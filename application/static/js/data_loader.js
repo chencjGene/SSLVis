@@ -722,6 +722,7 @@ DataLoaderClass = function () {
     //graph view:
     // first load graph
     that.get_graph_view = function() {
+
         that.state.rescale = true;
         that.state.highlights = [];
         // that.state.path = [];

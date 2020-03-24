@@ -56,6 +56,8 @@ DataLoaderClass.prototype.get_graph_handler = function (callback) {
                 next[j] = next[j].map(d => next_index[d]);
             }
         }
+        that.add_data_to_high_level([693, 1402, 4688], hierarchy);
+
         that.state.hierarchy = hierarchy;
         let graph = that.get_nodes_from_complete_graph(hierarchy[0].index);
 

@@ -141,6 +141,8 @@ class SSLModel(object):
         self.ent = ent
         self.pred_dist = pred_dist
         self.graph = affinity_matrix
+        unconnected = self.data._find_unconnected_nodes(self.graph, np.where(self.data.get_train_label()>-1)[0])
+        print("Unconnected cnt:{}".format(unconnected.shape[0]))
         print(process_data.shape)
         pred_y = pred_dist.argmax(axis=1)
         acc = accuracy_score(train_gt, pred_y)
@@ -367,6 +369,7 @@ class SSLModel(object):
         normalizer = np.atleast_2d(np.sum(probabilities, axis=1)).T
         probabilities /= normalizer
         acc = accuracy_score(test_y, probabilities.argmax(axis=1))
+        print(confusion_matrix(test_y, probabilities.argmax(axis=1)))
         logger.info("test accuracy: {}".format(acc))
         return probabilities.argmax(axis=1)
 
@@ -528,8 +531,8 @@ class SSLModel(object):
         logger.info("test accuracy: {}".format(acc))
         print(s/test_X.shape[0])
 
-    @async_once
-    def adaptive_evaluation_v2(self):
+    # @async_once
+    def adaptive_evaluation_v2(self, bound=None):
         train_X = self.data.get_train_X()
         affinity_matrix = self.data.get_graph()
         pred = self.pred_dist
@@ -538,12 +541,12 @@ class SSLModel(object):
         test_y = self.data.get_test_ground_truth()
         nn_fit = self.data.get_neighbors_model()
         logger.info("nn construction finished!")
-        max_k = 31
+        max_k = 50
         neighbor_result = nn_fit.kneighbors_graph(test_X,
                                                   max_k,
                                                   mode="distance")
         s = 0
-        low_bound = 3
+        low_bound = 13 if bound is None else bound
         degree = self.get_in_out_degree(affinity_matrix)[:,1]
         degree = np.sqrt(1/degree)
         labels = []
@@ -592,7 +595,7 @@ class SSLModel(object):
             f_tests.append(min_f_test)
         print(confusion_matrix(test_y, labels))
         acc = accuracy_score(test_y, labels)
-        logger.info("test accuracy: {}".format(acc))
+        logger.info("Bound is {}, test accuracy: {}".format(low_bound, acc))
         print(s / test_X.shape[0])
         return np.array(labels), np.array(fs), np.array(ks), np.array(neighbors), np.array(neighbors_pred), f_tests
 
