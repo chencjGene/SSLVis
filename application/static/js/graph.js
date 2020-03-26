@@ -24,6 +24,7 @@ let GraphLayout = function (container) {
     let path_mid_width = (path_begin_width+path_end_width)/2;
     let bundling_force_S = 0.02;
     let bundling_elect_scale = 6;
+    let is_local_k = false;
 
     // other consts
     let btn_select_color = "#560731";
@@ -75,6 +76,7 @@ let GraphLayout = function (container) {
     let aggregate = [];
     let rect_nodes = [];
     let imgs = [];
+    let nodes_dict = null;
 
     //edit info
     let add_labeled_nodes = [];
@@ -219,6 +221,7 @@ let GraphLayout = function (container) {
 
     that._update_data = function(state) {
         nodes_in_this_level = state.nodes;
+        nodes_dict = state.nodes;
         nodes = JSON.parse(JSON.stringify(nodes_in_this_level));
         nodes = Object.values(nodes);
         is_show_path = state.is_show_path;
@@ -745,9 +748,17 @@ let GraphLayout = function (container) {
                     that.data_manager.update_edit_state(d.id, "instance");
                 })
                 .on("click", function (d) {
+
                     // check if hided
                     d3.event.stopPropagation();
                     if(visible_items[d.id] === false) return;
+                    if(is_local_k){
+                        d3.event.stopPropagation();
+                        let new_highlights = JSON.parse(JSON.stringify(highlights));
+                        new_highlights.push(d.id);
+                        that.data_manager.highlight_nodes(new_highlights);
+                        return;
+                    }
                     // that.data_manager.highlight_nodes([d.id]);
                     //  that.highlight([d.id]);
                     // that.focus_nodes = [d];
@@ -785,7 +796,14 @@ let GraphLayout = function (container) {
                     // check if hided
                     d3.event.stopPropagation();
                     if(visible_items[d.id] === false) return;
-                     that.highlight([d.id]);
+                    if(is_local_k){
+                        d3.event.stopPropagation();
+                        let new_highlights = JSON.parse(JSON.stringify(highlights));
+                        new_highlights.push(d.id);
+                        that.data_manager.highlight_nodes(new_highlights);
+                        return;
+                    }
+                    that.highlight([d.id]);
                 })
                 .transition()
                 .duration(AnimationDuration)
@@ -1844,6 +1862,27 @@ let GraphLayout = function (container) {
                 .attr("cx", 0)
                 .attr("cy", 0)
         }
+    };
+
+    that.extend_local_update = function() {
+        let highlights_id = highlights;
+        // TODO : extend algorithm
+        let new_highlights = JSON.parse(JSON.stringify(highlights_id));
+        for(let id of highlights_id){
+            let in_nodes = nodes_dict[id].from;
+            for(let neighbor_id of in_nodes){
+                if(new_highlights.indexOf(neighbor_id) === -1){
+                    new_highlights.push(neighbor_id);
+                }
+            }
+        }
+        console.log("Extend nodes:", new_highlights);
+        is_local_k = true;
+        that.data_manager.highlight_nodes(new_highlights);
+    };
+
+    that.set_is_local_k = function(flag) {
+        is_local_k = flag;
     };
 
     // debug

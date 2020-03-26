@@ -304,6 +304,9 @@ DataLoaderClass = function () {
     };
 
     that.local_update_k = function(){
+        // set flag
+        that.graph_view.set_is_local_k(false);
+
         let params = "?dataset=" + that.dataset;
         that.local_update_k_node = new request_node(that.local_update_k_url + params,
             that.local_update_k_handler(async function(must_show_nodes, area, level, best_k){

@@ -2,6 +2,7 @@ from __future__ import print_function
 from glob import glob
 import threading
 import os
+import platform
 import sys
 import scipy.sparse as sp
 from sklearn.utils import check_array, check_random_state
@@ -16,6 +17,8 @@ from scipy.spatial.distance import sqeuclidean
 from scipy.spatial.distance import squareform
 from sklearn.manifold import _barnes_hut_tsne
 from sklearn.metrics.pairwise import pairwise_distances
+from scipy.sparse import csr_matrix
+from annoy import AnnoyIndex
 
 MACHINE_EPSILON = np.finfo(np.double).eps
 
@@ -183,11 +186,11 @@ class IncrementalTSNE:
         
         self.ffi = cffi.FFI()
         self.ffi.cdef(
-            """void run_bhtsne(double* X, int N, int D, double* Y, int no_dim, double* constraint_X,
-                                double* constraint_Y, int constraint_N, double alpha, double perplexity,
-                                double angle, int n_jobs, int n_iter, int random_state, int verbose,
-                                double accuracy, double early_exaggeration, double learning_rate,
-                                int skip_num_points, int exploration_n_iter, int* labels, double label_alpha);
+            """void run_bhtsne(double* X, int N, int D, double* Y, int no_dim, double* constraint_X, double* constraint_Y,
+			                    int constraint_N, double alpha, double perplexity, double angle, int n_jobs,
+                                int n_iter, int random_state, int verbose, double accuracy, double early_exaggeration, double learning_rate,
+                                int skip_num_points, int exploration_n_iter,
+                                int n_neighbors, int* neighbors_nn, int* constraint_neighbors_nn, double* distances_nn, double* constraint_distances_nn);
               void binary_search_perplexity(double* distances_nn, int* neighbors_nn, int N, int D,
                                 double perplexity, int verbose, double* conditional_P);
               void k_neighbors(double* X1, int N1, double* X2, int N2, int D, int n_neighbors, int* neighbors_nn, double* distances_nn,
@@ -202,12 +205,18 @@ class IncrementalTSNE:
         
         path = os.path.dirname(os.path.realpath(__file__))
         
+
         try:
-            sofile = (#glob(os.path.join(path, 'libtsne*.so')) +
-                      glob(os.path.join(path, 'incremental_tsne.dll')))[0]
-            print(sofile)
+            # sofile = (#glob(os.path.join(path, 'libtsne*.so')) +
+            #           glob(os.path.join(path, 'incremental_tsne.dll')))[0]
+            # print(sofile)
             # temp_file_path_for_debug = "C:/Users/Lcorvle/Documents/Visual Studio 2015/Projects/incremental_tsne_dll_generate/x64/Release/incremental_tsne_dll_generate.dll"
             # self.C = self.ffi.dlopen(temp_file_path_for_debug)
+            if platform.system() == "Windows":
+                sofile = glob(os.path.join(path, 'libtsne_incremental.dll'))[0]
+            else:
+                sofile = glob(os.path.join(path, 'libtsne_incremental.so'))[0]
+                #raise RuntimeError('No so build now')
             self.C = self.ffi.dlopen(os.path.join(path, sofile))
         except (IndexError, OSError):
             raise RuntimeError('Cannot find/open tsne_incremental shared library')
@@ -228,7 +237,7 @@ class IncrementalTSNE:
         return self
     
     def fit_transform(self, X, _y=None, skip_num_points=0, constraint_X=None, constraint_Y=None, alpha=0,
-                      label=None, corrected_id=None, corrected_weight=None, init_id=None, labels=None, label_alpha=0.3):
+                      label=None, corrected_id=None, corrected_weight=None, init_id=None, labels=None, label_alpha=0.3, near_pairs=None, near_alpha = 0.3):
         """
         Fit X into an embedded space and return that transformed output.
 
@@ -257,11 +266,11 @@ class IncrementalTSNE:
             init_id = init_id.astype(np.int32, copy=True)
 
         embedding = self._fit(X, skip_num_points=skip_num_points, constraint_X=constraint_X, constraint_Y=constraint_Y,
-                              alpha=alpha, label=label, corrected_id=corrected_id, corrected_weight=corrected_weight, init_id=init_id, labels=labels, label_alpha=label_alpha)
+                              alpha=alpha, label=label, corrected_id=corrected_id, corrected_weight=corrected_weight, init_id=init_id, labels=labels, label_alpha=label_alpha, near_pairs=near_pairs, near_alpha=near_alpha)
         self.embedding_ = embedding
         return self.embedding_
     
-    def _fit(self, X, skip_num_points=0, constraint_X=None, constraint_Y=None, alpha=0, label=None, corrected_id=None, corrected_weight=None, init_id=None, labels=None, label_alpha=0.3):
+    def _fit(self, X, skip_num_points=0, constraint_X=None, constraint_Y=None, alpha=0, label=None, corrected_id=None, corrected_weight=None, init_id=None, labels=None, label_alpha=0.3, near_pairs=None, near_alpha = 0.3):
         """
         Fit the model using X as training data.
 
@@ -396,15 +405,50 @@ class IncrementalTSNE:
             cffi_verbose = 0
             if self.verbose:
                 cffi_verbose = 1
-            X = np.array(X, copy=True).reshape(-1)
-            Y = np.array(Y, copy=True).reshape(-1)
-            cffi_X = self.ffi.cast('double*', X.ctypes.data)
             if labels is None:
                 labels = np.zeros((N, ), dtype=int)
                 label_alpha = 1.0
-            cffi_labels = self.ffi.cast('int*', labels.ctypes.data)
-            cffi_label_alpha = label_alpha
+            if near_pairs is None:
+                near_pairs = csr_matrix((N, N), dtype=int)
+                near_alpha = 1.0
+
+            forest = AnnoyIndex(X.shape[1], 'euclidean')
+            indices = []
+            distances = []
+            for i in range(X.shape[0]):
+                forest.add_item(i, X[i])
+            forest.build(10)
+            n_neighbors = min(N - 1, 10 * self.perplexity)
+            for i in range(X.shape[0]):
+                ret = forest.get_nns_by_item(i, n_neighbors + 1, include_distances = True)
+                indices.append(ret[0][1:])
+                if labels[i] == -1:
+                    distances.append(ret[1][1:])
+                else:
+                    dist = []
+                    for j in range(1, len(ret[1])):
+                        dis = ret[1][j]
+                        if labels[i] == labels[ret[0][j]]:
+                            dis *= label_alpha
+                        j_idx = ret[0][j]
+                        if near_pairs[i,j_idx] == 1:
+                            dis *= near_alpha
+                        dist.append(dis)
+
+                    distances.append(dist)
+            
+            indices = np.array(indices, copy=True).reshape(-1)
+            distances = np.array(distances, copy=True).reshape(-1)
+
+            cffi_indices = self.ffi.new('int[]', list(indices))
+            cffi_distances = self.ffi.new('double[]', list(distances))
+
+            X = np.array(X, copy=True).reshape(-1)
+            Y = np.array(Y, copy=True).reshape(-1)
+
+            cffi_X = self.ffi.cast('double*', X.ctypes.data)
             cffi_Y = self.ffi.cast('double*', Y.ctypes.data)
+
             if isinstance(constraint_X, np.ndarray):
                 # np.savetxt('X.txt', X)
                 # np.savetxt('Y.txt', Y)
@@ -418,6 +462,24 @@ class IncrementalTSNE:
                 constraint_N = 0
                 cffi_constraint_X = self.ffi.NULL
                 cffi_constraint_Y = self.ffi.NULL
+            if constraint_N > 0:
+                constraint_forest = AnnoyIndex(constraint_X.shape[1], 'euclidean')
+                constraint_indices = []
+                constraint_distances = []
+                for i in range(constraint_X.shape[0]):
+                    constraint_forest.add_item(i, constraint_X[i])
+                constraint_forest.build(10)
+                for i in range(X.shape[0]):
+                    ret = constraint_forest.get_nns_by_vector(X[i], n_neighbors + 1, include_distances = True)
+                    constraint_indices.append(ret[0][1:])
+                    constraint_idistances.append(ret[1][1:])
+                constraint_indices = np.array(constraint_indices, copy=True).reshape(-1)
+                constraint_distances = np.array(constraint_distances, copy=True).reshape(-1)
+                cffi_constraint_indices = self.ffi.new('int[]', list(constraint_indices))
+                cffi_constraint_distances = self.ffi.new('double[]', list(constraint_distances))
+            else:
+                cffi_constraint_indices = self.ffi.NULL
+                cffi_constraint_distances = self.ffi.NULL
             if isinstance(label, np.ndarray) and isinstance(corrected_id, np.ndarray) and isinstance(corrected_weight, np.ndarray) and isinstance(init_id, np.ndarray):
                 assert label.shape[0] == N, "shape[0] of label should be equal to data number."
                 corrected_N = corrected_id.shape[0]
@@ -439,12 +501,14 @@ class IncrementalTSNE:
             cffi_random_state = 1
             if self.random_state != None:
                 cffi_random_state = self.random_state
+            print(len(distances))
             t = FuncThread(self.C.run_bhtsne, cffi_X, N, D, cffi_Y, self.n_components,
                            cffi_constraint_X, cffi_constraint_Y, constraint_N, alpha,
                            self.perplexity, self.angle, self.n_jobs, self.n_iter,
                            cffi_random_state, cffi_verbose, self.accuracy,
-                           self.early_exaggeration, self.learning_rate, skip_num_points,
-                           self._EXPLORATION_N_ITER, cffi_labels, cffi_label_alpha)
+                           self.early_exaggeration, self.learning_rate,
+                           skip_num_points, self._EXPLORATION_N_ITER,
+                           n_neighbors, cffi_indices, cffi_constraint_indices, cffi_distances, cffi_constraint_distances)
                 # , cffi_label, cffi_corrected_id, cffi_corrected_weight, corrected_N,
                 #            cffi_init_id, init_N)
             t.daemon = True
