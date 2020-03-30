@@ -1,7 +1,7 @@
 import numpy as np
 import os
 from scipy import sparse
-from scipy.sparse import csgraph
+from scipy.sparse import csgraph, csr_matrix
 from scipy.stats import entropy
 from time import time
 from time import sleep
@@ -23,10 +23,12 @@ from ..utils.log_utils import logger
 from ..utils.helper_utils import check_exist, \
     pickle_load_data, pickle_save_data, flow_statistic, async, async_once
 from ..utils.embedder_utils import Embedder
+import concurrent.futures
+from multiprocessing import Pool
 
 from .data import Data, GraphData
 from .LSLabelSpreading import LSLabelSpreading
-from .model_helper import propagation, approximated_influence, exact_influence
+from .model_helper import propagation, approximated_influence, exact_influence, calculate_influence_matrix_local
 from .model_update import local_search_k
 from .model_helper import build_laplacian_graph
 
@@ -77,6 +79,7 @@ class SSLModel(object):
         self.propagation_path_from = None
         self.propagation_path_to = None
         self.influence_matrix = None
+        self.local_influence_matrix = None
         # self._get_signal_state()
 
     def init(self, k=None, filter_threshold=None, evaluate=True, simplifying=True):
@@ -182,6 +185,7 @@ class SSLModel(object):
             return
         affinity_matrix = self.data.get_graph(self.n_neighbor)
         laplacian = build_laplacian_graph(affinity_matrix)
+        self.laplacian = laplacian
         train_y = self.data.get_train_label()
         logger.info("begin load influence matrix")
         influence_matrix_path = os.path.join(self.selected_dir,
@@ -201,6 +205,78 @@ class SSLModel(object):
             pickle_save_data(influence_matrix_path, self.influence_matrix)
         self.influence_matrix.data[np.isnan(self.influence_matrix.data)] = 0
         return
+
+    def influence_matrix_local(self, selected_ids, thread_num = 5):
+        calculate_time = 0
+        affinity_matrix = self.graph
+        N = affinity_matrix.shape[0]
+        laplacian = self.laplacian
+        train_y = self.data.get_train_label()
+        # if self.local_influence_matrix is None:
+        #     self.local_influence_matrix = np.zeros((N, N), dtype=float)
+        self.local_influence_matrix = np.zeros((N, N), dtype=float)
+
+        logger.info("begin load local influence matrix")
+        alpha_lap = self.alpha * self.laplacian
+        alpha_lap = alpha_lap.tocsr()
+        tmp = affinity_matrix
+        D = tmp.sum(axis=0).getA1() - tmp.diagonal()
+        D[D == 0] = 1
+        graphs = {}
+        for id in selected_ids:
+            graphs[id] = {
+                "from":[],
+                "to":[],
+                "from_weight":[],
+                "to_weight":[]
+            }
+        t0 = time()
+        futures = []
+        # thread_num = 3
+        with concurrent.futures.ThreadPoolExecutor(max_workers = thread_num) as executor:
+        # with Pool(processes=thread_num) as pool:
+            node_cnt = len(selected_ids)
+            thread_node_cnt = int(node_cnt/thread_num)
+            for i in range(thread_num):
+                start_idx = i*thread_node_cnt
+                end_idx = (i+1)*thread_node_cnt if i < thread_num-1 else node_cnt
+                futures.append(executor.submit(calculate_influence_matrix_local, (graphs, selected_ids, start_idx, end_idx, self.propagation_path_from, self.propagation_path_to,
+                                                                               self.unnorm_dist, affinity_matrix, alpha_lap, self.alpha, D, 3, self.local_influence_matrix)))
+            t0 = time()
+            concurrent.futures.wait(futures)
+            calculate_time = time()-t0
+            print("parallel time:{}".format(calculate_time))
+
+        node_cnt = len(selected_ids)
+        thread_node_cnt = int(node_cnt/thread_num)
+        t0 = time()
+        for i in range(thread_num):
+                start_idx = i*thread_node_cnt
+                end_idx = (i+1)*thread_node_cnt if i < thread_num-1 else node_cnt
+                calculate_influence_matrix_local((graphs, selected_ids, start_idx, end_idx,
+                                                 self.propagation_path_from, self.propagation_path_to, self.unnorm_dist, affinity_matrix, alpha_lap, self.alpha, D, 3, self.local_influence_matrix))
+
+                # start_idx = i * thread_edge_cnt
+                # end_idx = (i + 1) * thread_edge_cnt if i < thread_num - 1 else edge_cnt
+                # for k in range(end_idx-start_idx):
+                #     self.local_influence_matrix[edges[start_idx+k][0], edges[start_idx+k][1]] = influence[k]
+        calculate_time = time()-t0
+        print("time:{}".format(calculate_time))
+        for to_id in selected_ids:
+            for from_id in self.propagation_path_from[to_id]:
+                appro_influence = self.local_influence_matrix[to_id, from_id]
+                graphs[to_id]["from"].append(from_id)
+                graphs[to_id]["from_weight"].append(appro_influence)
+        for from_id in selected_ids:
+            for to_id in self.propagation_path_to[from_id]:
+                appro_influence = self.local_influence_matrix[to_id, from_id]
+                graphs[from_id]["to"].append(to_id)
+                graphs[from_id]["to_weight"].append(appro_influence)
+
+        print("thread num:{}, calculate time:{}".format(thread_num, calculate_time))
+        logger.info("end local influence matrix")
+
+        return graphs, calculate_time
 
     def fetch_simplify_influence_matrix(self):
         simplify_path = os.path.join(self.selected_dir, "simplify_matrix.npy")
