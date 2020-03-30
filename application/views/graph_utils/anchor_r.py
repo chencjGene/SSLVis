@@ -473,7 +473,9 @@ class Anchors:
         propagation_path_from = self.model.propagation_path_from
         propagation_path_to = self.model.propagation_path_to
         influence_matrix = self.model.influence_matrix.copy()
-        influence_matrix.data /= influence_matrix.data.max()
+        # influence_matrix[np.isnan(influence_matrix)] = 0
+        influence_matrix.data /= (influence_matrix.data.max() + 1e-20)
+        influence_matrix.data[np.isnan(influence_matrix.data)] = 0
         ground_truth = self.model.data.get_full_train_ground_truth()
         samples_truth = ground_truth[selection]
         consistency = self.model.get_train_neighbors_consistency(n_neighbor=6).tolist()

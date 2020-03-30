@@ -18,7 +18,10 @@ from scipy.spatial.distance import squareform
 from sklearn.manifold import _barnes_hut_tsne
 from sklearn.metrics.pairwise import pairwise_distances
 from scipy.sparse import csr_matrix
-from annoy import AnnoyIndex
+try:
+    from annoy import AnnoyIndex
+except:
+    None
 
 MACHINE_EPSILON = np.finfo(np.double).eps
 

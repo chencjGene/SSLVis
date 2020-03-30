@@ -88,6 +88,9 @@ def propagation(graph_matrix, affinity_matrix, train_y, alpha=0.2, max_iter=15,
         if not (n_iter_ > 6 and k <= 3): # for case
             if np.abs(label_distributions_ - l_previous).sum() < tol:
                 break
+        # else:
+        #     if n_iter_ > 10:
+        #         break
 
         l_previous = label_distributions_.copy()
         label_distributions_a = safe_sparse_dot(
