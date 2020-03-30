@@ -252,6 +252,7 @@ class GraphData(Data):
                 os.path.exists(test_neighbors_path) and rebuild == False and DEBUG == False:
             logger.info("neighbors and neighbor_weight exist!!!")
             self.neighbors = np.load(neighbors_path)
+            self.neighbors_weight = np.load(neighbors_weight_path)
             self.test_neighbors = np.load(test_neighbors_path)
             return
         logger.info("neighbors and neighbor_weight "
@@ -275,7 +276,7 @@ class GraphData(Data):
                                                         self.max_neighbors,
                                                         mode="distance")
         logger.info("neighbor_result got!")
-        self.neighbors, neighbors_weight = self.csr_to_impact_matrix(neighbor_result,
+        self.neighbors, self.neighbors_weight = self.csr_to_impact_matrix(neighbor_result,
                                                                      train_num, self.max_neighbors)
         self.test_neighbors, test_neighbors_weight = self.csr_to_impact_matrix(test_neighbors_result,
                                                                                test_num, self.max_neighbors)
@@ -286,7 +287,7 @@ class GraphData(Data):
         if save:
             pickle_save_data(neighbors_model_path, nn_fit)
             np.save(neighbors_path, self.neighbors)
-            np.save(neighbors_weight_path, neighbors_weight)
+            np.save(neighbors_weight_path, self.neighbors_weight)
             np.save(test_neighbors_path, self.test_neighbors)
             np.save(test_neighbors_weight_path, test_neighbors_weight)
         return self.neighbors, self.test_neighbors
@@ -322,7 +323,7 @@ class GraphData(Data):
         logger.info("connected components without labeled data - instance num: {}".format(len(unp)))
         return self.affinity_matrix.copy()
 
-    def _construct_graph(self, n_neighbor=None):
+    def _construct_graph(self, n_neighbor=None, weight=False):
         # create neighbors buffer
         self._preprocess_neighbors()
 
@@ -333,6 +334,7 @@ class GraphData(Data):
         # neighbors = np.load(neighbors_path)
         # neighbors_weight = np.load(neighbors_weight_path)
         neighbors = self.neighbors
+        neighbors_weight = self.neighbors_weight
         instance_num = neighbors.shape[0]
         train_y = self.get_train_label()
         train_y = np.array(train_y)
@@ -344,9 +346,12 @@ class GraphData(Data):
         logger.info("get indptr")
         indices = neighbors[:, :n_neighbor].reshape(-1).tolist()
         logger.info("get indices")
-        data = neighbors[:, :n_neighbor].reshape(-1)
-        logger.info("get data")
-        data = (data * 0 + 1.0).tolist()
+        if not weight:
+            data = neighbors[:, :n_neighbor].reshape(-1)
+            logger.info("get data")
+            data = (data * 0 + 1.0).tolist()
+        else:
+            data = neighbors_weight[:, :n_neighbor].reshape(-1).tolist()
         logger.info("get data in connectivity")
         affinity_matrix = sparse.csr_matrix((data, indices, indptr),
                                             shape=(instance_num, instance_num))
