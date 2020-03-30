@@ -160,10 +160,10 @@
 				};
 
 				if ((Math.abs(force.x) > eps) || (Math.abs(force.y) > eps)) {
-					var diff = (Math.pow(custom_edge_length({
+					var diff = (1/Math.pow(custom_edge_length({
 						'source': subdivision_points_for_edge[compatible_edges_list[oe]][i],
 						'target': subdivision_points_for_edge[e_idx][i]
-					}), 2));
+					}), 1));
 					diff *= elect_scale;
 					diff = Math.min(diff, 2);
 					sum_of_forces.x += force.x * diff;
@@ -503,7 +503,7 @@
 		}
 
 		function repulsity_score(P, Q) {
-			return (anti_parallel(P, Q) || notsame_type(P, Q)) && in_compatibility(P, Q);
+			return (anti_parallel(P, Q) || notsame_type(P, Q));
 		}
 
 		function in_compatibility(P, Q) {

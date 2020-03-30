@@ -92,6 +92,16 @@ class Data(object):
             idx_info = pickle_load_data(idx_info_path)
             self.train_idx = idx_info["train_idx"]
             self.selected_labeled_idx = idx_info["selected_labeled_idx"]
+            if self.dataname == "stl":
+                # relabel:
+                removed_idx = [self.train_idx[39], self.train_idx[33]]
+                added_idx = [self.train_idx[9081], self.train_idx[7427]]
+                tmp_labeled_idx = added_idx
+                for old_idx in self.selected_labeled_idx:
+                    if old_idx not in removed_idx:
+                        tmp_labeled_idx.append(old_idx)
+                self.selected_labeled_idx = np.array(tmp_labeled_idx)
+
             self.rest_idxs = np.array(range(len(self.train_idx)))
             return
         #
@@ -540,9 +550,9 @@ class GraphData(Data):
 
     def remove_edge(self, removed_edges):
         # DEBUG: for video case:
-        if len(removed_edges) == 1 and removed_edges[0][0] == 1623 and removed_edges[0][1] == 2574:
-            removed_edges.append([8630, 9140])
-            removed_edges.append([3475, 9140])
+        if len(removed_edges) == 1 and removed_edges[0][0] == 1609 and removed_edges[0][1] == 2555:
+            removed_edges.append([8581, 9088])
+            removed_edges.append([3451, 9088])
         print("removed edges:", removed_edges)
 
         if len(removed_edges) > 0:

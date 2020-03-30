@@ -989,6 +989,9 @@ let FilterLayout = function (container) {
         let x_0_maxband = x(min_xv)+x.bandwidth()/2+x.step()/2;
         let bandwidth = x.bandwidth();
         let step = x.step();
+        // init
+        // data_manager.graph_view.set_step_out(0);
+        // data_manager.graph_view.set_step_in(0);
         // draw marker
         if(container.select("marker").size() === 0){
             container.append("marker")

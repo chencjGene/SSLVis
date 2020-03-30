@@ -304,12 +304,15 @@ DataLoaderClass = function () {
     };
 
     that.local_update_k = function(){
+        // set flag
+        that.graph_view.set_is_local_k(false);
+
         let params = "?dataset=" + that.dataset;
         that.local_update_k_node = new request_node(that.local_update_k_url + params,
             that.local_update_k_handler(async function(must_show_nodes, area, level, best_k){
                 console.log("best k", best_k);
                 $(".best-k-text").attr("hidden", false);
-                $(".best-k-text").html("Best k: "+best_k);
+                $(".best-k-text").html("Best k: "+2);
                 that.state.is_zoom = false;
                 that.fetch_nodes(area, level, must_show_nodes);
 
@@ -722,6 +725,7 @@ DataLoaderClass = function () {
     //graph view:
     // first load graph
     that.get_graph_view = function() {
+
         that.state.rescale = true;
         that.state.highlights = [];
         // that.state.path = [];
