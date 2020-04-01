@@ -104,7 +104,7 @@ DataLoaderClass = function () {
         last_nodes:[],
         // graph info:
         complete_graph:null,
-        edge_filter_threshold:[0.0, 1],
+        edge_filter_threshold:[0.05, 1],
         nodes: null,
         path: {
             "in": [],

@@ -300,22 +300,44 @@ let GraphLayout = function (container) {
 
         // show path when no highlights
         if(highlights.length === 0){
-            path = [];
-            let golds = nodes.filter(d => d.label[0] > -1);
-            for(let gold_node of golds){
-                let gold_node_cnt = 0;
-                for(let i=0; i<gold_node.to.length; i++){
-                    let source_id = gold_node.id;
-                    let target_id = gold_node.to[i];
-                    let edge_weight = gold_node.to_weight[i];
-                    if(state.nodes[target_id] !== undefined && source_id !== target_id && edge_weight >= edge_filter_threshold[0] && edge_weight <= edge_filter_threshold[1]){
-                        let target = state.nodes[target_id];
-                        path.push([gold_node, target, edge_weight]);
-                        gold_node_cnt++;
+            // path = [];
+            // let golds = nodes.filter(d => d.label[0] > -1);
+            // for(let gold_node of golds){
+            //     let gold_node_cnt = 0;
+            //     for(let i=0; i<gold_node.to.length; i++){
+            //         let source_id = gold_node.id;
+            //         let target_id = gold_node.to[i];
+            //         let edge_weight = gold_node.to_weight[i];
+            //         if(state.nodes[target_id] !== undefined && source_id !== target_id && edge_weight >= edge_filter_threshold[0] && edge_weight <= edge_filter_threshold[1]){
+            //             let target = state.nodes[target_id];
+            //             path.push([gold_node, target, edge_weight]);
+            //             gold_node_cnt++;
+            //         }
+            //         if(gold_node_cnt === 2) break;
+            //     }
+            // }
+            let all_path = [];
+            for (let i = 0; i < nodes.length; i++){
+                let from_list = nodes[i].from;
+                let from_weight = nodes[i].from_weight;
+                let to_list = nodes[i].to;
+                let to_weight = nodes[i].to_weight;
+                for (let j = 0; j < from_list.length; j++){
+                    if (nodes_dict[from_list[j]] != undefined){
+                        let path = [nodes_dict[from_list[j]], nodes[i], from_weight[j]];
+                        all_path.push(path);
                     }
-                    if(gold_node_cnt === 2) break;
+                }
+                for (let j = 0; j < to_list.length; j++){
+                    if (nodes_dict[to_list[j]] != undefined){
+                        let path = [nodes[i], nodes_dict[to_list[j]], to_weight[j]];
+                        all_path.push(path);
+                    }
                 }
             }
+            path = delRepeatPath(all_path);
+            path = path.filter(d => d[2] > edge_filter_threshold[0] && d[2] < edge_filter_threshold[1]);
+            path = path.filter(d => d[0].label.slice(-1)[0] != d[1].label.slice(-1)[0]);
         }
 
         // remove path of length 0
