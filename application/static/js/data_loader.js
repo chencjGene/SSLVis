@@ -125,6 +125,8 @@ DataLoaderClass = function () {
         rect_nodes: [],
         if_focus_selection_box: false,
         re_focus_selection_box: false,
+        nodes_before_focus_selection: null,
+        selection_before_focus_sulection: null,
         // history info:
         history_data: null,
         // edit info:
@@ -788,6 +790,15 @@ DataLoaderClass = function () {
     that.focus_selection_box = function(selection_box) {
         that.state.if_focus_selection_box = true;
         that.state.re_focus_selection_box = true;
+        that.state.nodes_before_focus_selection = that.state.nodes;
+        that.state.selection_before_focus_sulection = selection_box.map(function (d) {
+                return {
+                    x: d.x,
+                    y:d.y,
+                    width:d.width,
+                    height:d.height
+            }
+        });
         let res = that.get_nodes_in_area(selection_box, that.graph_view.center_scale_x, that.graph_view.center_scale_y);
         let nodes = res[0];
         let nodes_in_area = res[1];
@@ -803,6 +814,28 @@ DataLoaderClass = function () {
         that.update_filter_view();
         that.graph_view.show_edges();
         that.state.re_focus_selection_box = false;
+    };
+
+    that.unfocus_selection_box = function(selection_box) {
+        that.state.if_focus_selection_box = false;
+        that.state.re_focus_selection_box = false;
+        that.state.nodes = that.state.nodes_before_focus_selection;
+        for(let i=0; i<selection_box.length; i++){
+            selection_box[i].x = that.state.selection_before_focus_sulection[i].x;
+            selection_box[i].y = that.state.selection_before_focus_sulection[i].y;
+            selection_box[i].width = that.state.selection_before_focus_sulection[i].width;
+            selection_box[i].height = that.state.selection_before_focus_sulection[i].height;
+        }
+        for(let i = 0; i < selection_box.length; i++){
+            let nodes = Object.values(that.state.nodes)
+                .filter(d => inbox(selection_box[i], that.graph_view.center_scale_x(d.x), that.graph_view.center_scale_y(d.y)));
+            selection_box[i].nodes = nodes;
+        }
+        that.set_filter_data(that.state.nodes);
+        let ranges = that.filter_view.get_ranges();
+        that.set_filter_range(ranges[0], ranges[1], ranges[2], ranges[3], ranges[4], ranges[5], ranges[6], ranges[7]);
+        that.update_filter_view();
+        that.graph_view.show_edges();
     };
 
     that.graph_home_callback = function() {

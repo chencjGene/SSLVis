@@ -521,3 +521,8 @@ GraphLayout.prototype.focus_selection_box = function () {
     let that = this;
     that.data_manager.focus_selection_box(that.selection_box);
 };
+
+GraphLayout.prototype.unfocus_selection_box = function () {
+    let that = this;
+    that.data_manager.unfocus_selection_box(that.selection_box);
+};

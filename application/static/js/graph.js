@@ -643,21 +643,25 @@ let GraphLayout = function (container) {
             glyph_in_group
                 // .transition()
                 // .duration(AnimationDuration)
-                .attr("transform", d =>"translate("+that.if_focus_selection_box?d.focus_x:that.center_scale_x(d.x)+","+that.if_focus_selection_box?d.focus_y:that.center_scale_y(d.y)+")")
+                .attr("transform", d =>"translate("+(that.if_focus_selection_box?d.focus_x:that.center_scale_x(d.x))+","+(that.if_focus_selection_box?d.focus_y:that.center_scale_y(d.y))+")")
                 .attr("opacity", d => that.opacity(d.id))
                 .on("end", resolve);
             that.uncertainty_glyph_update();
 
             gradient_in_group
-                .attr("x1", d => that.if_focus_selection_box?d.focus_x:that.center_scale_x(d[0].x))
-                .attr("y1", d => that.if_focus_selection_box?d.focus_y:that.center_scale_y(d[0].y))
-                .attr("x2", d => that.if_focus_selection_box?d.focus_x:that.center_scale_x(d[1].x))
-                .attr("y2", d => that.if_focus_selection_box?d.focus_y:that.center_scale_y(d[1].y))
+                .attr("x1", d => that.if_focus_selection_box?d[0].focus_x:that.center_scale_x(d[0].x))
+                .attr("y1", d => that.if_focus_selection_box?d[0].focus_y:that.center_scale_y(d[0].y))
+                .attr("x2", d => that.if_focus_selection_box?d[1].focus_x:that.center_scale_x(d[1].x))
+                .attr("y2", d => that.if_focus_selection_box?d[1].focus_y:that.center_scale_y(d[1].y))
                 .each(function (d) {
                     let linearGradient = d3.select(this);
                     linearGradient.select(".stop-1")
                         .attr("stop-color", d[0].label[iter]===-1?color_unlabel:color_label[d[0].label[iter]]);
                     linearGradient.select(".stop-2")
+                        .attr("stop-color", d[0].label[iter]===-1?color_unlabel:color_label[d[0].label[iter]]);
+                    linearGradient.select(".stop-3")
+                        .attr("stop-color", d[1].label[iter]===-1?color_unlabel:color_label[d[1].label[iter]]);
+                    linearGradient.select(".stop-4")
                         .attr("stop-color", d[1].label[iter]===-1?color_unlabel:color_label[d[1].label[iter]]);
                 });
 
@@ -924,7 +928,7 @@ let GraphLayout = function (container) {
                     let node = d3.select(this);
                     // d.piechart = node;
                 })
-                .attr("transform", d =>"translate("+that.if_focus_selection_box?d.focus_x:that.center_scale_x(d.x)+","+that.if_focus_selection_box?d.focus_y:that.center_scale_y(d.y)+")")
+                .attr("transform", d =>"translate("+(that.if_focus_selection_box?d.focus_x:that.center_scale_x(d.x))+","+(that.if_focus_selection_box?d.focus_y:that.center_scale_y(d.y))+")")
                 .attr("opacity", 0);
             // glyphgs.selectAll("path")
             //     .data(d => pie(d.score[iter]))
@@ -946,16 +950,24 @@ let GraphLayout = function (container) {
                 .append("linearGradient")
                 .attr("gradientUnits", "userSpaceOnUse")
                 .attr("id", d => "path" + d[0].id + "-" + d[1].id)
-                .attr("x1", d => that.if_focus_selection_box?d.focus_x:that.center_scale_x(d[0].x))
-                .attr("y1", d => that.if_focus_selection_box?d.focus_y:that.center_scale_y(d[0].y))
-                .attr("x2", d => that.if_focus_selection_box?d.focus_x:that.center_scale_x(d[1].x))
-                .attr("y2", d => that.if_focus_selection_box?d.focus_y:that.center_scale_y(d[1].y));
+                .attr("x1", d => that.if_focus_selection_box?d[0].focus_x:that.center_scale_x(d[0].x))
+                .attr("y1", d => that.if_focus_selection_box?d[0].focus_y:that.center_scale_y(d[0].y))
+                .attr("x2", d => that.if_focus_selection_box?d[1].focus_x:that.center_scale_x(d[1].x))
+                .attr("y2", d => that.if_focus_selection_box?d[1].focus_y:that.center_scale_y(d[1].y));
             gradient.append("stop")
                 .attr("class", "stop-1")
                 .attr("offset", "0%")
                 .attr("stop-color", d => d[0].label[iter]===-1?color_unlabel:color_label[d[0].label[iter]]);
             gradient.append("stop")
                 .attr("class", "stop-2")
+                .attr("offset", "45%")
+                .attr("stop-color", d => d[0].label[iter]===-1?color_unlabel:color_label[d[0].label[iter]]);
+            gradient.append("stop")
+                .attr("class", "stop-3")
+                .attr("offset", "55%")
+                .attr("stop-color", d => d[1].label[iter]===-1?color_unlabel:color_label[d[1].label[iter]]);
+            gradient.append("stop")
+                .attr("class", "stop-4")
                 .attr("offset", "100%")
                 .attr("stop-color", d => d[1].label[iter]===-1?color_unlabel:color_label[d[1].label[iter]]);
 
