@@ -141,3 +141,21 @@ DataLoaderClass.prototype.add_data_to_high_level = function (nodes_id, hierarchy
         }
     }
 };
+
+DataLoaderClass.prototype.get_nodes_in_area = function (areas, center_scale_x, center_scale_y) {
+    let that = this;
+    let nodes_in_area = areas.map(d => []);
+    let nodes = {};
+    for (let node of Object.values(that.state.complete_graph)){
+        let i = 0;
+        for(let area of areas){
+            if(inbox(area, center_scale_x(node.x), center_scale_y(node.y))){
+                nodes_in_area[i].push(node);
+                nodes[node.id] = node;
+                break;
+            }
+            i+=1;
+        }
+    }
+    return [nodes, nodes_in_area];
+};

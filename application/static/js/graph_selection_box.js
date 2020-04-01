@@ -241,7 +241,7 @@ GraphLayout.prototype._update_selection_box = function(){
     // update data
     for(let i = 0; i < that.selection_box.length; i++){
         let nodes = Object.values(that.get_nodes())
-            .filter(d => inbox(that.selection_box[i], that.center_scale_x(d.x), that.center_scale_y(d.y)));
+            .filter(d => inbox(that.selection_box[i], that.if_focus_selection_box?d.focus_x:that.center_scale_x(d.x), that.if_focus_selection_box?d.focus_y:that.center_scale_y(d.y)));
         that.selection_box[i].nodes = nodes;
         let label_dist = nodes.map(d =>d.label.slice(-1)[0]);
         let label_count = new Array(12).fill(0);
@@ -494,7 +494,7 @@ GraphLayout.prototype.get_path = function(){
     that.all_path = path;
     that.highlights = highlights;
     return [path, highlights];
-}
+};
 
 GraphLayout.prototype.show_edges = async function(modes){
     let that = this;
@@ -515,4 +515,9 @@ GraphLayout.prototype.show_edges = async function(modes){
     that.data_manager.set_propagation_filter_data(that.step_count[2], that.step_count[0], that.step_count[1]);
     
     // that.update_snapshot();
+};
+
+GraphLayout.prototype.focus_selection_box = function () {
+    let that = this;
+    that.data_manager.focus_selection_box(that.selection_box);
 };
