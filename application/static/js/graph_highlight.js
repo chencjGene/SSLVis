@@ -13,6 +13,7 @@ let GraphHighlight = function (parent) {
     let influence_from_btn_path =null;
     let select_edge_btn_path = null;
     let edit_btn_path = null;
+    let focus_selection_btn_path = null;
     let btn_select_color = "#560731";
 
     let path_width_scale = 1.75;
@@ -30,6 +31,7 @@ let GraphHighlight = function (parent) {
         influence_to_btn_path = d3.select("#influence-to-btn").select("path");
         edit_btn_path = d3.select("#apply-delete-btn").select("path");
         select_edge_btn_path = d3.select("#select-edge-btn").select("path");
+        focus_selection_btn_path = d3.select("#focus-btn").selectAll("path");
 
         
 
@@ -40,6 +42,21 @@ let GraphHighlight = function (parent) {
                 $("#lasso-btn").css("background-color", btn_select_color);
                 lasso_btn_path.attr("stroke", "white").attr("fill", "white");
                 view.lasso_or_zoom("rect");
+            });
+
+        $("#focus-btn")
+            .click(function () {
+                // that._change_lasso_mode();
+                if(!view.if_focus_selection_box){
+                    $("#focus-btn").css("background-color", btn_select_color);
+                    focus_selection_btn_path.attr("stroke", "white").attr("fill", "white");
+                    view.focus_selection_box();
+                }
+                else {
+                    $("#focus-btn").css("background-color", "white");
+                    focus_selection_btn_path.attr("stroke", "black").attr("fill", "black");
+                    view.unfocus_selection_box();
+                }
             });
 
 
@@ -71,7 +88,7 @@ let GraphHighlight = function (parent) {
 
     that.add_btn_style = function() {
         let btn_ids = ["apply-delete-btn", "lasso-btn", "fisheye-btn", "home-btn", "refresh-btn", "influence-to-btn", "influence-from-btn",
-            "select-edge-btn", "loaddataset-button", "setk-button", "localk-button"];
+            "select-edge-btn", "loaddataset-button", "setk-button", "localk-button", "focus-btn"];
         for(let btn_id of btn_ids){
             let select_id = "#"+btn_id;
             let path = d3.select(select_id).selectAll("path");

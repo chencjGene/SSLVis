@@ -49,10 +49,12 @@ let GraphLayout = function (container) {
     let golds_group = null;
     let glyph_group = null;
     let gradient_group = null;
+    let edge_summary_group = null;
     let path_in_group = null;
     let nodes_in_group = null;
     let golds_in_group = null;
     let glyph_in_group = null;
+    let edge_summary_in_group = null;
     let legend_group = null;
     let img_in_group = null;
     let tmp_show_imgs = null;
@@ -77,6 +79,10 @@ let GraphLayout = function (container) {
     let rect_nodes = [];
     let imgs = [];
     let nodes_dict = null;
+    that.if_focus_selection_box = false;
+    let re_focus_selection_box = false;
+    let edges_summary = [];
+
 
     //edit info
     let add_labeled_nodes = [];
@@ -103,6 +109,7 @@ let GraphLayout = function (container) {
     that.center_scale_y = null;
     that.center_scale_x_reverse = null;
     that.center_scale_y_reverse = null;
+    that.center_scale = null;
 
     that.svg = null;
     that.main_group = null;
@@ -134,6 +141,7 @@ let GraphLayout = function (container) {
         nodes_group = that.main_group.append("g").attr("id", "graph-tsne-point-g");
         golds_group = that.main_group.append("g").attr("id", "graph-gold-g");
         glyph_group = that.main_group.append("g").attr("id", "graph-glyph-g");
+        edge_summary_group = that.main_group.append("g").attr("id", "edge-summary-g");
         that.label_group = that.main_group.append("g").attr("id", "graph-label-g");
         that.selection_group = that.main_group.append("g").attr("id", "graph-selection-g");
         that.snapshot_group = that.svg.append("g").attr("id", "snapshot-group");
@@ -216,7 +224,7 @@ let GraphLayout = function (container) {
         console.log("get graph state:", state);
         that._update_data(state);
         await that.data_manager.update_image_view(highlights);
-        await that._update_view();
+        await that._update_view(state);
     };
 
     that._update_data = function(state) {
@@ -229,6 +237,8 @@ let GraphLayout = function (container) {
         area = state.area;
         rescale = state.rescale;
         visible_items = state.visible_items;
+        that.if_focus_selection_box = state.if_focus_selection_box;
+        re_focus_selection_box = state.re_focus_selection_box;
         let old_glyphs = JSON.parse(JSON.stringify(glyphs));
         glyphs = state.glyphs;
         let old_tmp_glyphs = [];
@@ -247,6 +257,32 @@ let GraphLayout = function (container) {
         add_labeled_nodes = state.edit_state.labeled_idxs;
         add_labeled_label = state.edit_state.labels;
         delete_edges = state.edit_state.deleted_edges.map(d => d[0]+","+d[1]);
+        edges_summary = [];
+        let label_cnt = state.label_names.length+1;
+        if(that.if_focus_selection_box) {
+            let graph = that.data_manager.state.complete_graph;
+            for(let selection_box of that.selection_box){
+                let summary = [];
+                for(let i=0;i<label_cnt;i++) summary.push({in:0, out:0, idx:i});
+                for(let node of selection_box.nodes){
+                    for(let from_id of node.from){
+                        summary[graph[from_id].label[iter]+1].in++;
+                    }
+                    for(let to_id of node.to){
+                        summary[graph[to_id].label[iter]+1].out++;
+                    }
+                }
+                let tmp = [];
+                for(let item of summary){
+                    if(item.in !== 0 || item.out!==0){
+                        tmp.push(item)
+                    }
+                }
+                summary = tmp;
+                edges_summary.push(summary)
+            }
+        }
+
 
         // rescale
         if(rescale) that._center_tsne(nodes);
@@ -405,8 +441,13 @@ let GraphLayout = function (container) {
         console.log("path", path);
     };
 
-    that._update_view = function() {
+    that._update_view = function(state) {
         return new Promise(async function (resolve, reject) {
+            if(that.if_focus_selection_box && re_focus_selection_box){
+                that._get_focus_selection_scale();
+                nodes = JSON.parse(JSON.stringify(state.nodes));
+                nodes = Object.values(nodes);
+            }
             //
             // let nodes_ary = Object.values(nodes);
             let nodes_ary = nodes;
@@ -416,9 +457,15 @@ let GraphLayout = function (container) {
 
             let nodes_dict = {};
             for(let node of nodes){
-                nodes_dict[node.id] = node;
+                nodes_dict[node.id] = {
+                    id:node.id,
+                    x:that.if_focus_selection_box?node.focus_x:that.center_scale_x(node.x),
+                    y:that.if_focus_selection_box?node.focus_y:that.center_scale_y(node.y),
+                    label:node.label
+                };
             }
             for(let path of path_ary){
+                if(nodes_dict[path[0].id] === undefined || nodes_dict[path[1].id] === undefined) continue;
                 let alabel = nodes_dict[path[0].id].label[iter];
                 let blabel = nodes_dict[path[1].id].label[iter];
                 path.edge_type = alabel+","+blabel;
@@ -441,8 +488,6 @@ let GraphLayout = function (container) {
                         line[path_node_id].x = tmp.x;
                         line[path_node_id].y = tmp.y;
                     }
-                    line[path_node_id].x  = that.center_scale_x(line[path_node_id].x);
-                    line[path_node_id].y  = that.center_scale_y(line[path_node_id].y);
                 }
             }
             path_ary = path_ary.map((d,i) => d.concat([res[i]]));
@@ -452,7 +497,7 @@ let GraphLayout = function (container) {
                     d[i].x = that.center_scale_x_reverse(d[i].x);
                     d[i].y = that.center_scale_y_reverse(d[i].y);
                 }
-            })
+            });
             path_ary = path_ary.map((d,i) => d.concat([ori_res[i]]));
             that.path_ary = path_ary;
             if (that.focus_nodes.length === 1 && that.selection_box.length === 0){
@@ -480,6 +525,8 @@ let GraphLayout = function (container) {
                 .data(imgs, d => d.node.id);
             gradient_in_group = gradient_group.selectAll("linearGradient")
                 .data(path_ary, d => d[0].id+","+d[1].id);
+            edge_summary_in_group = edge_summary_group.selectAll(".edge-summary")
+                .data(edges_summary);
                 
             //
             // that.show_select_rect();
@@ -498,6 +545,7 @@ let GraphLayout = function (container) {
             glyph_in_group = glyph_group.selectAll(".pie-chart");
             path_in_group = path_group.selectAll("path");
             gradient_in_group = gradient_group.selectAll("linearGradient");
+            edge_summary_in_group = edge_summary_group.selectAll(".edge-summary");
 
             if(highlight_plg.if_lasso()){
                 highlight_plg.set_lasso();
@@ -568,8 +616,15 @@ let GraphLayout = function (container) {
                 .remove()
                 .on("end", resolve);
 
+            edge_summary_in_group.exit()
+                .transition()
+                .duration(remove_ani)
+                .attr("opacity", 0)
+                .remove()
+                .on("end", resolve);
+
             if((nodes_in_group.exit().size()===0) && (golds_in_group.exit().size() === 0)
-                && (glyph_in_group.exit().size() === 0) && (path_in_group.exit().size() === 0)){
+                && (glyph_in_group.exit().size() === 0) && (path_in_group.exit().size() === 0)&&(edge_summary_in_group.exit().size() === 0)){
                 console.log("no remove");
                 resolve();
             }
@@ -587,8 +642,8 @@ let GraphLayout = function (container) {
                 })
                 .attr("opacity", d => that.opacity(d.id))
                 .attr("r", d => that.r(d.id))
-                .attr("cx", d => that.center_scale_x(d.x))
-                .attr("cy", d => that.center_scale_y(d.y))
+                .attr("cx", d => that.if_focus_selection_box?d.focus_x:that.center_scale_x(d.x))
+                .attr("cy", d => that.if_focus_selection_box?d.focus_y:that.center_scale_y(d.y))
                 .on("end", resolve);
 
             golds_in_group
@@ -603,27 +658,32 @@ let GraphLayout = function (container) {
                     return d.label[iter]===-1?color_unlabel:color_label[d.label[iter]];
                 })
                 .attr("opacity", d => that.opacity(d.id))
-                .attr("d", d => star_path(star_outer_r * that.zoom_scale, star_inner_r * that.zoom_scale, that.center_scale_x(d.x), that.center_scale_y(d.y)))
+                .attr("d", d => star_path(star_outer_r * that.zoom_scale, star_inner_r * that.zoom_scale,
+                    that.if_focus_selection_box?d.focus_x:that.center_scale_x(d.x), that.if_focus_selection_box?d.focus_y:that.center_scale_y(d.y)))
                 .on("end", resolve);
 
             glyph_in_group
                 // .transition()
                 // .duration(AnimationDuration)
-                .attr("transform", d =>"translate("+that.center_scale_x(d.x)+","+that.center_scale_y(d.y)+")")
+                .attr("transform", d =>"translate("+(that.if_focus_selection_box?d.focus_x:that.center_scale_x(d.x))+","+(that.if_focus_selection_box?d.focus_y:that.center_scale_y(d.y))+")")
                 .attr("opacity", d => that.opacity(d.id))
                 .on("end", resolve);
             that.uncertainty_glyph_update();
 
             gradient_in_group
-                .attr("x1", d => that.center_scale_x(d[0].x))
-                .attr("y1", d => that.center_scale_y(d[0].y))
-                .attr("x2", d => that.center_scale_x(d[1].x))
-                .attr("y2", d => that.center_scale_y(d[1].y))
+                .attr("x1", d => that.if_focus_selection_box?d[0].focus_x:that.center_scale_x(d[0].x))
+                .attr("y1", d => that.if_focus_selection_box?d[0].focus_y:that.center_scale_y(d[0].y))
+                .attr("x2", d => that.if_focus_selection_box?d[1].focus_x:that.center_scale_x(d[1].x))
+                .attr("y2", d => that.if_focus_selection_box?d[1].focus_y:that.center_scale_y(d[1].y))
                 .each(function (d) {
                     let linearGradient = d3.select(this);
                     linearGradient.select(".stop-1")
                         .attr("stop-color", d[0].label[iter]===-1?color_unlabel:color_label[d[0].label[iter]]);
                     linearGradient.select(".stop-2")
+                        .attr("stop-color", d[0].label[iter]===-1?color_unlabel:color_label[d[0].label[iter]]);
+                    linearGradient.select(".stop-3")
+                        .attr("stop-color", d[1].label[iter]===-1?color_unlabel:color_label[d[1].label[iter]]);
+                    linearGradient.select(".stop-4")
                         .attr("stop-color", d[1].label[iter]===-1?color_unlabel:color_label[d[1].label[iter]]);
                 });
 
@@ -665,20 +725,68 @@ let GraphLayout = function (container) {
                     if (d.quad === 1 || d.quad === 2){
                         return that.center_scale_x(d.node.x) - d.w * that.scale * that.zoom_scale;
                     }
-                    return that.center_scale_x(d.node.x);
+                    return that.if_focus_selection_box?d.focus_x:that.center_scale_x(d.node.x);
                 })
                 .attr("y", function(d){
                     if (d.quad === 2 || d.quad === 3){
                         return that.center_scale_y(d.node.y) - d.h * that.scale * that.zoom_scale;
                     }
-                    return that.center_scale_y(d.node.y);
+                    return that.if_focus_selection_box?d.focus_y:that.center_scale_y(d.node.y);
                 })
                 .attr("width", d => d.w * that.scale * that.zoom_scale)
-                .attr("height", d => d.h * that.scale * that.zoom_scale)
+                .attr("height", d => d.h * that.scale * that.zoom_scale);
+
+
+            edge_summary_in_group
+                .attr("transform", function (d, i) {
+                    let class_cnt = d.length;
+                    let bar_width = 8*that.zoom_scale;
+                    let small_inner_bounder = 1.5*that.zoom_scale;
+                    let large_inner_bounder = 3*that.zoom_scale;
+                    let outer_bounder = 3*that.zoom_scale;
+                    let chart_height = 50*that.zoom_scale;
+                    let chart_width = bar_width*(2*class_cnt)+large_inner_bounder*(class_cnt-1)+small_inner_bounder*class_cnt+outer_bounder*2;
+                    return "translate("+(that.selection_box[i].x+that.selection_box[i].width/2-chart_width/2)+","+(that.selection_box[i].y-chart_height)+")"
+                })
+                .each(function (d) {
+                    let group = d3.select(this);
+                    let class_cnt = d.length;
+                    let bar_width = 8*that.zoom_scale;
+                    let small_inner_bounder = 1.5*that.zoom_scale;
+                    let large_inner_bounder = 3*that.zoom_scale;
+                    let outer_bounder = 3*that.zoom_scale;
+                    let chart_width = bar_width*(2*class_cnt)+large_inner_bounder*(class_cnt-1)+small_inner_bounder*class_cnt+outer_bounder*2;
+                    let chart_height = 50*that.zoom_scale;
+                    let max_num = 0;
+                    group.select("line")
+                        .attr("x1", 0)
+                        .attr("y1", chart_height*0.8)
+                        .attr("x2", chart_width)
+                        .attr("y2", chart_height*0.8)
+                        .attr("stroke-width", that.zoom_scale)
+                        .attr("stroke", "black");
+                    for(let i=0;i<d.length;i++){
+                        max_num = Math.max(max_num, d[i].in, d[i].out);
+                    }
+                    for(let i=0; i<d.length; i++){
+                        group.select("#edge-bar-in-"+i)
+                            .attr("x", outer_bounder+(bar_width*2+small_inner_bounder+large_inner_bounder)*i)
+                            .attr("y", chart_height*0.8-chart_height*0.7*d[i].in/max_num)
+                            .attr("width", bar_width)
+                            .attr("height", chart_height*0.7*d[i].in/max_num)
+                            .attr("fill", d[i].idx===0?color_unlabel:color_label[d[i].idx-1]);
+                        group.select("#edge-bar-out-"+i)
+                            .attr("x", outer_bounder+(bar_width*2+small_inner_bounder+large_inner_bounder)*i+bar_width+small_inner_bounder)
+                            .attr("y", chart_height*0.8-chart_height*0.7*d[i].out/max_num)
+                            .attr("width", bar_width)
+                            .attr("height", chart_height*0.7*d[i].out/max_num)
+                            .attr("fill", d[i].idx===0?color_unlabel:color_label[d[i].idx-1]);
+                    }
+            });
 
 
             if((nodes_in_group.size()===0) && (golds_in_group.size() === 0)
-                && (glyph_in_group.size() === 0) &&(path_in_group.size() === 0)){
+                && (glyph_in_group.size() === 0) &&(path_in_group.size() === 0) && (edge_summary_in_group.size() === 0)){
                 console.log("no update");
                 resolve();
             }
@@ -692,8 +800,8 @@ let GraphLayout = function (container) {
                 .attr("id", d => "id-" + d.id)
                 .attr("cursor", "default")
                 .attr("class", "node-dot")
-                .attr("cx", d => that.center_scale_x(d.x))
-                .attr("cy", d => that.center_scale_y(d.y))
+                .attr("cx", d => that.if_focus_selection_box?d.focus_x:that.center_scale_x(d.x))
+                .attr("cy", d => that.if_focus_selection_box?d.focus_y:that.center_scale_y(d.y))
                 .attr("r", d => that.r(d.id))
                 .attr("opacity", 0)
                 .attr("fill", function (d) {
@@ -796,7 +904,8 @@ let GraphLayout = function (container) {
                 .append("path")
                 .attr("id", d => "gold-" + d.id)
                 .attr("cursor", "default")
-                .attr("d", d => star_path(star_outer_r * that.zoom_scale, star_inner_r * that.zoom_scale, that.center_scale_x(d.x), that.center_scale_y(d.y)))
+                .attr("d", d => star_path(star_outer_r * that.zoom_scale, star_inner_r * that.zoom_scale,
+                    that.if_focus_selection_box?d.focus_x:that.center_scale_x(d.x), that.if_focus_selection_box?d.focus_y:that.center_scale_y(d.y)))
                 .attr("fill", function (d) {
                     let added_idx = add_labeled_nodes.indexOf(d.id);
                     if(added_idx > -1){
@@ -841,7 +950,7 @@ let GraphLayout = function (container) {
                     let node = d3.select(this);
                     // d.piechart = node;
                 })
-                .attr("transform", d =>"translate("+that.center_scale_x(d.x)+","+that.center_scale_y(d.y)+")")
+                .attr("transform", d =>"translate("+(that.if_focus_selection_box?d.focus_x:that.center_scale_x(d.x))+","+(that.if_focus_selection_box?d.focus_y:that.center_scale_y(d.y))+")")
                 .attr("opacity", 0);
             // glyphgs.selectAll("path")
             //     .data(d => pie(d.score[iter]))
@@ -863,16 +972,24 @@ let GraphLayout = function (container) {
                 .append("linearGradient")
                 .attr("gradientUnits", "userSpaceOnUse")
                 .attr("id", d => "path" + d[0].id + "-" + d[1].id)
-                .attr("x1", d => that.center_scale_x(d[0].x))
-                .attr("y1", d => that.center_scale_y(d[0].y))
-                .attr("x2", d => that.center_scale_x(d[1].x))
-                .attr("y2", d => that.center_scale_y(d[1].y));
+                .attr("x1", d => that.if_focus_selection_box?d[0].focus_x:that.center_scale_x(d[0].x))
+                .attr("y1", d => that.if_focus_selection_box?d[0].focus_y:that.center_scale_y(d[0].y))
+                .attr("x2", d => that.if_focus_selection_box?d[1].focus_x:that.center_scale_x(d[1].x))
+                .attr("y2", d => that.if_focus_selection_box?d[1].focus_y:that.center_scale_y(d[1].y));
             gradient.append("stop")
                 .attr("class", "stop-1")
                 .attr("offset", "0%")
                 .attr("stop-color", d => d[0].label[iter]===-1?color_unlabel:color_label[d[0].label[iter]]);
             gradient.append("stop")
                 .attr("class", "stop-2")
+                .attr("offset", "45%")
+                .attr("stop-color", d => d[0].label[iter]===-1?color_unlabel:color_label[d[0].label[iter]]);
+            gradient.append("stop")
+                .attr("class", "stop-3")
+                .attr("offset", "55%")
+                .attr("stop-color", d => d[1].label[iter]===-1?color_unlabel:color_label[d[1].label[iter]]);
+            gradient.append("stop")
+                .attr("class", "stop-4")
                 .attr("offset", "100%")
                 .attr("stop-color", d => d[1].label[iter]===-1?color_unlabel:color_label[d[1].label[iter]]);
 
@@ -888,23 +1005,6 @@ let GraphLayout = function (container) {
                 .attr("d", function (d) {
                     return bezier_tapered(d[3][0], d[3][1], d[3][2], path_begin_width * that.zoom_scale,
                         path_mid_width * that.zoom_scale, path_end_width * that.zoom_scale);
-                    return "M{0} {1}, Q {2} {3}, {4} {5}".format(
-                        d[3][0].x, d[3][0].y,
-                        d[3][1].x, d[3][1].y,
-                        d[3][2].x, d[3][2].y);
-                    return path_line(d[3])
-                    let begin = [that.center_scale_x(d[0].x), that.center_scale_y(d[0].y)];
-                    let end = [that.center_scale_x(d[1].x), that.center_scale_y(d[1].y)];
-                    let begin_dict={x:begin[0], y:begin[1]};
-                    let end_dict={x:end[0], y:end[1]};
-                    // return variableWidthPath(begin_dict, end_dict, 8, 2);
-                    let dis = Math.sqrt(Math.pow(begin[0]-end[0], 2) + Math.pow(begin[1]-end[1], 2));
-                    let radius = dis*path_curve;
-                    let mid = curve_mid(begin, end, radius);
-                    let path = d3.path();
-                    path.moveTo(begin[0], begin[1]);
-                    path.arcTo(mid[0], mid[1], end[0], end[1], radius);
-                    return path.toString();
                 })
                 .on("mouseover", function (d) {
                             console.log(d);
@@ -918,15 +1018,15 @@ let GraphLayout = function (container) {
                                 .attr("xlink:href", d => d.url)
                                 .attr("x", function(d){
                                     if (d.quad === 1 || d.quad === 2){
-                                        return that.center_scale_x(d.node.x)  - d.w * that.scale * that.zoom_scale;
+                                        return (that.if_focus_selection_box?d.focus_x:that.center_scale_x(d.node.x))  - d.w * that.scale * that.zoom_scale;
                                     }
-                                    return that.center_scale_x(d.node.x);
+                                    return that.if_focus_selection_box?d.focus_x:that.center_scale_x(d.node.x);
                                 })
                                 .attr("y", function(d){
                                     if (d.quad === 2 || d.quad === 3){
-                                        return that.center_scale_y(d.node.y)  - d.h * that.scale * that.zoom_scale;
+                                        return (that.if_focus_selection_box?d.focus_y:that.center_scale_y(d.node.y))  - d.h * that.scale * that.zoom_scale;
                                     }
-                                    return that.center_scale_y(d.node.y);
+                                    return that.if_focus_selection_box?d.focus_y:that.center_scale_y(d.node.y);
                                 })
                                 .attr("width", d => d.h * that.scale * that.zoom_scale)
                                 .attr("height", d => d.h * that.scale * that.zoom_scale);
@@ -952,24 +1052,173 @@ let GraphLayout = function (container) {
                     if (d.quad === 1 || d.quad === 2){
                         return that.center_scale_x(d.node.x)  - d.w * that.scale * that.zoom_scale;
                     }
-                    return that.center_scale_x(d.node.x);
+                    return that.if_focus_selection_box?d.focus_x:that.center_scale_x(d.node.x);
                 })
                 .attr("y", function(d){
                     if (d.quad === 2 || d.quad === 3){
                         return that.center_scale_y(d.node.y)  - d.h * that.scale * that.zoom_scale;
                     }
-                    return that.center_scale_y(d.node.y);
+                    return that.if_focus_selection_box?d.focus_y:that.center_scale_y(d.node.y);
                 })
                 .attr("width", d => d.h * that.scale * that.zoom_scale)
                 .attr("height", d => d.h * that.scale * that.zoom_scale);
 
+
+            edge_summary_in_group.enter()
+                .append("g")
+                .attr("class", "edge-summary")
+                .attr("transform", function (d,i) {
+                    let class_cnt = d.length;
+                    let bar_width = 8*that.zoom_scale;
+                    let small_inner_bounder = 1.5*that.zoom_scale;
+                    let large_inner_bounder = 3*that.zoom_scale;
+                    let outer_bounder = 3*that.zoom_scale;
+                    let chart_height = 50*that.zoom_scale;
+                    let chart_width = bar_width*(2*class_cnt)+large_inner_bounder*(class_cnt-1)+small_inner_bounder*class_cnt+outer_bounder*2;
+                    return "translate("+(that.selection_box[i].x+that.selection_box[i].width/2-chart_width/2)+","+(that.selection_box[i].y-chart_height)+")"
+                })
+                .each(function (d) {
+                    let group = d3.select(this);
+                    let class_cnt = d.length;
+                    let bar_width = 8*that.zoom_scale;
+                    let small_inner_bounder = 1.5*that.zoom_scale;
+                    let large_inner_bounder = 3*that.zoom_scale;
+                    let outer_bounder = 3*that.zoom_scale;
+                    let chart_width = bar_width*(2*class_cnt)+large_inner_bounder*(class_cnt-1)+small_inner_bounder*class_cnt+outer_bounder*2;
+                    let chart_height = 50*that.zoom_scale;
+                    let max_num = 0;
+                    for(let i=0;i<d.length;i++){
+                        max_num = Math.max(max_num, d[i].in, d[i].out);
+                    }
+                    group.append("line")
+                        .attr("x1", 0)
+                        .attr("y1", chart_height*0.8)
+                        .attr("x2", chart_width)
+                        .attr("y2", chart_height*0.8)
+                        .attr("stroke-width", that.zoom_scale)
+                        .attr("stroke", "black");
+                    for(let i=0; i<d.length;i++ ){
+                        group.append("rect")
+                            .attr("class", "edge-summary-rect")
+                            .attr("id", "edge-bar-in-"+i)
+                            .attr("x", outer_bounder+(bar_width*2+small_inner_bounder+large_inner_bounder)*i)
+                            .attr("y", chart_height*0.8-chart_height*0.7*d[i].in/max_num)
+                            .attr("width", bar_width)
+                            .attr("height", chart_height*0.7*d[i].in/max_num)
+                            .attr("fill", d[i].idx===0?color_unlabel:color_label[d[i].idx-1]);
+                        group.append("rect")
+                            .attr("class", "edge-summary-rect")
+                            .attr("id", "edge-bar-out-"+i)
+                            .attr("x", outer_bounder+(bar_width*2+small_inner_bounder+large_inner_bounder)*i+bar_width+small_inner_bounder)
+                            .attr("y", chart_height*0.8-chart_height*0.7*d[i].out/max_num)
+                            .attr("width", bar_width)
+                            .attr("height", chart_height*0.7*d[i].out/max_num)
+                            .attr("fill", d[i].idx===0?color_unlabel:color_label[d[i].idx-1]);
+                    }
+                });
+
             if((nodes_in_group.enter().size() === 0) && (golds_in_group.enter().size() === 0)
-                && (glyph_in_group.enter().size() === 0) &&(path_in_group.enter().size() === 0) && (img_in_group.enter().size() === 0)){
+                && (glyph_in_group.enter().size() === 0) &&(path_in_group.enter().size() === 0) && (img_in_group.enter().size() === 0) && (edge_summary_group.enter().size() === 0)){
                 console.log("no create");
                 resolve();
             }
 
         })
+    };
+
+    that._get_focus_selection_scale = function() {
+        function center(nodes, width, height) {
+            let m_center = {x:0, y:0};
+            for(let node of nodes){
+                m_center.x += node.x;
+                m_center.y += node.y;
+            }
+            m_center.x /= nodes.length;
+            m_center.y /= nodes.length;
+            let delta = {
+                x:width/2 - m_center.x,
+                y:height/2 - m_center.y
+            };
+            for(let node of nodes){
+                node.x += delta.x;
+                node.y += delta.y;
+            }
+        }
+        function fd(nodes, width, height) {
+        let simulate = d3.forceSimulation(nodes)
+             .force("charge", d3.forceManyBody().strength(100))
+            .force("collision", d3.forceCollide(d => d.r).strength(1))
+            .force("center", d3.forceCenter(width/2, height/2));
+        console.log("begin tick");
+        simulate.stop();
+        for(let i=0; i<500; i++){
+            simulate.tick();
+        }
+    }
+        function scalefd(nodes, width, height) {
+            let min_x = 1000000;
+            let max_x = -1000000;
+            let min_y = 1000000;
+            let max_y = -1000000;
+            for(let node of nodes){
+                min_x = Math.min(min_x, node.x-node.r);
+                max_x = Math.max(max_x, node.x+node.r);
+                min_y = Math.min(min_y, node.y-node.r);
+                max_y = Math.max(max_y, node.y+node.r);
+            }
+            let scale = Math.min(width/(max_x-min_x), height/(max_y-min_y));
+            console.log(scale);
+            scale *= 0.85;
+            //scale = 1;
+            for(let node of nodes){
+                node.r *= scale;
+                node.x *= scale;
+                node.y *= scale;
+            }
+            fd(nodes, width, height);
+            center(nodes, width, height);
+            return scale
+        }
+        let selection_boxes = that.selection_box.map(function (d) {
+            return {
+                x:d.x+d.width/2,
+                y:d.y+d.height/2,
+                width:d.width,
+                height:d.height,
+                id:d.id,
+                r:Math.sqrt(d.width*d.width+d.height*d.height)/2
+            }
+        });
+        fd(selection_boxes, that.width, that.height);
+        let scale = scalefd(selection_boxes, that.width, that.height);
+
+        // set nodes new position
+        console.log("selection boxes:", selection_boxes);
+        for(let i=0; i<selection_boxes.length; i++){
+            for(let node of that.selection_box[i].nodes){
+                let delta_x = (that.center_scale_x(node.x)-(that.selection_box[i].x+that.selection_box[i].width/2))*scale;
+                let delta_y = (that.center_scale_y(node.y)-(that.selection_box[i].y+that.selection_box[i].height/2))*scale;
+                node.focus_x = selection_boxes[i].x + delta_x;
+                node.focus_y = selection_boxes[i].y + delta_y;
+
+            }
+        }
+
+        // set new selection position
+        for(let i=0; i<selection_boxes.length; i++){
+            that.selection_box[i].width *= scale;
+            that.selection_box[i].height *= scale;
+            that.selection_box[i].x = selection_boxes[i].x - that.selection_box[i].width/2;
+            that.selection_box[i].y = selection_boxes[i].y - that.selection_box[i].height/2;
+        }
+        for(let i=0; i<selection_boxes.length; i++){
+            for(let node of that.selection_box[i].nodes){
+                let flag = inbox(that.selection_box[i], node.focus_x, node.focus_y);
+                if(flag === false){
+                    console.log("err");
+                }
+            }
+        }
     };
 
     that.r = function(id) {
@@ -1292,6 +1541,8 @@ let GraphLayout = function (container) {
                 .data(imgs, d => d.id);
             gradient_in_group = gradient_group.selectAll("linearGradient")
                 .data([], d => d[0].id+","+d[1].id);
+            edge_summary_in_group = edge_summary_group.selectAll(".edge-summary").data(edges_summary);
+
             await that._remove();
     };
 

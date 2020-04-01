@@ -45,7 +45,7 @@ let SettingView = null;
 // ];
 
 
-// stl
+// // stl
 let CategoryColor = [
     "#8c564b",
     "#ff7f0e",
@@ -58,7 +58,7 @@ let CategoryColor = [
     "#bcbd22",
     "#9467bd"];
 
-// // oct
+// oct
 // let CategoryColor = [
 //     "#1f77b4",
 //     "#ff7f0e",
