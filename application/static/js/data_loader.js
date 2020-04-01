@@ -793,10 +793,15 @@ DataLoaderClass = function () {
         that.state.nodes_before_focus_selection = that.state.nodes;
         that.state.selection_before_focus_sulection = selection_box.map(function (d) {
                 return {
-                    x: d.x,
-                    y:d.y,
-                    width:d.width,
-                    height:d.height
+                    "x": d.x,
+                    "y":d.y,
+                    "rx":d.rx,
+                    "ry":d.ry,
+                    "tao":d.tao,
+                    "F1":JSON.parse(JSON.stringify(d.F1)),
+                    "F2":JSON.parse(JSON.stringify(d.F2)),
+                    "s":d.s,
+                    "d":d.d,
             }
         });
         let res = that.get_nodes_in_area(selection_box, that.graph_view.center_scale_x, that.graph_view.center_scale_y);
@@ -823,8 +828,13 @@ DataLoaderClass = function () {
         for(let i=0; i<selection_box.length; i++){
             selection_box[i].x = that.state.selection_before_focus_sulection[i].x;
             selection_box[i].y = that.state.selection_before_focus_sulection[i].y;
-            selection_box[i].width = that.state.selection_before_focus_sulection[i].width;
-            selection_box[i].height = that.state.selection_before_focus_sulection[i].height;
+            selection_box[i].rx = that.state.selection_before_focus_sulection[i].rx;
+            selection_box[i].ry = that.state.selection_before_focus_sulection[i].ry;
+            selection_box[i].tao = that.state.selection_before_focus_sulection[i].tao;
+            selection_box[i].F1 = that.state.selection_before_focus_sulection[i].F1;
+            selection_box[i].F2 = that.state.selection_before_focus_sulection[i].F2;
+            selection_box[i].s = that.state.selection_before_focus_sulection[i].s;
+            selection_box[i].d = that.state.selection_before_focus_sulection[i].d;
         }
         for(let i = 0; i < selection_box.length; i++){
             let nodes = Object.values(that.state.nodes)

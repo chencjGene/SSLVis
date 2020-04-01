@@ -3,7 +3,11 @@
 * */
 
 function inbox(box, x, y){
-    if (x > box.x && x < box.x + box.width && y > box.y && y < box.y + box.height){
+    function distance(x1, y1, x2, y2) {
+            return Math.sqrt(Math.pow(x1-x2, 2)+ Math.pow(y1-y2, 2));
+        }
+
+    if (distance(x, y, box.F1.x, box.F1.y) + distance(x, y, box.F2.x, box.F2.y) <= box.s){
         return true;
     }
     else{
@@ -114,6 +118,14 @@ GraphLayout.prototype._create_selection_box = function(){
                 // d3.select(this).attr("x", d.x = d3.event.x).attr("y", d.y = d3.event.y)
                 d.x = d3.event.x;
                 d.y = d3.event.y;
+                d.F1 = {
+                    x:d.x-d.d/2*Math.cos(d.tao),
+                    y:d.y-d.d/2*Math.sin(d.tao)
+                };
+                d.F2 = {
+                    x:d.x+d.d/2*Math.cos(d.tao),
+                    y:d.y+d.d/2*Math.sin(d.tao)
+                };
                 that._update_selection_box();
             })
             .on("end", async function(){
@@ -126,7 +138,7 @@ GraphLayout.prototype._create_selection_box = function(){
         .enter()
         .append("g")
         .attr("class", "selection-box")
-        .attr("transform", d => "translate("+(d.x)+","+ (d.y) +")")
+        .attr("transform", d => "rotate("+d.tao+","+d.x+","+d.y+") translate("+(d.x)+","+ (d.y) +")")
         .call(drag)        
         .on("mousedown", function (d) {
             console.log("mousedown", d);
@@ -134,103 +146,18 @@ GraphLayout.prototype._create_selection_box = function(){
             that.data_manager.update_edit_state(d, "box");
             d3.event.stopPropagation();
         });
-    sg.append("rect")
+    sg.append("ellipse")
         .attr("class", "box")
-        .attr("width", d => d.width)
-        .attr("height", d => d.height)
-        .attr("x", d => 0)
-        .attr("y", d => 0)
+        .attr("rx", d => d.rx)
+        .attr("ry", d => d.ry)
+        .attr("cx", d => 0)
+        .attr("cy", d => 0)
         .style("fill", "white")
         .style("fill-opacity", 0)
-        .style("stroke-width", 4 * that.zoom_scale)
+        .style("stroke-width", 2 * that.zoom_scale)
         .style("stroke", "gray")
         .style("cursor", "move");
-    let resize_box_group = sg.append("g")
-        .attr("class", "resize");
-    resize_box_group.append("rect")
-        .attr("class", "resize-rect")
-        .attr("id", "resize_rect_right_bottom")
-        .attr("x", d => d.width - 5 * that.zoom_scale)
-        .attr("y", d => d.height - 5 * that.zoom_scale)
-        .attr("width", 10 * that.zoom_scale)
-        .attr("height", 10 * that.zoom_scale)
-        .attr("fill", "gray")
-        .attr("stroke-width", 0)
-        .style("cursor", "nw-resize")
-        .call(d3.drag().on("start", function () {
-            d3.event.sourceEvent.stopPropagation();
-        }).on("drag", function (d) {
-                let event = d3.mouse(that.main_group.node());
-                d.width = event[0] - d.x;
-                d.height= event[1] - d.y;
 
-                that._update_selection_box();
-        })).on("end", async function(){
-            await that.show_edges();
-        });
-    resize_box_group.append("rect")
-        .attr("class", "resize-rect")
-        .attr("id", "resize_rect_left_top")
-        .attr("x", -5 * that.zoom_scale)
-        .attr("y", -5 * that.zoom_scale)
-        .attr("width", 10  * that.zoom_scale)
-        .attr("height", 10  * that.zoom_scale)
-        .attr("fill", "gray")
-        .attr("stroke-width", 0)
-        .style("cursor", "nw-resize")
-        .call(d3.drag().on("start", function () {
-            d3.event.sourceEvent.stopPropagation();
-        }).on("drag", function (d) {
-                let event = d3.mouse(that.main_group.node());
-                d.width =d.x+d.width- event[0];
-                d.height=d.y+d.height-event[1];
-                d.x = event[0];
-                d.y = event[1];
-
-                that._update_selection_box();
-        }));
-
-    let cross_group = sg.append("g")
-            .attr("class", "cross")
-            .attr("transform", d => "translate("+(d.width - 10 * that.zoom_scale)+","+ (10 * that.zoom_scale) +")")
-            .on("mouseover", function(){
-                console.log("cross mouse over");
-                d3.select(this).selectAll("line")
-                    .classed("cross-line-hide", false)
-                    .classed("cross-line", true);
-            })
-            .on("mouseout", function(){
-                console.log("cross mouse out");
-                d3.select(this).selectAll("line")
-                .classed("cross-line-hide", true)
-                .classed("cross-line", false);
-            })
-            .on("click", async function(d){
-                await that.data_manager.delete_box(d.id);
-            })
-    cross_group.append("line")
-            .attr("id", "cross-line-1")
-            .attr("class", "cross-line-hide")
-            .attr("x1", -5 * that.zoom_scale)
-            .attr("y1", -5 * that.zoom_scale)
-            .attr("x2", 5 * that.zoom_scale)
-            .attr("y2", 5 * that.zoom_scale)
-            .style("stroke-width", 2  * that.zoom_scale);
-    cross_group.append("line")
-            .attr("id", "cross-line-2")
-            .attr("class", "cross-line-hide")
-            .attr("x1", -5 * that.zoom_scale)
-            .attr("y1", 5 * that.zoom_scale)
-            .attr("x2", 5 * that.zoom_scale)
-            .attr("y2", -5 * that.zoom_scale)
-            .style("stroke-width", 2  * that.zoom_scale);
-    cross_group.append("rect")
-            .attr("class", "cross-background")
-            .attr("x", -5 * 1.5 * that.zoom_scale)
-            .attr("y", -5 * 1.5 * that.zoom_scale)
-            .attr("width", 10 * 1.5 * that.zoom_scale)
-            .attr("height", 10 * 1.5 * that.zoom_scale)
-            .style("opacity", 0);
 
 };
 
@@ -257,6 +184,7 @@ GraphLayout.prototype._update_selection_box = function(){
         that.selection_box[i].label_count = label_count;
         that.selection_box[i].max_count_cls = max_count_cls;
     }
+    console.log("new selection box:", that.selection_box);
 
     // TODO: highlight 
     if (that.selection_box.length > 0){
@@ -273,45 +201,13 @@ GraphLayout.prototype._update_selection_box = function(){
 
     let sg = that.selection_group.selectAll(".selection-box")
         .data(that.selection_box, d => d.id)
-        .attr("transform", d => "translate("+(d.x)+","+ (d.y) +")");
+        .attr("transform", d => "rotate("+d.tao+","+d.x+","+d.y+") translate("+(d.x)+","+ (d.y) +")");
     sg.selectAll(".box")
-        .attr("width", d => d.width)
-        .attr("height", d => d.height)
-        .style("stroke-width", 4 * that.zoom_scale)
+        .attr("rx", d => d.rx)
+        .attr("ry", d => d.ry)
+        .style("stroke-width", 2 * that.zoom_scale)
         .style("stroke", d => CategoryColor[d.max_count_cls]);
-    let cross_group = sg.select(".cross")
-        .attr("transform", d => "translate("+(d.width - 10 * that.zoom_scale)+","+ (10 * that.zoom_scale) +")");
-    cross_group.select("#cross-line-1")
-        .attr("x1", -5 * that.zoom_scale)
-        .attr("y1", -5 * that.zoom_scale)
-        .attr("x2", 5 * that.zoom_scale)
-        .attr("y2", 5 * that.zoom_scale)
-        .style("stroke-width", 2  * that.zoom_scale);
-    cross_group.select("#cross-line-2")
-        .attr("x1", -5 * that.zoom_scale)
-        .attr("y1", 5 * that.zoom_scale)
-        .attr("x2", 5 * that.zoom_scale)
-        .attr("y2", -5 * that.zoom_scale)
-        .style("stroke-width", 2  * that.zoom_scale);
-    cross_group.select("rect")
-        .attr("x", -5 * 1.5 * that.zoom_scale)
-        .attr("y", -5 * 1.5 * that.zoom_scale)
-        .attr("width", 10 * 1.5 * that.zoom_scale)
-        .attr("height", 10 * 1.5 * that.zoom_scale);
 
-
-    sg.select(".resize").select("#resize_rect_right_bottom")
-        .attr("x", d => d.width-5 * that.zoom_scale)
-        .attr("y", d => d.height-5 * that.zoom_scale)
-        .attr("width", 10 * that.zoom_scale)
-        .attr("height", 10 * that.zoom_scale)
-        .style("fill", d => CategoryColor[d.max_count_cls]);
-    sg.select(".resize").select("#resize_rect_left_top")
-        .attr("x", -5 * that.zoom_scale)
-        .attr("y", -5 * that.zoom_scale)
-        .attr("width", 10  * that.zoom_scale)
-        .attr("height", 10  * that.zoom_scale)
-        .style("fill", d => CategoryColor[d.max_count_cls]);
 
 };
 
