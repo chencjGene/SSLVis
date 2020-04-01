@@ -281,7 +281,7 @@ let GraphHighlight = function (parent) {
                 if(max_d-min_d < 1e-4) break;
             }
             let min_res = get_area(mid_d, h, k, tao, convexhull, true);
-            let s = min_res.s;
+            let s = min_res.s * 1.1;
             let rx = s/2;
             let ry = Math.sqrt(s*s-mid_d*mid_d)/2;
             console.log(min_res);
@@ -304,10 +304,10 @@ let GraphHighlight = function (parent) {
             .classed("not_possible", false)
             .classed("possible", false);
 
-        // let lasso_paths = lasso.selectedItems().data().map(function (d) {
-        //         return {x:view.center_scale_x(d.x), y:view.center_scale_y(d.y)}
-        //     });
-        let lasso_paths = lasso_select_path;
+        let lasso_paths = lasso.selectedItems().data().map(function (d) {
+                return {x:view.center_scale_x(d.x), y:view.center_scale_y(d.y)}
+        });
+        // let lasso_paths = lasso_select_path;
         console.log(lasso_paths);
         let ellipse_path = ellipse(lasso_paths);
         view.selection_box.push({

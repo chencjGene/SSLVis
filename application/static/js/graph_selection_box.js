@@ -116,8 +116,8 @@ GraphLayout.prototype._create_selection_box = function(){
             })
             .on("drag", function(d){
                 // d3.select(this).attr("x", d.x = d3.event.x).attr("y", d.y = d3.event.y)
-                d.x = d3.event.x;
-                d.y = d3.event.y;
+                d.x = d3.mouse(that.main_group.node())[0];
+                d.y = d3.mouse(that.main_group.node())[1];
                 d.F1 = {
                     x:d.x-d.d/2*Math.cos(d.tao),
                     y:d.y-d.d/2*Math.sin(d.tao)
