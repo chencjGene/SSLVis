@@ -352,28 +352,29 @@ let GraphLayout = function (container) {
             //         if(gold_node_cnt === 2) break;
             //     }
             // }
-            let all_path = [];
-            for (let i = 0; i < nodes.length; i++){
-                let from_list = nodes[i].from;
-                let from_weight = nodes[i].from_weight;
-                let to_list = nodes[i].to;
-                let to_weight = nodes[i].to_weight;
-                for (let j = 0; j < from_list.length; j++){
-                    if (nodes_dict[from_list[j]] != undefined){
-                        let path = [nodes_dict[from_list[j]], nodes[i], from_weight[j]];
-                        all_path.push(path);
-                    }
-                }
-                for (let j = 0; j < to_list.length; j++){
-                    if (nodes_dict[to_list[j]] != undefined){
-                        let path = [nodes[i], nodes_dict[to_list[j]], to_weight[j]];
-                        all_path.push(path);
-                    }
-                }
-            }
-            path = delRepeatPath(all_path);
-            path = path.filter(d => d[2] > edge_filter_threshold[0] && d[2] < edge_filter_threshold[1]);
-            path = path.filter(d => d[0].label.slice(-1)[0] != d[1].label.slice(-1)[0]);
+            
+            // let all_path = [];
+            // for (let i = 0; i < nodes.length; i++){
+            //     let from_list = nodes[i].from;
+            //     let from_weight = nodes[i].from_weight;
+            //     let to_list = nodes[i].to;
+            //     let to_weight = nodes[i].to_weight;
+            //     for (let j = 0; j < from_list.length; j++){
+            //         if (nodes_dict[from_list[j]] != undefined){
+            //             let path = [nodes_dict[from_list[j]], nodes[i], from_weight[j]];
+            //             all_path.push(path);
+            //         }
+            //     }
+            //     for (let j = 0; j < to_list.length; j++){
+            //         if (nodes_dict[to_list[j]] != undefined){
+            //             let path = [nodes[i], nodes_dict[to_list[j]], to_weight[j]];
+            //             all_path.push(path);
+            //         }
+            //     }
+            // }
+            // path = delRepeatPath(all_path);
+            // path = path.filter(d => d[2] > edge_filter_threshold[0] && d[2] < edge_filter_threshold[1]);
+            // path = path.filter(d => d[0].label.slice(-1)[0] != d[1].label.slice(-1)[0]);
         }
 
         // remove path of length 0
