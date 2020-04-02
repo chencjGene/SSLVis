@@ -104,7 +104,7 @@ DataLoaderClass = function () {
         last_nodes:[],
         // graph info:
         complete_graph:null,
-        edge_filter_threshold:[0.0, 1],
+        edge_filter_threshold:[0.05, 1],
         nodes: null,
         path: {
             "in": [],
@@ -123,6 +123,10 @@ DataLoaderClass = function () {
         aggregate:[],
         is_zoom: true,
         rect_nodes: [],
+        if_focus_selection_box: false,
+        re_focus_selection_box: false,
+        nodes_before_focus_selection: null,
+        selection_before_focus_sulection: null,
         // history info:
         history_data: null,
         // edit info:
@@ -360,7 +364,7 @@ DataLoaderClass = function () {
     that.set_view = function(v, name){
         that[name + "_view"] = v;
         v.set_data_manager(that);
-    }
+    };
 
     // update img_url in states and update ImageView
     that.update_image_view = async function(nodes){
@@ -744,7 +748,7 @@ DataLoaderClass = function () {
         }
         // // edited by Changjian
         that.set_filter_range([19, 19], label_range, [0, 19], [0,19],
-            [1,19], ["between"], [0, 6], that.state.kdegree_widget_range);
+            [0,19], ["between"], [0, 6], that.state.kdegree_widget_range);
         that.update_filter_view();
         that.state.glyphs = that.state.uncertainty_widget_data[that.state.uncertainty_widget_data.length - 1];
 
@@ -775,9 +779,73 @@ DataLoaderClass = function () {
             "rect_nodes": that.state.rect_nodes,
             "edge_filter_threshold": that.state.edge_filter_threshold,
             "edge_type_range": that.state.edge_type_range,
-            "edit_state": that.state.edit_state
+            "edit_state": that.state.edit_state,
+            "if_focus_selection_box": that.state.if_focus_selection_box,
+            "re_focus_selection_box":that.state.re_focus_selection_box,
+            "label_names": that.state.label_names
         });
 
+    };
+
+    that.focus_selection_box = function(selection_box) {
+        that.state.if_focus_selection_box = true;
+        that.state.re_focus_selection_box = true;
+        that.state.nodes_before_focus_selection = that.state.nodes;
+        that.state.selection_before_focus_sulection = selection_box.map(function (d) {
+                return {
+                    "x": d.x,
+                    "y":d.y,
+                    "rx":d.rx,
+                    "ry":d.ry,
+                    "tao":d.tao,
+                    "F1":JSON.parse(JSON.stringify(d.F1)),
+                    "F2":JSON.parse(JSON.stringify(d.F2)),
+                    "s":d.s,
+                    "d":d.d,
+            }
+        });
+        let res = that.get_nodes_in_area(selection_box, that.graph_view.center_scale_x, that.graph_view.center_scale_y);
+        let nodes = res[0];
+        let nodes_in_area = res[1];
+        that.state.nodes = nodes;
+        that.state.rescale = false;
+        let i=0;
+        for(let one_selection_box of selection_box){
+            one_selection_box.nodes = nodes_in_area[i++];
+        }
+        that.set_filter_data(that.state.nodes);
+        let ranges = that.filter_view.get_ranges();
+        that.set_filter_range(ranges[0], ranges[1], ranges[2], ranges[3], ranges[4], ranges[5], ranges[6], ranges[7]);
+        that.update_filter_view();
+        that.graph_view.show_edges();
+        that.state.re_focus_selection_box = false;
+    };
+
+    that.unfocus_selection_box = function(selection_box) {
+        that.state.if_focus_selection_box = false;
+        that.state.re_focus_selection_box = false;
+        that.state.nodes = that.state.nodes_before_focus_selection;
+        for(let i=0; i<selection_box.length; i++){
+            selection_box[i].x = that.state.selection_before_focus_sulection[i].x;
+            selection_box[i].y = that.state.selection_before_focus_sulection[i].y;
+            selection_box[i].rx = that.state.selection_before_focus_sulection[i].rx;
+            selection_box[i].ry = that.state.selection_before_focus_sulection[i].ry;
+            selection_box[i].tao = that.state.selection_before_focus_sulection[i].tao;
+            selection_box[i].F1 = that.state.selection_before_focus_sulection[i].F1;
+            selection_box[i].F2 = that.state.selection_before_focus_sulection[i].F2;
+            selection_box[i].s = that.state.selection_before_focus_sulection[i].s;
+            selection_box[i].d = that.state.selection_before_focus_sulection[i].d;
+        }
+        for(let i = 0; i < selection_box.length; i++){
+            let nodes = Object.values(that.state.nodes)
+                .filter(d => inbox(selection_box[i], that.graph_view.center_scale_x(d.x), that.graph_view.center_scale_y(d.y)));
+            selection_box[i].nodes = nodes;
+        }
+        that.set_filter_data(that.state.nodes);
+        let ranges = that.filter_view.get_ranges();
+        that.set_filter_range(ranges[0], ranges[1], ranges[2], ranges[3], ranges[4], ranges[5], ranges[6], ranges[7]);
+        that.update_filter_view();
+        that.graph_view.show_edges();
     };
 
     that.graph_home_callback = function() {
@@ -798,7 +866,7 @@ DataLoaderClass = function () {
             label_range.push(i);
         }
         that.set_filter_range([19, 19], label_range, [0, 19], [0,19],
-            [1,19], [], [0,6], that.state.kdegree_widget_range);
+            [0,19], [], [0,6], that.state.kdegree_widget_range);
         // that.set_filter_range([18, 19], label_range, [0, 19], [0,19]);
         that.update_filter_view();
         // update dist view

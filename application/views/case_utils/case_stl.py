@@ -16,8 +16,14 @@ class CaseSTL(CaseBase):
         if step is None:
             step = self.base_config["step"]
         self._init_model(k=k, evaluate=evaluate, simplifying=simplifying)
+
         if step >= 1:
             self.model.data.actions = []
+            self.model.data.add_new_categories("snake")
+            self.model.data.label_instance([6219, 11966, 12467, 7573, 11905], [10, 10, 10, 10, 10])
+            self.model._training(rebuild=False, evaluate=False, simplifying=False)
+
+        if step >= 2:
             self.model.data.label_instance(
                 json.loads(open(os.path.join(self.model.selected_dir, "dog_idxs.txt"), "r").read().strip("\n")), [5, 5, 5])
 
@@ -29,23 +35,23 @@ class CaseSTL(CaseBase):
         #     self.model._training(rebuild=False, evaluate=False, simplifying=False)
 
         categories = [1 for i in range(10)]
-        if step >= 2:
+        if step >= 3:
             self.model.data.actions = []
             c = json.loads(open(os.path.join(self.model.selected_dir, "local_2_idxs.txt"), "r").read().strip("\n"))
             self.model.local_search_k(c, [1, 2, 3, 4], categories, simplifying=False, evaluate=True)
 
-        if step >= 3:
+        if step >= 4:
             self.model.data.actions = []
             e = json.loads(open(os.path.join(self.model.selected_dir, "local_1_idxs.txt"), "r").read().strip("\n"))
             self.model.local_search_k(e, [1, 2, 3, 4], categories, simplifying=True, evaluate=True)
         
-        if step >= 4:
+        if step >= 5:
             edge_list = [[1609, 2555]]
             self.model.data.actions = []
             self.model.data.remove_edge(edge_list)
             self.model._training(rebuild=False, evaluate=True, simplifying=False)
 
-        if step >= 5:
+        if step >= 6:
             all_labeled_idxs = self.model.data.labeled_idx
             labeled_y = self.model.data.y[all_labeled_idxs]
             cat_idxs = all_labeled_idxs[labeled_y == 3]

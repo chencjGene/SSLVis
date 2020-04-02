@@ -56,10 +56,10 @@ class ExchangePortClass(object):
             self.case_util.connect_model(self.model)
 
     def init_model(self, k, filter_threshold):
-        if self.case_util.base_config["step"] >= 5:
-            config.use_add_tsne = True
-        else:
-            config.use_add_tsne = False
+        # if self.case_util.base_config["step"] >= 5:
+        #     config.use_add_tsne = True
+        # else:
+        #     config.use_add_tsne = False
         self.case_util.run(k=k)
 
     def setK(self, k):
@@ -108,6 +108,7 @@ class ExchangePortClass(object):
     def get_graph(self, filter_threshold=None, wh = 1):
         print(config.use_add_tsne)
         res = self.anchor.get_nodes(wh)
+        res["label_names"] = self.model.data.class_names
         graph = res["graph"]
         for id in graph["nodes"]:
             self.current_ids.append(int(id))

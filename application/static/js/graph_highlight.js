@@ -13,6 +13,8 @@ let GraphHighlight = function (parent) {
     let influence_from_btn_path =null;
     let select_edge_btn_path = null;
     let edit_btn_path = null;
+    let focus_selection_btn_path = null;
+    let lasso_select_path = [];
     let btn_select_color = "#560731";
 
     let path_width_scale = 1.75;
@@ -30,6 +32,7 @@ let GraphHighlight = function (parent) {
         influence_to_btn_path = d3.select("#influence-to-btn").select("path");
         edit_btn_path = d3.select("#apply-delete-btn").select("path");
         select_edge_btn_path = d3.select("#select-edge-btn").select("path");
+        focus_selection_btn_path = d3.select("#focus-btn").selectAll("path");
 
         
 
@@ -39,7 +42,22 @@ let GraphHighlight = function (parent) {
                 // that._change_lasso_mode();
                 $("#lasso-btn").css("background-color", btn_select_color);
                 lasso_btn_path.attr("stroke", "white").attr("fill", "white");
-                view.lasso_or_zoom("rect");
+                view.lasso_or_zoom("lasso");
+            });
+
+        $("#focus-btn")
+            .click(function () {
+                // that._change_lasso_mode();
+                if(!view.if_focus_selection_box){
+                    $("#focus-btn").css("background-color", btn_select_color);
+                    focus_selection_btn_path.attr("stroke", "white").attr("fill", "white");
+                    view.focus_selection_box();
+                }
+                else {
+                    $("#focus-btn").css("background-color", "white");
+                    focus_selection_btn_path.attr("stroke", "black").attr("fill", "black");
+                    view.unfocus_selection_box();
+                }
             });
 
 
@@ -71,7 +89,7 @@ let GraphHighlight = function (parent) {
 
     that.add_btn_style = function() {
         let btn_ids = ["apply-delete-btn", "lasso-btn", "fisheye-btn", "home-btn", "refresh-btn", "influence-to-btn", "influence-from-btn",
-            "select-edge-btn", "loaddataset-button", "setk-button", "localk-button"];
+            "select-edge-btn", "loaddataset-button", "setk-button", "localk-button", "focus-btn"];
         for(let btn_id of btn_ids){
             let select_id = "#"+btn_id;
             let path = d3.select(select_id).selectAll("path");
@@ -125,6 +143,7 @@ let GraphHighlight = function (parent) {
     };
 
     that.lasso_start = function () {
+        lasso_select_path = [];
         lasso.items()
             .attr("r", d => view.r(d.id)) // reset size
             .classed("not_possible", true)
@@ -132,6 +151,8 @@ let GraphHighlight = function (parent) {
     };
 
     that.lasso_draw = function () {
+        let path_node = d3.mouse(view.main_group.node());
+        lasso_select_path.push({x:path_node[0], y:path_node[1]});
         // Style the possible dots
         lasso.possibleItems()
             .classed("not_possible", false)
@@ -146,25 +167,167 @@ let GraphHighlight = function (parent) {
 
     };
 
-    that.lasso_end = function () {
+    that.lasso_end =async function () {
+        function distance(x1, y1, x2, y2) {
+            return Math.sqrt(Math.pow(x1-x2, 2)+ Math.pow(y1-y2, 2));
+        }
+        function convexHull (arr) {
+                const n = arr.length;
+                // There must be at least 3 points
+                if(n < 3) {
+                    return arr;
+                }
+                const hull = [];
+                let l = 0;
+                for(let i = 0; i < n; i++) {
+                    if(arr[i].x < arr[l].x) {
+                        l = i;
+                    }
+                }
+
+                let p = l, q;
+                do{
+                    hull.push(arr[p]);
+                    q = (p + 1) % n;
+                    for(let i = 0; i < n; i++) {
+                        if(orientation(arr[p], arr[i], arr[q]) === 2) {
+                            q = i;
+                        }
+                    }
+                    p = q;
+                }while(p !== l);
+                return hull;
+
+            }
+        function orientation (p, q, r) {
+            const val = (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
+            if(val === 0) {
+                return 0;
+            }
+            return (val > 0) ? 1 : 2;
+        }
+        function get_area(d, h, k, tao, convex_hull, return_max_s = false) {
+            let F1 = {
+                x:h-d/2*Math.cos(tao),
+                y:k-d/2*Math.sin(tao)
+            };
+            let F2 = {
+                x:h+d/2*Math.cos(tao),
+                y:k+d/2*Math.sin(tao)
+            };
+            let max_s= 0;
+            for(let node of convex_hull){
+                //let s = distance(node.x, node.y, F1.x, F1.y) + distance(node.x, node.y, F2.x, F2.y);
+                max_s = Math.max(max_s, distance(node.x, node.y, F1.x, F1.y) + distance(node.x, node.y, F2.x, F2.y))
+            }
+            if(return_max_s) return {
+                area:Math.PI*max_s/4*Math.sqrt(max_s*max_s-d*d),
+                s: max_s,
+                F1:F1,
+                F2:F2
+            };
+            return Math.PI*max_s/4*Math.sqrt(max_s*max_s-d*d);
+        }
+        function get_mid(min_d, max_d) {
+            return min_d + (3-Math.sqrt(5))/2*(max_d-min_d);
+        }
+        function ellipse(path) {
+            let convexhull = convexHull(path);
+            console.log("find convex hull", convexhull);
+
+            // step 1: find h,k, tao
+            let node_a, node_b;
+            let max_dis = 0;
+            for(let u of path){
+                for(let v of path){
+                    let dis = distance(u.x, u.y, v.x, v.y);
+                    if(dis > max_dis) {
+                        max_dis = dis;
+                        node_a = u;
+                        node_b = v;
+                    }
+                }
+            }
+            let h = (node_a.x+node_b.x)/2;
+            let k = (node_a.y+node_b.y)/2;
+            let tao = Math.PI/2;
+            if(node_a.x!==node_b.x) tao = Math.atan((node_a.y-node_b.y)/(node_a.x-node_b.x));
+            // step 2: d
+            let min_d = 0;
+            let max_d = 0;
+            for(let node of path){
+                max_d = Math.max(max_d, 2*distance(node.x, node.y, h, k));
+            }
+            let mid_d = get_mid(min_d, max_d);
+            let min_d_area = get_area(min_d, h, k, tao, convexhull);
+            let max_d_area = get_area(max_d, h, k, tao, convexhull);
+            let mid_d_area = get_area(mid_d, h, k, tao, convexhull);
+            while (true){
+                console.log(min_d, mid_d, max_d);
+                let new_mid_d = get_mid(mid_d, max_d);
+                let new_mid_area = get_area(new_mid_d, h, k, tao, convexhull);
+                if(new_mid_area < mid_d_area){
+                    min_d = mid_d;
+                    min_d_area = mid_d_area;
+                    mid_d = new_mid_d;
+                    mid_d_area = new_mid_area;
+                }
+                else {
+                    max_d = new_mid_d;
+                    max_d_area = new_mid_area;
+                    mid_d = get_mid(min_d, max_d);
+                    mid_d_area = get_area(mid_d, h, k, tao, convexhull)
+                }
+                if(max_d-min_d < 1e-4) break;
+            }
+            let min_res = get_area(mid_d, h, k, tao, convexhull, true);
+            let s = min_res.s * 1.1;
+            let rx = s/2;
+            let ry = Math.sqrt(s*s-mid_d*mid_d)/2;
+            console.log(min_res);
+            return {
+                cx:h,
+                cy:k,
+                rx:rx,
+                ry:ry,
+                s:s,
+                F1:min_res.F1,
+                F2:min_res.F2,
+                d:mid_d,
+                tao:tao
+            }
+        }
+
+        let path_node = d3.mouse(view.main_group.node());
+        lasso_select_path.push({x:path_node[0], y:path_node[1]});
         lasso.items()
             .classed("not_possible", false)
             .classed("possible", false);
 
-        // Reset the style of the not selected dots
-        lasso.notSelectedItems()
-            .attr("r", d => view.r(d.id));
-
-        let new_selection_tmp = lasso.selectedItems().data().map(d => d.id);
-        // remove hided lasso items
-        let new_selection = [];
-        lasso.selectedItems().each(function (d) {
-            let node = d3.select(this);
-            let opacity = node.attr("opacity");
-            let node_id = d.id;
-            if((view.get_visible_items()[node_id] === true) && (opacity != 0)) new_selection.push(node_id);
+        let lasso_paths = lasso.selectedItems().data().map(function (d) {
+                return {x:view.center_scale_x(d.x), y:view.center_scale_y(d.y)}
         });
-        that.highlight(view.get_nodes(), new_selection);
+        // let lasso_paths = lasso_select_path;
+        console.log(lasso_paths);
+        if(lasso_paths.length === 0) return ;
+        let ellipse_path = ellipse(lasso_paths);
+        view.selection_box.push({
+            "x": ellipse_path.cx,
+            "y": ellipse_path.cy,
+            "rx":ellipse_path.rx,
+            "ry":ellipse_path.ry,
+            "tao":ellipse_path.tao,
+            "F1":ellipse_path.F1,
+            "F2":ellipse_path.F2,
+            "s":ellipse_path.s,
+            "d":ellipse_path.d,
+            "id": view.selection_box_id_count
+        });
+        view.selection_box_id_count += 1;
+        view._create_selection_box();
+        view._update_selection_box();
+        await view.show_edges();
+        that.reset_selection();
     };
 
     that.highlight = function(nodes, select_ids) {

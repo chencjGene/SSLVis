@@ -3,7 +3,11 @@
 * */
 
 function inbox(box, x, y){
-    if (x > box.x && x < box.x + box.width && y > box.y && y < box.y + box.height){
+    function distance(x1, y1, x2, y2) {
+            return Math.sqrt(Math.pow(x1-x2, 2)+ Math.pow(y1-y2, 2));
+        }
+
+    if (distance(x, y, box.F1.x, box.F1.y) + distance(x, y, box.F2.x, box.F2.y) <= box.s){
         return true;
     }
     else{
@@ -112,125 +116,281 @@ GraphLayout.prototype._create_selection_box = function(){
             })
             .on("drag", function(d){
                 // d3.select(this).attr("x", d.x = d3.event.x).attr("y", d.y = d3.event.y)
-                d.x = d3.event.x;
-                d.y = d3.event.y;
+                d.x = d3.mouse(that.main_group.node())[0];
+                d.y = d3.mouse(that.main_group.node())[1];
+                d.F1 = {
+                    x:d.x-d.d/2*Math.cos(d.tao),
+                    y:d.y-d.d/2*Math.sin(d.tao)
+                };
+                d.F2 = {
+                    x:d.x+d.d/2*Math.cos(d.tao),
+                    y:d.y+d.d/2*Math.sin(d.tao)
+                };
                 that._update_selection_box();
             })
             .on("end", async function(){
                 await that.show_edges();
             });
     let transform = that.get_transform();
+    let resizeing = false;
+    let hovering = false;
+    function show_resize_rect(group){
+        let opatity = (resizeing||hovering)?1:0;
+        group.selectAll(".resize-rect")
+            .attr("opacity", opatity);
+    }
     console.log("get transform:", transform);
     let sg = that.selection_group.selectAll(".selection-box")
         .data(that.selection_box, d => d.id)
         .enter()
         .append("g")
         .attr("class", "selection-box")
-        .attr("transform", d => "translate("+(d.x)+","+ (d.y) +")")
+        .attr("transform", d => "rotate("+(d.tao/Math.PI*180)+","+d.x+","+d.y+") translate("+(d.x)+","+ (d.y) +")")
         .call(drag)        
         .on("mousedown", function (d) {
             console.log("mousedown", d);
             // that.data_manager.edit_view.update_click_menu($('#graph-view-svg'), "box");
             that.data_manager.update_edit_state(d, "box");
             d3.event.stopPropagation();
+        })
+        .on("mouseover", function (d) {
+            hovering = true;
+            show_resize_rect(d3.select(this));
+        })
+        .on("mouseout", function (d) {
+            hovering = false;
+            show_resize_rect(d3.select(this));
         });
-    sg.append("rect")
+    sg.append("ellipse")
         .attr("class", "box")
-        .attr("width", d => d.width)
-        .attr("height", d => d.height)
-        .attr("x", d => 0)
-        .attr("y", d => 0)
+        .attr("rx", d => d.rx)
+        .attr("ry", d => d.ry)
+        .attr("cx", d => 0)
+        .attr("cy", d => 0)
         .style("fill", "white")
         .style("fill-opacity", 0)
-        .style("stroke-width", 4 * that.zoom_scale)
+        .style("stroke-width", 2 * that.zoom_scale)
         .style("stroke", "gray")
         .style("cursor", "move");
+
+    let rect_size = 6*that.zoom_scale;
+
+
+    let rotating = false;
     let resize_box_group = sg.append("g")
         .attr("class", "resize");
+    function resize_ellipse(d, mode, event, group){
+        let top_rect = group.select("#resize-rect-top");
+        let right_rect = group.select("#resize-rect-right");
+        let bottom_rect = group.select("#resize-rect-bottom");
+        let left_rect = group.select("#resize-rect-left");
+
+        let rotate = false;
+        if(mode === "top"){
+            //event[1] = -Math.abs(event[1]);
+            let delta = event[1] + d.ry;
+            if(Math.abs(delta[0])>100 && Math.abs(delta[1]) > 100) return;
+            d.y += delta/2*Math.cos(d.tao);
+            d.x -= delta/2*Math.sin(d.tao);
+            d.ry = (d.ry-event[1])/2;
+            if(d.ry > d.rx){
+                d.tao-=Math.PI/2;
+                //d.tao = Math.atan(Math.tan(d.tao));
+                let tmp = d.rx;
+                d.rx = d.ry;
+                d.ry = tmp;
+                rotate = true;
+            }
+        }
+        else if(mode === "right") {
+            //event[0] = Math.abs(event[0]);
+            let delta = event[0] - d.rx;
+            if(Math.abs(delta[0])>100 && Math.abs(delta[1]) > 100) return;
+            d.y += delta/2*Math.sin(d.tao);
+            d.x += delta/2*Math.cos(d.tao);
+            d.rx = (d.rx+event[0])/2;
+            if(d.ry > d.rx){
+                d.tao-=Math.PI/2;
+                //d.tao = Math.atan(Math.tan(d.tao));
+                let tmp = d.rx;
+                d.rx = d.ry;
+                d.ry = tmp;
+                rotate = true;
+            }
+        }
+        else if(mode === "bottom") {
+            //event[1] = Math.abs(event[1]);
+            let delta = event[1] - d.ry;
+            if(Math.abs(delta[0])>100 && Math.abs(delta[1]) > 100) return;
+            d.y += delta/2*Math.cos(d.tao);
+            d.x -= delta/2*Math.sin(d.tao);
+            d.ry = (d.ry+event[1])/2;
+            if(d.ry > d.rx){
+                d.tao-=Math.PI/2;
+                //d.tao = Math.atan(Math.tan(d.tao));
+                let tmp = d.rx;
+                d.rx = d.ry;
+                d.ry = tmp;
+                rotate = true;
+            }
+        }
+        else if(mode === "left") {
+            //event[0] = -Math.abs(event[0]);
+            let delta = event[0] + d.rx;
+            if(Math.abs(delta[0])>100 && Math.abs(delta[1]) > 100) return;
+            d.y += delta/2*Math.sin(d.tao);
+            d.x += delta/2*Math.cos(d.tao);
+            d.rx = (d.rx-event[0])/2;
+            if(d.ry > d.rx){
+                d.tao-=Math.PI/2;
+                //d.tao = Math.atan(Math.tan(d.tao));
+                let tmp = d.rx;
+                d.rx = d.ry;
+                d.ry = tmp;
+                rotate = true;
+            }
+        }
+        if(rotate) {
+            rotating = true;
+            setTimeout(function () {
+                rotating = false
+            }, 100);
+            top_rect.attr("id", "resize-rect-right");
+            right_rect.attr("id", "resize-rect-bottom");
+            bottom_rect.attr("id", "resize-rect-left");
+            left_rect.attr("id", "resize-rect-top");
+
+        }
+        d.s = d.rx * 2;
+        d.d = Math.sqrt(d.rx*d.rx-d.ry*d.ry)*2;
+        d.F1 = {
+            x:d.x-d.d/2*Math.cos(d.tao),
+            y:d.y-d.d/2*Math.sin(d.tao)
+        };
+        d.F2 = {
+            x:d.x+d.d/2*Math.cos(d.tao),
+            y:d.y+d.d/2*Math.sin(d.tao)
+        };
+        if(d.ry < 4){
+            console.log("get")
+        }
+    }
+
     resize_box_group.append("rect")
         .attr("class", "resize-rect")
-        .attr("id", "resize_rect_right_bottom")
-        .attr("x", d => d.width - 5 * that.zoom_scale)
-        .attr("y", d => d.height - 5 * that.zoom_scale)
-        .attr("width", 10 * that.zoom_scale)
-        .attr("height", 10 * that.zoom_scale)
+        .attr("id", "resize-rect-top")
+        .attr("x", d => -rect_size/2)
+        .attr("y", d => -d.ry-rect_size/2)
+        .attr("width", rect_size)
+        .attr("height", rect_size)
         .attr("fill", "gray")
         .attr("stroke-width", 0)
-        .style("cursor", "nw-resize")
+        .attr("opacity", 0)
+        .style("cursor", "default")
         .call(d3.drag().on("start", function () {
+            resizeing = true;
+            show_resize_rect(d3.select(d3.select(this).node().parentNode.parentNode));
             d3.event.sourceEvent.stopPropagation();
         }).on("drag", function (d) {
-                let event = d3.mouse(that.main_group.node());
-                d.width = event[0] - d.x;
-                d.height= event[1] - d.y;
-
+                let rect = d3.select(this);
+                let event = d3.mouse(d3.select(this).node().parentNode.parentNode);
+                let class_name = rect.attr("id").split("-");
+                class_name = class_name[class_name.length-1];
+                resize_ellipse(d, class_name, event, d3.select(d3.select(this).node().parentNode.parentNode));
                 that._update_selection_box();
-        })).on("end", async function(){
+        }).on("end", async function(){
+            resizeing = false;
+            show_resize_rect(d3.select(d3.select(this).node().parentNode.parentNode));
             await that.show_edges();
-        });
-    resize_box_group.append("rect")
-        .attr("class", "resize-rect")
-        .attr("id", "resize_rect_left_top")
-        .attr("x", -5 * that.zoom_scale)
-        .attr("y", -5 * that.zoom_scale)
-        .attr("width", 10  * that.zoom_scale)
-        .attr("height", 10  * that.zoom_scale)
-        .attr("fill", "gray")
-        .attr("stroke-width", 0)
-        .style("cursor", "nw-resize")
-        .call(d3.drag().on("start", function () {
-            d3.event.sourceEvent.stopPropagation();
-        }).on("drag", function (d) {
-                let event = d3.mouse(that.main_group.node());
-                d.width =d.x+d.width- event[0];
-                d.height=d.y+d.height-event[1];
-                d.x = event[0];
-                d.y = event[1];
-
-                that._update_selection_box();
         }));
 
-    let cross_group = sg.append("g")
-            .attr("class", "cross")
-            .attr("transform", d => "translate("+(d.width - 10 * that.zoom_scale)+","+ (10 * that.zoom_scale) +")")
-            .on("mouseover", function(){
-                console.log("cross mouse over");
-                d3.select(this).selectAll("line")
-                    .classed("cross-line-hide", false)
-                    .classed("cross-line", true);
-            })
-            .on("mouseout", function(){
-                console.log("cross mouse out");
-                d3.select(this).selectAll("line")
-                .classed("cross-line-hide", true)
-                .classed("cross-line", false);
-            })
-            .on("click", async function(d){
-                await that.data_manager.delete_box(d.id);
-            })
-    cross_group.append("line")
-            .attr("id", "cross-line-1")
-            .attr("class", "cross-line-hide")
-            .attr("x1", -5 * that.zoom_scale)
-            .attr("y1", -5 * that.zoom_scale)
-            .attr("x2", 5 * that.zoom_scale)
-            .attr("y2", 5 * that.zoom_scale)
-            .style("stroke-width", 2  * that.zoom_scale);
-    cross_group.append("line")
-            .attr("id", "cross-line-2")
-            .attr("class", "cross-line-hide")
-            .attr("x1", -5 * that.zoom_scale)
-            .attr("y1", 5 * that.zoom_scale)
-            .attr("x2", 5 * that.zoom_scale)
-            .attr("y2", -5 * that.zoom_scale)
-            .style("stroke-width", 2  * that.zoom_scale);
-    cross_group.append("rect")
-            .attr("class", "cross-background")
-            .attr("x", -5 * 1.5 * that.zoom_scale)
-            .attr("y", -5 * 1.5 * that.zoom_scale)
-            .attr("width", 10 * 1.5 * that.zoom_scale)
-            .attr("height", 10 * 1.5 * that.zoom_scale)
-            .style("opacity", 0);
+    resize_box_group.append("rect")
+        .attr("class", "resize-rect")
+        .attr("id", "resize-rect-bottom")
+        .attr("x", d => -rect_size/2)
+        .attr("y", d => d.ry-rect_size/2)
+        .attr("width", rect_size)
+        .attr("height", rect_size)
+        .attr("fill", "gray")
+        .attr("stroke-width", 0)
+        .attr("opacity", 0)
+        .style("cursor", "default")
+        .call(d3.drag().on("start", function () {
+            resizeing = true;
+            show_resize_rect(d3.select(d3.select(this).node().parentNode.parentNode));
+            d3.event.sourceEvent.stopPropagation();
+        }).on("drag", function (d) {
+            if(rotating) return;
+                let rect = d3.select(this);
+                let event = d3.mouse(d3.select(this).node().parentNode.parentNode);
+                let class_name = rect.attr("id").split("-");
+                class_name = class_name[class_name.length-1];
+                resize_ellipse(d, class_name, event, d3.select(d3.select(this).node().parentNode.parentNode));
+
+                that._update_selection_box();
+        }).on("end", async function(){
+            resizeing = false;
+            show_resize_rect(d3.select(d3.select(this).node().parentNode.parentNode));
+            await that.show_edges();
+        }));
+
+    resize_box_group.append("rect")
+        .attr("class", "resize-rect")
+        .attr("id", "resize-rect-left")
+        .attr("x", d => -d.rx-rect_size/2)
+        .attr("y", d => -rect_size/2)
+        .attr("width", rect_size)
+        .attr("height", rect_size)
+        .attr("fill", "gray")
+        .attr("stroke-width", 0)
+        .attr("opacity", 0)
+        .style("cursor", "default")
+        .call(d3.drag().on("start", function () {
+            resizeing = true;
+            show_resize_rect(d3.select(d3.select(this).node().parentNode.parentNode));
+            d3.event.sourceEvent.stopPropagation();
+        }).on("drag", function (d) {
+            if(rotating) return;
+                let rect = d3.select(this);
+                let event = d3.mouse(d3.select(this).node().parentNode.parentNode);
+                let class_name = rect.attr("id").split("-");
+                class_name = class_name[class_name.length-1];
+                resize_ellipse(d, class_name, event, d3.select(d3.select(this).node().parentNode.parentNode));
+                that._update_selection_box();
+        }).on("end", async function(){
+            resizeing = false;
+            show_resize_rect(d3.select(d3.select(this).node().parentNode.parentNode));
+            await that.show_edges();
+        }));
+
+    resize_box_group.append("rect")
+        .attr("class", "resize-rect")
+        .attr("id", "resize-rect-right")
+        .attr("x", d => d.rx-rect_size/2)
+        .attr("y", d => -rect_size/2)
+        .attr("width", rect_size)
+        .attr("height", rect_size)
+        .attr("fill", "gray")
+        .attr("stroke-width", 0)
+        .attr("opacity", 0)
+        .style("cursor", "default")
+        .call(d3.drag().on("start", function () {
+            resizeing = true;
+            show_resize_rect(d3.select(d3.select(this).node().parentNode.parentNode));
+            d3.event.sourceEvent.stopPropagation();
+        }).on("drag", function (d) {
+            if(rotating) return;
+                let rect = d3.select(this);
+                let event = d3.mouse(d3.select(this).node().parentNode.parentNode);
+                let class_name = rect.attr("id").split("-");
+                class_name = class_name[class_name.length-1];
+                resize_ellipse(d, class_name, event, d3.select(d3.select(this).node().parentNode.parentNode));
+                that._update_selection_box();
+        }).on("end", async function(){
+            resizeing = false;
+            show_resize_rect(d3.select(d3.select(this).node().parentNode.parentNode));
+            await that.show_edges();
+        }));
 
 };
 
@@ -241,13 +401,13 @@ GraphLayout.prototype._update_selection_box = function(){
     // update data
     for(let i = 0; i < that.selection_box.length; i++){
         let nodes = Object.values(that.get_nodes())
-            .filter(d => inbox(that.selection_box[i], that.center_scale_x(d.x), that.center_scale_y(d.y)));
+            .filter(d => inbox(that.selection_box[i], that.if_focus_selection_box?d.focus_x:that.center_scale_x(d.x), that.if_focus_selection_box?d.focus_y:that.center_scale_y(d.y)));
         that.selection_box[i].nodes = nodes;
         let label_dist = nodes.map(d =>d.label.slice(-1)[0]);
         let label_count = new Array(12).fill(0);
         label_dist.forEach(b => {label_count[b] = label_count[b] + 1});
         let max_count_cls = -1;
-        let max_count = -1
+        let max_count = 0;
         for (let i = 0; i < label_count.length; i++){
             if(label_count[i] > max_count){
                 max_count = label_count[i];
@@ -257,6 +417,7 @@ GraphLayout.prototype._update_selection_box = function(){
         that.selection_box[i].label_count = label_count;
         that.selection_box[i].max_count_cls = max_count_cls;
     }
+    console.log("new selection box:", that.selection_box);
 
     // TODO: highlight 
     if (that.selection_box.length > 0){
@@ -273,46 +434,38 @@ GraphLayout.prototype._update_selection_box = function(){
 
     let sg = that.selection_group.selectAll(".selection-box")
         .data(that.selection_box, d => d.id)
-        .attr("transform", d => "translate("+(d.x)+","+ (d.y) +")");
+        .attr("transform", d => "rotate("+(d.tao/Math.PI*180)+","+d.x+","+d.y+") translate("+(d.x)+","+ (d.y) +")");
     sg.selectAll(".box")
-        .attr("width", d => d.width)
-        .attr("height", d => d.height)
-        .style("stroke-width", 4 * that.zoom_scale)
-        .style("stroke", d => CategoryColor[d.max_count_cls]);
-    let cross_group = sg.select(".cross")
-        .attr("transform", d => "translate("+(d.width - 10 * that.zoom_scale)+","+ (10 * that.zoom_scale) +")");
-    cross_group.select("#cross-line-1")
-        .attr("x1", -5 * that.zoom_scale)
-        .attr("y1", -5 * that.zoom_scale)
-        .attr("x2", 5 * that.zoom_scale)
-        .attr("y2", 5 * that.zoom_scale)
-        .style("stroke-width", 2  * that.zoom_scale);
-    cross_group.select("#cross-line-2")
-        .attr("x1", -5 * that.zoom_scale)
-        .attr("y1", 5 * that.zoom_scale)
-        .attr("x2", 5 * that.zoom_scale)
-        .attr("y2", -5 * that.zoom_scale)
-        .style("stroke-width", 2  * that.zoom_scale);
-    cross_group.select("rect")
-        .attr("x", -5 * 1.5 * that.zoom_scale)
-        .attr("y", -5 * 1.5 * that.zoom_scale)
-        .attr("width", 10 * 1.5 * that.zoom_scale)
-        .attr("height", 10 * 1.5 * that.zoom_scale);
+        .attr("rx", d => d.rx)
+        .attr("ry", d => d.ry)
+        .style("stroke-width", 2 * that.zoom_scale)
+        .style("stroke", d => d.max_count_cls === -1? UnlabeledColor:CategoryColor[d.max_count_cls]);
 
-
-    sg.select(".resize").select("#resize_rect_right_bottom")
-        .attr("x", d => d.width-5 * that.zoom_scale)
-        .attr("y", d => d.height-5 * that.zoom_scale)
-        .attr("width", 10 * that.zoom_scale)
-        .attr("height", 10 * that.zoom_scale)
-        .style("fill", d => CategoryColor[d.max_count_cls]);
-    sg.select(".resize").select("#resize_rect_left_top")
-        .attr("x", -5 * that.zoom_scale)
-        .attr("y", -5 * that.zoom_scale)
-        .attr("width", 10  * that.zoom_scale)
-        .attr("height", 10  * that.zoom_scale)
-        .style("fill", d => CategoryColor[d.max_count_cls]);
-
+    let rect_size = 6*that.zoom_scale;
+    sg.select(".resize").select("#resize-rect-top")
+        .attr("fill", d => d.max_count_cls === -1? UnlabeledColor:CategoryColor[d.max_count_cls])
+        .attr("x", d => -rect_size/2)
+        .attr("y", d => -d.ry-rect_size/2)
+        .attr("width", rect_size)
+        .attr("height", rect_size);
+    sg.select(".resize").select("#resize-rect-bottom")
+        .attr("fill", d => d.max_count_cls === -1? UnlabeledColor:CategoryColor[d.max_count_cls])
+        .attr("x", d => -rect_size/2)
+        .attr("y", d => d.ry-rect_size/2)
+        .attr("width", rect_size)
+        .attr("height", rect_size);
+    sg.select(".resize").select("#resize-rect-left")
+        .attr("fill", d => d.max_count_cls === -1? UnlabeledColor:CategoryColor[d.max_count_cls])
+        .attr("x", d => -d.rx-rect_size/2)
+        .attr("y", d => -rect_size/2)
+        .attr("width", rect_size)
+        .attr("height", rect_size);
+    sg.select(".resize").select("#resize-rect-right")
+        .attr("fill", d => d.max_count_cls === -1? UnlabeledColor:CategoryColor[d.max_count_cls])
+        .attr("x", d => d.rx-rect_size/2)
+        .attr("y", d => -rect_size/2)
+        .attr("width", rect_size)
+        .attr("height", rect_size);
 };
 
 GraphLayout.prototype._remove_selection_box = function(){
@@ -494,7 +647,7 @@ GraphLayout.prototype.get_path = function(){
     that.all_path = path;
     that.highlights = highlights;
     return [path, highlights];
-}
+};
 
 GraphLayout.prototype.show_edges = async function(modes){
     let that = this;
@@ -515,4 +668,14 @@ GraphLayout.prototype.show_edges = async function(modes){
     that.data_manager.set_propagation_filter_data(that.step_count[2], that.step_count[0], that.step_count[1]);
     
     // that.update_snapshot();
+};
+
+GraphLayout.prototype.focus_selection_box = function () {
+    let that = this;
+    that.data_manager.focus_selection_box(that.selection_box);
+};
+
+GraphLayout.prototype.unfocus_selection_box = function () {
+    let that = this;
+    that.data_manager.unfocus_selection_box(that.selection_box);
 };

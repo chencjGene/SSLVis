@@ -47,3 +47,20 @@ GraphLayout.prototype.get_average_consistency = function (nodes, nodes_id) {
 GraphLayout.prototype.get_distance = function (source, target) {
     return Math.sqrt(Math.pow(source.x-target.x, 2)+ Math.pow(source.y-target.y, 2));
 };
+
+
+GraphLayout.prototype.cal_vonoroi = function(nodes){
+    nodes = Object.values(nodes);
+    let cls = nodes.map(d => d.label.slice(-1)[0]);
+    cls = cls.delRepeat();
+    centers = {};
+    for (let i of cls){
+        nodes_in_cls = nodes.filter(d => d.label.slice(-1)[0] === i);
+        let center_x = average(nodes.map(d => d.x));
+        let center_y = average(nodes.map(d => d.y));
+        centers[i] = [center_x, center_y];
+    }
+    let voronoi = d3.voronoi();
+    let c = voronoi.voronoi(cneters);
+    return c;
+};

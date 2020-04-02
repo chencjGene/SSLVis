@@ -9,6 +9,8 @@ from tqdm import tqdm
 import json
 import warnings
 import copy
+import threading
+import multiprocessing
 
 
 from sklearn.neighbors import kneighbors_graph
@@ -24,7 +26,9 @@ from ..utils.helper_utils import check_exist, \
     pickle_load_data, pickle_save_data, flow_statistic, async, async_once
 from ..utils.embedder_utils import Embedder
 import concurrent.futures
-from multiprocessing import Pool
+
+# from multiprocessing import Pool
+from multiprocessing.pool import ThreadPool as Pool
 
 from .data import Data, GraphData
 from .LSLabelSpreading import LSLabelSpreading
@@ -33,6 +37,24 @@ from .model_update import local_search_k
 from .model_helper import build_laplacian_graph
 
 DEBUG = False
+
+
+def square(n):
+    t0 = time()
+    alpha_lap, deltaF, F0 = pickle_load_data("buffer/args.pkl")
+    print("begin {}".format(n))
+
+    deltaF = F0
+    for i in range(200):
+        for j in range(n):
+            deltaF = alpha_lap.dot(deltaF) + F0
+
+    # for i in range(n):
+    #     for j in range(n):
+    #         a+=1/(i+j+1)
+
+    print("{} time {}".format(n, time() - t0))
+    return None
 
 def change_local(selected_idxs, neighbors, affinity_matrix, local_k):
     from scipy import sparse
@@ -76,10 +98,12 @@ class SSLModel(object):
         logger.info("n_neighbor: {}".format(self.n_neighbor))
 
         self.simplified_affinity_matrix = None
+        self.local_appro_data = None
         self.propagation_path_from = None
         self.propagation_path_to = None
         self.influence_matrix = None
         self.local_influence_matrix = None
+
         # self._get_signal_state()
 
     def init(self, k=None, filter_threshold=None, evaluate=True, simplifying=True):
@@ -97,6 +121,7 @@ class SSLModel(object):
         self.propagation_path_to = None
         self.simplified_affinity_matrix = None
         self.influence_matrix = None
+        self.local_appro_data = None
         # self._training(evaluate=evaluate, simplifying=simplifying))
         self._training(evaluate=evaluate, simplifying=simplifying)
 
@@ -106,6 +131,24 @@ class SSLModel(object):
     def setK(self, k=None):
         if k is not None:
             self.n_neighbor = k
+
+    def get_local_appro_data(self, graph_matrix):
+        graph = graph_matrix.tocsc()
+        N = graph.shape[0]
+        k_degree = [{i} for i in range(N)]
+        indptr = graph.indptr
+        indices = graph.indices
+        data = graph.data
+        for i in range(N):
+            degree = 2
+            m_set = k_degree[i]
+            for _ in range(degree):
+                add_set = set()
+                for idx in m_set:
+                    for neighbor_idx in indices[indptr[idx]:indptr[idx+1]]:
+                        add_set.add(neighbor_idx)
+                m_set.update(add_set)
+        return k_degree
 
     def _clean_buffer(self):
         self.simplified_affinity_matrix = None
@@ -144,6 +187,7 @@ class SSLModel(object):
         self.ent = ent
         self.pred_dist = pred_dist
         self.graph = affinity_matrix
+        self.local_appro_data = self.get_local_appro_data(self.graph)
         unconnected = self.data._find_unconnected_nodes(self.graph, np.where(self.data.get_train_label()>-1)[0])
         print("Unconnected cnt:{}".format(unconnected.shape[0]))
         print(process_data.shape)
@@ -208,7 +252,32 @@ class SSLModel(object):
         self.influence_matrix.data[np.isnan(self.influence_matrix.data)] = 0
         return
 
+    def test(self):
+        thread_num = 4
+        values = [3 for i in range(thread_num)]
+        t0 = time()
+        with Pool(processes=thread_num) as pool:
+            results = pool.map(square, values)
+            print("=========================================")
+
+            res = time()
+            print("calculate time:{}".format(res - t0))
+            for v in values:
+                square(v)
+
     def influence_matrix_local(self, selected_ids, thread_num = 5):
+        # thread_num = 4
+        # values = [3 for i in range(thread_num)]
+        # t0 = time()
+        # with Pool(processes=thread_num) as pool:
+        #     results = pool.map(square, values)
+        #     print("=========================================")
+        #
+        #     res = time()
+        #     print("calculate time:{}".format(res - t0))
+        #     for v in values:
+        #         square(v)
+        # return None, None
         calculate_time = 0
         affinity_matrix = self.graph
         N = affinity_matrix.shape[0]
@@ -216,7 +285,8 @@ class SSLModel(object):
         train_y = self.data.get_train_label()
         # if self.local_influence_matrix is None:
         #     self.local_influence_matrix = np.zeros((N, N), dtype=float)
-        self.local_influence_matrix = np.zeros((N, N), dtype=float)
+        self.local_influence_matrix = affinity_matrix.copy()*0
+        self.local_influence_matrix_flag = affinity_matrix.copy() * 0
 
         logger.info("begin load local influence matrix")
         alpha_lap = self.alpha * self.laplacian
@@ -234,20 +304,46 @@ class SSLModel(object):
             }
         t0 = time()
         futures = []
+        node_cnt = len(selected_ids)
+        thread_node_cnt = int(node_cnt / thread_num)
         # thread_num = 3
-        with concurrent.futures.ThreadPoolExecutor(max_workers = thread_num) as executor:
-        # with Pool(processes=thread_num) as pool:
+        # with concurrent.futures.ThreadPoolExecutor(max_workers = thread_num) as executor:
+
+
+        with Pool(processes=thread_num) as pool:
             node_cnt = len(selected_ids)
             thread_node_cnt = int(node_cnt/thread_num)
+            values = []
             for i in range(thread_num):
                 start_idx = i*thread_node_cnt
                 end_idx = (i+1)*thread_node_cnt if i < thread_num-1 else node_cnt
-                futures.append(executor.submit(calculate_influence_matrix_local, (graphs, selected_ids, start_idx, end_idx, self.propagation_path_from, self.propagation_path_to,
-                                                                               self.unnorm_dist, affinity_matrix, alpha_lap, self.alpha, D, 3, self.local_influence_matrix)))
+                values.append((graphs, selected_ids, start_idx, end_idx, self.propagation_path_from, self.propagation_path_to,
+                                                                               self.unnorm_dist, affinity_matrix, alpha_lap, self.alpha, D, 3, self.local_influence_matrix,
+                               self.local_appro_data, self.local_influence_matrix_flag))
             t0 = time()
-            concurrent.futures.wait(futures)
-            calculate_time = time()-t0
-            print("parallel time:{}".format(calculate_time))
+            pool.map(calculate_influence_matrix_local, values)
+        calculate_time = time()-t0
+        print("parallel time:{}".format(calculate_time))
+
+
+
+        # with concurrent.futures.ThreadPoolExecutor(max_workers = thread_num) as executor:
+        # with Pool(processes=thread_num) as pool:
+        #     node_cnt = len(selected_ids)
+        #     thread_node_cnt = int(node_cnt / thread_num)
+        #     res = []
+        #     for i in range(thread_num):
+        #         start_idx = i * thread_node_cnt
+        #         end_idx = (i + 1) * thread_node_cnt if i < thread_num - 1 else node_cnt
+        #
+        #         res.append(pool.apply_async(calculate_influence_matrix_local, (
+        #             graphs, selected_ids, start_idx, end_idx, self.propagation_path_from, self.propagation_path_to,
+        #             self.unnorm_dist, affinity_matrix, alpha_lap, self.alpha, D, 3, self.local_influence_matrix)))
+        #     t0 = time()
+        #     # concurrent.futures.wait(futures)
+        #     [r.get() for r in res]
+        #     calculate_time = time() - t0
+        #     print("parallel time:{}".format(calculate_time))
 
         node_cnt = len(selected_ids)
         thread_node_cnt = int(node_cnt/thread_num)
@@ -256,7 +352,8 @@ class SSLModel(object):
                 start_idx = i*thread_node_cnt
                 end_idx = (i+1)*thread_node_cnt if i < thread_num-1 else node_cnt
                 calculate_influence_matrix_local((graphs, selected_ids, start_idx, end_idx,
-                                                 self.propagation_path_from, self.propagation_path_to, self.unnorm_dist, affinity_matrix, alpha_lap, self.alpha, D, 3, self.local_influence_matrix))
+                                                 self.propagation_path_from, self.propagation_path_to, self.unnorm_dist, affinity_matrix, alpha_lap, self.alpha, D, 3, self.local_influence_matrix,
+                                                  self.local_appro_data, self.local_influence_matrix_flag))
 
                 # start_idx = i * thread_edge_cnt
                 # end_idx = (i + 1) * thread_edge_cnt if i < thread_num - 1 else edge_cnt
@@ -433,7 +530,7 @@ class SSLModel(object):
                 propagation_path_to[int(target_id)].append(int(node_id))
         return propagation_path_from, propagation_path_to
 
-    @async_once
+    # @async_once
     def evaluate(self, n_neighbor = -1):
         train_X = self.data.get_train_X()
         test_X = self.data.get_test_X()
@@ -624,7 +721,7 @@ class SSLModel(object):
                                                   max_k,
                                                   mode="distance")
         s = 0
-        low_bound = 13 if bound is None else bound
+        low_bound = 33 if bound is None else bound
         degree = self.get_in_out_degree(affinity_matrix)[:,1]
         degree = np.sqrt(1/degree)
         labels = []
