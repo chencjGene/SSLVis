@@ -52,6 +52,10 @@ class Data(object):
             new_test_data_path = os.path.join(self.data_root, "test_data.pkl")
             self.test_idx = pickle_load_data(new_test_data_path).reshape(-1)
 
+        if self.dataname.lower() == config.stl.lower():
+            new_id = [56, 240, 689, 1032, 1048, 1513, 2043, 2061, 2134, 2302, 2944, 3408, 3568, 3642, 3813, 4434, 4614, 4635, 4799, 4814, 5036, 5109, 5516, 6174, 6243, 6382, 6442, 6451, 6499, 6719, 6729, 6852, 6980, 7274, 7481, 7994, 8076, 8668, 9152, 9787, 9990, 10015, 10071, 10247, 10279, 10529, 10629, 10772, 10788, 10908, 10976, 11410, 11554, 11948, 12002, 12006, 12817, 13020, 13441, 13464, 13532, 13877, 14098, 14316, 14335, 14337, 14428, 14810, 15620, 15662, 15831, 17106, 17225, 17229, 17415, 18360, 18870, 19103, 19244, 19590, 19704]
+            self.test_idx = self.test_idx.tolist() + new_id
+            self.y[np.array(new_id)] = 10            
 
     def _load_data(self):
         processed_data_filename = os.path.join(self.data_root, config.processed_dataname)
