@@ -21,7 +21,7 @@ class CaseSTL(CaseBase):
             self.model.data.actions = []
             self.model.data.add_new_categories("snake")
             self.model.data.label_instance([6219, 11966, 12467, 7573, 11905], [10, 10, 10, 10, 10])
-            self.model._training(rebuild=False, evaluate=False, simplifying=False)
+            self.model._training(rebuild=False, evaluate=evaluate, simplifying=False)
 
         if step >= 2:
             self.model.data.label_instance(
