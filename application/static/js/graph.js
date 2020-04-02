@@ -1182,12 +1182,17 @@ let GraphLayout = function (container) {
         }
         let selection_boxes = that.selection_box.map(function (d) {
             return {
-                x:d.x+d.width/2,
-                y:d.y+d.height/2,
-                width:d.width,
-                height:d.height,
-                id:d.id,
-                r:Math.sqrt(d.width*d.width+d.height*d.height)/2
+                "x": d.x,
+                "y":d.y,
+                "rx":d.rx,
+                "ry":d.ry,
+                "tao":d.tao,
+                "F1":JSON.parse(JSON.stringify(d.F1)),
+                "F2":JSON.parse(JSON.stringify(d.F2)),
+                "s":d.s,
+                "d":d.d,
+                "id":d.id,
+                "r":Math.max(d.rx, d.ry)
             }
         });
         fd(selection_boxes, that.width, that.height);
@@ -1197,8 +1202,8 @@ let GraphLayout = function (container) {
         console.log("selection boxes:", selection_boxes);
         for(let i=0; i<selection_boxes.length; i++){
             for(let node of that.selection_box[i].nodes){
-                let delta_x = (that.center_scale_x(node.x)-(that.selection_box[i].x+that.selection_box[i].width/2))*scale;
-                let delta_y = (that.center_scale_y(node.y)-(that.selection_box[i].y+that.selection_box[i].height/2))*scale;
+                let delta_x = (that.center_scale_x(node.x)-(that.selection_box[i].x))*scale;
+                let delta_y = (that.center_scale_y(node.y)-(that.selection_box[i].y))*scale;
                 node.focus_x = selection_boxes[i].x + delta_x;
                 node.focus_y = selection_boxes[i].y + delta_y;
 
@@ -1207,10 +1212,20 @@ let GraphLayout = function (container) {
 
         // set new selection position
         for(let i=0; i<selection_boxes.length; i++){
-            that.selection_box[i].width *= scale;
-            that.selection_box[i].height *= scale;
-            that.selection_box[i].x = selection_boxes[i].x - that.selection_box[i].width/2;
-            that.selection_box[i].y = selection_boxes[i].y - that.selection_box[i].height/2;
+            that.selection_box[i].rx *= scale;
+            that.selection_box[i].ry *= scale;
+            that.selection_box[i].s *= scale;
+            that.selection_box[i].d *= scale;
+            that.selection_box[i].x = selection_boxes[i].x;
+            that.selection_box[i].y = selection_boxes[i].y;
+            that.selection_box[i].F1 = {
+                x:that.selection_box[i].x-that.selection_box[i].d/2*Math.cos(that.selection_box[i].tao),
+                y:that.selection_box[i].y-that.selection_box[i].d/2*Math.sin(that.selection_box[i].tao)
+            };
+            that.selection_box[i].F2 = {
+                x:that.selection_box[i].x+that.selection_box[i].d/2*Math.cos(that.selection_box[i].tao),
+                y:that.selection_box[i].y+that.selection_box[i].d/2*Math.sin(that.selection_box[i].tao)
+            }
         }
         for(let i=0; i<selection_boxes.length; i++){
             for(let node of that.selection_box[i].nodes){

@@ -528,7 +528,7 @@ class SSLModel(object):
                 propagation_path_to[int(target_id)].append(int(node_id))
         return propagation_path_from, propagation_path_to
 
-    @async_once
+    # @async_once
     def evaluate(self, n_neighbor = -1):
         train_X = self.data.get_train_X()
         test_X = self.data.get_test_X()
@@ -719,7 +719,7 @@ class SSLModel(object):
                                                   max_k,
                                                   mode="distance")
         s = 0
-        low_bound = 13 if bound is None else bound
+        low_bound = 33 if bound is None else bound
         degree = self.get_in_out_degree(affinity_matrix)[:,1]
         degree = np.sqrt(1/degree)
         labels = []
