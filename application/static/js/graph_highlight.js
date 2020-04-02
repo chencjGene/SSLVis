@@ -294,7 +294,7 @@ let GraphHighlight = function (parent) {
                 F1:min_res.F1,
                 F2:min_res.F2,
                 d:mid_d,
-                tao:tao*180/Math.PI
+                tao:tao
             }
         }
 
@@ -309,6 +309,7 @@ let GraphHighlight = function (parent) {
         });
         // let lasso_paths = lasso_select_path;
         console.log(lasso_paths);
+        if(lasso_paths.length === 0) return ;
         let ellipse_path = ellipse(lasso_paths);
         view.selection_box.push({
             "x": ellipse_path.cx,
