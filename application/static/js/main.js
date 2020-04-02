@@ -48,7 +48,7 @@ $(document).ready(function () {
 
     set_up();
     // SettingView.choose("oct-1000-10000");
-    SettingView.choose("stl-50-12214");
+    SettingView.choose("stl-50-12840");
     // SettingView.choose("stl-20-2000");
 
     

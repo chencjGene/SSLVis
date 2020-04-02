@@ -98,7 +98,7 @@ class SSLModel(object):
         self.simplified_affinity_matrix = None
         self.influence_matrix = None
         # self._training(evaluate=evaluate, simplifying=simplifying))
-        self._training(evaluate=evaluate, simplifying=True)
+        self._training(evaluate=evaluate, simplifying=simplifying)
 
 
         logger.info("init finished")
@@ -149,6 +149,7 @@ class SSLModel(object):
         print(process_data.shape)
         pred_y = pred_dist.argmax(axis=1)
         acc = accuracy_score(train_gt, pred_y)
+        self.acc = acc
         logger.info("model accuracy: {}, iter: {}".format(acc, iter))
         logger.info("model confusion matrix:\n{}".format(confusion_matrix(train_gt, pred_y)))
         logger.info("model entropy: {}".format(entropy(pred_dist.T + 1e-20).mean()))
@@ -156,9 +157,10 @@ class SSLModel(object):
         # if not config.show_simplified:
         propagation_path_from, propagation_path_to = self.get_path_to_label(self.process_data,
                                                                             self.graph)
-        self._influence_matrix()
-        self.propagation_path_from = propagation_path_from
-        self.propagation_path_to = propagation_path_to
+        if simplifying:
+            self._influence_matrix()
+            self.propagation_path_from = propagation_path_from
+            self.propagation_path_to = propagation_path_to
 
 
         # if simplifying and config.show_simplified:
@@ -520,7 +522,7 @@ class SSLModel(object):
         logger.info("test accuracy: {}".format(acc))
         logger.info("confusion matrix: \n{}".format(confusion_mat))
         print(s / test_X.shape[0])
-        return labels, np.array(adaptive_ks)
+        return labels, np.array(adaptive_ks), acc
 
     # @async_once
     def adaptive_evaluation(self, pred=None):

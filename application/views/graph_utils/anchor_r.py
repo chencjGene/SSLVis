@@ -176,7 +176,7 @@ class Anchors:
             if level_id == 0:
                 sample_number = target_num
             logger.info("Level:{}, Sampling number:{}".format(level_id, sample_number))
-            sampler = DensityBasedSampler(n_samples=sample_number, beta=0.25)
+            sampler = DensityBasedSampler(n_samples=sample_number, beta=0.7)
             last_selection = level_unlabeled_selection
             tmp_selection = sampler.fit_sample(data=train_x[last_selection], return_others=False,
                                                  mixed_degree=1-entropy[last_selection])
