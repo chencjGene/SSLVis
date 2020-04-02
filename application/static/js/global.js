@@ -56,7 +56,8 @@ let CategoryColor = [
     "#e377c2",
     "#ffdb45",
     "#bcbd22",
-    "#9467bd"];
+    "#9467bd",
+    "#a6cee3"];
 
 // oct
 // let CategoryColor = [

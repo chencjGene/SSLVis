@@ -108,6 +108,7 @@ class ExchangePortClass(object):
     def get_graph(self, filter_threshold=None, wh = 1):
         print(config.use_add_tsne)
         res = self.anchor.get_nodes(wh)
+        res["label_names"] = self.model.data.class_names
         graph = res["graph"]
         for id in graph["nodes"]:
             self.current_ids.append(int(id))
