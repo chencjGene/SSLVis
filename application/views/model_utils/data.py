@@ -78,10 +78,10 @@ class Data(object):
         self.add_info = processed_data[config.add_info_name]
         self.actions = []
 
-        if self.dataname.lower() == "stl":
-            # self.y[]
-            unlabeled_pred = pickle_load_data(os.path.join(self.data_root, "unlabeled_labels.pkl"))
-            self.y[self.unlabeled_idx] = unlabeled_pred
+        # if self.dataname.lower() == "stl":
+        #     # self.y[]
+        #     unlabeled_pred = pickle_load_data(os.path.join(self.data_root, "unlabeled_labels.pkl"))
+        #     self.y[self.unlabeled_idx] = unlabeled_pred
 
         if self.selected_labeled_num is None and self.selected_total_num is None:
             self.selected_labeled_num = self.add_info.get("default_selected_labeled_num", None)
