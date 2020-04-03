@@ -4,6 +4,10 @@
     height: 100%;
 }
 
+.input-new-label {
+    width: 60px;
+}
+
 #my-graph-left {
     display: flex;
     flex-direction: column;
