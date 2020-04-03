@@ -38,20 +38,21 @@
         }
 
         var myoptions = option;
+        let id = null;
         if ($.inArray(method, ['menu', 'popup', 'close', 'destroy']) > -1) {
             option = iMethods.optionOtimizer(method, option);
             this.each(function() {
-                var $this = $(this)
+                var $this = $(this);
                 myoptions = $.extend({}, $.fn.contextMenu.defaults, option);
                 if (!myoptions.baseTrigger) {
                     myoptions.baseTrigger = $this;
                 }
-                methods[method].call($this, selector, myoptions)
+                id = methods[method].call($this, selector, myoptions)
             });
         } else {
             methods[method].call(this, selector, myoptions)
         }
-        return this;
+        return id;
     };
     $.fn.contextMenu.defaults = {
         triggerOn: 'click', //avaliable options are all event related mouse plus enter option
@@ -78,6 +79,7 @@
         menu: function(selector, option) {
             selector = iMethods.createMenuList(this, selector, option);
             iMethods.contextMenuBind.call(this, selector, option, 'menu');
+            return selector
         },
         popup: function(selector, option) {
             $(selector).addClass('iw-contextMenu');
@@ -326,7 +328,8 @@
             });
 
             menu.delegate('li', 'click', function(e) {
-                if (option.closeOnClick && !$.single(this).hasClass('iw-has-submenu')) iMethods.closeContextMenu(option, trigger, menu, e);
+                if (option.closeOnClick && !$.single(this).hasClass('iw-has-submenu')
+                    && !$.single(this).hasClass('add-menu-item') && !$.single(this).hasClass('new-label')) iMethods.closeContextMenu(option, trigger, menu, e);
             });
         },
         eventHandler: function(e) {
@@ -548,7 +551,7 @@
             }
         },
         keyEvent: function(e) {
-            e.preventDefault();
+            // e.preventDefault();
             var menu = e.data.menu,
                 option = e.data.option,
                 keyCode = e.keyCode;

@@ -355,6 +355,8 @@ let FilterLayout = function (container) {
         });
         rects.transition()
             .duration(AnimationDuration)
+            .attr("x", function(d, i) { return x(i); })
+            .attr("width", x.bandwidth())
             .attr("y", function(d, i) { return y(d.avg_consistency/max_len); })
             .attr("height", function(d) {
                   return container_height*  0.7 - y(d.avg_consistency/max_len);
@@ -377,7 +379,7 @@ let FilterLayout = function (container) {
             .attr("stroke-width", 1);
         }
         // draw checkbox
-        if(container.select(".current-label-checkbox").size() === 0){
+        //if(container.select(".current-label-checkbox").size() === 0){
             let bandwidth = checkbox_width;
             let xoffset = (x.bandwidth()-bandwidth)/2;
             let yoffset = x.bandwidth()*0.15;
@@ -508,8 +510,11 @@ let FilterLayout = function (container) {
             //         let checkbox = d3.select(this);
             //         label_rect[i].checkbox = checkbox;
             //     })
-        }
-        else {
+
+        //else {
+        //     let bandwidth = checkbox_width;
+        //     let xoffset = (x.bandwidth()-bandwidth)/2;
+        //     let yoffset = x.bandwidth()*0.15;
             container.selectAll(".current-label-checkbox")
                 .data(Object.values(label_rect));
             container.selectAll(".current-label-checkbox")
@@ -520,14 +525,34 @@ let FilterLayout = function (container) {
                 .select("rect")
                 .data(Object.values(label_rect));
 
+            container.selectAll(".current-label-checkbox")
+                .each(function (d, i) {
+                    label_rect[i].checkbox = d3.select(this);
+                })
+                .attr("transform", (d, i) => "translate("+(x(label_rect[i].label)+xoffset)+","+(container_height*  0.7+yoffset)+")");
 
             container.selectAll(".current-label-checkbox")
                 .select("rect")
-                .attr("fill", (d,i) => label_rect[d.label].rect.attr("opacity")==1 ? (d.label===0?color_unlabel:color_label[d.label-1]) : "white")
-        }
+                .transition()
+                .duration(AnimationDuration)
+                .attr("x", 0)
+                .attr("y", 0)
+                .attr("width", checkbox_width)
+                .attr("height", checkbox_width)
+                .attr("rx", checkbox_r)
+                .attr("ry", checkbox_r)
+                .attr("fill", (d,i) => label_rect[d.label].rect.attr("opacity")==1 ? (d.label===0?color_unlabel:color_label[d.label-1]) : "white");
+
+            container.selectAll(".current-label-checkbox")
+                .select("text")
+                .transition()
+                .duration(AnimationDuration)
+                .attr("x", checkbox_width/2)
+                .attr("y", checkbox_width/2 + 5)
+        //}
 
         // draw label glyph
-        if(label_distribution.length === 11){
+        if(label_distribution.length >= 11){
             console.log("STL data");
             if(container.select("#current-label-glyphs").size() === 0){
                 container.append("g")
@@ -589,6 +614,18 @@ let FilterLayout = function (container) {
             .each(function () {
                 let text = d3.select(this);
                 set_font(text);
+            });
+        legends
+            .text(d => d)
+            .transition()
+            .duration(AnimationDuration)
+            .attr("x", x.bandwidth()*0.4)
+            .attr("y", 0)
+            .attr("transform", function(d, i){
+                let xcor=x(i);
+                let ycor=container_height*  0.7+23;
+                return "translate(" + (xcor)
+                    + ", " + ycor + ") rotate(30)";
             });
     };
 

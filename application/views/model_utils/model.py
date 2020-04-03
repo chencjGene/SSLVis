@@ -865,6 +865,9 @@ class SSLModel(object):
         return selected_flows, idxs
 
     def editing_data(self, data):
+        if len(data["label_names"]) > len(self.data.class_names):
+            for class_name in data["label_names"][len(self.data.class_names):]:
+                self.data.add_new_categories(class_name)
         self.data.editing_data(data)
         self.data.update_graph(data["deleted_idxs"])
         self._training(rebuild=False, evaluate=True)

@@ -181,7 +181,11 @@ DataLoaderClass = function () {
 
                 that.set_filter_data(that.state.nodes);
                 let ranges = that.filter_view.get_ranges();
-                that.set_filter_range(ranges[0], ranges[1], ranges[2], ranges[3], ranges[4], ranges[5], ranges[6], ranges[7]);
+                let label_range = [];
+                for(let i=0; i<=that.state.label_names.length; i++){
+            label_range.push(i);
+        }
+                that.set_filter_range(ranges[0], label_range, ranges[2], ranges[3], ranges[4], ranges[5], ranges[6], ranges[7]);
                 that.update_filter_view();
 
 
@@ -287,9 +291,9 @@ DataLoaderClass = function () {
         that.add_data_node.notify();
     }
 
-    that.update_edit_state = function(data, mode){
-        console.log("update_edit_state", data, mode);
-        that.edit_view.update_focus(data, mode);
+    that.update_edit_state = function(data, mode, node){
+        console.log("update_edit_state", data, mode, node);
+        that.edit_view.update_focus(data, mode, node);
     };
 
     that.delete_idxs = function(selected_idxs){
@@ -410,6 +414,7 @@ DataLoaderClass = function () {
         }, selected_flows);
         //TODO:
         that.update_setting_view();
+        that.update_edit_info()
     };
 
     that.retrain = function(){ 
