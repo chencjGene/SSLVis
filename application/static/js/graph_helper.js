@@ -50,17 +50,70 @@ GraphLayout.prototype.get_distance = function (source, target) {
 
 
 GraphLayout.prototype.cal_vonoroi = function(nodes){
+    let that = this;
     nodes = Object.values(nodes);
     let cls = nodes.map(d => d.label.slice(-1)[0]);
     cls = cls.delRepeat();
     centers = {};
     for (let i of cls){
         nodes_in_cls = nodes.filter(d => d.label.slice(-1)[0] === i);
-        let center_x = average(nodes.map(d => d.x));
-        let center_y = average(nodes.map(d => d.y));
-        centers[i] = [center_x, center_y];
+        let center_x = average(nodes_in_cls.map(d => d.x));
+        let center_y = average(nodes_in_cls.map(d => d.y));
+        centers[i] = [center_x, center_y, i, nodes_in_cls];
     }
-    let voronoi = d3.voronoi();
-    let c = voronoi.voronoi(cneters);
-    return c;
+    let Diagram = null;
+    for (let _iter = 0; _iter < 50; _iter++){
+        if (_iter !== 0){
+            for (let i = 0; i < cls.length; i++){
+                node_in_cls = centers[i][3];
+                exclude_node = [];
+                for(let j = 0; j < node_in_cls.length; j++){
+                    let nearest_cell = Diagram.find(node_in_cls[j].x, node_in_cls[j].y);
+                    if(nearest_cell.data[2] !== i){
+                        exclude_node.push(node_in_cls[j]);
+                    }
+                }
+                if (i === 4){
+                    console.log("exclude node", exclude_node);
+                }
+                if (exclude_node.length > 0){
+                    let exclude_center_x = average(exclude_node.map(d => d.x));
+                    let exclude_center_y = average(exclude_node.map(d => d.y));
+                    centers[i][0] = centers[i][0] + 0.02 * exclude_node.length / node_in_cls.length * (exclude_center_x - centers[i][0]);
+                    centers[i][1] = centers[i][1] + 0.02 * exclude_node.length / node_in_cls.length * (exclude_center_y - centers[i][1]);
+                }
+            }
+        }
+        let voronoi = d3.voronoi()
+                .extent([[that.xRange[0] * 2, that.yRange[0] * 2],
+                     [that.xRange[1] * 2, that.yRange[1] * 2]]);
+        Diagram = voronoi(Object.values(centers));
+        let poly = Diagram.polygons();
+        for (let i = 0; i < Diagram.cells.length; i++){
+            Diagram.cells[i].id = Diagram.cells[i].site.data[2];
+            Diagram.cells[i].poly = poly[i];
+        }
+    }
+    return Diagram;
 };
+
+GraphLayout.prototype.get_cell_path = function(cell, scale){
+    let that = this;
+    let cells = that.vonoroi_data.cells;
+    let edges = that.vonoroi_data.edges;
+    // let cell = cells[i];
+    let halfedges = cell.halfedges;
+    let path = "M";
+    for (let j = 0; j < halfedges.length; j++){
+        let edge = edges[halfedges[j]];
+        let poly = cell.poly[j];
+        path = path + that.center_scale_x(poly[0]) + 
+            "," + that.center_scale_y(poly[1]);
+        if (j !== halfedges.length - 1){
+            path = path + "L";
+        }
+    }
+    path = path + "Z";
+    cell.path = path;
+    return path;
+}

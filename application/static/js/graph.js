@@ -61,6 +61,8 @@ let GraphLayout = function (container) {
     let gradient_in_group = null;
     that.selection_group = null;
     that.snapshot_group = null;
+    that.vonoroi_group = null;
+    that.vonoroi_in_group = null;
 
     // meta data
     let nodes = {};
@@ -78,6 +80,7 @@ let GraphLayout = function (container) {
     let aggregate = [];
     let rect_nodes = [];
     let imgs = [];
+    that.vonoroi_data = {"edges": [], "cells": []};
     let nodes_dict = null;
     that.if_focus_selection_box = false;
     let re_focus_selection_box = false;
@@ -145,6 +148,7 @@ let GraphLayout = function (container) {
         that.label_group = that.main_group.append("g").attr("id", "graph-label-g");
         that.selection_group = that.main_group.append("g").attr("id", "graph-selection-g");
         that.snapshot_group = that.svg.append("g").attr("id", "snapshot-group");
+        that.vonoroi_group = that.main_group.append("g").attr("id", "vonoroi-group");
         tmp_show_imgs = that.main_group.append("g").attr("id", "tmp-graph-label-g");
         that.width = $('#graph-view-svg').width();
         that.height = $('#graph-view-svg').height();
@@ -352,7 +356,7 @@ let GraphLayout = function (container) {
             //         if(gold_node_cnt === 2) break;
             //     }
             // }
-            
+
             // let all_path = [];
             // for (let i = 0; i < nodes.length; i++){
             //     let from_list = nodes[i].from;
@@ -418,6 +422,9 @@ let GraphLayout = function (container) {
             }
         }
         glyphs = tmp_glyphs;
+
+        
+        that.vonoroi_data = that.cal_vonoroi(nodes);
 
         // }
         // glyphs
@@ -524,6 +531,8 @@ let GraphLayout = function (container) {
                 .data(path_ary, d => d[0].id+","+d[1].id);
             img_in_group = that.label_group.selectAll("image")
                 .data(imgs, d => d.node.id);
+            that.vonoroi_in_group = that.vonoroi_group.selectAll("g")
+                .data(that.vonoroi_data.cells, d => d.id);
             gradient_in_group = gradient_group.selectAll("linearGradient")
                 .data(path_ary, d => d[0].id+","+d[1].id);
             edge_summary_in_group = edge_summary_group.selectAll(".edge-summary")
@@ -611,6 +620,13 @@ let GraphLayout = function (container) {
                 .on("end", resolve);
 
             img_in_group.exit()
+                .transition()
+                .duration(remove_ani)
+                .attr("opacity", 0)
+                .remove()
+                .on("end", resolve);
+
+            that.vonoroi_in_group.exit()
                 .transition()
                 .duration(remove_ani)
                 .attr("opacity", 0)
@@ -736,7 +752,14 @@ let GraphLayout = function (container) {
                 })
                 .attr("width", d => d.w * that.scale * that.zoom_scale)
                 .attr("height", d => d.h * that.scale * that.zoom_scale);
-
+            
+            that.vonoroi_in_group
+                .selectAll("path")
+                .attr("d", d => that.get_cell_path(d, that.scale));
+            that.vonoroi_in_group
+                .selectAll("circile")
+                .attr("cx", d => that.center_scale_x(d.site.data[0]))
+                .attr("cy", d => that.center_scale_y(d.site.data[1]));
 
             edge_summary_in_group
                 .attr("transform", function (d, i) {
@@ -1063,7 +1086,21 @@ let GraphLayout = function (container) {
                 })
                 .attr("width", d => d.h * that.scale * that.zoom_scale)
                 .attr("height", d => d.h * that.scale * that.zoom_scale);
+            
+            let v_g = that.vonoroi_in_group.enter()
+                .append("g");
+            v_g.append("path")
+                .attr("d", d => that.get_cell_path(d, that.scale))
+                .style("fill", "none")
+                .style("stroke-width", 2)
+                .style("stroke", "#a9a9a9");
+            v_g.append("circle")
+                .attr("cx", d => that.center_scale_x(d.site.data[0]))
+                .attr("cy", d => that.center_scale_y(d.site.data[1]))
+                .attr("r", 3)
+                .style("fill", "black");
 
+                
 
             edge_summary_in_group.enter()
                 .append("g")
@@ -1356,6 +1393,8 @@ let GraphLayout = function (container) {
         var yRange = d3.extent(nodes_ary, function (d) {
                     return d.y
                 });
+        // console.log("xRange", xRange);
+        // console.log("yRange", yRange);
         if (xRange[0] == xRange[1]) {
                     xRange[0] -= 10;
                     xRange[1] += 10;
@@ -1364,6 +1403,8 @@ let GraphLayout = function (container) {
                     yRange[0] -= 10;
                     yRange[1] += 10;
                 }
+        that.xRange = xRange;
+        that.yRange = yRange;
         let width = $('#graph-view-svg').width();
         let height = $('#graph-view-svg').height();
 
@@ -1482,6 +1523,10 @@ let GraphLayout = function (container) {
             // 
             that._update_selection_box();
         }
+        that.vonoroi_in_group
+            .select("circle")
+            .attr("cx", d => that.center_scale_x(d.site.data[0]))
+            .attr("cy", d => that.center_scale_y(d.site.data[1]));
 
     };
 
@@ -1555,6 +1600,8 @@ let GraphLayout = function (container) {
                 .data([], d => d[0].id+","+d[1].id);
             img_in_group = that.label_group.selectAll("image")
                 .data(imgs, d => d.id);
+            that.vonoroi_in_group = that.vonoroi_group.selectAll("g")
+                .data(that.vonoroi_data.cells, d => d.id);
             gradient_in_group = gradient_group.selectAll("linearGradient")
                 .data([], d => d[0].id+","+d[1].id);
             edge_summary_in_group = edge_summary_group.selectAll(".edge-summary").data(edges_summary);
