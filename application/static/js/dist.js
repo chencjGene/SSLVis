@@ -876,6 +876,20 @@ let DistLayout = function (container) {
         //         let text = d3.select(this);
         //         set_font(text);
         //     });
+        legend_group.selectAll("rect.legend")
+            .attr("width", rect_height)
+            .attr("height", rect_height)
+            .attr("x", (d,i) => (rect_width * i + rect_margin * i))
+            .attr("y", 0)
+            .attr("fill", (d,i) => colors[i]);
+        legend_group.selectAll("text.legend")
+            .attr("x", (d,i) => (rect_width * i + rect_margin * i + rect_height + 2))
+            .attr("y", rect_height / 2 + 5)
+            .attr("text-anchor", "start")
+            .attr("font-size", 16)
+            .attr("font-family", '"Helvetica Neue", Helvetica, Arial, sans-serif')
+            .attr("fill", FontColor)
+            .text(d => d);
     };
 
     that._update_selected_flows = function(){

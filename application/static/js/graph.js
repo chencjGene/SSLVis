@@ -875,8 +875,9 @@ let GraphLayout = function (container) {
                                 .attr("cy", d => that.center_scale_y(d.y));
                 })
                 .on("mousedown", function(d){
+                    let node = this;
                     console.log("mousedown", d.id);
-                    that.data_manager.update_edit_state(d.id, "instance");
+                    that.data_manager.update_edit_state(d.id, "instance", node);
                 })
                 .on("click", function (d) {
 
@@ -1976,8 +1977,9 @@ let GraphLayout = function (container) {
                     return;
                 })
                 .on("mousedown", function(d){
+                    let node = this;
                     console.log("mousedown", d.id);
-                    that.data_manager.update_edit_state(d.id, "instance");
+                    that.data_manager.update_edit_state(d.id, "instance", node);
                 })
                 .on("click", function (d) {
                     // check if hided
