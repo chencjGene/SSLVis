@@ -73,9 +73,6 @@ GraphLayout.prototype.cal_vonoroi = function(nodes){
                         exclude_node.push(node_in_cls[j]);
                     }
                 }
-                if (i === 4){
-                    console.log("exclude node", exclude_node);
-                }
                 if (exclude_node.length > 0){
                     let exclude_center_x = average(exclude_node.map(d => d.x));
                     let exclude_center_y = average(exclude_node.map(d => d.y));
@@ -94,6 +91,7 @@ GraphLayout.prototype.cal_vonoroi = function(nodes){
             Diagram.cells[i].poly = poly[i];
         }
     }
+    that.edge_statistic(Diagram);
     return Diagram;
 };
 
@@ -116,4 +114,57 @@ GraphLayout.prototype.get_cell_path = function(cell, scale){
     path = path + "Z";
     cell.path = path;
     return path;
+}
+
+GraphLayout.prototype.in_edge_filter = function(weight){
+    let that = this;
+    let edge_filter_threshold = that.edge_filter_threshold;
+    if (weight > edge_filter_threshold[0] && weight < edge_filter_threshold[1]){
+        return true;
+    }
+    else{
+        return false;
+    }
+}
+
+GraphLayout.prototype.edge_statistic = function(diagram){
+    let that = this;
+    let groups = diagram.cells.map(d => d.site.data[3]);
+    let label_cnt = groups.length;
+    let graph = that.data_manager.state.complete_graph;
+    let edges_summary = [];
+    for (let group_id = 0; group_id < groups.length; group_id++){
+        let group = groups[group_id];
+        let summary = [];
+        for (let i = 0; i < label_cnt; i++){
+            summary.push({in:0, out:0, idx:i});
+        }
+        for (let node of group){
+            for (let id = 0; id < node.from.length; id++){
+                let from_id = node.from[id];
+                let from_weight = node.from_weight[id];
+                // if (that.in_edge_filter(from_weight)){
+                if (1){
+                    summary[graph[from_id].label.slice(-1)[0]].in++;
+                }
+            }
+            for (let id = 0; id < node.to.length; id++){
+                let to_id = node.to[id];
+                let to_weight = node.to_weight[id];
+                // if (that.in_edge_filter(to_weight)){
+                if (1){
+                    summary[graph[to_id].label.slice(-1)[0]].in++;
+                }
+            }
+        }
+        edges_summary.push(summary);
+        diagram.cells[group_id].summary = summary;
+    }
+    return edges_summary;
+};
+
+GraphLayout.prototype.test_edge_statistic = function(){
+    let that = this;
+    let diagram = that.cal_vonoroi(Object.values(DataLoader.state.nodes));
+    return that.edge_statistic(diagram);
 }

@@ -255,6 +255,7 @@ let GraphLayout = function (container) {
         aggregate = state.aggregate;
         rect_nodes = state.rect_nodes;
         edge_filter_threshold = state.edge_filter_threshold;
+        that.edge_filter_threshold = edge_filter_threshold;
         edge_type_range = state.edge_type_range;
         all_path = state.path;
         path = [];
@@ -531,7 +532,7 @@ let GraphLayout = function (container) {
                 .data(path_ary, d => d[0].id+","+d[1].id);
             img_in_group = that.label_group.selectAll("image")
                 .data(imgs, d => d.node.id);
-            that.vonoroi_in_group = that.vonoroi_group.selectAll("g")
+            that.vonoroi_in_group = that.vonoroi_group.selectAll("g.voronoi-cell")
                 .data(that.vonoroi_data.cells, d => d.id);
             gradient_in_group = gradient_group.selectAll("linearGradient")
                 .data(path_ary, d => d[0].id+","+d[1].id);
@@ -756,10 +757,7 @@ let GraphLayout = function (container) {
             that.vonoroi_in_group
                 .selectAll("path")
                 .attr("d", d => that.get_cell_path(d, that.scale));
-            that.vonoroi_in_group
-                .selectAll("circile")
-                .attr("cx", d => that.center_scale_x(d.site.data[0]))
-                .attr("cy", d => that.center_scale_y(d.site.data[1]));
+                
 
             edge_summary_in_group
                 .attr("transform", function (d, i) {
@@ -1089,17 +1087,64 @@ let GraphLayout = function (container) {
                 .attr("height", d => d.h * that.scale * that.zoom_scale);
             
             let v_g = that.vonoroi_in_group.enter()
-                .append("g");
+                .append("g")
+                .attr("class", "voronoi-cell");
             v_g.append("path")
                 .attr("d", d => that.get_cell_path(d, that.scale))
                 .style("fill", "none")
                 .style("stroke-width", 2)
                 .style("stroke", "#a9a9a9");
-            v_g.append("circle")
-                .attr("cx", d => that.center_scale_x(d.site.data[0]))
-                .attr("cy", d => that.center_scale_y(d.site.data[1]))
-                .attr("r", 3)
-                .style("fill", "black");
+            // v_g.append("circle")
+            //     .attr("cx", d => that.center_scale_x(d.site.data[0]))
+            //     .attr("cy", d => that.center_scale_y(d.site.data[1]))
+            //     .attr("r", 3)
+            //     .style("fill", "black");
+            let sub_v_g = v_g.append("g")
+                .attr("transform", d => "translate("+(that.center_scale_x(d.site.data[0]))+","+(that.center_scale_y(d.site.data[1]))+")")
+                .each(function (_d) {
+                    let d = _d.summary;
+                    let group = d3.select(this);
+                    let class_cnt = d.length;
+                    let bar_width = 4*that.zoom_scale;
+                    let small_inner_bounder = 1.5*that.zoom_scale;
+                    let large_inner_bounder = 3*that.zoom_scale;
+                    let outer_bounder = 3*that.zoom_scale;
+                    let chart_width = bar_width*(2*class_cnt)+large_inner_bounder*(class_cnt-1)+small_inner_bounder*class_cnt+outer_bounder*2;
+                    let chart_height = 50*that.zoom_scale;
+                    let max_num = 0;
+                    for(let i=0;i<d.length;i++){
+                        max_num = Math.max(max_num, d[i].in, d[i].out);
+                    }
+                    scale_function = function(x){
+                        return Math.pow(x, 0.5);
+                    }
+                    // group.append("line")
+                    //     .attr("x1", 0)
+                    //     .attr("y1", chart_height*0.8)
+                    //     .attr("x2", chart_width)
+                    //     .attr("y2", chart_height*0.8)
+                    //     .attr("stroke-width", that.zoom_scale)
+                    //     .attr("stroke", "black");
+                    for(let i=0; i<d.length;i++ ){
+                        group.append("rect")
+                            .attr("class", "edge-summary-rect")
+                            .attr("id", "edge-bar-in-"+i)
+                            .attr("x", outer_bounder+(bar_width*2+small_inner_bounder+large_inner_bounder)*i)
+                            .attr("y", chart_height*0.8-chart_height*0.7*scale_function(d[i].in/max_num))
+                            .attr("width", bar_width)
+                            .attr("height", chart_height*0.7*scale_function(d[i].in/max_num))
+                            .attr("fill", color_label[d[i].idx]);
+                        group.append("rect")
+                            .attr("class", "edge-summary-rect")
+                            .attr("id", "edge-bar-out-"+i)
+                            .attr("x", outer_bounder+(bar_width*2+small_inner_bounder+large_inner_bounder)*i+bar_width+small_inner_bounder)
+                            .attr("y", chart_height*0.8-chart_height*0.7*scale_function(d[i].out/max_num))
+                            .attr("width", bar_width)
+                            .attr("height", chart_height*0.7*scale_function(d[i].out/max_num))
+                            .attr("fill", color_label[d[i].idx]);
+                    }
+                });
+
 
                 
 
