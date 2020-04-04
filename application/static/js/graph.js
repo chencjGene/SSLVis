@@ -85,6 +85,7 @@ let GraphLayout = function (container) {
     that.if_focus_selection_box = false;
     let re_focus_selection_box = false;
     let edges_summary = [];
+    let show_voronoi = false;
 
 
     //edit info
@@ -423,8 +424,15 @@ let GraphLayout = function (container) {
         }
         glyphs = tmp_glyphs;
 
-        
-        that.vonoroi_data = that.cal_vonoroi(nodes);
+        if(show_voronoi){
+            that.vonoroi_data = that.cal_vonoroi(nodes);
+        }
+        else {
+            that.vonoroi_data = {
+                edges:[],
+                cells:[]
+            }
+        }
 
         // }
         // glyphs
@@ -752,14 +760,18 @@ let GraphLayout = function (container) {
                 })
                 .attr("width", d => d.w * that.scale * that.zoom_scale)
                 .attr("height", d => d.h * that.scale * that.zoom_scale);
-            
+
+            // that.vonoroi_in_group
+            //     .selectAll(".voronoi-edge")
+            //     .attr("d", d => that.get_cell_path(d, that.scale));
+
             that.vonoroi_in_group
-                .selectAll("path")
-                .attr("d", d => that.get_cell_path(d, that.scale));
-            that.vonoroi_in_group
-                .selectAll("circile")
-                .attr("cx", d => that.center_scale_x(d.site.data[0]))
-                .attr("cy", d => that.center_scale_y(d.site.data[1]));
+                .selectAll(".voronoi-edge")
+                .attr("d", d => that.get_skeleton_path(d, that.scale));
+            // that.vonoroi_in_group
+            //     .selectAll("circile")
+            //     .attr("cx", d => that.center_scale_x(d.site.data[0]))
+            //     .attr("cy", d => that.center_scale_y(d.site.data[1]));
 
             edge_summary_in_group
                 .attr("transform", function (d, i) {
@@ -1090,16 +1102,45 @@ let GraphLayout = function (container) {
             
             let v_g = that.vonoroi_in_group.enter()
                 .append("g");
-            v_g.append("path")
-                .attr("d", d => that.get_cell_path(d, that.scale))
-                .style("fill", "none")
-                .style("stroke-width", 2)
-                .style("stroke", "#a9a9a9");
-            v_g.append("circle")
-                .attr("cx", d => that.center_scale_x(d.site.data[0]))
-                .attr("cy", d => that.center_scale_y(d.site.data[1]))
-                .attr("r", 3)
-                .style("fill", "black");
+            v_g.each(function (d) {
+                let group = d3.select(this);
+                // show entire path
+                // for(let edge_id of d.halfedges){
+                //     group.append("path")
+                //         .datum(edge_id)
+                //         .attr("class", "voronoi-edge")
+                //         .attr("d", d => that.get_cell_path(d, that.scale))
+                //         .style("fill", "none")
+                //         .style("stroke-width", 2)
+                //         .style("stroke", "#a9a9a9")
+                //         .on("mouseover", function (d) {
+                //             console.log(that.vonoroi_data.edges[d])
+                //         });
+                // }
+                // show skeleton
+                for(let edge of d.skeleton){
+                    group.append("path")
+                        .datum(edge)
+                        .attr("class", "voronoi-edge")
+                        .attr("d", d => that.get_skeleton_path(d, that.scale))
+                        .style("fill", "none")
+                        .style("stroke-width", 2)
+                        .style("stroke", "#a9a9a9")
+                        .on("mouseover", function (d) {
+                            console.log(d)
+                        });
+                }
+            });
+            // v_g.append("path")
+            //     .attr("d", d => that.get_cell_path(d, that.scale))
+            //     .style("fill", "none")
+            //     .style("stroke-width", 2)
+            //     .style("stroke", "#a9a9a9");
+            // v_g.append("circle")
+            //     .attr("cx", d => that.center_scale_x(d.site.data[0]))
+            //     .attr("cy", d => that.center_scale_y(d.site.data[1]))
+            //     .attr("r", 3)
+            //     .style("fill", "black");
 
                 
 
@@ -1524,10 +1565,10 @@ let GraphLayout = function (container) {
             // 
             that._update_selection_box();
         }
-        that.vonoroi_in_group
-            .select("circle")
-            .attr("cx", d => that.center_scale_x(d.site.data[0]))
-            .attr("cy", d => that.center_scale_y(d.site.data[1]));
+        // that.vonoroi_in_group
+        //     .select("circle")
+        //     .attr("cx", d => that.center_scale_x(d.site.data[0]))
+        //     .attr("cy", d => that.center_scale_y(d.site.data[1]));
 
     };
 
@@ -2253,6 +2294,11 @@ let GraphLayout = function (container) {
         uncertainty_glyph_radius = type===2?9:13;
         d3.selectAll(".pie-chart").remove();
         await that._update_view();
+    };
+
+    that.if_show_voronoi = function(flag){
+        show_voronoi = flag;
+        that.data_manager.update_graph_view()
     };
 
 
