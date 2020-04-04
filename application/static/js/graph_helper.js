@@ -112,7 +112,7 @@ GraphLayout.prototype.cal_vonoroi = function(nodes) {
                         if (new_halfedge[edge] === undefined) new_halfedge[edge] = 0;
                         new_halfedge[edge] += 1;
                     }
-                    nodes_id.push(v.nodes);
+                    nodes_id = nodes_id.concat(v.nodes);
                     idxs.push(j);
                     Diagram.cells[i].id = Diagram.cells[i].id.concat(Diagram.cells[j].id);
                 }
