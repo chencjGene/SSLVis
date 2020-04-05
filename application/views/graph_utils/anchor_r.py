@@ -22,6 +22,7 @@ from sklearn.manifold import TSNE
 from ..graph_utils.RandomSampler import random_sample
 from sklearn.neighbors import BallTree
 from ..graph_utils.aggregation import Aggregation
+from ..utils.helper_utils import *
 
 
 
@@ -410,6 +411,15 @@ class Anchors:
             all_outliers += outlier_ids.tolist()
         return all_outliers
 
+    def get_outlier(self, data, labels, label_cnt = 11):
+        outlier_path = os.path.join(self.model.data.selected_dir, "outliers.pkl")
+        if os.path.exists(outlier_path):
+            return pickle_load_data(outlier_path)
+        else:
+            all_outliers = self.computer_local_outlier(data, labels, label_cnt)
+            pickle_save_data(outlier_path, all_outliers)
+            return all_outliers
+
 
     def get_nodes(self, wh):
         self.remove_ids = self.model.data.get_removed_idxs()
@@ -433,9 +443,9 @@ class Anchors:
 
         # get outlier
         top_level = np.array(self.hierarchy_info[0]["index"])
-        outliers = self.computer_local_outlier(tsne[top_level], self.model.get_pred_labels()[top_level])
+        outliers = self.get_outlier(tsne[top_level], self.model.get_pred_labels()[top_level])
         outliers = top_level[outliers].tolist()
-        print("outlier:", outliers)
+        print("outliers:{}".format(outliers))
 
 
         self.old_nodes_id = selection
