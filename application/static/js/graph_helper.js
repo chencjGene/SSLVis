@@ -214,22 +214,21 @@ GraphLayout.prototype.cal_vonoroi = function(nodes) {
     // get edges skeleton
     let edges = Diagram.edges;
     let predefined_skeleton = {
-        "-5.722075812274367,-3.14427797833935": true,
-        "-7.966393586005831,-1.406422740524782": true,
-        "-0.617103386809269,7.017834224598929": true,
-        "5.296328413284132,-4.526955719557195": true,
-        "4.2830254138104,6.139549406453771": true,
-        "0.930343117611701,2.3844940893608495": true,
-        "2.4494735454385657,6.512194234487607": true,
+        // "-5.722075812274367,-3.14427797833935": true,
+        // "-7.966393586005831,-1.406422740524782": true,
+        // "-0.617103386809269,7.017834224598929": true,
+        // "5.296328413284132,-4.526955719557195": true,
+        // "4.2830254138104,6.139549406453771": true,
+        // "0.930343117611701,2.3844940893608495": true,
+        // "2.4494735454385657,6.512194234487607": true,
+        "6.244586523736601,-4.495347115875447":true
     };
     let not_predefined_skeleton = {
         "-9.956811125485123,4.312367399741268": true,
         "-14.388622448979588,6.91364795918367": true,
         "-15.818022288446054,7.76523902651023": true,
-        "-12.56665907019143,-3.3994712853236093": true,
         "-9.987834445086401,-9.385353222333105": true,
         "6.203132286462051,-12.226498929336188": true,
-        // "7.654278000617093,11.524108299907436":true,
         "19.214696569920697,-6.769261213720301": true,
         "15.842210065645485,-6.407242888402623": true,
         "10.914449977866314,-5.776489597166888": true,
@@ -242,6 +241,18 @@ GraphLayout.prototype.cal_vonoroi = function(nodes) {
         "8.292218045112781,5.952518796992482":[8.088306451612903, 6.8701209677419355],
         "0.930343117611701,2.3844940893608495":[-0.5342129694753129, 3.778111548741032]
     };
+    let correction_edges = {
+        "-9.683447459766487,3.766366361628274,-16.324801033097344,5.973639755117645":[[-6.431889324110342, 3.576033211100925], [-9.683447459766487, 3.766366361628274], 2],
+        "-12.56665907019143,-3.3994712853236093,-25.22,-7.395263157894741":[[-6.292421165152324, 0.9073570283270975], [-12.56665907019143, -3.3994712853236093], 1],
+        "-8.143245989304813,-9.089919786096257,-10.781221476510066,-11.51255033557047":[[-4.3867593900028234, -6.519148545608585], [-8.143245989304813, -9.089919786096257], 3],
+        "3.414543512480323,-11.099967393748592,5.902799955766885,-14.530279774411138":[[1.3241964056482667, -6.151261553273427], [3.414543512480323, -11.099967393748592], 1],
+        "6.244586523736601,-4.495347115875447,19.49672064777312,-6.87502024291496":[[3.3416339208321295, -2.225208032360589], [6.244586523736601, -4.495347115875447], 2],
+        "7.637046905537459,11.579377850162865,16.037363636363636,28.08":[[7.848633727953612, 7.35838487557381], [7.637046905537459, 11.579377850162865], 1],
+        "13.164281048022792,-0.6814250469108325,16.965275970619082,-3.552389296956968":[[8.73137505889744, 2.2905709125176688], [13.164281048022792, -0.6814250469108325], 2]
+    };
+    // predefined_skeleton = {};
+    // not_predefined_skeleton = {};
+    replace_node = {};
     let is_skeleton = {};
     for(let cell of Diagram.cells){
         let halfedges = cell.halfedges;
@@ -325,14 +336,73 @@ GraphLayout.prototype.cal_vonoroi = function(nodes) {
             }
         }
     }
+
     for(let cell of Diagram.cells){
         let new_skeleton = [];
         let old_skeleton = cell.skeleton;
         for(let i=0; i<cell.skeleton.length; i++){
-            new_skeleton.push([old_skeleton[i], old_skeleton[i+1===cell.skeleton.length?0:i+1]])
+            new_skeleton.push([JSON.parse(JSON.stringify(old_skeleton[i])), JSON.parse(JSON.stringify(old_skeleton[i+1===cell.skeleton.length?0:i+1]))])
         }
         cell.skeleton = new_skeleton;
     }
+    let correct_Edge = function (edge, direction) {
+            let u = edge[0];
+            let v = edge[1];
+            if(Math.pow(u[0], 2) + Math.pow(u[1], 2) > Math.pow(v[0], 2) + Math.pow(v[1], 2)){
+                let tmp = u;
+                u=v;
+                v=tmp;
+            }
+            let du = direction[0];
+            let dv = direction[1];
+            let distance = Math.sqrt(Math.pow(u[0]-v[0], 2) + Math.pow(u[1]-v[1], 2));
+            let direction_dis = Math.sqrt(Math.pow(du[0]-dv[0], 2) + Math.pow(du[1]-dv[1], 2));
+            let old_v = JSON.parse(JSON.stringify(v));
+            v[0] = u[0]+(distance/direction_dis)*(dv[0]-du[0]);
+            v[1] = u[1]+(distance/direction_dis)*(dv[1]-du[1]);
+            return old_v;
+    };
+    for(let cell of Diagram.cells){
+        for(let edge of cell.skeleton){
+            let u = edge[0];
+            let v = edge[1];
+            if(Math.pow(u[0], 2) + Math.pow(u[1], 2) > Math.pow(v[0], 2) + Math.pow(v[1], 2)){
+                let tmp = u;
+                u=v;
+                v=tmp;
+            }
+            let key = u[0]+","+u[1]+","+v[0]+","+v[1];
+            if(correction_edges[key]){
+                let direction = correction_edges[key];
+                let cnt = direction[2];
+                let start_node = correct_Edge(edge, direction);
+                let new_start_node = v;
+                let last_edge = edge;
+                for(let i=0; i<cnt-1; i++){
+                    for(let edge of cell.skeleton){
+                        if(edge === last_edge) continue;
+                        if(JSON.stringify(edge[0]) === JSON.stringify(start_node)){
+                            edge[0] = new_start_node;
+                            start_node=correct_Edge(edge, direction);
+                            new_start_node = edge[1];
+                            last_edge = edge;
+                            break;
+                        }
+                        if(JSON.stringify(edge[1]) === JSON.stringify(start_node)){
+                            edge[1] = new_start_node;
+                            start_node=correct_Edge(edge, direction);
+                            new_start_node = edge[0];
+                            last_edge = edge;
+                            break;
+                        }
+                    }
+                }
+
+            }
+        }
+    }
+
+
     that.edge_statistic(Diagram);
 
 

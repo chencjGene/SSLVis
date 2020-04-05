@@ -127,6 +127,7 @@ DataLoaderClass = function () {
         re_focus_selection_box: false,
         nodes_before_focus_selection: null,
         selection_before_focus_sulection: null,
+        outliers: null,
         // history info:
         history_data: null,
         // edit info:
@@ -787,7 +788,8 @@ DataLoaderClass = function () {
             "edit_state": that.state.edit_state,
             "if_focus_selection_box": that.state.if_focus_selection_box,
             "re_focus_selection_box":that.state.re_focus_selection_box,
-            "label_names": that.state.label_names
+            "label_names": that.state.label_names,
+            "outliers": that.state.outliers
         });
 
     };

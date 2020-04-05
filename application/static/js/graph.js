@@ -86,6 +86,7 @@ let GraphLayout = function (container) {
     let re_focus_selection_box = false;
     let edges_summary = [];
     let show_voronoi = false;
+    let outliers = {};
 
 
     //edit info
@@ -234,6 +235,7 @@ let GraphLayout = function (container) {
 
     that._update_data = function(state) {
         nodes_in_this_level = state.nodes;
+        outliers = state.outliers;
         nodes_dict = state.nodes;
         nodes = JSON.parse(JSON.stringify(nodes_in_this_level));
         nodes = Object.values(nodes);
@@ -426,7 +428,8 @@ let GraphLayout = function (container) {
         glyphs = tmp_glyphs;
 
         if(show_voronoi){
-            that.vonoroi_data = that.cal_vonoroi(nodes);
+            let voronoi_nodes = nodes.filter(d => outliers[d.id] === undefined);
+            that.vonoroi_data = that.cal_vonoroi(voronoi_nodes);
         }
         else {
             that.vonoroi_data = {
@@ -2346,6 +2349,17 @@ let GraphLayout = function (container) {
     that.if_show_voronoi = function(flag){
         show_voronoi = flag;
         that.data_manager.update_graph_view()
+    };
+
+    that.if_show_outliers = function(flag) {
+        if(flag) {
+            nodes_in_group.attr("fill", d => outliers[d.id]?"black":(d.label[iter]===-1?color_unlabel:color_label[d.label[iter]]))
+        }
+        else {
+            nodes_in_group.attr("fill", function (d) {
+                    return d.label[iter]===-1?color_unlabel:color_label[d.label[iter]];
+            })
+        }
     };
 
 

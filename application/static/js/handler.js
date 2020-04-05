@@ -39,6 +39,10 @@ DataLoaderClass.prototype.get_graph_handler = function (callback) {
 
     function _graph_handler(data) {
         console.log("Get data:", data);
+        that.state.outliers = {};
+        for(let outlier of data.outliers){
+            that.state.outliers[outlier] = true;
+        }
         that.state.label_names = data.label_names;
         let complete_graph = data.graph.nodes;
         that.state.complete_graph = complete_graph;

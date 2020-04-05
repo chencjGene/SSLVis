@@ -10,6 +10,7 @@ import time
 from scipy.stats import entropy
 import math
 from sklearn.metrics import pairwise_distances
+from sklearn.neighbors import LocalOutlierFactor
 
 from ..utils.config_utils import config
 from ..utils.log_utils import logger
@@ -398,6 +399,18 @@ class Anchors:
             np.save(self.matrix_path, self.rotate_matrix)
             logger.info("finish rotate matrix:{}, wh={}".format(self.rotate_matrix, best_wh))
 
+    def computer_local_outlier(self, data, labels, label_cnt = 11):
+        all_outliers = []
+        for label in range(label_cnt):
+            ids = np.where(labels == label)[0]
+            label_data = data[ids]
+            lof = LocalOutlierFactor()
+            flag = lof.fit_predict(label_data)
+            outlier_ids = ids[np.where(flag==-1)[0]]
+            all_outliers += outlier_ids.tolist()
+        return all_outliers
+
+
     def get_nodes(self, wh):
         self.remove_ids = self.model.data.get_removed_idxs()
         self.tsne = self.get_train_x_tsne()
@@ -418,6 +431,11 @@ class Anchors:
         selection = np.arange(0, all_node_num)
         tsne = self.get_init_tsne(selection)
 
+        # get outlier
+        top_level = np.array(self.hierarchy_info[0]["index"])
+        outliers = self.computer_local_outlier(tsne[top_level], self.model.get_pred_labels()[top_level])
+        outliers = top_level[outliers].tolist()
+
 
         self.old_nodes_id = selection
         self.old_nodes_tsne = tsne
@@ -435,7 +453,8 @@ class Anchors:
         # graph["aggregate"] = aggregate
         return {
             "graph":graph,
-            "hierarchy":self.hierarchy_info
+            "hierarchy":self.hierarchy_info,
+            "outliers":outliers
         }
 
     def rotate_area(self, area):
