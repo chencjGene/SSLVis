@@ -380,7 +380,7 @@ GraphLayout.prototype.in_edge_filter = function(weight){
 
 GraphLayout.prototype.edge_statistic = function(diagram){
     let that = this;
-    let groups = diagram.cells.map(d => d.site.data[3]);
+    let groups = diagram.cells.map(d => d.nodes);
     let label_cnt = groups.length;
     let graph = that.data_manager.state.complete_graph;
     let edges_summary = [];
