@@ -404,7 +404,7 @@ class Anchors:
         for label in range(label_cnt):
             ids = np.where(labels == label)[0]
             label_data = data[ids]
-            lof = LocalOutlierFactor()
+            lof = LocalOutlierFactor(contamination=0.1)
             flag = lof.fit_predict(label_data)
             outlier_ids = ids[np.where(flag==-1)[0]]
             all_outliers += outlier_ids.tolist()
@@ -435,6 +435,7 @@ class Anchors:
         top_level = np.array(self.hierarchy_info[0]["index"])
         outliers = self.computer_local_outlier(tsne[top_level], self.model.get_pred_labels()[top_level])
         outliers = top_level[outliers].tolist()
+        print("outlier:", outliers)
 
 
         self.old_nodes_id = selection
