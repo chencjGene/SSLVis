@@ -61,8 +61,8 @@ let GraphLayout = function (container) {
     let gradient_in_group = null;
     that.selection_group = null;
     that.snapshot_group = null;
-    that.vonoroi_group = null;
-    that.vonoroi_in_group = null;
+    that.voronoi_group = null;
+    that.voronoi_in_group = null;
 
     // meta data
     let nodes = {};
@@ -80,7 +80,7 @@ let GraphLayout = function (container) {
     let aggregate = [];
     let rect_nodes = [];
     let imgs = [];
-    that.vonoroi_data = {"edges": [], "cells": []};
+    that.voronoi_data = {"edges": [], "cells": []};
     let nodes_dict = null;
     that.if_focus_selection_box = false;
     let re_focus_selection_box = false;
@@ -122,6 +122,7 @@ let GraphLayout = function (container) {
     // plugin
     let transform_plg = null;
     let highlight_plg = null;
+    let voronoi_plg = null;
     let if_lasso = false;
 
     that.set_step_in = function(n){
@@ -150,7 +151,7 @@ let GraphLayout = function (container) {
         that.label_group = that.main_group.append("g").attr("id", "graph-label-g");
         that.selection_group = that.main_group.append("g").attr("id", "graph-selection-g");
         that.snapshot_group = that.svg.append("g").attr("id", "snapshot-group");
-        that.vonoroi_group = that.main_group.append("g").attr("id", "vonoroi-group");
+        that.voronoi_group = that.main_group.append("g").attr("id", "voronoi-group");
         tmp_show_imgs = that.main_group.append("g").attr("id", "tmp-graph-label-g");
         that.width = $('#graph-view-svg').width();
         that.height = $('#graph-view-svg').height();
@@ -161,6 +162,8 @@ let GraphLayout = function (container) {
         //add plugin
         transform_plg = new GraphTransform(that);
         highlight_plg = new GraphHighlight(that);
+        voronoi_plg = new GraphVoronoi(that);
+        that.voronoi_plg = voronoi_plg;
         that.highlight_plg = highlight_plg;
 
         // init zoom
@@ -429,10 +432,10 @@ let GraphLayout = function (container) {
 
         if(show_voronoi){
             let voronoi_nodes = nodes.filter(d => outliers[d.id] === undefined);
-            that.vonoroi_data = that.cal_vonoroi(voronoi_nodes);
+            that.voronoi_data = that.cal_voronoi(voronoi_nodes);
         }
         else {
-            that.vonoroi_data = {
+            that.voronoi_data = {
                 edges:[],
                 cells:[]
             }
@@ -543,8 +546,8 @@ let GraphLayout = function (container) {
                 .data(path_ary, d => d[0].id+","+d[1].id);
             img_in_group = that.label_group.selectAll("image")
                 .data(imgs, d => d.node.id);
-            that.vonoroi_in_group = that.vonoroi_group.selectAll("g.voronoi-cell")
-                .data(that.vonoroi_data.cells, d => d.id);
+            that.voronoi_in_group = that.voronoi_group.selectAll("g.voronoi-cell")
+                .data(that.voronoi_data.cells, d => d.id);
             gradient_in_group = gradient_group.selectAll("linearGradient")
                 .data(path_ary, d => d[0].id+","+d[1].id);
             edge_summary_in_group = edge_summary_group.selectAll(".edge-summary")
@@ -638,12 +641,12 @@ let GraphLayout = function (container) {
                 .remove()
                 .on("end", resolve);
 
-            that.vonoroi_in_group.exit()
-                .transition()
-                .duration(remove_ani)
-                .attr("opacity", 0)
-                .remove()
-                .on("end", resolve);
+            // that.voronoi_in_group.exit()
+            //     .transition()
+            //     .duration(remove_ani)
+            //     .attr("opacity", 0)
+            //     .remove()
+            //     .on("end", resolve);
 
             edge_summary_in_group.exit()
                 .transition()
@@ -765,14 +768,14 @@ let GraphLayout = function (container) {
                 .attr("width", d => d.w * that.scale * that.zoom_scale)
                 .attr("height", d => d.h * that.scale * that.zoom_scale);
 
-            // that.vonoroi_in_group
+            // that.voronoi_in_group
             //     .selectAll(".voronoi-edge")
             //     .attr("d", d => that.get_cell_path(d, that.scale));
 
-            that.vonoroi_in_group
-                .selectAll(".voronoi-edge")
-                .attr("d", d => that.get_skeleton_path(d, that.scale));
-            // that.vonoroi_in_group
+            // that.voronoi_in_group
+            //     .selectAll(".voronoi-edge")
+            //     .attr("d", d => that.get_skeleton_path(d, that.scale));
+            // that.voronoi_in_group
             //     .selectAll("circile")
             //     .attr("cx", d => that.center_scale_x(d.site.data[0]))
             //     .attr("cy", d => that.center_scale_y(d.site.data[1]));
@@ -1104,92 +1107,92 @@ let GraphLayout = function (container) {
                 .attr("width", d => d.h * that.scale * that.zoom_scale)
                 .attr("height", d => d.h * that.scale * that.zoom_scale);
             
-            let v_g = that.vonoroi_in_group.enter()
-                .append("g");
-            v_g.each(function (d) {
-                let group = d3.select(this);
-                // show entire path
-                // for(let edge_id of d.halfedges){
-                //     group.append("path")
-                //         .datum(edge_id)
-                //         .attr("class", "voronoi-edge")
-                //         .attr("d", d => that.get_cell_path(d, that.scale))
-                //         .style("fill", "none")
-                //         .style("stroke-width", 2)
-                //         .style("stroke", "#a9a9a9")
-                //         .on("mouseover", function (d) {
-                //             console.log(that.vonoroi_data.edges[d])
-                //         });
-                // }
-                // show skeleton
-                for(let edge of d.skeleton){
-                    group.append("path")
-                        .datum(edge)
-                        .attr("class", "voronoi-edge")
-                        .attr("d", d => that.get_skeleton_path(d, that.scale))
-                        .style("fill", "none")
-                        .style("stroke-width", 2)
-                        .style("stroke", "#a9a9a9")
-                        .on("mouseover", function (d) {
-                            console.log(d)
-                        });
-                }
-            });
-            // v_g.append("path")
-            //     .attr("d", d => that.get_cell_path(d, that.scale))
-            //     .style("fill", "none")
-            //     .style("stroke-width", 2)
-            //     .style("stroke", "#a9a9a9");
-            // v_g.append("circle")
-            //     .attr("cx", d => that.center_scale_x(d.site.data[0]))
-            //     .attr("cy", d => that.center_scale_y(d.site.data[1]))
-            //     .attr("r", 3)
-            //     .style("fill", "black");
-            let sub_v_g = v_g.append("g")
-                .attr("transform", d => "translate("+(that.center_scale_x(d.site.data[0]))+","+(that.center_scale_y(d.site.data[1]))+")")
-                .each(function (_d) {
-                    let d = _d.summary;
-                    let group = d3.select(this);
-                    let class_cnt = d.length;
-                    let bar_width = 4*that.zoom_scale;
-                    let small_inner_bounder = 1.5*that.zoom_scale * 0;
-                    let large_inner_bounder = 3*that.zoom_scale * 0;
-                    let outer_bounder = 3*that.zoom_scale;
-                    let chart_width = bar_width*(2*class_cnt)+large_inner_bounder*(class_cnt-1)+small_inner_bounder*class_cnt+outer_bounder*2;
-                    let chart_height = 50*that.zoom_scale;
-                    let max_num = 0;
-                    for(let i=0;i<d.length;i++){
-                        max_num = Math.max(max_num, d[i].in, d[i].out);
-                    }
-                    scale_function = function(x){
-                        return Math.pow(x, 0.5);
-                    }
-                    // group.append("line")
-                    //     .attr("x1", 0)
-                    //     .attr("y1", chart_height*0.8)
-                    //     .attr("x2", chart_width)
-                    //     .attr("y2", chart_height*0.8)
-                    //     .attr("stroke-width", that.zoom_scale)
-                    //     .attr("stroke", "black");
-                    for(let i=0; i<d.length;i++ ){
-                        group.append("rect")
-                            .attr("class", "edge-summary-rect")
-                            .attr("id", "edge-bar-in-"+i)
-                            .attr("x", outer_bounder+(bar_width*2+small_inner_bounder+large_inner_bounder)*i)
-                            .attr("y", chart_height*0.8-chart_height*0.7*scale_function(d[i].in/max_num))
-                            .attr("width", bar_width)
-                            .attr("height", chart_height*0.7*scale_function(d[i].in/max_num))
-                            .attr("fill", color_label[d[i].idx]);
-                        group.append("rect")
-                            .attr("class", "edge-summary-rect")
-                            .attr("id", "edge-bar-out-"+i)
-                            .attr("x", outer_bounder+(bar_width*2+small_inner_bounder+large_inner_bounder)*i+bar_width+small_inner_bounder)
-                            .attr("y", chart_height*0.8-chart_height*0.7*scale_function(d[i].out/max_num))
-                            .attr("width", bar_width)
-                            .attr("height", chart_height*0.7*scale_function(d[i].out/max_num))
-                            .attr("fill", color_label[d[i].idx]);
-                    }
-                });
+            // let v_g = that.voronoi_in_group.enter()
+            //     .append("g");
+            // v_g.each(function (d) {
+            //     let group = d3.select(this);
+            //     // show entire path
+            //     // for(let edge_id of d.halfedges){
+            //     //     group.append("path")
+            //     //         .datum(edge_id)
+            //     //         .attr("class", "voronoi-edge")
+            //     //         .attr("d", d => that.get_cell_path(d, that.scale))
+            //     //         .style("fill", "none")
+            //     //         .style("stroke-width", 2)
+            //     //         .style("stroke", "#a9a9a9")
+            //     //         .on("mouseover", function (d) {
+            //     //             console.log(that.voronoi_data.edges[d])
+            //     //         });
+            //     // }
+            //     // show skeleton
+            //     for(let edge of d.skeleton){
+            //         group.append("path")
+            //             .datum(edge)
+            //             .attr("class", "voronoi-edge")
+            //             .attr("d", d => that.get_skeleton_path(d, that.scale))
+            //             .style("fill", "none")
+            //             .style("stroke-width", 2)
+            //             .style("stroke", "#a9a9a9")
+            //             .on("mouseover", function (d) {
+            //                 console.log(d)
+            //             });
+            //     }
+            // });
+            // // v_g.append("path")
+            // //     .attr("d", d => that.get_cell_path(d, that.scale))
+            // //     .style("fill", "none")
+            // //     .style("stroke-width", 2)
+            // //     .style("stroke", "#a9a9a9");
+            // // v_g.append("circle")
+            // //     .attr("cx", d => that.center_scale_x(d.site.data[0]))
+            // //     .attr("cy", d => that.center_scale_y(d.site.data[1]))
+            // //     .attr("r", 3)
+            // //     .style("fill", "black");
+            // let sub_v_g = v_g.append("g")
+            //     .attr("transform", d => "translate("+(that.center_scale_x(d.site.data[0]))+","+(that.center_scale_y(d.site.data[1]))+")")
+            //     .each(function (_d) {
+            //         let d = _d.summary;
+            //         let group = d3.select(this);
+            //         let class_cnt = d.length;
+            //         let bar_width = 4*that.zoom_scale;
+            //         let small_inner_bounder = 1.5*that.zoom_scale * 0;
+            //         let large_inner_bounder = 3*that.zoom_scale * 0;
+            //         let outer_bounder = 3*that.zoom_scale;
+            //         let chart_width = bar_width*(2*class_cnt)+large_inner_bounder*(class_cnt-1)+small_inner_bounder*class_cnt+outer_bounder*2;
+            //         let chart_height = 50*that.zoom_scale;
+            //         let max_num = 0;
+            //         for(let i=0;i<d.length;i++){
+            //             max_num = Math.max(max_num, d[i].in, d[i].out);
+            //         }
+            //         scale_function = function(x){
+            //             return Math.pow(x, 0.5);
+            //         }
+            //         group.append("rect")
+            //             .attr("class", "barchart-background")
+            //             .attr("x", 0)
+            //             .attr("y", 0)
+            //             .attr("width", chart_width)
+            //             .attr("height", chart_height*0.8)
+            //             .style("fill", "white");
+            //         for(let i=0; i<d.length;i++ ){
+            //             group.append("rect")
+            //                 .attr("class", "edge-summary-rect")
+            //                 .attr("id", "edge-bar-in-"+i)
+            //                 .attr("x", outer_bounder+(bar_width*2+small_inner_bounder+large_inner_bounder)*i)
+            //                 .attr("y", chart_height*0.8-chart_height*0.7*scale_function(d[i].in/max_num))
+            //                 .attr("width", bar_width)
+            //                 .attr("height", chart_height*0.7*scale_function(d[i].in/max_num))
+            //                 .attr("fill", color_label[d[i].idx]);
+            //             group.append("rect")
+            //                 .attr("class", "edge-summary-rect")
+            //                 .attr("id", "edge-bar-out-"+i)
+            //                 .attr("x", outer_bounder+(bar_width*2+small_inner_bounder+large_inner_bounder)*i+bar_width+small_inner_bounder)
+            //                 .attr("y", chart_height*0.8-chart_height*0.7*scale_function(d[i].out/max_num))
+            //                 .attr("width", bar_width)
+            //                 .attr("height", chart_height*0.7*scale_function(d[i].out/max_num))
+            //                 .attr("fill", color_label[d[i].idx]);
+            //         }
+            //     });
 
 
                 
@@ -1615,7 +1618,7 @@ let GraphLayout = function (container) {
             // 
             that._update_selection_box();
         }
-        // that.vonoroi_in_group
+        // that.voronoi_in_group
         //     .select("circle")
         //     .attr("cx", d => that.center_scale_x(d.site.data[0]))
         //     .attr("cy", d => that.center_scale_y(d.site.data[1]));
@@ -1692,8 +1695,8 @@ let GraphLayout = function (container) {
                 .data([], d => d[0].id+","+d[1].id);
             img_in_group = that.label_group.selectAll("image")
                 .data(imgs, d => d.id);
-            that.vonoroi_in_group = that.vonoroi_group.selectAll("g")
-                .data(that.vonoroi_data.cells, d => d.id);
+            // that.voronoi_in_group = that.voronoi_group.selectAll("g")
+            //     .data(that.voronoi_data.cells, d => d.id);
             gradient_in_group = gradient_group.selectAll("linearGradient")
                 .data([], d => d[0].id+","+d[1].id);
             edge_summary_in_group = edge_summary_group.selectAll(".edge-summary").data(edges_summary);
@@ -2347,8 +2350,9 @@ let GraphLayout = function (container) {
     };
 
     that.if_show_voronoi = function(flag){
-        show_voronoi = flag;
-        that.data_manager.update_graph_view()
+        // show_voronoi = flag;
+        // that.data_manager.update_graph_view()
+        voronoi_plg.show_voronoi(nodes, outliers);
     };
 
     that.if_show_outliers = function(flag) {

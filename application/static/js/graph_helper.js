@@ -49,7 +49,7 @@ GraphLayout.prototype.get_distance = function (source, target) {
 };
 
 
-GraphLayout.prototype.cal_vonoroi = function(nodes) {
+GraphLayout.prototype.cal_voronoi = function(nodes) {
     let that = this;
     //let nodes_dic = nodes;
     nodes = Object.values(nodes);
@@ -414,8 +414,8 @@ GraphLayout.prototype.cal_vonoroi = function(nodes) {
 
 GraphLayout.prototype.get_cell_path = function(edge_id, scale){
     let that = this;
-    let cells = that.vonoroi_data.cells;
-    let edges = that.vonoroi_data.edges;
+    let cells = that.voronoi_data.cells;
+    let edges = that.voronoi_data.edges;
 
     return "M{0} {1}, L {2} {3}".format(that.center_scale_x(edges[edge_id][0][0]), that.center_scale_y(edges[edge_id][0][1]),
         that.center_scale_x(edges[edge_id][1][0]), that.center_scale_y(edges[edge_id][1][1])
@@ -457,16 +457,28 @@ GraphLayout.prototype.edge_statistic = function(diagram){
     for (let group_id = 0; group_id < groups.length; group_id++){
         let group = groups[group_id];
         let summary = [];
+        let simple_summary = [];
         for (let i = 0; i < label_cnt; i++){
             summary.push({in:0, out:0, idx:i});
         }
+        for (let i = 0; i < 2; i++){
+            simple_summary.push({in:0, out:0, idx: i});
+        }
         for (let node of group){
+            let node_cls = node.label.slice(-1)[0];
             for (let id = 0; id < node.from.length; id++){
                 let from_id = node.from[id];
                 let from_weight = node.from_weight[id];
                 // if (that.in_edge_filter(from_weight)){
                 if (1){
-                    summary[graph[from_id].label.slice(-1)[0]].in++;
+                    let cls = graph[from_id].label.slice(-1)[0];
+                    summary[cls].in++;
+                    if (cls === node_cls){
+                        simple_summary[0].in++;
+                    }
+                    else{
+                        simple_summary[1].in++;
+                    }
                 }
             }
             for (let id = 0; id < node.to.length; id++){
@@ -474,19 +486,27 @@ GraphLayout.prototype.edge_statistic = function(diagram){
                 let to_weight = node.to_weight[id];
                 // if (that.in_edge_filter(to_weight)){
                 if (1){
-                    summary[graph[to_id].label.slice(-1)[0]].in++;
+                    let cls = graph[to_id].label.slice(-1)[0];
+                    summary[cls].in++;
+                    if (cls === node_cls){
+                        simple_summary[0].in++;
+                    }
+                    else{
+                        simple_summary[1].in++;
+                    }
                 }
             }
         }
         edges_summary.push(summary);
         diagram.cells[group_id].summary = summary;
+        diagram.cells[group_id].simple_summary = simple_summary;
     }
     return edges_summary;
 };
 
 GraphLayout.prototype.test_edge_statistic = function(){
     let that = this;
-    let diagram = that.cal_vonoroi(Object.values(DataLoader.state.nodes));
+    let diagram = that.cal_voronoi(Object.values(DataLoader.state.nodes));
     return that.edge_statistic(diagram);
 };
 
