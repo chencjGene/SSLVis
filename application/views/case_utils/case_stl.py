@@ -35,15 +35,15 @@ class CaseSTL(CaseBase):
         #     self.model._training(rebuild=False, evaluate=False, simplifying=False)
 
         if step >= 3:
-            all_labeled_idxs = self.model.data.labeled_idx
-            labeled_y = self.model.data.y[all_labeled_idxs]
-            cat_idxs = all_labeled_idxs[labeled_y == 3]
-            pickle_save_data(os.path.join(self.model.selected_dir, "step-3-add-data.pkl"), cat_idxs)
+            # all_labeled_idxs = self.model.data.labeled_idx
+            # labeled_y = self.model.data.y[all_labeled_idxs]
+            # cat_idxs = all_labeled_idxs[labeled_y == 3]
+            # pickle_save_data(os.path.join(self.model.selected_dir, "step-3-add-data.pkl"), cat_idxs)
             cat_idxs = pickle_load_data(os.path.join(self.model.selected_dir, "step-3-add-data.pkl"))
             self.model.add_data(cat_idxs, 3)
-            self.model._training(rebuild=False, evaluate=True, simplifying=False)
-            self.model._influence_matrix(rebuild=True)
-            self.model.adaptive_evaluation_unasync()
+            self.model._training(rebuild=False, evaluate=evaluate, simplifying=False)
+            self.model._influence_matrix(rebuild=True, prefix="add_")
+            # self.model.adaptive_evaluation_unasync()
 
         categories = [1 for i in range(11)]
         if step >= 4:
