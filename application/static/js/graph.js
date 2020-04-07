@@ -25,6 +25,7 @@ let GraphLayout = function (container) {
     let bundling_force_S = 0.02;
     let bundling_elect_scale = 6;
     let is_local_k = false;
+    let old_path_way = false;
 
     // other consts
     let btn_select_color = "#560731";
@@ -85,7 +86,7 @@ let GraphLayout = function (container) {
     that.if_focus_selection_box = false;
     let re_focus_selection_box = false;
     let edges_summary = [];
-    let show_voronoi = true;
+    let show_voronoi = false;
     let outliers = {};
 
 
@@ -516,6 +517,16 @@ let GraphLayout = function (container) {
                         "edge_type":d.edge_type
 				    }
                 }).filter(d => d.source !== d.target));
+            let oldfbundling = d3.OldForceEdgeBundling()
+				.nodes(nodes_dict)
+				.edges(path_ary.map(function (d) {
+                    return {
+				        "source":d[0].id,
+                        "target":d[1].id
+				    }
+                }));
+            let old_res = oldfbundling();
+
             let res = fbundling();
             for(let line of res){
                 for(let path_node_id = 0; path_node_id < line.length; path_node_id++){
@@ -536,6 +547,10 @@ let GraphLayout = function (container) {
                 }
             });
             path_ary = path_ary.map((d,i) => d.concat([ori_res[i]]));
+            path_ary = path_ary.map(function (d, i) {
+                d.old_res = old_res[i];
+                return d
+            });
             that.path_ary = path_ary;
             if (that.focus_nodes.length === 1 && that.selection_box.length === 0){
                 imgs = label_layout(that.linked_nodes, path_ary, that.zoom_scale);
@@ -548,6 +563,8 @@ let GraphLayout = function (container) {
                     console.log("get")
                 }
             }
+
+
             console.log("path_ary", path_ary);
             console.log("bundling res", path_ary);
             nodes_in_group = nodes_group.selectAll("circle")
@@ -735,33 +752,21 @@ let GraphLayout = function (container) {
 
             path_in_group
                 .attr("stroke-width", 2.0 * that.zoom_scale)
-                .attr("fill", d => "url(#path"  + d[0].id + "-" + d[1].id + ")")
-                .attr("stroke", "none")
+                .attr("stroke", d => old_path_way?"url(#path"  + d[0].id + "-" + d[1].id + ")":"none")
+                .attr("fill", d => old_path_way?"none": "url(#path"  + d[0].id + "-" + d[1].id + ")")
                 // .attr("marker-mid", d => "url(#arrow-gray)")
                 // .attr("fill", "none")
                 .transition()
                 .duration(AnimationDuration)
                 .attr("d", function (d) {
+                    if(old_path_way){
+                        let d3line = d3.line()
+                            .x(function(d){return d.x;})
+                            .y(function(d){return d.y;});
+                        return d3line(d.old_res)
+                    }
                     return bezier_tapered(d[3][0], d[3][1], d[3][2], path_begin_width * that.zoom_scale,
                         path_mid_width * that.zoom_scale, path_end_width * that.zoom_scale);
-                    return "M{0} {1}, Q {2} {3}, {4} {5}".format(
-                        d[3][0].x, d[3][0].y,
-                        d[3][1].x, d[3][1].y,
-                        d[3][2].x, d[3][2].y);
-                    return path_line(d[3]);
-
-                    let begin = [that.center_scale_x(d[0].x), that.center_scale_y(d[0].y)];
-                    let end = [that.center_scale_x(d[1].x), that.center_scale_y(d[1].y)];
-                    let begin_dict={x:begin[0], y:begin[1]};
-                    let end_dict={x:end[0], y:end[1]};
-                    // return variableWidthPath(begin_dict, end_dict, 8, 2);
-                    let dis = Math.sqrt(Math.pow(begin[0]-end[0], 2) + Math.pow(begin[1]-end[1], 2));
-                    let radius = dis*path_curve;
-                    let mid = curve_mid(begin, end, radius);
-                    let path = d3.path();
-                    path.moveTo(begin[0], begin[1]);
-                    path.arcTo(mid[0], mid[1], end[0], end[1], radius);
-                    return path.toString();
                 })
                 .attr("opacity", d => that.opacity_path(d))
                 .on("end", resolve);
@@ -1055,12 +1060,18 @@ let GraphLayout = function (container) {
                 .append("path")
                 .attr("class", "propagation-path")
                 .attr("cursor", "default")
-                .attr("stroke", "none")
-                .attr("fill", d => "url(#path"  + d[0].id + "-" + d[1].id + ")")
+                .attr("stroke", d => old_path_way?"url(#path"  + d[0].id + "-" + d[1].id + ")":"none")
+                .attr("fill", d => old_path_way?"none": "url(#path"  + d[0].id + "-" + d[1].id + ")")
                 .attr("opacity", 0)
                 // .attr("marker-mid", d => "url(#arrow-gray)")
                 // .attr("fill", "none")
                 .attr("d", function (d) {
+                    if(old_path_way){
+                        let d3line = d3.line()
+                            .x(function(d){return d.x;})
+                            .y(function(d){return d.y;});
+                        return d3line(d.old_res)
+                    }
                     return bezier_tapered(d[3][0], d[3][1], d[3][2], path_begin_width * that.zoom_scale,
                         path_mid_width * that.zoom_scale, path_end_width * that.zoom_scale);
                 })
@@ -2378,6 +2389,11 @@ let GraphLayout = function (container) {
                     return d.label[iter]===-1?color_unlabel:color_label[d.label[iter]];
             })
         }
+    };
+
+    that.if_show_oldpath = function(flag) {
+        old_path_way = flag;
+        that.data_manager.update_graph_view();
     };
 
 
