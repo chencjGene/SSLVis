@@ -48,6 +48,20 @@ GraphLayout.prototype.get_distance = function (source, target) {
     return Math.sqrt(Math.pow(source.x-target.x, 2)+ Math.pow(source.y-target.y, 2));
 };
 
+GraphLayout.prototype.find_class = function (diagram) {
+    for(let cell of diagram.cells){
+        let class_cnt = [];
+        for(let i=0; i<11; i++) class_cnt.push(0);
+        for(let node of cell.nodes){
+            let class_id = node.label[node.label.length - 1];
+            class_cnt[class_id] += 1
+        }
+        let max_class = class_cnt.map((x, i) => [x, i]).reduce((r, a) => (a[0] > r[0] ? a : r))[1];
+        cell.label = max_class;
+    }
+    diagram.cells.sort((a, b) => a.label-b.label);
+};
+
 
 GraphLayout.prototype.cal_vonoroi = function(nodes) {
     let that = this;
@@ -401,7 +415,7 @@ GraphLayout.prototype.cal_vonoroi = function(nodes) {
             }
         }
     }
-
+    that.find_class(Diagram);
 
     that.edge_statistic(Diagram);
 
