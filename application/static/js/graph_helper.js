@@ -401,12 +401,11 @@ GraphLayout.prototype.cal_voronoi = function(nodes) {
         }
     }
 
+
+    that.find_class(Diagram);
     for(let cell of Diagram.cells){
         cell.nodes = [];
     }
-
-
-    that.find_class(Diagram);
 
     that.edge_statistic(Diagram);
 
