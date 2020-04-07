@@ -28,7 +28,7 @@ class CaseSTL(CaseBase):
                 json.loads(open(os.path.join(self.model.selected_dir, "dog_idxs.txt"), "r").read().strip("\n")), [5, 5, 5])
 
             # self._init_model(k=k, evaluate=True, simplifying=simplifying)
-            self.model._training(rebuild=False, evaluate=False, simplifying=False)
+            self.model._training(rebuild=False, evaluate=evaluate, simplifying=False)
         
         # if step >= 1.4:
         #     self.model.data.label_instance([5146, 2339], [4, 6])

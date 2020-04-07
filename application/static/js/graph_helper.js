@@ -473,20 +473,25 @@ GraphLayout.prototype.in_edge_filter = function(weight){
 
 GraphLayout.prototype.edge_statistic = function(diagram){
 
-    let data = [8.886126704089815 , 1.1796311146752205 ,
-        8.39402560455192 , 1.2816500711237553 ,
-        8.86447638603696 , 1.2618069815195072 ,
-        7.551319648093842 , 2.1173020527859236 ,
-        8.656962025316457 , 1.5113924050632912 ,
-        8.47067981318111 , 1.0799169693824597 ,
-        8.232179226069247 , 1.7576374745417516 ,
-        8.453347969264545 , 1.4368825466520307 ,
-        9.149580915538362 , 0.693745970341715 ,
-        7.8713178294573645 , 1.6496124031007753 ,
-        9.309815950920246 , 0.24079754601226994 ];
+    // let data = [8.886126704089815 , 1.1796311146752205 ,
+    //     8.39402560455192 , 1.2816500711237553 ,
+    //     8.86447638603696 , 1.2618069815195072 ,
+    //     7.551319648093842 , 2.1173020527859236 ,
+    //     8.656962025316457 , 1.5113924050632912 ,
+    //     8.47067981318111 , 1.0799169693824597 ,
+    //     8.232179226069247 , 1.7576374745417516 ,
+    //     8.453347969264545 , 1.4368825466520307 ,
+    //     9.149580915538362 , 0.693745970341715 ,
+    //     7.8713178294573645 , 1.6496124031007753 ,
+    //     9.309815950920246 , 0.24079754601226994 ];
 
     let that = this;
-    let groups = diagram.cells.map(d => d.nodes);
+    // let groups = diagram.cells.map(d => d.nodes);
+    let groups = [];
+    for (let i = 0; i < diagram.cells.length; i++){
+        let group = Object.values(graph).filter(d => d.label.slice(-1)[0] === i);
+        groups.push(group);
+    }
     let label_cnt = groups.length;
     let graph = that.data_manager.state.complete_graph;
     let edges_summary = [];
@@ -533,8 +538,8 @@ GraphLayout.prototype.edge_statistic = function(diagram){
                 }
             }
         }
-        simple_summary[0].in = data[group_id * 2];
-        simple_summary[1].in = data[group_id * 2 + 1];
+        simple_summary[0].in /= group.length;
+        simple_summary[1].in /= group.length;
         edges_summary.push(summary);
         diagram.cells[group_id].summary = summary;
         diagram.cells[group_id].simple_summary = simple_summary;
