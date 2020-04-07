@@ -26,7 +26,7 @@ let GraphVoronoi = function(parent){
     that.cell_data = [];
 
     // flag
-    that.show_voronoi = false;
+    // that.show_voronoi = false;
     that.simple_bar = true;
     that.drag_activated = false;
     that.drag_node = null;

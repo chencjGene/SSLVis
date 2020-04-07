@@ -237,7 +237,7 @@ class SSLModel(object):
         influence_matrix_path = os.path.join(self.selected_dir,
                                              "{}{}_{}_influence_matrix.pkl"
                                              .format(prefix, self.alpha, self.n_neighbor))
-        if os.path.exists(influence_matrix_path) and (not DEBUG) and (not rebuild):
+        if os.path.exists(influence_matrix_path) and (not DEBUG):
             logger.info("influence_matrix exist!!!")
             self.influence_matrix = pickle_load_data(influence_matrix_path)
             self.influence_matrix.data[np.isnan(self.influence_matrix.data)] = 0
@@ -247,8 +247,8 @@ class SSLModel(object):
         self.influence_matrix = \
             approximated_influence(self.unnorm_dist, affinity_matrix,
                                    laplacian, self.alpha, train_y, self.n_iters)
-        if not rebuild:
-            pickle_save_data(influence_matrix_path, self.influence_matrix)
+        # if rebuild:
+        pickle_save_data(influence_matrix_path, self.influence_matrix)
         self.influence_matrix.data[np.isnan(self.influence_matrix.data)] = 0
         return
 
