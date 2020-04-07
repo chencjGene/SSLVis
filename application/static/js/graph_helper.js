@@ -486,6 +486,7 @@ GraphLayout.prototype.edge_statistic = function(diagram){
     //     9.309815950920246 , 0.24079754601226994 ];
 
     let that = this;
+    let graph = that.data_manager.state.complete_graph;
     // let groups = diagram.cells.map(d => d.nodes);
     let groups = [];
     for (let i = 0; i < diagram.cells.length; i++){
@@ -493,7 +494,6 @@ GraphLayout.prototype.edge_statistic = function(diagram){
         groups.push(group);
     }
     let label_cnt = groups.length;
-    let graph = that.data_manager.state.complete_graph;
     let edges_summary = [];
     for (let group_id = 0; group_id < groups.length; group_id++){
         let group = groups[group_id];
