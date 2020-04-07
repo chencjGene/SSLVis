@@ -53,6 +53,7 @@ class Anchors:
         self.rotate_matrix = np.array([[1,0],[0,1]])
         self.aggregate = Aggregation()
         self.labeled_matrix = None
+        self.if_add_data = False
         self.labeled_idx_map = None
 
     # added by Changjian
@@ -81,6 +82,7 @@ class Anchors:
         self.rotate_matrix = np.array([[1,0],[0,1]])
         self.labeled_matrix = None
         self.labeled_idx_map = None
+        self.if_add_data = False
 
     def get_pred_labels(self):
         labels = self.model.get_pred_labels()
@@ -89,6 +91,11 @@ class Anchors:
         return labels
 
     def get_train_x_tsne(self):
+        if self.if_add_data:
+            self.tsne_path = os.path.join(self.selected_dir, "add_tsne.npy")
+        else:
+            self.tsne_path = os.path.join(self.selected_dir, "tsne.npy")
+
         if os.path.exists(self.tsne_path):
             self.tsne = np.load(self.tsne_path)
             self.tsne = np.round(self.tsne, 2)
@@ -137,6 +144,11 @@ class Anchors:
         logger.info("simplify end")
 
     def get_hierarchical_sampling(self):
+        if self.if_add_data:
+            self.hierarchy_info_path = self.hierarchy_info_path = os.path.join(self.selected_dir, "add_hierarchy_info" + config.pkl_ext)
+        else:
+            self.hierarchy_info_path = os.path.join(self.selected_dir, "hierarchy_info" + config.pkl_ext)
+
         if os.path.exists(self.hierarchy_info_path):
             with open(self.hierarchy_info_path, "rb") as f:
                 self.hierarchy_info = pickle.load(f)
@@ -421,7 +433,8 @@ class Anchors:
             return all_outliers
 
 
-    def get_nodes(self, wh):
+    def get_nodes(self, wh, if_add_data):
+        self.if_add_data = if_add_data
         self.remove_ids = self.model.data.get_removed_idxs()
         self.tsne = self.get_train_x_tsne()
         # reset rotate matrix

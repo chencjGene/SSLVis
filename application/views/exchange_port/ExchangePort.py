@@ -27,6 +27,7 @@ class ExchangePortClass(object):
         self.anchor = Anchors()
         self.video_debug = True
         self.local_update_step = 0
+        self.if_add_data = False
         if self.dataname is None:
             self.model = None
         else:
@@ -60,6 +61,8 @@ class ExchangePortClass(object):
         #     config.use_add_tsne = True
         # else:
         #     config.use_add_tsne = False
+        if self.dataname.lower() == "stl" and self.case_util.base_config["step"] >= 3:
+            self.if_add_data = True
         self.case_util.run(k=k)
 
     def setK(self, k):
@@ -107,7 +110,7 @@ class ExchangePortClass(object):
 
     def get_graph(self, filter_threshold=None, wh = 1):
         print(config.use_add_tsne)
-        res = self.anchor.get_nodes(wh)
+        res = self.anchor.get_nodes(wh, self.if_add_data)
         res["label_names"] = self.model.data.class_names
         graph = res["graph"]
         for id in graph["nodes"]:
