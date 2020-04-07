@@ -249,12 +249,6 @@ GraphLayout.prototype.cal_voronoi = function(nodes) {
         "-0.4081211279641104,3.643222602008118":true,
         "4.2830254138104,6.139549406453771":true
     };
-    let replace_node = {
-        "17.321140939597328,28.08":[5.75864906343549, 28.08],
-        "23.58403917964593,-7.684647092967011":[100000000.58403917964593, 1.0099118618981962],
-        "8.292218045112781,5.952518796992482":[8.088306451612903, 6.8701209677419355],
-        "0.930343117611701,2.3844940893608495":[-0.5342129694753129, 3.778111548741032]
-    };
     let correction_edges = {
         "-9.683447459766487,3.766366361628274,-16.324801033097344,5.973639755117645":[[-6.431889324110342, 3.576033211100925], [-9.683447459766487, 3.766366361628274], 2],
         "-12.56665907019143,-3.3994712853236093,-25.22,-7.395263157894741":[[-6.292421165152324, 0.9073570283270975], [-12.56665907019143, -3.3994712853236093], 1],
@@ -266,7 +260,6 @@ GraphLayout.prototype.cal_voronoi = function(nodes) {
     };
     // predefined_skeleton = {};
     // not_predefined_skeleton = {};
-    replace_node = {};
     let is_skeleton = {};
     for(let cell of Diagram.cells){
         let halfedges = cell.halfedges;
@@ -340,18 +333,9 @@ GraphLayout.prototype.cal_voronoi = function(nodes) {
         cell.idx_in_skeleton = tmp_idx_in_skeleton;
         //cell.skeleton = cell.idx_in_skeleton.map(d => path_nodes[d]);
     }
-    for(let cell of Diagram.cells){
-        let skeleton = cell.skeleton;
-        for(let node of skeleton){
-            let node_key = node[0]+","+node[1];
-            if(replace_node[node_key]){
-                node[0] = replace_node[node_key][0];
-                node[1] = replace_node[node_key][1];
-            }
-        }
-    }
 
     for(let cell of Diagram.cells){
+        cell.polygon = JSON.parse(JSON.stringify(cell.skeleton));
         let new_skeleton = [];
         let old_skeleton = cell.skeleton;
         for(let i=0; i<cell.skeleton.length; i++){
@@ -376,6 +360,7 @@ GraphLayout.prototype.cal_voronoi = function(nodes) {
             v[1] = u[1]+(distance/direction_dis)*(dv[1]-du[1]);
             return old_v;
     };
+
     for(let cell of Diagram.cells){
         for(let edge of cell.skeleton){
             let u = edge[0];
@@ -415,15 +400,39 @@ GraphLayout.prototype.cal_voronoi = function(nodes) {
             }
         }
     }
-    that.find_class(Diagram);
 
-    that.edge_statistic(Diagram);
+    for(let cell of Diagram.cells){
+        cell.nodes = [];
+    }
+
+
+    that.find_class(Diagram);
 
 
     // change direction of long edges
 
 
     return Diagram;
+};
+
+GraphLayout.prototype.if_in_cell = function(node, cell) {
+    // ray-casting algorithm based on
+    // http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
+    let point = node;
+    let vs = cell.polygon;
+    var x = point.x, y = point.y;
+
+    var inside = false;
+    for (var i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+        var xi = vs[i][0], yi = vs[i][1];
+        var xj = vs[j][0], yj = vs[j][1];
+
+        var intersect = ((yi > y) != (yj > y))
+            && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+    }
+
+    return inside;
 };
 
 GraphLayout.prototype.get_cell_path = function(edge_id, scale){
