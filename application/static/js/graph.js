@@ -20,7 +20,7 @@ let GraphLayout = function (container) {
     let star_outer_r = 15;
     let path_width_scale = 1.75;
     let path_begin_width = 2*path_width_scale;
-    let path_end_width = 0.4;
+    let path_end_width = 0.8;
     let path_mid_width = (path_begin_width+path_end_width)/2;
     let bundling_force_S = 0.02;
     let bundling_elect_scale = 6;
@@ -85,7 +85,7 @@ let GraphLayout = function (container) {
     that.if_focus_selection_box = false;
     let re_focus_selection_box = false;
     let edges_summary = [];
-    let show_voronoi = false;
+    let show_voronoi = true;
     let outliers = {};
 
 
@@ -433,6 +433,20 @@ let GraphLayout = function (container) {
         if(show_voronoi){
             let voronoi_nodes = nodes.filter(d => outliers[d.id] === undefined);
             that.voronoi_data = that.cal_voronoi(voronoi_nodes);
+            for(let node of nodes){
+                let find = false;
+                for(let cell of that.voronoi_data.cells){
+                    if(that.if_in_cell(node, cell)) {
+                        find = true;
+                        cell.nodes.push(node);
+                        break;
+                    }
+                }
+                if(!find) {
+                    console.log("Error: point not in any cells");
+                }
+            }
+            that.edge_statistic(that.voronoi_data);
         }
         else {
             that.voronoi_data = {
