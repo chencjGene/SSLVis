@@ -408,6 +408,7 @@ GraphLayout.prototype.cal_voronoi = function(nodes) {
 
     that.find_class(Diagram);
 
+    that.edge_statistic(Diagram);
 
     // change direction of long edges
 
@@ -522,21 +523,21 @@ GraphLayout.prototype.edge_statistic = function(diagram){
                     }
                 }
             }
-            for (let id = 0; id < node.to.length; id++){
-                let to_id = node.to[id];
-                let to_weight = node.to_weight[id];
-                // if (that.in_edge_filter(to_weight)){
-                if (1){
-                    let cls = graph[to_id].label.slice(-1)[0];
-                    summary[cls].in++;
-                    if (cls === node_cls){
-                        simple_summary[0].in++;
-                    }
-                    else{
-                        simple_summary[1].in++;
-                    }
-                }
-            }
+            // for (let id = 0; id < node.to.length; id++){
+            //     let to_id = node.to[id];
+            //     let to_weight = node.to_weight[id];
+            //     // if (that.in_edge_filter(to_weight)){
+            //     if (1){
+            //         let cls = graph[to_id].label.slice(-1)[0];
+            //         summary[cls].in++;
+            //         if (cls === node_cls){
+            //             simple_summary[0].in++;
+            //         }
+            //         else{
+            //             simple_summary[1].in++;
+            //         }
+            //     }
+            // }
         }
         simple_summary[0].in /= group.length;
         simple_summary[1].in /= group.length;

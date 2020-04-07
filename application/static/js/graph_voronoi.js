@@ -52,6 +52,19 @@ let GraphVoronoi = function(parent){
         let voronoi_nodes = nodes.filter(d => outliers[d.id] === undefined);
         that.voronoi_data = view.cal_voronoi(voronoi_nodes);
 
+        for(let node of nodes){
+            let find = false;
+            for(let cell of that.voronoi_data.cells){
+                if(view.if_in_cell(node, cell)) {
+                    find = true;
+                    cell.nodes.push(node);
+                    break;
+                }
+            }
+            if(!find) {
+                console.log("Error: point not in any cells");
+            }
+        }
         that.update_view();
     };
 
