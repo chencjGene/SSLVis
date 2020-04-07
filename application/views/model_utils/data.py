@@ -597,6 +597,7 @@ class GraphData(Data):
             pickle_save_data(add_data_neighbors_path, neighbors)
             pickle_save_data(add_data_test_neighbors_path, test_neighbors)
         self.neighbors = neighbors
+        self.test_neighbors = test_neighbors
         new_affinity_matrix  = np.zeros((pre_num + add_num, pre_num + add_num))
         new_affinity_matrix[:pre_num, :pre_num] = self.affinity_matrix.toarray()
         for i in range(pre_num, pre_num + add_num):

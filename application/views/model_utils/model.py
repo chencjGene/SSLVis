@@ -225,7 +225,7 @@ class SSLModel(object):
 
         logger.info("_training finished!!!!!!!!")
 
-    def _influence_matrix(self, rebuild = False):
+    def _influence_matrix(self, rebuild = False, prefix=""):
         if self.influence_matrix is not None and (not DEBUG) and (not rebuild):
             self.influence_matrix.data[np.isnan(self.influence_matrix.data)] = 0
             return
@@ -235,8 +235,8 @@ class SSLModel(object):
         train_y = self.data.get_train_label()
         logger.info("begin load influence matrix")
         influence_matrix_path = os.path.join(self.selected_dir,
-                                             "{}_{}_influence_matrix.pkl"
-                                             .format(self.alpha, self.n_neighbor))
+                                             "{}{}_{}_influence_matrix.pkl"
+                                             .format(prefix, self.alpha, self.n_neighbor))
         if os.path.exists(influence_matrix_path) and (not DEBUG) and (not rebuild):
             logger.info("influence_matrix exist!!!")
             self.influence_matrix = pickle_load_data(influence_matrix_path)
