@@ -35,7 +35,8 @@ let GraphVoronoi = function(parent){
 
     // function
     scale_function = function(x){
-        return Math.pow(x, 0.5);
+        if (x > 0.2 && x < 0.5) { x = x * 2;}
+        return Math.pow(x, 0.8);
     }
 
     that._init = function(){
@@ -50,12 +51,50 @@ let GraphVoronoi = function(parent){
     that.show_voronoi = function(nodes, outliers){
         let voronoi_nodes = nodes.filter(d => outliers[d.id] === undefined);
         that.voronoi_data = view.cal_voronoi(voronoi_nodes);
-        that.place_barchart();
+
         that.update_view();
     };
 
+    that.max_search_num = 100;
+
     that.place_barchart = function(){
-        
+        let step = 0.1;
+        let direct_map = {
+            0: [1,0],
+            1: [0,1],
+            2: [-1,0],
+            3: [0,-1]
+        }
+        for (let i = 0; i < that.voronoi_data.cells.length; i++){
+            let cell = that.voronoi_data.cells[i];
+            let cell_x = cell.site.data[0];
+            let cell_y = cell.site.data[1];
+            console.log("cell position", cell_x, cell_y, 
+                cell.chart_width / view.scale, cell.chart_height/view.scale);
+            let nodes = cell.nodes;
+            let j = 0;
+            for (; j < that.max_search_num; j++){
+                let direct = direct_map[j % 4];
+                cell_x = cell_x + direct[0] * j * step;
+                cell_y = cell_y + direct[1] * j * step;
+                let k = 0;
+                for (; k < nodes.length; k++){
+                    if (nodes[k].x > cell_x && nodes[k].x < (cell_x + cell.chart_width / view.scale)
+                        && nodes[k].y > cell_y && nodes[k].y > (cell_y + cell.chart_height/view.scale)){
+                            break;
+                        }
+                    else{
+                    }
+                }
+                if (k === nodes.length){
+                    break;
+                }
+                // console.log("j", j);
+            }
+            cell.x = cell_x;
+            cell.y = cell_y;
+            console.log("final cell position", cell_x, cell_y, j);
+        }
     };
 
     that.disable_voronoi = function(){
@@ -164,6 +203,7 @@ let GraphVoronoi = function(parent){
             cell.summary_data = summary;
             that.cell_data.push(cell);
         }
+        that.place_barchart();
         console.log("that.cell_data", that.cell_data.map(d => d.summary_data), "simple_bar", that.simple_bar);
         that.voronoi_in_group = that.voronoi_group.selectAll("g.voronoi-cell")
         .data(that.cell_data, d => d.id);
@@ -199,6 +239,12 @@ let GraphVoronoi = function(parent){
             .attr("width", d => d.chart_width)
             .attr("height", d => d.chart_height);
 
+        that.voronoi_in_group
+            .selectAll(".bar-group")
+            .attr("transform", d => 
+                "translate("+(view.center_scale_x(d.x))
+                +","+(view.center_scale_y(d.y))+")")
+
         that.sub_bar_group
             .attr("id", (d, i) => "edge-bar-in-"+i)
             .attr("x", (d, i) => d.x)
@@ -233,8 +279,8 @@ let GraphVoronoi = function(parent){
         let sub_v_g = v_g.append("g")
         .attr("class", "bar-group")
             .attr("transform", d => 
-                "translate("+(view.center_scale_x(d.site.data[0]))
-                +","+(view.center_scale_y(d.site.data[1]))+")")
+                "translate("+(view.center_scale_x(d.x))
+                +","+(view.center_scale_y(d.y))+")")
             .on("mouseover", function(d){
                 // that.change_bar_mode();
                 let _this = d3.select(this);
@@ -303,6 +349,7 @@ let GraphVoronoi = function(parent){
                 for (let i = 0; i < d.summary_data.length; i++){
                     max_num = Math.max(max_num, d.summary_data[i].in);
                 }
+                max_num = 10;
                 for (let i = 0; i < d.summary_data.length; i++){
                     let value = d.summary_data[i].in / max_num;
                     let idx = d.summary_data[i].idx;
@@ -328,7 +375,7 @@ let GraphVoronoi = function(parent){
             .attr("y", (d, i) => d.y)
             .attr("width", (d, i) => d.w)
             .attr("height", (d, i) => d.h)
-            .attr("fill", (d, i) => d.color);
+            .attr("fill", (d, i) => "gray");
         };
 
     that.init = function () {
