@@ -721,7 +721,7 @@ class SSLModel(object):
                                                   max_k,
                                                   mode="distance")
         s = 0
-        low_bound = 33 if bound is None else bound
+        low_bound = 20 if bound is None else bound
         degree = self.get_in_out_degree(affinity_matrix)[:,1]
         degree = np.sqrt(1/degree)
         labels = []
@@ -731,6 +731,7 @@ class SSLModel(object):
         fs = []
         ks = []
         f_tests = []
+        estimate_k = 20
         for test_node_id in range(test_X.shape[0]):
             start = neighbor_result.indptr[test_node_id]
             end = neighbor_result.indptr[test_node_id + 1]
@@ -743,7 +744,12 @@ class SSLModel(object):
             min_k = 0
             min_f_test = np.zeros((label_cnt))
             sims = []
-            for k in range(low_bound,max_k):
+            estimated_idxs = j_in_this_row[:estimate_k]
+            # estimated_idxs = [m[i] for i in estimated_idxs]
+            adaptive_k = affinity_matrix[estimated_idxs, :].sum() / estimate_k
+            adaptive_min_low_bound = int(adaptive_k*0.5 if adaptive_k*0.5>5 else 5)
+            adaptive_max_low_bound = int(adaptive_k*1.5)
+            for k in range(low_bound,30):
                 estimated_idxs = j_in_this_row[:k]
                 # get f_test
                 neighbor_tmp = pred[estimated_idxs]*degree[estimated_idxs].reshape((k,1))

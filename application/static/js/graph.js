@@ -65,6 +65,7 @@ let GraphLayout = function (container) {
     that.voronoi_group = null;
     that.voronoi_in_group = null;
 
+
     // meta data
     let nodes = {};
     that.linked_nodes = [];
@@ -84,6 +85,7 @@ let GraphLayout = function (container) {
     that.voronoi_data = {"edges": [], "cells": []};
     let nodes_dict = null;
     that.if_focus_selection_box = false;
+    that.show_init_voronoi = false;
     let re_focus_selection_box = false;
     let edges_summary = [];
     let show_voronoi = false;
@@ -2394,6 +2396,11 @@ let GraphLayout = function (container) {
     that.if_show_oldpath = function(flag) {
         old_path_way = flag;
         that.data_manager.update_graph_view();
+    };
+
+    that.if_show_init_voronoi = function(flag) {
+        that.if_show_init_voronoi = flag;
+        voronoi_plg.show_voronoi(nodes, outliers);
     };
 
 
