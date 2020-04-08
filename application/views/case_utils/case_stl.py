@@ -30,11 +30,33 @@ class CaseSTL(CaseBase):
                 json.loads(open(os.path.join(self.model.selected_dir, "dog_idxs.txt"), "r").read().strip("\n")), [5, 5, 5])
 
             # self._init_model(k=k, evaluate=True, simplifying=simplifying)
-            self.model._training(rebuild=False, evaluate=evaluate, simplifying=True)
+            self.model._training(rebuild=False, evaluate=evaluate, simplifying=False)
         
         # if step >= 1.4:
         #     self.model.data.label_instance([5146, 2339], [4, 6])
         #     self.model._training(rebuild=False, evaluate=False, simplifying=False)
+
+
+        categories = [1 for i in range(11)]
+        if step >= 3:
+            self.model.data.actions = []
+            c = json.loads(open(os.path.join(self.model.selected_dir, "local_2_idxs.txt"), "r").read().strip("\n"))
+            self.model.local_search_k(c, [1, 2, 3, 4], categories, simplifying=False, evaluate=True)
+
+        # if step >= 4:
+            self.model.data.actions = []
+            e = json.loads(open(os.path.join(self.model.selected_dir, "local_1_idxs.txt"), "r").read().strip("\n"))
+            self.model.local_search_k(e, [1, 2, 3, 4], categories, simplifying=False, evaluate=True)
+
+            self.model.data.actions = []
+            e = json.loads(open(os.path.join(self.model.selected_dir, "local_3_idxs.txt"), "r").read().strip("\n"))
+            self.model.local_search_k(e, [1, 2, 3, 4], categories, simplifying=False, evaluate=True)
+
+        if step >= 6:
+            edge_list = [[1609, 2555]]
+            self.model.data.actions = []
+            self.model.data.remove_edge(edge_list)
+            self.model._training(rebuild=False, evaluate=True, simplifying=False)
 
         if step >= 3:
             # all_labeled_idxs = self.model.data.labeled_idx
@@ -46,24 +68,6 @@ class CaseSTL(CaseBase):
             self.model._training(rebuild=False, evaluate=evaluate, simplifying=False)
             self.model._influence_matrix(rebuild=True, prefix="add_")
             # self.model.adaptive_evaluation_unasync()
-
-        categories = [1 for i in range(11)]
-        if step >= 4:
-            self.model.data.actions = []
-            c = json.loads(open(os.path.join(self.model.selected_dir, "local_2_idxs.txt"), "r").read().strip("\n"))
-            self.model.local_search_k(c, [1, 2, 3, 4], categories, simplifying=False, evaluate=True)
-
-        if step >= 5:
-            self.model.data.actions = []
-            e = json.loads(open(os.path.join(self.model.selected_dir, "local_1_idxs.txt"), "r").read().strip("\n"))
-            self.model.local_search_k(e, [1, 2, 3, 4], categories, simplifying=True, evaluate=True)
-        
-        if step >= 6:
-            edge_list = [[1609, 2555]]
-            self.model.data.actions = []
-            self.model.data.remove_edge(edge_list)
-            self.model._training(rebuild=False, evaluate=True, simplifying=False)
-
 
         self.model.adaptive_evaluation()
         return
