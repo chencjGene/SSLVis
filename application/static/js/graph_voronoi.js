@@ -24,6 +24,8 @@ let GraphVoronoi = function(parent){
     let large_inner_bounder = null;
     let outer_bounder = null;
     that.cell_data = [];
+    that.max_num = 10;
+
 
     // flag
     // that.show_voronoi = false;
@@ -35,8 +37,9 @@ let GraphVoronoi = function(parent){
 
     // function
     scale_function = function(x){
+        if (x < 0.15) x /= 4;
         if (x > 0.2 && x < 0.5) { x = x * 2;}
-        return Math.pow(x, 0.8);
+        return Math.pow(x, 0.4);
     }
 
     that._init = function(){
@@ -112,6 +115,7 @@ let GraphVoronoi = function(parent){
 
     that.disable_voronoi = function(){
         that.voronoi_data = {"edges": [], "cells": []};
+        that.update_view();
     };
 
     that.change_bar_mode = function(){
@@ -119,6 +123,11 @@ let GraphVoronoi = function(parent){
         that.update_view();
     };
     
+    that.change_max_num = function(num){
+        that.max_num = num;
+        that.update_view();
+    }
+
     that.show_comparison = function(){
         that.comparison_flag = true; 
         let data = [];
@@ -362,9 +371,9 @@ let GraphVoronoi = function(parent){
                 for (let i = 0; i < d.summary_data.length; i++){
                     max_num = Math.max(max_num, d.summary_data[i].in);
                 }
-                max_num = 10;
+                // that.max_num = 5;
                 for (let i = 0; i < d.summary_data.length; i++){
-                    let value = d.summary_data[i].in / max_num;
+                    let value = d.summary_data[i].in / that.max_num;
                     let idx = d.summary_data[i].idx;
                     d.summary_data[i].value = value;
                     data.push({
@@ -374,7 +383,7 @@ let GraphVoronoi = function(parent){
                         y: d.chart_height*0.8-d.chart_height*0.7*scale_function(value),
                         w: d.bar_width,
                         h: d.chart_height*0.7*scale_function(value),
-                        color: color_label[idx]
+                        color: idx === -1 ? "gray" : color_label[idx]
                     });
                 }
                 console.log("data, ", data);
@@ -388,7 +397,7 @@ let GraphVoronoi = function(parent){
             .attr("y", (d, i) => d.y)
             .attr("width", (d, i) => d.w)
             .attr("height", (d, i) => d.h)
-            .attr("fill", (d, i) => "gray");
+            .attr("fill", (d, i) => d.color);
         };
 
     that.init = function () {

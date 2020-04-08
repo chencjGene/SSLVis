@@ -431,30 +431,30 @@ let GraphLayout = function (container) {
         }
         glyphs = tmp_glyphs;
 
-        if(show_voronoi){
-            let voronoi_nodes = nodes.filter(d => outliers[d.id] === undefined);
-            that.voronoi_data = that.cal_voronoi(voronoi_nodes);
-            for(let node of nodes){
-                let find = false;
-                for(let cell of that.voronoi_data.cells){
-                    if(that.if_in_cell(node, cell)) {
-                        find = true;
-                        cell.nodes.push(node);
-                        break;
-                    }
-                }
-                if(!find) {
-                    console.log("Error: point not in any cells");
-                }
-            }
-            that.edge_statistic(that.voronoi_data);
-        }
-        else {
-            that.voronoi_data = {
-                edges:[],
-                cells:[]
-            }
-        }
+        // if(show_voronoi){
+        //     let voronoi_nodes = nodes.filter(d => outliers[d.id] === undefined);
+        //     that.voronoi_data = that.cal_voronoi(voronoi_nodes);
+        //     for(let node of nodes){
+        //         let find = false;
+        //         for(let cell of that.voronoi_data.cells){
+        //             if(that.if_in_cell(node, cell)) {
+        //                 find = true;
+        //                 cell.nodes.push(node);
+        //                 break;
+        //             }
+        //         }
+        //         if(!find) {
+        //             console.log("Error: point not in any cells");
+        //         }
+        //     }
+        //     that.edge_statistic(that.voronoi_data);
+        // }
+        // else {
+        //     that.voronoi_data = {
+        //         edges:[],
+        //         cells:[]
+        //     }
+        // }
 
         // }
         // glyphs
@@ -2377,7 +2377,12 @@ let GraphLayout = function (container) {
     that.if_show_voronoi = function(flag){
         // show_voronoi = flag;
         // that.data_manager.update_graph_view()
-        voronoi_plg.show_voronoi(nodes, outliers);
+        if (flag){
+            voronoi_plg.show_voronoi(nodes, outliers);
+        }
+        else{
+            voronoi_plg.disable_voronoi();
+        }
     };
 
     that.if_show_outliers = function(flag) {

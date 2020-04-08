@@ -15,20 +15,22 @@ class CaseSTL(CaseBase):
         self.model.data.actions = []
         if step is None:
             step = self.base_config["step"]
-        self._init_model(k=k, evaluate=evaluate, simplifying=simplifying)
+        self._init_model(k=k, evaluate=evaluate, simplifying=False)
 
         if step >= 1:
+            print("step 1")
             self.model.data.actions = []
             self.model.data.add_new_categories("snake")
             self.model.data.label_instance([6219, 11966, 12467, 7573, 11905], [10, 10, 10, 10, 10])
             self.model._training(rebuild=False, evaluate=evaluate, simplifying=False)
 
         if step >= 2:
+            print("step 2")
             self.model.data.label_instance(
                 json.loads(open(os.path.join(self.model.selected_dir, "dog_idxs.txt"), "r").read().strip("\n")), [5, 5, 5])
 
             # self._init_model(k=k, evaluate=True, simplifying=simplifying)
-            self.model._training(rebuild=False, evaluate=evaluate, simplifying=False)
+            self.model._training(rebuild=False, evaluate=evaluate, simplifying=True)
         
         # if step >= 1.4:
         #     self.model.data.label_instance([5146, 2339], [4, 6])

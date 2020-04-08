@@ -202,7 +202,7 @@ class SSLModel(object):
         propagation_path_from, propagation_path_to = self.get_path_to_label(self.process_data,
                                                                             self.graph)
         # if simplifying:
-        self._influence_matrix()
+        self._influence_matrix(rebuild=simplifying)
         self.propagation_path_from = propagation_path_from
         self.propagation_path_to = propagation_path_to
 
@@ -237,7 +237,7 @@ class SSLModel(object):
         influence_matrix_path = os.path.join(self.selected_dir,
                                              "{}{}_{}_influence_matrix.pkl"
                                              .format(prefix, self.alpha, self.n_neighbor))
-        if os.path.exists(influence_matrix_path) and (not DEBUG):
+        if os.path.exists(influence_matrix_path) and (not DEBUG) and (not rebuild):
             logger.info("influence_matrix exist!!!")
             self.influence_matrix = pickle_load_data(influence_matrix_path)
             self.influence_matrix.data[np.isnan(self.influence_matrix.data)] = 0
