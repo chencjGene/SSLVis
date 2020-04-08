@@ -263,7 +263,8 @@ GraphLayout.prototype.cal_voronoi = function(nodes) {
         "6.244586523736601,-4.495347115875447,19.49672064777312,-6.87502024291496":[[3.3416339208321295, -2.225208032360589], [6.244586523736601, -4.495347115875447], 2],
         "7.637046905537459,11.579377850162865,16.037363636363636,28.08":[[7.848633727953612, 7.35838487557381], [7.637046905537459, 11.579377850162865], 1],
         "13.164281048022792,-0.6814250469108325,16.965275970619082,-3.552389296956968":[[8.73137505889744, 2.2905709125176688], [13.164281048022792, -0.6814250469108325], 2],
-        "-12.31393684036028,-2.972250372989998,-25.22,-4.567909090909089":[[-6.178643560119811, 1.783444587077448], [-12.31393684036028, -2.972250372989998], 1]
+        "-12.31393684036028,-2.972250372989998,-25.22,-4.567909090909089":[[-6.178643560119811, 1.783444587077448], [-12.31393684036028, -2.972250372989998], 1],
+        "6.244586523736601,-4.495347115875447,22.468977080312982,-7.278233324848664":[[3.3416339208321295, -2.225208032360589], [6.244586523736601, -4.495347115875447]]
     };
     // predefined_skeleton = {};
     // not_predefined_skeleton = {};
@@ -306,7 +307,7 @@ GraphLayout.prototype.cal_voronoi = function(nodes) {
             if(!not_predefined_skeleton[node_key]){
                 if((predefined_skeleton[node_key]) && (skeleton.length===0 || skeleton[skeleton.length-1][0] !== mid_node[0] || skeleton[skeleton.length-1][1] !== mid_node[1])) skeleton.push(mid_node);
                 if((start_edges[mid_key].length > 2) && (skeleton.length===0 || skeleton[skeleton.length-1][0] !== mid_node[0] || skeleton[skeleton.length-1][1] !== mid_node[1])) skeleton.push(mid_node);
-                if(Math.sqrt(Math.pow(mid_node[0]-next_node[0], 2) + Math.pow(mid_node[1]-next_node[1], 2)) > 3){
+                if(Math.sqrt(Math.pow(mid_node[0]-next_node[0], 2) + Math.pow(mid_node[1]-next_node[1], 2)) > 20){
                     if(skeleton.length===0 || skeleton[skeleton.length-1][0] !== mid_node[0] || skeleton[skeleton.length-1][1] !== mid_node[1]) skeleton.push(mid_node);
                     if(!not_predefined_skeleton[next_key]) skeleton.push(next_node);
                 }
