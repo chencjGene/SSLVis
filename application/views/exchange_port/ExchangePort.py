@@ -27,13 +27,14 @@ class ExchangePortClass(object):
         self.anchor = Anchors()
         self.video_debug = True
         self.local_update_step = 0
-        self.if_add_data = False
+        self.case_step = 0
         if self.dataname is None:
             self.model = None
         else:
             self.model = SSLModel(self.dataname)
             self.anchor.link_model(self.model)
             self.case_util = get_case_util(self.dataname)
+            self.case_step = self.case_util.step
             self.case_util.connect_model(self.model)
 
     def reset_dataname(self, dataname):
@@ -110,7 +111,7 @@ class ExchangePortClass(object):
 
     def get_graph(self, filter_threshold=None, wh = 1):
         print(config.use_add_tsne)
-        res = self.anchor.get_nodes(wh, self.if_add_data)
+        res = self.anchor.get_nodes(wh, self.case_step)
         res["label_names"] = self.model.data.class_names
         graph = res["graph"]
         for id in graph["nodes"]:
@@ -122,6 +123,7 @@ class ExchangePortClass(object):
 
     def local_update_k(self, data):
         # self.model.local_update(data["selected_idxs"], local_k=3)
+        self.case_step += 1
         if self.video_debug:
             if self.model.dataname == "stl":
                 assert self.local_update_step <2
@@ -162,6 +164,7 @@ class ExchangePortClass(object):
         # return jsonify(res)
 
     def add_data(self, data):
+        self.case_step += 1
         self.model.add_more_similar_data(data)
         graph = self.anchor.get_nodes(data["wh"])
         res = {
@@ -254,6 +257,7 @@ class ExchangePortClass(object):
         return jsonify(self.anchor.get_path(ids))
 
     def update_delete_and_change_label(self, data):
+        self.case_step += 1
         self.model.editing_data(data)
         remain_ids = []
         for id in self.current_ids:

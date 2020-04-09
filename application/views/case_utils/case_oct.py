@@ -17,6 +17,7 @@ class CaseOCT(CaseBase):
         
         if k is None:
             k = self.base_config["k"]
+        self.step = step
 
         self._init_model(k=k, evaluate=evaluate, simplifying=simplifying)
 

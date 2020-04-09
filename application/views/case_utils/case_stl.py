@@ -17,6 +17,7 @@ class CaseSTL(CaseBase):
             step = self.base_config["step"]
         self._init_model(k=k, evaluate=evaluate, simplifying=False)
         self.pred_result[0] = self.model.get_pred_labels()
+        self.step = step
 
         if step >= 1:
             print("step 1")

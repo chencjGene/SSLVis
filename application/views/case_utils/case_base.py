@@ -9,6 +9,7 @@ class CaseBase():
         
         self.model = None
         self.base_config = None
+        self.step = 0
 
         self.pred_result = {}
 

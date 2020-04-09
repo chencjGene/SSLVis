@@ -53,7 +53,7 @@ class Anchors:
         self.rotate_matrix = np.array([[1,0],[0,1]])
         self.aggregate = Aggregation()
         self.labeled_matrix = None
-        self.if_add_data = False
+        self.step = 0
         self.labeled_idx_map = None
 
     # added by Changjian
@@ -82,7 +82,7 @@ class Anchors:
         self.rotate_matrix = np.array([[1,0],[0,1]])
         self.labeled_matrix = None
         self.labeled_idx_map = None
-        self.if_add_data = False
+        self.step = False
 
     def get_pred_labels(self):
         labels = self.model.get_pred_labels()
@@ -91,19 +91,19 @@ class Anchors:
         return labels
 
     def get_train_x_tsne(self):
-        if self.if_add_data:
-            self.tsne_path = os.path.join(self.selected_dir, "add_tsne.npy")
-        else:
-            self.tsne_path = os.path.join(self.selected_dir, "tsne.npy")
-
-        if os.path.exists(self.tsne_path):
-            self.tsne = np.load(self.tsne_path)
-            self.tsne = np.round(self.tsne, 2)
-            return self.tsne
-        else:
-            self.init_train_x_tsne()
-            self.tsne = np.round(self.tsne, 2)
-            return self.tsne
+        self.tsne_path = os.path.join(self.selected_dir, "tsne-step"+str(self.step)+".npy")
+        assert os.path.exists(self.tsne_path)
+        self.tsne = np.load(self.tsne_path)
+        self.tsne = np.round(self.tsne, 2)
+        return self.tsne
+        # if os.path.exists(self.tsne_path):
+        #     self.tsne = np.load(self.tsne_path)
+        #     self.tsne = np.round(self.tsne, 2)
+        #     return self.tsne
+        # else:
+        #     self.init_train_x_tsne()
+        #     self.tsne = np.round(self.tsne, 2)
+        #     return self.tsne
 
     def init_train_x_tsne(self):
         logger.info("begin tsne init")
@@ -144,21 +144,20 @@ class Anchors:
         logger.info("simplify end")
 
     def get_hierarchical_sampling(self):
-        if self.if_add_data:
-            self.hierarchy_info_path = self.hierarchy_info_path = os.path.join(self.selected_dir, "add_hierarchy_info" + config.pkl_ext)
-        else:
-            self.hierarchy_info_path = os.path.join(self.selected_dir, "hierarchy_info" + config.pkl_ext)
-
-        if os.path.exists(self.hierarchy_info_path):
-            with open(self.hierarchy_info_path, "rb") as f:
-                self.hierarchy_info = pickle.load(f)
-        else:
-            if self.margin == None:
-                self.margin = self.get_margin(self.model.process_data)
-            hierarchical_info = self.construct_hierarchical_sampling(self.full_x, self.margin, target_num=1000)
-            with open(self.hierarchy_info_path, "wb") as f:
-                pickle.dump(hierarchical_info, f)
-            self.hierarchy_info = hierarchical_info
+        self.hierarchy_info_path = self.hierarchy_info_path = os.path.join(self.selected_dir, "hierarchy_info-step" + str(self.step) + config.pkl_ext)
+        assert os.path.exists(self.hierarchy_info_path)
+        with open(self.hierarchy_info_path, "rb") as f:
+            self.hierarchy_info = pickle.load(f)
+        # if os.path.exists(self.hierarchy_info_path):
+        #     with open(self.hierarchy_info_path, "rb") as f:
+        #         self.hierarchy_info = pickle.load(f)
+        # else:
+        #     if self.margin == None:
+        #         self.margin = self.get_margin(self.model.process_data)
+        #     hierarchical_info = self.construct_hierarchical_sampling(self.full_x, self.margin, target_num=1000)
+        #     with open(self.hierarchy_info_path, "wb") as f:
+        #         pickle.dump(hierarchical_info, f)
+        #     self.hierarchy_info = hierarchical_info
         return self.hierarchy_info
 
     def construct_hierarchical_sampling(self, train_x: np.ndarray, entropy: np.ndarray, target_num: int):
@@ -433,8 +432,8 @@ class Anchors:
             return all_outliers
 
 
-    def get_nodes(self, wh, if_add_data):
-        self.if_add_data = if_add_data
+    def get_nodes(self, wh, step):
+        self.step = step
         self.remove_ids = self.model.data.get_removed_idxs()
         self.tsne = self.get_train_x_tsne()
         # reset rotate matrix
