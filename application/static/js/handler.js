@@ -39,6 +39,10 @@ DataLoaderClass.prototype.get_graph_handler = function (callback) {
 
     function _graph_handler(data) {
         console.log("Get data:", data);
+        that.state.rest_idxes = {};
+        for(let id of data.rest_idxs){
+            that.state.rest_idxes[id] = true;
+        }
         that.state.outliers = {};
         for(let outlier of data.outliers){
             that.state.outliers[outlier] = true;

@@ -459,6 +459,9 @@ class Anchors:
         outliers = top_level[outliers].tolist()
         print("outliers:{}".format(outliers))
 
+        selection = selection[self.model.data.rest_idxs]
+        tsne = tsne[selection]
+
 
         self.old_nodes_id = selection
         self.old_nodes_tsne = tsne
@@ -477,7 +480,8 @@ class Anchors:
         return {
             "graph":graph,
             "hierarchy":self.hierarchy_info,
-            "outliers":outliers
+            "outliers":outliers,
+            "rest_idxs": self.model.data.rest_idxs.tolist()
         }
 
     def rotate_area(self, area):

@@ -2344,6 +2344,10 @@ let GraphLayout = function (container) {
         is_local_k = flag;
     };
 
+    that.remove_nodes = function(ids) {
+        that.data_manager.delete_nodes_menu(ids);
+    };
+
     // debug
     that.update_path_width_scale = async function(scale) {
         path_width_scale = scale;

@@ -27,6 +27,7 @@ class ExchangePortClass(object):
         self.anchor = Anchors()
         self.video_debug = True
         self.local_update_step = 0
+        self.case_mode = False
         # self.case_step = 0
         if self.dataname is None:
             self.model = None
@@ -124,7 +125,8 @@ class ExchangePortClass(object):
 
     def local_update_k(self, data):
         # self.model.local_update(data["selected_idxs"], local_k=3)
-        self.model.step += 1
+        if self.case_mode:
+            self.model.step += 1
         if self.video_debug:
             if self.model.dataname == "stl":
                 assert self.local_update_step <2
@@ -153,7 +155,7 @@ class ExchangePortClass(object):
         else:
             _, best_k = self.model.local_search_k(data["selected_idxs"], list(range(data["range"][0], data["range"][1]+1)), data["selected_categories"])
         best_k = int(best_k)
-        graph = self.anchor.get_nodes(data["wh"])
+        graph = self.anchor.get_nodes(data["wh"], self.model.step)
         res = {
             "graph": graph,
             "area": data["area"],
@@ -165,9 +167,10 @@ class ExchangePortClass(object):
         # return jsonify(res)
 
     def add_data(self, data):
-        self.model.step += 1
+        if self.case_mode:
+            self.model.step += 1
         self.model.add_more_similar_data(data)
-        graph = self.anchor.get_nodes(data["wh"])
+        graph = self.anchor.get_nodes(data["wh"], self.model.step)
         res = {
             "graph": graph,
             "area": data["area"],
@@ -258,14 +261,15 @@ class ExchangePortClass(object):
         return jsonify(self.anchor.get_path(ids))
 
     def update_delete_and_change_label(self, data):
-        self.model.step += 1
+        if self.case_mode:
+            self.model.step += 1
         self.model.editing_data(data)
         remain_ids = []
         for id in self.current_ids:
             if id not in data["deleted_idxs"]:
                 remain_ids.append(id)
         self.anchor.data_degree = None
-        graph = self.anchor.get_nodes(data["wh"])
+        graph = self.anchor.get_nodes(data["wh"], self.model.step)
         res = {
             "graph": graph,
             "must_show_ids": remain_ids,
@@ -304,7 +308,7 @@ class ExchangePortClass(object):
     
     def set_history(self, data):
         history_data = self.model.set_history(data["id"])
-        res = self.anchor.get_nodes(1)
+        res = self.anchor.get_nodes(1, self.model.step)
         graph = res["graph"]
         for id in graph["nodes"]:
             self.current_ids.append(int(id))
