@@ -10,6 +10,8 @@ class CaseBase():
         self.model = None
         self.base_config = None
 
+        self.pred_result = {}
+
         self._load_base_config()
         
     def connect_model(self, model):

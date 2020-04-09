@@ -61,8 +61,8 @@ class ExchangePortClass(object):
         #     config.use_add_tsne = True
         # else:
         #     config.use_add_tsne = False
-        if self.dataname.lower() == "stl" and self.case_util.base_config["step"] >= 3:
-            self.if_add_data = True
+        # if self.dataname.lower() == "stl" and self.case_util.base_config["step"] >= 3:
+        #     self.if_add_data = True
         self.case_util.run(k=k)
 
     def setK(self, k):
