@@ -78,6 +78,11 @@ let GraphHighlight = function (parent) {
                 that._change_edge_select_mode();
             });
 
+        $("#remove-nodes")
+            .click(function () {
+                view.remove_nodes();
+            });
+
         that.add_btn_style();
     };
 
@@ -89,7 +94,7 @@ let GraphHighlight = function (parent) {
 
     that.add_btn_style = function() {
         let btn_ids = ["apply-delete-btn", "lasso-btn", "fisheye-btn", "home-btn", "refresh-btn", "influence-to-btn", "influence-from-btn",
-            "select-edge-btn", "loaddataset-button", "setk-button", "localk-button", "focus-btn"];
+            "select-edge-btn", "loaddataset-button", "setk-button", "localk-button", "focus-btn", "remove-nodes"];
         for(let btn_id of btn_ids){
             let select_id = "#"+btn_id;
             let path = d3.select(select_id).selectAll("path");

@@ -224,7 +224,7 @@ class Data(object):
 
     def remove_instance(self, idxs):
         if len(idxs) > 0:
-            self.actions.append("deleted_idxs")
+            self.actions.append("remove-node")
         self.rest_idxs = np.array([i for i in self.rest_idxs if i not in idxs])
         self.removed_idxs += idxs
         logger.info("rest data: {}".format(len(self.rest_idxs)))

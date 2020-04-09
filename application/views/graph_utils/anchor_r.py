@@ -423,13 +423,13 @@ class Anchors:
         return all_outliers
 
     def get_outlier(self, data, labels, label_cnt = 11):
-        outlier_path = os.path.join(self.model.data.selected_dir, "outliers.pkl")
-        if os.path.exists(outlier_path):
-            return pickle_load_data(outlier_path)
-        else:
-            all_outliers = self.computer_local_outlier(data, labels, label_cnt)
-            pickle_save_data(outlier_path, all_outliers)
-            return all_outliers
+        # outlier_path = os.path.join(self.model.data.selected_dir, "outliers.pkl")
+        # if os.path.exists(outlier_path):
+        #     return pickle_load_data(outlier_path)
+        # else:
+        all_outliers = self.computer_local_outlier(data, labels, label_cnt)
+        # pickle_save_data(outlier_path, all_outliers)
+        return all_outliers
 
 
     def get_nodes(self, wh, step):
@@ -454,8 +454,12 @@ class Anchors:
         tsne = self.get_init_tsne(selection)
 
         # get outlier
-        top_level = np.array(self.hierarchy_info[0]["index"])
-        outliers = self.get_outlier(tsne[top_level], self.model.get_pred_labels()[top_level])
+        _top_level = np.array(self.hierarchy_info[0]["index"])
+        _top_level = list(set(_top_level.tolist()).intersection(set(self.model.data.rest_idxs.tolist())))
+        top_level = np.array(_top_level, dtype=int)
+        m = self.model.data.get_new_id_map()
+        m_toplevel = np.array([m[id] for id in _top_level], dtype=int)
+        outliers = self.get_outlier(tsne[top_level], self.model.get_pred_labels()[m_toplevel])
         outliers = top_level[outliers].tolist()
         print("outliers:{}".format(outliers))
 
