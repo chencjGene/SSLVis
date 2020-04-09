@@ -2421,7 +2421,7 @@ let GraphLayout = function (container) {
     };
 
     that.if_show_init_voronoi = function(flag) {
-        that.if_show_init_voronoi = flag;
+        that.show_init_voronoi = flag;
         voronoi_plg.show_voronoi(nodes, outliers);
     };
 

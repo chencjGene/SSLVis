@@ -271,24 +271,28 @@ let GraphVoronoi = function(parent){
         .each(function (d) {
             let group = d3.select(this);
             if(view.show_init_voronoi) {
-                            group.selectAll("path")
-                                .attr("d", d => view.get_cell_path(d, that.scale))
-                                .style("fill", "none")
-                                .style("stroke-width", 2)
-                                .style("stroke", "#a9a9a9")
-                                .on("mouseover", function (d) {
-                                    console.log(that.voronoi_data.edges[d])
-                                });
+                group.selectAll("path")
+                    .data(d.halfedges)
+                    .attr("class", "voronoi-edge")
+                    .attr("d", d => view.get_cell_path(d, that.scale, that.voronoi_data))
+                    .style("fill", "none")
+                    .style("stroke-width", 2)
+                    .style("stroke", "#a9a9a9")
+                    .on("mouseover", function (d) {
+                        console.log(that.voronoi_data.edges[d])
+                    });
             }
             else {
-                    group.selectAll("path")
-                        .attr("d", d => view.get_skeleton_path(d, view.scale))
-                        .style("fill", "none")
-                        .style("stroke-width", 2)
-                        .style("stroke", "#a9a9a9")
-                        .on("mouseover", function (d) {
-                            console.log(d)
-                        });
+                group.selectAll("path")
+                    .data(d.skeleton)
+                    .attr("class", "voronoi-edge")
+                    .attr("d", d => view.get_skeleton_path(d, view.scale, that.voronoi_data))
+                    .style("fill", "none")
+                    .style("stroke-width", 2)
+                    .style("stroke", "#a9a9a9")
+                    .on("mouseover", function (d) {
+                        console.log(d)
+                    });
 
             }
 
@@ -314,32 +318,32 @@ let GraphVoronoi = function(parent){
         .each(function (d) {
             let group = d3.select(this);
             if(view.show_init_voronoi) {
-                for(let edge_id of d.halfedges){
-                            group.append("path")
-                                .datum(edge_id)
-                                .attr("class", "voronoi-edge")
-                                .attr("d", d => view.get_cell_path(d, that.scale))
-                                .style("fill", "none")
-                                .style("stroke-width", 2)
-                                .style("stroke", "#a9a9a9")
-                                .on("mouseover", function (d) {
-                                    console.log(that.voronoi_data.edges[d])
-                                });
-                }
+                group.selectAll("path")
+                    .data(d.halfedges)
+                    .enter()
+                    .append("path")
+                    .attr("class", "voronoi-edge")
+                    .attr("d", d => view.get_cell_path(d, that.scale, that.voronoi_data))
+                    .style("fill", "none")
+                    .style("stroke-width", 2)
+                    .style("stroke", "#a9a9a9")
+                    .on("mouseover", function (d) {
+                        console.log(that.voronoi_data.edges[d])
+                    });
             }
             else {
-                for(let edge of d.skeleton){
-                    group.append("path")
-                        .datum(edge)
-                        .attr("class", "voronoi-edge")
-                        .attr("d", d => view.get_skeleton_path(d, view.scale))
-                        .style("fill", "none")
-                        .style("stroke-width", 2)
-                        .style("stroke", "#a9a9a9")
-                        .on("mouseover", function (d) {
-                            console.log(d)
-                        });
-                }
+                group.selectAll("path")
+                    .data(d.skeleton)
+                    .enter()
+                    .append("path")
+                    .attr("class", "voronoi-edge")
+                    .attr("d", d => view.get_skeleton_path(d, view.scale, that.voronoi_data))
+                    .style("fill", "none")
+                    .style("stroke-width", 2)
+                    .style("stroke", "#a9a9a9")
+                    .on("mouseover", function (d) {
+                        console.log(d)
+                    });
 
             }
 
@@ -420,6 +424,9 @@ let GraphVoronoi = function(parent){
                 // that.max_num = 5;
                 for (let i = 0; i < d.summary_data.length; i++){
                     let value = d.summary_data[i].in / that.max_num;
+                    if(isNaN(value)){
+                        console.log("get");
+                    }
                     let idx = d.summary_data[i].idx;
                     d.summary_data[i].value = value;
                     data.push({

@@ -416,6 +416,8 @@ class Anchors:
         for label in range(label_cnt):
             ids = np.where(labels == label)[0]
             label_data = data[ids]
+            if len(label_data) == 0:
+                continue
             lof = LocalOutlierFactor(contamination=0.1)
             flag = lof.fit_predict(label_data)
             outlier_ids = ids[np.where(flag==-1)[0]]

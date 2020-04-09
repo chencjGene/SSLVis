@@ -67,6 +67,14 @@ GraphLayout.prototype.cal_voronoi = function(nodes) {
     let that = this;
     //let nodes_dic = nodes;
     nodes = Object.values(nodes);
+    if(DataLoader.dataset.startsWith("stl")){
+        nodes.push({
+            x:25,
+            y:-10,
+            label:[2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2]
+        });
+    }
+
     let centers = {};
 
     for (let node of nodes) {
@@ -167,7 +175,7 @@ GraphLayout.prototype.cal_voronoi = function(nodes) {
     while (true) {
         let all_large = false;
         for (let i = 0; i < Diagram.cells.length; i++) {
-            if (Diagram.cells[i].nodes.length < 10) {
+            if (Diagram.cells[i].nodes.length < 30) {
                 all_large = true;
                 let halfpath = Diagram.cells[i].all_edges;
                 let max_halfpath = -1;
@@ -266,8 +274,9 @@ GraphLayout.prototype.cal_voronoi = function(nodes) {
         "-12.31393684036028,-2.972250372989998,-25.22,-4.567909090909089":[[-6.178643560119811, 1.783444587077448], [-12.31393684036028, -2.972250372989998], 1],
         "6.244586523736601,-4.495347115875447,22.468977080312982,-7.278233324848664":[[3.3416339208321295, -2.225208032360589], [6.244586523736601, -4.495347115875447]]
     };
-    // predefined_skeleton = {};
-    // not_predefined_skeleton = {};
+    predefined_skeleton = {};
+    not_predefined_skeleton = {};
+    correction_edges = {};
     let is_skeleton = {};
     for(let cell of Diagram.cells){
         let halfedges = cell.halfedges;
@@ -295,6 +304,22 @@ GraphLayout.prototype.cal_voronoi = function(nodes) {
             path_nodes.push(next_node);
             if(next_node === null){
                 console.log("err, should have next node");
+                let min_dis = 100000;
+                for(let edge of halfedges.map(d => Diagram.edges[d])){
+                    let dis_a = Math.pow(edge[0][0]-mid_node[0], 2) + Math.pow(edge[0][1]-mid_node[1], 2);
+                    dis_a = dis_a===0?100000:dis_a;
+                    let dis_b = Math.pow(edge[1][0]-mid_node[0], 2) + Math.pow(edge[1][1]-mid_node[1], 2);
+                    dis_b = dis_a===0?100000:dis_b;
+                    if(dis_a<min_dis){
+                        min_dis = dis_a;
+                        next_node = edge[0];
+                    }
+                    if(dis_b<min_dis){
+                        min_dis = dis_b;
+                        next_node = edge[1];
+                    }
+                }
+                console.log("find next node:", next_node);
             }
             // if(is_skeleton[node_key])
             // if(Math.round(mid_node[0]*10000)%10 === 0 && (skeleton.length===0 || skeleton[skeleton.length-1][0] !== mid_node[0] || skeleton[skeleton.length-1][1] !== mid_node[1])){
@@ -305,12 +330,15 @@ GraphLayout.prototype.cal_voronoi = function(nodes) {
             let node_key = mid_node[0]+","+mid_node[1];
             let next_key = next_node[0]+","+next_node[1];
             if(!not_predefined_skeleton[node_key]){
-                if((predefined_skeleton[node_key]) && (skeleton.length===0 || skeleton[skeleton.length-1][0] !== mid_node[0] || skeleton[skeleton.length-1][1] !== mid_node[1])) skeleton.push(mid_node);
+                // if((predefined_skeleton[node_key]) && (skeleton.length===0 || skeleton[skeleton.length-1][0] !== mid_node[0] || skeleton[skeleton.length-1][1] !== mid_node[1])) skeleton.push(mid_node);
                 if((start_edges[mid_key].length > 2) && (skeleton.length===0 || skeleton[skeleton.length-1][0] !== mid_node[0] || skeleton[skeleton.length-1][1] !== mid_node[1])) skeleton.push(mid_node);
-                if(Math.sqrt(Math.pow(mid_node[0]-next_node[0], 2) + Math.pow(mid_node[1]-next_node[1], 2)) > 20){
-                    if(skeleton.length===0 || skeleton[skeleton.length-1][0] !== mid_node[0] || skeleton[skeleton.length-1][1] !== mid_node[1]) skeleton.push(mid_node);
-                    if(!not_predefined_skeleton[next_key]) skeleton.push(next_node);
+                else if(Math.abs(mid_node[0]) > 40 || Math.abs(mid_node[1]) > 40) {
+                    skeleton.push(mid_node)
                 }
+                // if(Math.sqrt(Math.pow(mid_node[0]-next_node[0], 2) + Math.pow(mid_node[1]-next_node[1], 2)) > 20){
+                //     if(skeleton.length===0 || skeleton[skeleton.length-1][0] !== mid_node[0] || skeleton[skeleton.length-1][1] !== mid_node[1]) skeleton.push(mid_node);
+                //     if(!not_predefined_skeleton[next_key]) skeleton.push(next_node);
+                // }
             }
             last_node = mid_node;
             mid_node = next_node;
@@ -443,10 +471,14 @@ GraphLayout.prototype.if_in_cell = function(node, cell) {
     return inside;
 };
 
-GraphLayout.prototype.get_cell_path = function(edge_id, scale){
+GraphLayout.prototype.get_cell_path = function(edge_id, scale, voronoi_data){
     let that = this;
-    let cells = that.voronoi_data.cells;
-    let edges = that.voronoi_data.edges;
+    let cells = voronoi_data.cells;
+    let edges = voronoi_data.edges;
+    if(edges[edge_id] === undefined){
+        console.log("undefined edge");
+        return ""
+    }
 
     return "M{0} {1}, L {2} {3}".format(that.center_scale_x(edges[edge_id][0][0]), that.center_scale_y(edges[edge_id][0][1]),
         that.center_scale_x(edges[edge_id][1][0]), that.center_scale_y(edges[edge_id][1][1])
@@ -466,7 +498,7 @@ GraphLayout.prototype.get_cell_path = function(edge_id, scale){
     path = path + "Z";
     cell.path = path;
     return path;
-}
+};
 
 GraphLayout.prototype.in_edge_filter = function(weight){
     let that = this;
@@ -534,10 +566,10 @@ GraphLayout.prototype.edge_statistic = function(diagram){
             //     }
             // }
         }
-        simple_summary[0].in /= group.length;
-        simple_summary[1].in /= group.length;
+        simple_summary[0].in /= Math.max(1, group.length);
+        simple_summary[1].in /= Math.max(1, group.length);
         for (let i = 0; i < label_cnt; i++){
-            summary[i].in /= group.length;
+            summary[i].in /= Math.max(1, group.length);
         }
         edges_summary.push(summary);
         diagram.cells[group_id].summary = summary;
@@ -552,7 +584,7 @@ GraphLayout.prototype.test_edge_statistic = function(){
     return that.edge_statistic(diagram);
 };
 
-GraphLayout.prototype.get_skeleton_path = function(edge, scale){
+GraphLayout.prototype.get_skeleton_path = function(edge, scale, voronoi_data){
     let that = this;
     if(Math.abs(edge[0][0]) > 100){
         return "M{0} {1}, L {2} {3}".format(edge[0][0], edge[0][1],
