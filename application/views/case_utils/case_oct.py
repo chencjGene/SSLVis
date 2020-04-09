@@ -11,6 +11,7 @@ class CaseOCT(CaseBase):
         dataname = config.oct
         super(CaseOCT, self).__init__(dataname)
 
+
     def run(self, k=None, evaluate=False, simplifying=False, step=None):
         if step is None:
             step = self.base_config["step"]

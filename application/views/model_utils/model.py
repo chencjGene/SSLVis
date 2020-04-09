@@ -74,11 +74,12 @@ def change_local(selected_idxs, neighbors, affinity_matrix, local_k):
     affinity_matrix = sparse.csr_matrix((np.ones(len(affinity_matrix.data)).tolist(),
                                          affinity_matrix.indices, affinity_matrix.indptr),
                                         shape=(instance_num, instance_num))
-    return affinity_matrix
+    return affinity_matrix_
 
 class SSLModel(object):
     def __init__(self, dataname, labeled_num=None, total_num=None, seed=123):
         self.dataname = dataname
+        self.step = 0
         self.data_root = os.path.join(config.data_root, self.dataname)
 
         self.model = None
@@ -235,7 +236,7 @@ class SSLModel(object):
         train_y = self.data.get_train_label()
         logger.info("begin load influence matrix")
         influence_matrix_path = os.path.join(self.selected_dir,
-                                             "{}{}_{}_influence_matrix.pkl"
+                                             ("{}{}_{}_influence_matrix-step"+str(self.step)+".pkl")
                                              .format(prefix, self.alpha, self.n_neighbor))
         if os.path.exists(influence_matrix_path) and (not DEBUG) and (not rebuild):
             logger.info("influence_matrix exist!!!")

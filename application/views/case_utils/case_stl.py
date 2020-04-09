@@ -10,14 +10,18 @@ class CaseSTL(CaseBase):
     def __init__(self):
         dataname = config.stl
         super(CaseSTL, self).__init__(dataname)
+        self.step = self.base_config
+
+
 
     def run(self, k=6, evaluate=True, simplifying=False, step=None):
         self.model.data.actions = []
         if step is None:
             step = self.base_config["step"]
+        self.model.step = step
+        self.step = step
         self._init_model(k=k, evaluate=evaluate, simplifying=False)
         self.pred_result[0] = self.model.get_pred_labels()
-        self.step = step
 
         if step >= 1:
             print("step 1")
