@@ -309,7 +309,7 @@ GraphLayout.prototype.cal_voronoi = function(nodes) {
                     let dis_a = Math.pow(edge[0][0]-mid_node[0], 2) + Math.pow(edge[0][1]-mid_node[1], 2);
                     dis_a = dis_a===0?100000:dis_a;
                     let dis_b = Math.pow(edge[1][0]-mid_node[0], 2) + Math.pow(edge[1][1]-mid_node[1], 2);
-                    dis_b = dis_a===0?100000:dis_b;
+                    dis_b = dis_b===0?100000:dis_b;
                     if(dis_a<min_dis){
                         min_dis = dis_a;
                         next_node = edge[0];
@@ -332,7 +332,8 @@ GraphLayout.prototype.cal_voronoi = function(nodes) {
             if(!not_predefined_skeleton[node_key]){
                 // if((predefined_skeleton[node_key]) && (skeleton.length===0 || skeleton[skeleton.length-1][0] !== mid_node[0] || skeleton[skeleton.length-1][1] !== mid_node[1])) skeleton.push(mid_node);
                 if((start_edges[mid_key].length > 2) && (skeleton.length===0 || skeleton[skeleton.length-1][0] !== mid_node[0] || skeleton[skeleton.length-1][1] !== mid_node[1])) skeleton.push(mid_node);
-                else if(Math.abs(mid_node[0]) > 40 || Math.abs(mid_node[1]) > 40) {
+                else if(Math.abs(mid_node[0]) > 40 || Math.abs(mid_node[1]) > 40 &&
+                    (skeleton.length===0 || skeleton[skeleton.length-1][0] !== mid_node[0] || skeleton[skeleton.length-1][1] !== mid_node[1])) {
                     skeleton.push(mid_node)
                 }
                 // if(Math.sqrt(Math.pow(mid_node[0]-next_node[0], 2) + Math.pow(mid_node[1]-next_node[1], 2)) > 20){
@@ -454,9 +455,13 @@ GraphLayout.prototype.cal_voronoi = function(nodes) {
 GraphLayout.prototype.if_in_cell = function(node, cell) {
     // ray-casting algorithm based on
     // http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
+    let that = this;
     let point = node;
     let vs = cell.polygon;
     var x = point.x, y = point.y;
+    let cx = that.center_scale_x(x);
+    let cy = that.center_scale_y(y);
+    if(cx < 70 || cx > 1000 || cy < 70 || cy > 740) return false;
 
     var inside = false;
     for (var i = 0, j = vs.length - 1; i < vs.length; j = i++) {
@@ -465,6 +470,7 @@ GraphLayout.prototype.if_in_cell = function(node, cell) {
 
         var intersect = ((yi > y) != (yj > y))
             && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+
         if (intersect) inside = !inside;
     }
 
