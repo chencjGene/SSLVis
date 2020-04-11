@@ -77,12 +77,22 @@ GraphLayout.prototype.cal_voronoi = function(nodes) {
             nodes_center[label].cnt += 1;
         }
         let scale_label = [1, 5, 9];
+        let score_small = [3];
         for(let center of Object.values(nodes_center)) {
             center.x /= center.cnt;
             center.y /= center.cnt;
             let scale = false;
+            let small_scale = false;
             center.dis = Math.sqrt(Math.pow(center.x, 2) + Math.pow(center.y, 2));
             if(scale_label.indexOf(center.label) === -1) scale = true;
+            if(score_small.indexOf(center.label) > -1) small_scale = true;
+            if(small_scale) {
+                nodes.push({
+                    x:scale?center.x*1.5:center.x,
+                    y:scale?center.y*1.5:center.y,
+                    label:[center.label,center.label,center.label,center.label,center.label,center.label,center.label,center.label,center.label,center.label,center.label,center.label,center.label,center.label]
+                })
+            }
             nodes.push({
                 x:scale?center.x*2:center.x,
                 y:scale?center.y*2:center.y,
