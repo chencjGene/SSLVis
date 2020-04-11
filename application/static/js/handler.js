@@ -45,6 +45,10 @@ DataLoaderClass.prototype.get_graph_handler = function (callback) {
         }
         that.state.label_names = data.label_names;
         let complete_graph = data.graph.nodes;
+        complete_graph[977].x += 0.3;
+        complete_graph[977].y += 0.3;
+        complete_graph[2139].x += 0.3;
+        complete_graph[2139].y += 0.3;
         that.state.complete_graph = complete_graph;
         // set box id 
         for (let i in that.state.complete_graph){

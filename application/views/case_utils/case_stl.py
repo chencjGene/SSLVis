@@ -49,6 +49,21 @@ class CaseSTL(CaseBase):
         categories = [1 for i in range(11)]
         if step >= 3:
             self.model.data.actions = []
+            c = json.loads(open(os.path.join(self.model.selected_dir, "local_4_idxs.txt"), "r").read().strip("\n"))
+            # self.model.local_search_k(c, range(7, 40), categories, simplifying=False, evaluate=True)
+            self.model.local_search_k(c, range(27, 29), categories, simplifying=False, evaluate=True)
+
+            edge_list = json.loads(open(os.path.join(self.model.selected_dir, "removed_1.txt"), "r").read().strip("\n"))
+
+            self.model.data.remove_edge(edge_list)
+            self.model._training(rebuild=False, evaluate=True, simplifying=False)
+            self.pred_result[3] = self.model.get_pred_labels()
+
+
+
+        categories = [1 for i in range(11)]
+        if step >= 4:
+            self.model.data.actions = []
             c = json.loads(open(os.path.join(self.model.selected_dir, "local_2_idxs.txt"), "r").read().strip("\n"))
             self.model.local_search_k(c, [1, 2, 3, 4], categories, simplifying=False, evaluate=True)
 
@@ -61,7 +76,7 @@ class CaseSTL(CaseBase):
             e = json.loads(open(os.path.join(self.model.selected_dir, "local_3_idxs.txt"), "r").read().strip("\n"))
             self.model.local_search_k(e, [1, 2, 3, 4], categories, simplifying=False, evaluate=True)
 
-            self.pred_result[3] = self.model.get_pred_labels()
+            self.pred_result[4] = self.model.get_pred_labels()
 
         if step >= 6:
             edge_list = [[1609, 2555]]
@@ -69,12 +84,12 @@ class CaseSTL(CaseBase):
             self.model.data.remove_edge(edge_list)
             self.model._training(rebuild=False, evaluate=True, simplifying=False)
 
-        if step >= 4:
+        if step >= 5:
             # all_labeled_idxs = self.model.data.labeled_idx
             # labeled_y = self.model.data.y[all_labeled_idxs]
             # cat_idxs = all_labeled_idxs[labeled_y == 3]
             # pickle_save_data(os.path.join(self.model.selected_dir, "step-3-add-data.pkl"), cat_idxs)
-            cat_idxs = pickle_load_data(os.path.join(self.model.selected_dir, "step-3-add-data.pkl"))
+            cat_idxs = pickle_load_data(os.path.join(self.model.selected_dir, "step-5-add-data.pkl"))
             self.model.add_data(cat_idxs, 3)
             self.model._training(rebuild=False, evaluate=evaluate, simplifying=False)
             self.model._influence_matrix(rebuild=True, prefix="add_")

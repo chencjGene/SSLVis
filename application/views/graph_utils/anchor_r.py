@@ -145,19 +145,19 @@ class Anchors:
 
     def get_hierarchical_sampling(self):
         self.hierarchy_info_path = self.hierarchy_info_path = os.path.join(self.selected_dir, "hierarchy_info-step" + str(self.step) + config.pkl_ext)
-        assert os.path.exists(self.hierarchy_info_path)
-        with open(self.hierarchy_info_path, "rb") as f:
-            self.hierarchy_info = pickle.load(f)
-        # if os.path.exists(self.hierarchy_info_path):
-        #     with open(self.hierarchy_info_path, "rb") as f:
-        #         self.hierarchy_info = pickle.load(f)
-        # else:
-        #     if self.margin == None:
-        #         self.margin = self.get_margin(self.model.process_data)
-        #     hierarchical_info = self.construct_hierarchical_sampling(self.full_x, self.margin, target_num=1000)
-        #     with open(self.hierarchy_info_path, "wb") as f:
-        #         pickle.dump(hierarchical_info, f)
-        #     self.hierarchy_info = hierarchical_info
+        # assert os.path.exists(self.hierarchy_info_path)
+        # with open(self.hierarchy_info_path, "rb") as f:
+        #     self.hierarchy_info = pickle.load(f)
+        if os.path.exists(self.hierarchy_info_path):
+            with open(self.hierarchy_info_path, "rb") as f:
+                self.hierarchy_info = pickle.load(f)
+        else:
+            if self.margin == None:
+                self.margin = self.get_margin(self.model.process_data)
+            hierarchical_info = self.construct_hierarchical_sampling(self.full_x, self.margin, target_num=1000)
+            with open(self.hierarchy_info_path, "wb") as f:
+                pickle.dump(hierarchical_info, f)
+            self.hierarchy_info = hierarchical_info
         return self.hierarchy_info
 
     def construct_hierarchical_sampling(self, train_x: np.ndarray, entropy: np.ndarray, target_num: int):

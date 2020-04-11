@@ -216,7 +216,7 @@ class SSLModel(object):
         if evaluate:
             # self.evaluate()
             print("begin evaluation")
-            #self.adaptive_evaluation()
+            self.adaptive_evaluation()
             # self.adaptive_evaluation_bkp()
             # self.adaptive_evaluation_v2()
 

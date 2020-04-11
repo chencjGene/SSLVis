@@ -49,14 +49,14 @@ let SettingView = null;
 let CategoryColor = [
     "#8c564b",
     "#ff7f0e",
-    "#17becf",
+    "#9467bd",
     "#d62728",
     "#1f77b4",
     "#2ca02c",
     "#e377c2",
     "#ffdb45",
     "#bcbd22",
-    "#9467bd",
+    "#17becf",
     "#a6cee3"];
 
 // oct
