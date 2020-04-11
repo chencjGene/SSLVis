@@ -66,7 +66,8 @@ class ExchangePortClass(object):
         #     config.use_add_tsne = False
         # if self.dataname.lower() == "stl" and self.case_util.base_config["step"] >= 3:
         #     self.if_add_data = True
-        self.case_util.run(k=k)
+        self.model = self.case_util.run(k=k, use_buffer=True)
+        self.anchor.link_model(self.model)
 
     def setK(self, k):
         self.model.setK(k=k)

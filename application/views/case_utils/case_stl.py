@@ -12,17 +12,30 @@ class CaseSTL(CaseBase):
         super(CaseSTL, self).__init__(dataname)
         self.step = self.base_config
 
+    def load_model(self, name):
+        save = pickle_load_data(name)
+        model = save[0]
+        model.data = save[1]
+        return model
 
 
-    def run(self, k=6, evaluate=True, simplifying=False, step=None):
+    def run(self, k=6, evaluate=True, simplifying=False, step=None, use_buffer = False):
         self.model.data.actions = []
         if step is None:
             step = self.base_config["step"]
         self.model.step = step
         self.step = step
         self.model.step = 0
-        self._init_model(k=k, evaluate=evaluate, simplifying=False)
+        if (not use_buffer) or (not os.path.exists(os.path.join(self.model.selected_dir, "case-step" + str(step) + ".pkl"))):
+            self._init_model(k=k, evaluate=evaluate, simplifying=False)
+            save = (self.model, self.model.data)
+            pickle_save_data(os.path.join(self.model.selected_dir, "case-step" + str(self.model.step) + ".pkl"), save)
+        else:
+            self.model.step = step
+            self.model = self.load_model(os.path.join(self.model.selected_dir, "case-step" + str(self.model.step) + ".pkl"))
+            return self.model
         self.pred_result[0] = self.model.get_pred_labels()
+
 
 
         if step >= 1:
@@ -34,7 +47,8 @@ class CaseSTL(CaseBase):
             self.model._training(rebuild=False, evaluate=evaluate, simplifying=False)
             self.pred_result[1] = self.model.get_pred_labels()
             self.model.adaptive_evaluation(step=1)
-
+            save = (self.model, self.model.data)
+            pickle_save_data(os.path.join(self.model.selected_dir, "case-step" + str(self.model.step) + ".pkl"), save)
 
         if step >= 2:
             self.model.step += 1
@@ -46,6 +60,8 @@ class CaseSTL(CaseBase):
             self.model._training(rebuild=False, evaluate=evaluate, simplifying=False)
             self.pred_result[2] = self.model.get_pred_labels()
             self.model.adaptive_evaluation(step=2)
+            save = (self.model, self.model.data)
+            pickle_save_data(os.path.join(self.model.selected_dir, "case-step" + str(self.model.step) + ".pkl"), save)
         
         # if step >= 1.4:
         #     self.model.data.label_instance([5146, 2339], [4, 6])
@@ -66,6 +82,8 @@ class CaseSTL(CaseBase):
             self.model._training(rebuild=False, evaluate=True, simplifying=False)
             self.pred_result[3] = self.model.get_pred_labels()
             self.model.adaptive_evaluation(step=3)
+            save = (self.model, self.model.data)
+            pickle_save_data(os.path.join(self.model.selected_dir, "case-step" + str(self.model.step) + ".pkl"), save)
 
 
 
@@ -87,6 +105,8 @@ class CaseSTL(CaseBase):
 
             self.pred_result[4] = self.model.get_pred_labels()
             self.model.adaptive_evaluation(step=4)
+            save = (self.model, self.model.data)
+            pickle_save_data(os.path.join(self.model.selected_dir, "case-step" + str(self.model.step) + ".pkl"), save)
 
         if step >= 6:
             self.model.step += 1
@@ -94,6 +114,8 @@ class CaseSTL(CaseBase):
             self.model.data.actions = []
             self.model.data.remove_edge(edge_list)
             self.model._training(rebuild=False, evaluate=True, simplifying=False)
+            save = (self.model, self.model.data)
+            pickle_save_data(os.path.join(self.model.selected_dir, "case-step" + str(self.model.step) + ".pkl"), save)
 
         if step >= 5:
             self.model.data.actions = []
@@ -107,10 +129,12 @@ class CaseSTL(CaseBase):
             self.model._training(rebuild=False, evaluate=evaluate, simplifying=False)
             self.model._influence_matrix(rebuild=True, prefix="add_")
             self.model.adaptive_evaluation(step=5)
+            save = (self.model, self.model.data)
+            pickle_save_data(os.path.join(self.model.selected_dir, "case-step" + str(self.model.step) + ".pkl"), save)
             # self.model.adaptive_evaluation_unasync()
 
         self.model.adaptive_evaluation()
-        return
+        return self.model
 
         # if step >= 4:
         #     self.model._training(rebuild=False, evaluate=False, simplifying=False)
