@@ -174,7 +174,7 @@ let HistoryLayout = function (container) {
             .attr("class", "action-type-g");
         history.selectAll("use")
             .data(function (d) {
-                return  d.map(function (one) {
+                return  d.actions.map(function (one) {
                     return {
                         "action":one,
                         "all":d.length
