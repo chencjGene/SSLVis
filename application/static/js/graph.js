@@ -875,6 +875,7 @@ let GraphLayout = function (container) {
                 .on("mouseover", function (d) {
                     // check if hided
                     if(visible_items[d.id] === false) return;
+                    console.log(d)
                     if((path_nodes[d.id]!==undefined)){
                         return
                     }
@@ -987,7 +988,7 @@ let GraphLayout = function (container) {
                 .on("mouseover", function (d) {
                     // check if hided
                     if(visible_items[d.id] === false) return;
-                    console.log("Label node id:", d.id)
+                    console.log(d)
                 })
                 .on("click", function (d) {
                     // check if hided
