@@ -156,7 +156,7 @@ class SSLModel(object):
         self.propagation_path_from = None
         self.propagation_path_to = None
 
-    def _training(self, rebuild=True, evaluate=False, simplifying=True, record=True):
+    def _training(self, rebuild=True, evaluate=False, simplifying=True, record=True, saving = True):
         self._clean_buffer()
         affinity_matrix = self.data.get_graph(self.n_neighbor, rebuild=rebuild)
         laplacian = build_laplacian_graph(affinity_matrix)
@@ -203,7 +203,7 @@ class SSLModel(object):
         propagation_path_from, propagation_path_to = self.get_path_to_label(self.process_data,
                                                                             self.graph)
         # if simplifying:
-        self._influence_matrix(rebuild=simplifying)
+        self._influence_matrix(rebuild=simplifying, saving = saving)
         self.propagation_path_from = propagation_path_from
         self.propagation_path_to = propagation_path_to
 
@@ -226,7 +226,7 @@ class SSLModel(object):
 
         logger.info("_training finished!!!!!!!!")
 
-    def _influence_matrix(self, rebuild = False, prefix=""):
+    def _influence_matrix(self, rebuild = False, prefix="", saving = True):
         if self.influence_matrix is not None and (not DEBUG) and (not rebuild):
             self.influence_matrix.data[np.isnan(self.influence_matrix.data)] = 0
             return
@@ -249,7 +249,8 @@ class SSLModel(object):
             approximated_influence(self.unnorm_dist, affinity_matrix,
                                    laplacian, self.alpha, train_y, self.n_iters)
         # if rebuild:
-        pickle_save_data(influence_matrix_path, self.influence_matrix)
+        if saving:
+            pickle_save_data(influence_matrix_path, self.influence_matrix)
         self.influence_matrix.data[np.isnan(self.influence_matrix.data)] = 0
         return
 
@@ -510,7 +511,7 @@ class SSLModel(object):
         return pred, best_k
 
     def get_train_neighbors_consistency(self, n_neighbor = 6):
-        neighbors = self.data.get_neighbors()[:,:n_neighbor]
+        neighbors = self.data.get_neighbors(n_neighbor)
         labels = self.get_pred_labels()
         neighbor_labels = labels[neighbors]
         return n_neighbor-np.count_nonzero(np.subtract(neighbor_labels.T , labels), axis=0)
@@ -877,7 +878,7 @@ class SSLModel(object):
                 self.data.add_new_categories(class_name)
         self.data.editing_data(data)
         self.data.update_graph(data["deleted_idxs"])
-        self._training(rebuild=False, evaluate=True)
+        self._training(rebuild=False, evaluate=True, saving=False)
 
     def get_data(self):
         train_X = self.data.get_train_X()

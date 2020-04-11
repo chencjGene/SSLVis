@@ -322,6 +322,11 @@ let EditLayout = function(){
         console.log("Now edit state:", edit_state);
     };
 
+    that.delete_nodes = function(nodes) {
+        edit_state.deleted_idxs = nodes;
+        // that.eval_edit();
+    };
+
     that.eval_edit = function() {
         that.data_manager.update_delete_and_change_label(edit_state);
         edit_state = {

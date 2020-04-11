@@ -68,19 +68,24 @@ let GraphVoronoi = function(parent){
                 console.log("Error: point not in any cells");
             }
         }
+        for(let cell of that.voronoi_data.cells) {
+            let center = cell.nodes.reduce(function (acc, node) {
+                acc.x += node.x;
+                acc.y += node.y;
+                return acc;
+            }, {x:0,y:0});
+            center.x /= cell.nodes.length;
+            center.y /= cell.nodes.length;
+            cell.site.data[0] = cell.site[0] = center.x;
+            cell.site.data[1] = cell.site[1] = center.y;
+        }
         that.update_view();
     };
 
-    that.max_search_num = 100;
+    that.max_search_deep = 40;
 
     that.place_barchart = function(){
-        let step = 0.1;
-        let direct_map = {
-            0: [1,0],
-            1: [0,1],
-            2: [-1,0],
-            3: [0,-1]
-        }
+        let step = 0.5;
         for (let i = 0; i < that.voronoi_data.cells.length; i++){
             let cell = that.voronoi_data.cells[i];
             let cell_x = cell.site.data[0];
@@ -88,28 +93,46 @@ let GraphVoronoi = function(parent){
             console.log("cell position", cell_x, cell_y, 
                 cell.chart_width / view.scale, cell.chart_height/view.scale);
             let nodes = cell.nodes;
-            let j = 0;
-            for (; j < that.max_search_num; j++){
-                let direct = direct_map[j % 4];
-                cell_x = cell_x + direct[0] * j * step;
-                cell_y = cell_y + direct[1] * j * step;
-                let k = 0;
-                for (; k < nodes.length; k++){
-                    if (nodes[k].x > cell_x && nodes[k].x < (cell_x + cell.chart_width / view.scale)
-                        && nodes[k].y > cell_y && nodes[k].y > (cell_y + cell.chart_height/view.scale)){
+            let deep = 1;
+            let min_node_cnt = 100000;
+            let best_dx = -1;
+            let best_dy = -1;
+            let find = false;
+            for (; deep < that.max_search_deep; deep++){
+                for(let dx = -deep; dx <= deep; dx++){
+                    for(let dy = -(deep-Math.abs(dx)); dy <= deep-Math.abs(dx); dy++){
+                        cell_x = cell.site.data[0] + dx * step;
+                        cell_y = cell.site.data[1] + dy * step;
+                        let contain_nodes_cnt = 0;
+                        let k = 0;
+                        let if_in_poly = view.if_in_cell({x:cell_x, y:cell_y}, cell)
+                                    && view.if_in_cell({x:cell_x, y:cell_y + cell.chart_height/view.scale}, cell)
+                                    && view.if_in_cell({x:cell_x + cell.chart_width / view.scale, y:cell_y}, cell)
+                                    && view.if_in_cell({x:cell_x + cell.chart_width / view.scale, y:cell_y + cell.chart_height/view.scale}, cell);
+                        if(!if_in_poly) continue;
+                        for (; k < nodes.length; k++){
+                            if (nodes[k].x > (cell_x- cell.chart_width / view.scale) && nodes[k].x < (cell_x + cell.chart_width*1.5 / view.scale)
+                                && nodes[k].y > (cell_y - cell.chart_height*0.5/view.scale) && nodes[k].y < (cell_y + cell.chart_height*1.5/view.scale)){
+                                    contain_nodes_cnt++;
+                                }
+                        }
+                        if (contain_nodes_cnt < min_node_cnt){
+                            min_node_cnt = contain_nodes_cnt;
+                            best_dx = dx;
+                            best_dy = dy;
+                        }
+                        if(min_node_cnt === 0){
+                            find = true;
                             break;
                         }
-                    else{
                     }
+                    if(find) break;
                 }
-                if (k === nodes.length){
-                    break;
-                }
-                // console.log("j", j);
+                if(find) break;
             }
-            cell.x = cell_x;
-            cell.y = cell_y;
-            console.log("final cell position", cell_x, cell_y, j);
+            cell.x = cell.site.data[0] + best_dx * step;
+            cell.y = cell.site.data[1] + best_dy * step;
+            console.log("final cell position", cell.x, cell.y, best_dx, best_dy);
         }
     };
 
@@ -271,24 +294,28 @@ let GraphVoronoi = function(parent){
         .each(function (d) {
             let group = d3.select(this);
             if(view.show_init_voronoi) {
-                            group.selectAll("path")
-                                .attr("d", d => view.get_cell_path(d, that.scale))
-                                .style("fill", "none")
-                                .style("stroke-width", 2)
-                                .style("stroke", "#a9a9a9")
-                                .on("mouseover", function (d) {
-                                    console.log(that.voronoi_data.edges[d])
-                                });
+                group.selectAll("path")
+                    .data(d.halfedges)
+                    .attr("class", "voronoi-edge")
+                    .attr("d", d => view.get_cell_path(d, that.scale, that.voronoi_data))
+                    .style("fill", "none")
+                    .style("stroke-width", 2)
+                    .style("stroke", "#a9a9a9")
+                    .on("mouseover", function (d) {
+                        console.log(that.voronoi_data.edges[d])
+                    });
             }
             else {
-                    group.selectAll("path")
-                        .attr("d", d => view.get_skeleton_path(d, view.scale))
-                        .style("fill", "none")
-                        .style("stroke-width", 2)
-                        .style("stroke", "#a9a9a9")
-                        .on("mouseover", function (d) {
-                            console.log(d)
-                        });
+                group.selectAll("path")
+                    .data(d.skeleton)
+                    .attr("class", "voronoi-edge")
+                    .attr("d", d => view.get_skeleton_path(d, view.scale, that.voronoi_data))
+                    .style("fill", "none")
+                    .style("stroke-width", 2)
+                    .style("stroke", "#a9a9a9")
+                    .on("mouseover", function (d) {
+                        console.log(d)
+                    });
 
             }
 
@@ -314,32 +341,32 @@ let GraphVoronoi = function(parent){
         .each(function (d) {
             let group = d3.select(this);
             if(view.show_init_voronoi) {
-                for(let edge_id of d.halfedges){
-                            group.append("path")
-                                .datum(edge_id)
-                                .attr("class", "voronoi-edge")
-                                .attr("d", d => view.get_cell_path(d, that.scale))
-                                .style("fill", "none")
-                                .style("stroke-width", 2)
-                                .style("stroke", "#a9a9a9")
-                                .on("mouseover", function (d) {
-                                    console.log(that.voronoi_data.edges[d])
-                                });
-                }
+                group.selectAll("path")
+                    .data(d.halfedges)
+                    .enter()
+                    .append("path")
+                    .attr("class", "voronoi-edge")
+                    .attr("d", d => view.get_cell_path(d, that.scale, that.voronoi_data))
+                    .style("fill", "none")
+                    .style("stroke-width", 2)
+                    .style("stroke", "#a9a9a9")
+                    .on("mouseover", function (d) {
+                        console.log(that.voronoi_data.edges[d])
+                    });
             }
             else {
-                for(let edge of d.skeleton){
-                    group.append("path")
-                        .datum(edge)
-                        .attr("class", "voronoi-edge")
-                        .attr("d", d => view.get_skeleton_path(d, view.scale))
-                        .style("fill", "none")
-                        .style("stroke-width", 2)
-                        .style("stroke", "#a9a9a9")
-                        .on("mouseover", function (d) {
-                            console.log(d)
-                        });
-                }
+                group.selectAll("path")
+                    .data(d.skeleton)
+                    .enter()
+                    .append("path")
+                    .attr("class", "voronoi-edge")
+                    .attr("d", d => view.get_skeleton_path(d, view.scale, that.voronoi_data))
+                    .style("fill", "none")
+                    .style("stroke-width", 2)
+                    .style("stroke", "#a9a9a9")
+                    .on("mouseover", function (d) {
+                        console.log(d)
+                    });
 
             }
 
@@ -381,7 +408,10 @@ let GraphVoronoi = function(parent){
                     d => "translate("+(d.x)
                     +","+(d.y)+")");
             })
-            .on("end", function(){
+            .on("end", function(d){
+                d.x = d3.mouse(view.main_group.node())[0];
+                d.y = d3.mouse(view.main_group.node())[1];
+                console.log("drag end", d.x, d.y);
                 that.drag_activated = false;
                 if (that.second_drag_node){
                     that.show_comparison();
@@ -420,6 +450,9 @@ let GraphVoronoi = function(parent){
                 // that.max_num = 5;
                 for (let i = 0; i < d.summary_data.length; i++){
                     let value = d.summary_data[i].in / that.max_num;
+                    if(isNaN(value)){
+                        console.log("get");
+                    }
                     let idx = d.summary_data[i].idx;
                     d.summary_data[i].value = value;
                     data.push({

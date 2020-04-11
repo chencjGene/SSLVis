@@ -128,6 +128,7 @@ DataLoaderClass = function () {
         nodes_before_focus_selection: null,
         selection_before_focus_sulection: null,
         outliers: null,
+        rest_idxes: {},
         // history info:
         history_data: null,
         // edit info:
@@ -297,11 +298,6 @@ DataLoaderClass = function () {
         that.edit_view.update_focus(data, mode, node);
     };
 
-    that.delete_idxs = function(selected_idxs){
-        that.edit_view.update_focus(selected_idxs, "instance");
-        that.edit_view.editing(-1);
-    };
-
     that.update_k = function(k){
         that.graph_view.remove_all();
         that.state.k = k;
@@ -384,6 +380,10 @@ DataLoaderClass = function () {
             "img_grid_urls": that.state.img_grid_urls,
             "re_fetch": that.state.re_fetch
         })
+    };
+
+    that.delete_nodes_menu = function(nodes) {
+        that.edit_view.delete_nodes(nodes);
     };
 
 

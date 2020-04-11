@@ -3,6 +3,7 @@ DataLoaderClass.prototype.get_nodes_from_complete_graph = function (nodes_id) {
     let complete_graph = that.state.complete_graph;
     let graph = {};
     for(let node_id of nodes_id){
+        if(that.state.rest_idxes[node_id] === undefined) continue;
         graph[node_id] = complete_graph[node_id];
     }
     return graph;
@@ -15,6 +16,7 @@ function get_next_level(hierarchy, level, area, complete_graph){
     for(let i=0; i<last_index.length; i++){
         let ind = last_index[i];
         let node = complete_graph[ind];
+        if(node === undefined) continue;
         let pos = {x:node.x, y:node.y};
         if((area.x <= pos.x) && (area.x +area.width>= pos.x) && (area.y <= pos.y) &&( area.y + area.height >= pos.y)){
             // let temp_selection = hierarchy[level]["index"].filter(d => last_next[i].indexOf(d) > -1);
@@ -48,6 +50,7 @@ DataLoaderClass.prototype.get_data_selection = function (area, level, must_show_
     for(let i=0; i<selection.length; i++){
             let ind = selection[i];
             let node = that.state.complete_graph[ind];
+            if(node === undefined)continue;
             let pos = {x:node.x, y:node.y};
             if((area.x <= pos.x) && (area.x +area.width>= pos.x) && (area.y <= pos.y) &&( area.y + area.height >= pos.y)){
                 _selection.push(ind)

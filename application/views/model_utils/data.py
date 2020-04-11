@@ -224,8 +224,8 @@ class Data(object):
 
     def remove_instance(self, idxs):
         if len(idxs) > 0:
-            self.actions.append("deleted_idxs")
-        self.rest_idxs = [i for i in self.rest_idxs if i not in idxs]
+            self.actions.append("remove-node")
+        self.rest_idxs = np.array([i for i in self.rest_idxs if i not in idxs])
         self.removed_idxs += idxs
         logger.info("rest data: {}".format(len(self.rest_idxs)))
 
@@ -452,8 +452,24 @@ class GraphData(Data):
         neighbors_model = pickle_load_data(neighbors_model_path)
         return neighbors_model
 
-    def get_neighbors(self):
-        return self.neighbors[self.rest_idxs]
+    def get_neighbors(self, k_neighbors = None):
+        if k_neighbors is None:
+            return self.neighbors[self.rest_idxs]
+        else:
+            m = self.get_new_id_map()
+            new_neighbors = np.zeros((len(self.rest_idxs), k_neighbors), dtype=int)
+            rest_dict = {}
+            for id in self.rest_idxs:
+                rest_dict[id] = True
+            for i, row_neighbors in enumerate(self.neighbors[self.rest_idxs]):
+                neighbor_cnt = 0
+                for neighbor_id in row_neighbors:
+                    if neighbor_id in rest_dict.keys():
+                        new_neighbors[i][neighbor_cnt] = m[neighbor_id]
+                        neighbor_cnt += 1
+                        if neighbor_cnt == k_neighbors:
+                            break
+            return new_neighbors
 
     def record_state(self, pred):
         new_state = Node(self.state_idx, parent=self.current_state)
@@ -582,7 +598,10 @@ class GraphData(Data):
         self.actions = ["add-unlabeled"]
         added_idxs = np.array(added_idxs).reshape(-1)
         self.train_idx = np.hstack((self.train_idx, added_idxs))
-        self.rest_idxs = np.array(range(len(self.train_idx)))
+        added_false_idxes = [i for i in range(len(self.train_idx), len(self.train_idx)+len(added_idxs))]
+
+        self.rest_idxs = self.rest_idxs.tolist() + added_false_idxes
+        self.rest_idxs = np.array(self.rest_idxs)
 
         pre_num = self.affinity_matrix.shape[0]
         add_num = len(added_idxs)

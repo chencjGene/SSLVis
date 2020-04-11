@@ -121,6 +121,7 @@ let GraphLayout = function (container) {
 
     that.svg = null;
     that.main_group = null;
+    let delete_nodes = {};
 
     // plugin
     let transform_plg = null;
@@ -1419,6 +1420,9 @@ let GraphLayout = function (container) {
             return 0.0
         }
         else {
+            if(delete_nodes[id] === true){
+                return 0;
+            }
             if(highlights.length === 0 && glyphs.length > 10){
                 if(visible_items[id] === false){
                     return 0;
@@ -2344,6 +2348,19 @@ let GraphLayout = function (container) {
         is_local_k = flag;
     };
 
+    that.remove_nodes = function() {
+        console.log("Remove nodes:", highlights);
+        if(highlights.length === 0){
+            return
+        }
+        delete_nodes = {};
+        for(let id of highlights){
+            delete_nodes[id] = true;
+        }
+        that.data_manager.update_graph_view();
+        that.data_manager.delete_nodes_menu(highlights);
+    };
+
     // debug
     that.update_path_width_scale = async function(scale) {
         path_width_scale = scale;
@@ -2404,7 +2421,7 @@ let GraphLayout = function (container) {
     };
 
     that.if_show_init_voronoi = function(flag) {
-        that.if_show_init_voronoi = flag;
+        that.show_init_voronoi = flag;
         voronoi_plg.show_voronoi(nodes, outliers);
     };
 
