@@ -248,8 +248,8 @@ let FilterLayout = function (container) {
         }
         let max_len = 0;
         for(let label_ary of label_distribution){
-            if(max_len < label_ary.avg_consistency){
-                max_len = label_ary.avg_consistency;
+            if(max_len < label_ary.length){
+                max_len = label_ary.length;
             }
         }
 
@@ -281,9 +281,9 @@ let FilterLayout = function (container) {
             .style("fill", (d, i) => i===0?color_unlabel:color_label[i-1])
             .attr("x", function(d, i) { return x(i); })
             .attr("width", x.bandwidth())
-            .attr("y", function(d, i) { return y(d.avg_consistency/max_len); })
+            .attr("y", function(d, i) { return y(d.length/max_len); })
             .attr("height", function(d) {
-              return container_height*  0.7 - y(d.avg_consistency/max_len);
+              return container_height*  0.7 - y(d.length/max_len);
           })
             .attr("opacity", (d, i) => (label_widget_range.indexOf(i) > -1)?1:0.2)
             .on("mouseover", function (d, i) {
@@ -357,9 +357,9 @@ let FilterLayout = function (container) {
             .duration(AnimationDuration)
             .attr("x", function(d, i) { return x(i); })
             .attr("width", x.bandwidth())
-            .attr("y", function(d, i) { return y(d.avg_consistency/max_len); })
+            .attr("y", function(d, i) { return y(d.length/max_len); })
             .attr("height", function(d) {
-                  return container_height*  0.7 - y(d.avg_consistency/max_len);
+                  return container_height*  0.7 - y(d.length/max_len);
               })
             .attr("opacity", (d, i) => (label_widget_range.indexOf(i) > -1)?1:0.2);
         rects.exit()

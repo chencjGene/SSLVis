@@ -45,6 +45,7 @@ class Data(object):
         self.seed = seed
         self.selected_dir = None
         self.rest_idxs = None
+        self.model = None
 
         self._load_data()
 
@@ -261,12 +262,12 @@ class GraphData(Data):
         self.current_state = self.state
 
     def _preprocess_neighbors(self, rebuild=False, save=True):
-        neighbors_model_path = os.path.join(self.selected_dir, "neighbors_model.pkl")
-        neighbors_path = os.path.join(self.selected_dir, "neighbors.npy")
+        neighbors_model_path = os.path.join(self.selected_dir, "neighbors_model-step"+str(self.model.step)+".pkl")
+        neighbors_path = os.path.join(self.selected_dir, "neighbors-step"+str(self.model.step)+".npy")
         neighbors_weight_path = os.path.join(self.selected_dir,
-                                             "neighbors_weight.npy")
-        test_neighbors_path = os.path.join(self.selected_dir, "test_neighbors.npy")
-        test_neighbors_weight_path = os.path.join(self.selected_dir, "test_neighbors_weight.npy")
+                                             "neighbors_weight-step"+str(self.model.step)+".npy")
+        test_neighbors_path = os.path.join(self.selected_dir, "test_neighbors-step"+str(self.model.step)+".npy")
+        test_neighbors_weight_path = os.path.join(self.selected_dir, "test_neighbors_weight-step"+str(self.model.step)+".npy")
         if os.path.exists(neighbors_model_path) and \
                 os.path.exists(neighbors_path) and \
                 os.path.exists(test_neighbors_path) and rebuild == False and DEBUG == False:
@@ -414,6 +415,7 @@ class GraphData(Data):
         affinity_matrix = affinity_matrix.copy()
         labeled_ids = np.where(self.get_train_label() > -1)[0]
         iter_cnt = 0
+        neighbors = self.get_neighbors(k_neighbors=100)
         while True:
             unconnected_ids = self._find_unconnected_nodes(affinity_matrix, labeled_ids)
             if unconnected_ids.shape[0] == 0:
@@ -433,7 +435,7 @@ class GraphData(Data):
             else:
                 while True:
                     corrected_id = np.random.choice(unconnected_ids)
-                    k_neighbors = self.neighbors[corrected_id]
+                    k_neighbors = neighbors[corrected_id]
                     find = False
                     for neighbor_id in k_neighbors:
                         if neighbor_id not in unconnected_ids:
@@ -452,7 +454,8 @@ class GraphData(Data):
         neighbors_model = pickle_load_data(neighbors_model_path)
         return neighbors_model
 
-    def get_neighbors(self, k_neighbors = None):
+    def get_neighbors(self, k_neighbors = None, if_map = True):
+        self._preprocess_neighbors()
         if k_neighbors is None:
             return self.neighbors[self.rest_idxs]
         else:
@@ -465,7 +468,11 @@ class GraphData(Data):
                 neighbor_cnt = 0
                 for neighbor_id in row_neighbors:
                     if neighbor_id in rest_dict.keys():
-                        new_neighbors[i][neighbor_cnt] = m[neighbor_id]
+                        # new_neighbors[i][neighbor_cnt] = m[neighbor_id]
+                        if if_map:
+                            new_neighbors[i][neighbor_cnt] = m[neighbor_id]
+                        else:
+                            new_neighbors[i][neighbor_cnt] = neighbor_id
                         neighbor_cnt += 1
                         if neighbor_cnt == k_neighbors:
                             break
@@ -568,8 +575,22 @@ class GraphData(Data):
         self.print_state()
         return self.return_state()
 
-    def get_test_neighbors(self):
-        return self.test_neighbors
+    def get_test_neighbors(self, k_neighbors = 100):
+        self._preprocess_neighbors()
+        new_neighbors = np.zeros((len(self.test_neighbors), k_neighbors), dtype=int)
+        rest_dict = {}
+        m = self.get_new_id_map()
+        for id in self.rest_idxs:
+            rest_dict[id] = True
+        for i, row_neighbors in enumerate(self.test_neighbors):
+            neighbor_cnt = 0
+            for neighbor_id in row_neighbors:
+                if neighbor_id in rest_dict.keys():
+                    new_neighbors[i][neighbor_cnt] = m[neighbor_id]
+                    neighbor_cnt += 1
+                    if neighbor_cnt == k_neighbors:
+                        break
+        return new_neighbors
 
     def add_edge(self, added_edges):
         None
@@ -597,10 +618,11 @@ class GraphData(Data):
     def add_data(self, added_idxs, train_pred, cls):
         self.actions = ["add-unlabeled"]
         added_idxs = np.array(added_idxs).reshape(-1)
-        self.train_idx = np.hstack((self.train_idx, added_idxs))
+
         added_false_idxes = [i for i in range(len(self.train_idx), len(self.train_idx)+len(added_idxs))]
 
         self.rest_idxs = self.rest_idxs.tolist() + added_false_idxes
+        self.train_idx = np.hstack((self.train_idx, added_idxs))
         self.rest_idxs = np.array(self.rest_idxs)
 
         pre_num = self.affinity_matrix.shape[0]

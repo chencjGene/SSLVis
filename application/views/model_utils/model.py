@@ -92,6 +92,7 @@ class SSLModel(object):
         self.config = config.stl_config if dataname.lower() == "stl" else config.oct_config
 
         self.data = GraphData(self.dataname, labeled_num, total_num)
+        self.data.model = self
         # self.data.case_set_rest_idxs()
         self.selected_dir = self.data.selected_dir
         self.n_neighbor = self.config["n_neighbors"]
@@ -490,7 +491,7 @@ class SSLModel(object):
             logger.info("bincount info: {}".format(str(np.bincount(train_pred[np.array(selected_idxs)]))))
         train_gt = self.data.get_train_ground_truth()
         train_y = self.data.get_train_label()
-        neighbors = self.data.get_neighbors()
+        neighbors = self.data.get_neighbors(k_neighbors=100)
         affinity_matrix = self.data.get_graph()
         affinity_matrix.setdiag(0)
         affinity_matrix, pred, best_k = local_search_k(k_list, self.n_neighbor,
@@ -624,7 +625,7 @@ class SSLModel(object):
         return labels, np.array(adaptive_ks), acc
 
     # @async_once
-    def adaptive_evaluation(self, pred=None):
+    def adaptive_evaluation(self, pred=None, step = None):
         affinity_matrix = self.data.get_graph()
         affinity_matrix.setdiag(0)
         if pred is None:
@@ -654,7 +655,10 @@ class SSLModel(object):
 
         acc = accuracy_score(test_y, labels)
         confusion_mat = confusion_matrix(test_y, labels)
-        logger.info("test accuracy: {}".format(acc))
+        if step == None:
+            logger.info("test accuracy: {}".format(acc))
+        else:
+            logger.info("test accuracy step {}: {}".format(step, acc))
         logger.info("confusion matrix: \n{}".format(confusion_mat))
 
         # for k, i in [[2, 7], [2, 6], [2, 5]]:

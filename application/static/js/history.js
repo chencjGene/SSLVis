@@ -27,6 +27,7 @@ let HistoryLayout = function (container) {
     let create_ani = AnimationDuration;
     let update_ani = AnimationDuration;
     let remove_ani = AnimationDuration * 0;
+    let action_type_size = 20;
 
     that.svg = container.select("#history-view").select("svg");
     that.line_group = that.svg.append("g").attr("id", "line");
@@ -172,18 +173,25 @@ let HistoryLayout = function (container) {
         let history = cells.append("g")
             .attr("class", "action-type-g");
         history.selectAll("use")
-            .data(d => d.actions)
+            .data(function (d) {
+                return  d.map(function (one) {
+                    return {
+                        "action":one,
+                        "all":d.length
+                    }
+                });
+            })
             .enter()
             .append("use")
-            .attr("xlink:href", d => "#action-"+d)
+            .attr("xlink:href", d => "#action-"+d.action)
             .attr("x", function (d, i) {
                 return action_begin+20
             })
             .attr("y", function (d) {
                 return cell_height - 30;
             })
-            .attr("width", 20)
-            .attr("height", 20);
+            .attr("width", action_type_size)
+            .attr("height", action_type_size);
 
             
         cells.append("text")
