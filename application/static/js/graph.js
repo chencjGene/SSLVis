@@ -274,26 +274,29 @@ let GraphLayout = function (container) {
         delete_edges = state.edit_state.deleted_edges.map(d => d[0]+","+d[1]);
         edges_summary = [];
         let label_cnt = state.label_names.length+1;
-        if(that.if_focus_selection_box) {
+        if(that.selection_box.length > 0) {
             let graph = that.data_manager.state.complete_graph;
             for(let selection_box of that.selection_box){
-                let summary = [];
-                for(let i=0;i<label_cnt;i++) summary.push({in:0, out:0, idx:i});
+                let summary = {heterogeneous:0, homogeneous:0};
                 for(let node of selection_box.nodes){
+                    let cls = node.label[iter];
                     for(let from_id of node.from){
-                        summary[graph[from_id].label[iter]+1].in++;
-                    }
-                    for(let to_id of node.to){
-                        summary[graph[to_id].label[iter]+1].out++;
-                    }
-                }
-                let tmp = [];
-                for(let item of summary){
-                    if(item.in !== 0 || item.out!==0){
-                        tmp.push(item)
+                        let from_cls = graph[from_id].label[iter];
+                        if(cls === from_cls){
+                            summary.homogeneous++;
+                        }
+                        else {
+                            summary.heterogeneous++;
+                        }
                     }
                 }
-                summary = tmp;
+                // let tmp = [];
+                // for(let item of summary){
+                //     if(item.in !== 0 || item.out!==0){
+                //         tmp.push(item)
+                //     }
+                // }
+                // summary = tmp;
                 edges_summary.push(summary)
             }
         }
@@ -803,7 +806,7 @@ let GraphLayout = function (container) {
             //     .attr("cy", d => that.center_scale_y(d.site.data[1]));
 
             edge_summary_in_group
-                .attr("transform", function (d, i) {
+                .attr("transform", function (d,i) {
                     let class_cnt = d.length;
                     let bar_width = 8*that.zoom_scale;
                     let small_inner_bounder = 1.5*that.zoom_scale;
@@ -811,42 +814,57 @@ let GraphLayout = function (container) {
                     let outer_bounder = 3*that.zoom_scale;
                     let chart_height = 50*that.zoom_scale;
                     let chart_width = bar_width*(2*class_cnt)+large_inner_bounder*(class_cnt-1)+small_inner_bounder*class_cnt+outer_bounder*2;
-                    return "translate("+(that.selection_box[i].x+that.selection_box[i].width/2-chart_width/2)+","+(that.selection_box[i].y-chart_height)+")"
+                    let ellipse = that.selection_box[i];
+                    let chart_del = [];
+                    chart_del.push([ellipse.rx*Math.cos(ellipse.tao), ellipse.rx*Math.sin(ellipse.tao)]);
+                    chart_del.push([-ellipse.rx*Math.cos(ellipse.tao), -ellipse.rx*Math.sin(ellipse.tao)]);
+                    chart_del.push([ellipse.ry*Math.sin(ellipse.tao), -ellipse.ry*Math.cos(ellipse.tao)]);
+                    chart_del.push([-ellipse.ry*Math.sin(ellipse.tao), ellipse.ry*Math.cos(ellipse.tao)]);
+                    let del = [];
+                    for(let chart_begin of chart_del){
+                        if(chart_begin[0] >= 0 && chart_begin[1] < 0){
+                            del = chart_begin;
+                            break;
+                        }
+                    }
+                    return "translate("+(that.selection_box[i].x+del[0])+","+(that.selection_box[i].y-chart_height+del[1])+")"
                 })
                 .each(function (d) {
                     let group = d3.select(this);
-                    let class_cnt = d.length;
+                    let class_cnt = 1;
                     let bar_width = 8*that.zoom_scale;
                     let small_inner_bounder = 1.5*that.zoom_scale;
                     let large_inner_bounder = 3*that.zoom_scale;
                     let outer_bounder = 3*that.zoom_scale;
                     let chart_width = bar_width*(2*class_cnt)+large_inner_bounder*(class_cnt-1)+small_inner_bounder*class_cnt+outer_bounder*2;
                     let chart_height = 50*that.zoom_scale;
-                    let max_num = 0;
-                    group.select("line")
-                        .attr("x1", 0)
-                        .attr("y1", chart_height*0.8)
-                        .attr("x2", chart_width)
-                        .attr("y2", chart_height*0.8)
-                        .attr("stroke-width", that.zoom_scale)
-                        .attr("stroke", "black");
-                    for(let i=0;i<d.length;i++){
-                        max_num = Math.max(max_num, d[i].in, d[i].out);
-                    }
-                    for(let i=0; i<d.length; i++){
-                        group.select("#edge-bar-in-"+i)
-                            .attr("x", outer_bounder+(bar_width*2+small_inner_bounder+large_inner_bounder)*i)
-                            .attr("y", chart_height*0.8-chart_height*0.7*d[i].in/max_num)
+                    let max_num = Math.max(d.homogeneous, d.heterogeneous);
+                    group.select(".barchart-shadow")
+                        .attr("x", 1.5)
+                        .attr("y", 1.5)
+                        .attr("width", d => chart_width)
+                        .attr("height", d => chart_height)
+                        .style("fill", "#969696");
+                    group.select(".barchart-background")
+                        .attr("x", 0)
+                        .attr("y", 0)
+                        .attr("width", d => chart_width)
+                        .attr("height", d => chart_height)
+                        .style("fill", "white")
+                        .style("stroke", "#d8d7d7")
+                        .style("stroke-width", 1);
+                    group.select("#edge-bar-heterogeneous")
+                            .attr("x", outer_bounder+bar_width+small_inner_bounder)
+                            .attr("y", chart_height*0.8-chart_height*0.7*d.heterogeneous/max_num)
                             .attr("width", bar_width)
-                            .attr("height", chart_height*0.7*d[i].in/max_num)
-                            .attr("fill", d[i].idx===0?color_unlabel:color_label[d[i].idx-1]);
-                        group.select("#edge-bar-out-"+i)
-                            .attr("x", outer_bounder+(bar_width*2+small_inner_bounder+large_inner_bounder)*i+bar_width+small_inner_bounder)
-                            .attr("y", chart_height*0.8-chart_height*0.7*d[i].out/max_num)
-                            .attr("width", bar_width)
-                            .attr("height", chart_height*0.7*d[i].out/max_num)
-                            .attr("fill", d[i].idx===0?color_unlabel:color_label[d[i].idx-1]);
-                    }
+                            .attr("height", chart_height*0.7*d.heterogeneous/max_num)
+                            .attr("fill", color_unlabel);
+                    group.select("#edge-bar-homogeneous")
+                        .attr("x", outer_bounder)
+                        .attr("y", chart_height*0.8-chart_height*0.7*d.homogeneous/max_num)
+                        .attr("width", bar_width)
+                        .attr("height", chart_height*0.7*d.homogeneous/max_num)
+                        .attr("fill", color_unlabel);
             });
 
 
@@ -1237,46 +1255,65 @@ let GraphLayout = function (container) {
                     let outer_bounder = 3*that.zoom_scale;
                     let chart_height = 50*that.zoom_scale;
                     let chart_width = bar_width*(2*class_cnt)+large_inner_bounder*(class_cnt-1)+small_inner_bounder*class_cnt+outer_bounder*2;
-                    return "translate("+(that.selection_box[i].x+that.selection_box[i].width/2-chart_width/2)+","+(that.selection_box[i].y-chart_height)+")"
+                    let ellipse = that.selection_box[i];
+                    let chart_del = [];
+                    chart_del.push([ellipse.rx*Math.cos(ellipse.tao), ellipse.rx*Math.sin(ellipse.tao)]);
+                    chart_del.push([-ellipse.rx*Math.cos(ellipse.tao), -ellipse.rx*Math.sin(ellipse.tao)]);
+                    chart_del.push([ellipse.ry*Math.sin(ellipse.tao), -ellipse.ry*Math.cos(ellipse.tao)]);
+                    chart_del.push([-ellipse.ry*Math.sin(ellipse.tao), ellipse.ry*Math.cos(ellipse.tao)]);
+                    let del = [];
+                    for(let chart_begin of chart_del){
+                        if(chart_begin[0] >= 0 && chart_begin[1] < 0){
+                            del = chart_begin;
+                            break;
+                        }
+                    }
+                    return "translate("+(that.selection_box[i].x+del[0])+","+(that.selection_box[i].y-chart_height+del[1])+")"
                 })
                 .each(function (d) {
                     let group = d3.select(this);
-                    let class_cnt = d.length;
+                    let class_cnt = 1;
                     let bar_width = 8*that.zoom_scale;
                     let small_inner_bounder = 1.5*that.zoom_scale;
                     let large_inner_bounder = 3*that.zoom_scale;
                     let outer_bounder = 3*that.zoom_scale;
                     let chart_width = bar_width*(2*class_cnt)+large_inner_bounder*(class_cnt-1)+small_inner_bounder*class_cnt+outer_bounder*2;
                     let chart_height = 50*that.zoom_scale;
-                    let max_num = 0;
-                    for(let i=0;i<d.length;i++){
-                        max_num = Math.max(max_num, d[i].in, d[i].out);
-                    }
-                    group.append("line")
-                        .attr("x1", 0)
-                        .attr("y1", chart_height*0.8)
-                        .attr("x2", chart_width)
-                        .attr("y2", chart_height*0.8)
-                        .attr("stroke-width", that.zoom_scale)
-                        .attr("stroke", "black");
-                    for(let i=0; i<d.length;i++ ){
+                    let max_num = Math.max(d.heterogeneous, d.homogeneous);
+                    group.append("rect")
+                        .attr("class", "barchart-shadow")
+                        .attr("x", 1.5)
+                        .attr("y", 1.5)
+                        .attr("width", d => chart_width)
+                        .attr("height", d => chart_height)
+                        .style("fill", "#969696");
+                    group.append("rect")
+                        .attr("class", "barchart-background")
+                        .attr("x", 0)
+                        .attr("y", 0)
+                        .attr("width", d => chart_width)
+                        .attr("height", d => chart_height)
+                        .style("fill", "white")
+                        .style("stroke", "#d8d7d7")
+                        .style("stroke-width", 1);
+                    // for(let i=0; i<d.length;i++ ){
                         group.append("rect")
                             .attr("class", "edge-summary-rect")
-                            .attr("id", "edge-bar-in-"+i)
-                            .attr("x", outer_bounder+(bar_width*2+small_inner_bounder+large_inner_bounder)*i)
-                            .attr("y", chart_height*0.8-chart_height*0.7*d[i].in/max_num)
+                            .attr("id", "edge-bar-heterogeneous")
+                            .attr("x", outer_bounder+bar_width+small_inner_bounder)
+                            .attr("y", chart_height*0.8-chart_height*0.7*d.heterogeneous/max_num)
                             .attr("width", bar_width)
-                            .attr("height", chart_height*0.7*d[i].in/max_num)
-                            .attr("fill", d[i].idx===0?color_unlabel:color_label[d[i].idx-1]);
+                            .attr("height", chart_height*0.7*d.heterogeneous/max_num)
+                            .attr("fill", color_unlabel);
                         group.append("rect")
                             .attr("class", "edge-summary-rect")
-                            .attr("id", "edge-bar-out-"+i)
-                            .attr("x", outer_bounder+(bar_width*2+small_inner_bounder+large_inner_bounder)*i+bar_width+small_inner_bounder)
-                            .attr("y", chart_height*0.8-chart_height*0.7*d[i].out/max_num)
+                            .attr("id", "edge-bar-homogeneous")
+                            .attr("x", outer_bounder)
+                            .attr("y", chart_height*0.8-chart_height*0.7*d.homogeneous/max_num)
                             .attr("width", bar_width)
-                            .attr("height", chart_height*0.7*d[i].out/max_num)
-                            .attr("fill", d[i].idx===0?color_unlabel:color_label[d[i].idx-1]);
-                    }
+                            .attr("height", chart_height*0.7*d.homogeneous/max_num)
+                            .attr("fill", color_unlabel);
+                    // }
                 });
 
             if((nodes_in_group.enter().size() === 0) && (golds_in_group.enter().size() === 0)
@@ -1330,7 +1367,8 @@ let GraphLayout = function (container) {
             }
             let scale = Math.min(width/(max_x-min_x), height/(max_y-min_y));
             console.log(scale);
-            scale *= 0.85;
+            if(nodes.length === 1) scale *= 0.6;
+            else scale *= 0.85;
             //scale = 1;
             for(let node of nodes){
                 node.r *= scale;
