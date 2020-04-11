@@ -489,7 +489,7 @@ class GraphData(Data):
             "selected_labeled_idx": self.selected_labeled_idx,
             "state": self.current_state,
             "pred": pred,
-            "actions": self.actions
+            "actions": list(set(self.actions))
         }
         self.print_state()
 
@@ -616,7 +616,7 @@ class GraphData(Data):
         self.remove_edge(data["deleted_edges"])
 
     def add_data(self, added_idxs, train_pred, cls):
-        self.actions = ["add-unlabeled"]
+        self.actions.append("add-unlabeled")
         added_idxs = np.array(added_idxs).reshape(-1)
 
         added_false_idxes = [i for i in range(len(self.train_idx), len(self.train_idx)+len(added_idxs))]

@@ -177,7 +177,7 @@ let HistoryLayout = function (container) {
                 return  d.actions.map(function (one) {
                     return {
                         "action":one,
-                        "all":d.length
+                        "all":d.actions.length
                     }
                 });
             })
@@ -185,7 +185,8 @@ let HistoryLayout = function (container) {
             .append("use")
             .attr("xlink:href", d => "#action-"+d.action)
             .attr("x", function (d, i) {
-                return action_begin+20
+                let all = d.all;
+                return action_begin+20+action_type_size/2-(action_type_size+2)/2*all+(action_type_size+2)*i;
             })
             .attr("y", function (d) {
                 return cell_height - 30;

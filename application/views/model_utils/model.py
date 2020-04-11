@@ -475,8 +475,8 @@ class SSLModel(object):
             sleep(sleep_time)
             return False
 
-    def local_search_k(self, selected_idxs, k_list=None, selected_categories=None, simplifying=True, evaluate=True):
-        self.data.actions = ["local-update"]
+    def local_search_k(self, selected_idxs, k_list=None, selected_categories=None, simplifying=True, evaluate=True, record = True):
+        self.data.actions.append("local-update")
         m = self.data.get_new_id_map()
         selected_idxs = [m[id] for id in selected_idxs if id not in self.data.get_removed_idxs()]
         if k_list is None:
@@ -508,7 +508,7 @@ class SSLModel(object):
         # self.laplacian = laplacian_matrix
         self.data.affinity_matrix = self.data.correct_unconnected_nodes(affinity_matrix)
         # self.data.affinity_matrix = affinity_matrix
-        self._training(rebuild=False, evaluate=evaluate, simplifying=simplifying)
+        self._training(rebuild=False, evaluate=evaluate, simplifying=simplifying, record=record)
         return pred, best_k
 
     def get_train_neighbors_consistency(self, n_neighbor = 6):

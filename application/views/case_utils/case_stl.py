@@ -58,7 +58,7 @@ class CaseSTL(CaseBase):
             self.model.data.actions = []
             c = json.loads(open(os.path.join(self.model.selected_dir, "local_4_idxs.txt"), "r").read().strip("\n"))
             # self.model.local_search_k(c, range(7, 40), categories, simplifying=False, evaluate=True)
-            self.model.local_search_k(c, range(27, 29), categories, simplifying=False, evaluate=True)
+            self.model.local_search_k(c, range(27, 29), categories, simplifying=False, evaluate=True, record=False)
 
             edge_list = json.loads(open(os.path.join(self.model.selected_dir, "removed_1.txt"), "r").read().strip("\n"))
 
@@ -74,16 +74,16 @@ class CaseSTL(CaseBase):
             self.model.step += 1
             self.model.data.actions = []
             c = json.loads(open(os.path.join(self.model.selected_dir, "local_2_idxs.txt"), "r").read().strip("\n"))
-            self.model.local_search_k(c, [1, 2, 3, 4], categories, simplifying=False, evaluate=True)
+            self.model.local_search_k(c, [1, 2, 3, 4], categories, simplifying=False, evaluate=True, record=False)
 
         # if step >= 4:
             self.model.data.actions = []
             e = json.loads(open(os.path.join(self.model.selected_dir, "local_1_idxs.txt"), "r").read().strip("\n"))
-            self.model.local_search_k(e, [1, 2, 3, 4], categories, simplifying=False, evaluate=True)
+            self.model.local_search_k(e, [1, 2, 3, 4], categories, simplifying=False, evaluate=True, record=False)
 
             self.model.data.actions = []
             e = json.loads(open(os.path.join(self.model.selected_dir, "local_3_idxs.txt"), "r").read().strip("\n"))
-            self.model.local_search_k(e, [1, 2, 3, 4], categories, simplifying=False, evaluate=True)
+            self.model.local_search_k(e, [1, 2, 3, 4], categories, simplifying=False, evaluate=True, record=True)
 
             self.pred_result[4] = self.model.get_pred_labels()
             self.model.adaptive_evaluation(step=4)
@@ -96,6 +96,7 @@ class CaseSTL(CaseBase):
             self.model._training(rebuild=False, evaluate=True, simplifying=False)
 
         if step >= 5:
+            self.model.data.actions = []
             self.model.step += 1
             # all_labeled_idxs = self.model.data.labeled_idx
             # labeled_y = self.model.data.y[all_labeled_idxs]

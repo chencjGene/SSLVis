@@ -125,6 +125,7 @@ class ExchangePortClass(object):
 
     def local_update_k(self, data):
         # self.model.local_update(data["selected_idxs"], local_k=3)
+        self.model.data.actions = []
         if self.case_mode:
             self.model.step += 1
         if self.video_debug:
