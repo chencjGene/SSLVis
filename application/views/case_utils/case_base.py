@@ -1,6 +1,6 @@
 import numpy as np
 import os
-from ..utils.helper_utils import json_load_data
+from ..utils.helper_utils import json_load_data, pickle_load_data
 from ..utils.config_utils import config
 
 class CaseBase():
@@ -25,3 +25,9 @@ class CaseBase():
     def _load_base_config(self):
         json_data = json_load_data(os.path.join(config.case_util_root, "case_config.json"))
         self.base_config = json_data[self.dataname]
+
+    def load_model(self, name):
+        save = pickle_load_data(name)
+        model = save[0]
+        model.data = save[1]
+        return model
