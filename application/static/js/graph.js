@@ -392,7 +392,7 @@ let GraphLayout = function (container) {
             // }
             // path = delRepeatPath(all_path);
             // path = path.filter(d => d[2] > edge_filter_threshold[0] && d[2] < edge_filter_threshold[1]);
-            // path = path.filter(d => d[0].label.slice(-1)[0] != d[1].label.slice(-1)[0]);
+            // path = path.filter(d => d[0].label.slice(-1)[0] !== d[1].label.slice(-1)[0]);
         }
 
         // remove path of length 0
