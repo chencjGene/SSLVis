@@ -12,11 +12,7 @@ class CaseSTL(CaseBase):
         super(CaseSTL, self).__init__(dataname)
         self.step = self.base_config
 
-    def load_model(self, name):
-        save = pickle_load_data(name)
-        model = save[0]
-        model.data = save[1]
-        return model
+
 
 
     def run(self, k=6, evaluate=True, simplifying=False, step=None, use_buffer = False):
