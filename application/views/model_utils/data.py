@@ -592,8 +592,11 @@ class GraphData(Data):
                         break
         return new_neighbors
 
-    def add_edge(self, added_edges):
-        None
+    def add_edge(self, removed_edges):
+        for edges in removed_edges:
+            s, e = edges
+            self.affinity_matrix[s, e] = 1
+            self.affinity_matrix[e, s] = 1
 
     def remove_edge(self, removed_edges):
         # DEBUG: for video case:

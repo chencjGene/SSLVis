@@ -36,6 +36,12 @@ let GraphVoronoi = function(parent){
     that.comparison_flag = false;
 
     // function
+    // scale_function = function(x){
+    //     if (x < 0.15) x /= 4;
+    //     if (x > 0.2 && x < 0.5) { x = x * 2;}
+    //     return Math.pow(x, 0.4);
+    // }
+
     scale_function = function(x){
         if (x < 0.15) x /= 4;
         if (x > 0.2 && x < 0.5) { x = x * 2;}

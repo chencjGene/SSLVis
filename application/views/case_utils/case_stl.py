@@ -103,19 +103,26 @@ class CaseSTL(CaseBase):
             e = json.loads(open(os.path.join(self.model.selected_dir, "local_3_idxs.txt"), "r").read().strip("\n"))
             self.model.local_search_k(e, [1, 2, 3, 4], categories, simplifying=False, evaluate=True, record=True)
 
+
+            edge_list = json.loads(open(os.path.join(self.model.selected_dir, "removed_2.txt"), "r").read().strip("\n"))
+
+            self.model.data.remove_edge(edge_list)
+            self.model.data.add_edge([[3679, 7302]])
+            self.model._training(rebuild=False, evaluate=True, simplifying=False)
+
             self.pred_result[4] = self.model.get_pred_labels()
             self.model.adaptive_evaluation(step=4)
             save = (self.model, self.model.data)
             pickle_save_data(os.path.join(self.model.selected_dir, "case-step" + str(self.model.step) + ".pkl"), save)
 
-        if step >= 6:
-            self.model.step += 1
-            edge_list = [[1609, 2555]]
-            self.model.data.actions = []
-            self.model.data.remove_edge(edge_list)
-            self.model._training(rebuild=False, evaluate=True, simplifying=False)
-            save = (self.model, self.model.data)
-            pickle_save_data(os.path.join(self.model.selected_dir, "case-step" + str(self.model.step) + ".pkl"), save)
+        # if step >= 6:
+        #     self.model.step += 1
+        #     edge_list = [[1609, 2555]]
+        #     self.model.data.actions = []
+        #     self.model.data.remove_edge(edge_list)
+        #     self.model._training(rebuild=False, evaluate=True, simplifying=False)
+        #     save = (self.model, self.model.data)
+        #     pickle_save_data(os.path.join(self.model.selected_dir, "case-step" + str(self.model.step) + ".pkl"), save)
 
         if step >= 5:
             self.model.data.actions = []

@@ -12,7 +12,7 @@ class CaseOCT(CaseBase):
         super(CaseOCT, self).__init__(dataname)
 
 
-    def run(self, k=None, evaluate=False, simplifying=False, step=None):
+    def run(self, k=None, evaluate=False, simplifying=False, step=None, use_buffer = False):
         if step is None:
             step = self.base_config["step"]
         
@@ -21,6 +21,7 @@ class CaseOCT(CaseBase):
         self.step = step
 
         self._init_model(k=k, evaluate=evaluate, simplifying=simplifying)
+        self.pred_result[0] = self.model.get_pred_labels()
 
         categories = [1 for i in range(12)]
         categories[11] = False
@@ -29,10 +30,12 @@ class CaseOCT(CaseBase):
             c = json.loads(open(os.path.join(self.model.selected_dir, "local_1_idxs.txt"), "r").read().strip("\n"))
             self.model.local_search_k(c, [1, 2, 3, 4], categories, simplifying=False, evaluate=evaluate)
         
-        if step >= 2:
+        # if step >= 2:
             e = json.loads(open(os.path.join(self.model.selected_dir, "local_2_idxs.txt"), "r").read().strip("\n"))
             self.model.local_search_k(e, [1, 2, 3, 4], categories, simplifying=True, evaluate=evaluate)
-        
+
+            self.pred_result[1] = self.model.get_pred_labels()
+
         if step >= 3:
             train_pred_step_1 = self.model.get_pred_labels()
             train_gt = self.model.data.get_train_ground_truth()
@@ -71,3 +74,6 @@ class CaseOCT(CaseBase):
 
         # if not evaluate:
         #     self.model.adaptive_evaluation_unasync()
+
+
+        return self.model
