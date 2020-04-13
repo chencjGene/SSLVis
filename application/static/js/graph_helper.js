@@ -63,10 +63,10 @@ GraphLayout.prototype.find_class = function (diagram) {
 };
 
 
-GraphLayout.prototype.cal_voronoi = function(nodes) {
+GraphLayout.prototype.cal_voronoi = function(node_dict) {
     let that = this;
     //let nodes_dic = nodes;
-    nodes = Object.values(nodes);
+    nodes = Object.values(node_dict);
     if(DataLoader.dataset.startsWith("stl")){
         let nodes_center = {};
         for(let node of nodes){
@@ -464,7 +464,7 @@ GraphLayout.prototype.cal_voronoi = function(nodes) {
         cell.nodes = [];
     }
 
-    that.edge_statistic(Diagram);
+    that.edge_statistic(Diagram, node_dict);
 
     // change direction of long edges
 
@@ -526,9 +526,9 @@ GraphLayout.prototype.get_cell_path = function(edge_id, scale, voronoi_data){
     return path;
 };
 
-GraphLayout.prototype.in_edge_filter = function(weight){
+GraphLayout.prototype.in_edge_filter = function(weight, range){
     let that = this;
-    let edge_filter_threshold = that.edge_filter_threshold;
+    let edge_filter_threshold = range || that.edge_filter_threshold;
     if (weight > edge_filter_threshold[0] && weight < edge_filter_threshold[1]){
         return true;
     }
@@ -538,9 +538,9 @@ GraphLayout.prototype.in_edge_filter = function(weight){
 }
 
 GraphLayout.prototype.edge_statistic = function(diagram){
-
     let that = this;
     let graph = that.data_manager.state.complete_graph;
+    let node_dict = that.data_manager.state.nodes;
     // let groups = diagram.cells.map(d => d.nodes);
     let groups = [];
     for (let i = 0; i < diagram.cells.length; i++){
@@ -557,10 +557,13 @@ GraphLayout.prototype.edge_statistic = function(diagram){
             summary.push({in:0, out:0, idx:i, path: []});
         }
         for (let i = 0; i < 2; i++){
-            simple_summary.push({in:0, out:0, idx: i === 0 ? group_id : -1});
+            simple_summary.push({in:0, out:0, idx: i === 0 ? group_id : -1, path: []});
         }
         for (let node of group){
             let node_cls = node.label.slice(-1)[0];
+            if (node.id === 2429){
+                let a = 1;
+            }
             for (let id = 0; id < node.from.length; id++){
                 let from_id = node.from[id];
                 let from_weight = node.from_weight[id];
@@ -568,7 +571,9 @@ GraphLayout.prototype.edge_statistic = function(diagram){
                 if (1){
                     let cls = graph[from_id].label.slice(-1)[0];
                     summary[cls].in++;
-                    summary[cls].path.push([from_id, node.id, from_weight]);
+                    if (node_dict[node.id]){
+                        summary[cls].path.push([from_id, node.id, from_weight]);
+                    }
                     if (cls === node_cls){
                         simple_summary[0].in++;
                     }
@@ -593,6 +598,23 @@ GraphLayout.prototype.edge_statistic = function(diagram){
             //     }
             // }
         }
+
+        for (let i = 0; i < label_cnt; i++){
+            path = summary[i].path;
+            if (group_id === 5 && i === 3){
+                path = path.filter(d => [6919, 10774, 6305, 5606, 9140, 11171].indexOf(d[1]) === -1);
+                path = path.filter(function(d){
+                    let a = graph[d[0]];
+                    let b = graph[d[1]];
+                    let dis = (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y);
+                    return dis > 5;
+                })
+            }
+            path.sort((a,b) => b[2] - a[2]);
+            path = path.slice(0,5);
+            summary[i].path = path;
+        }
+
         simple_summary[0].in /= Math.max(1, group.length);
         simple_summary[1].in /= Math.max(1, group.length);
         for (let i = 0; i < label_cnt; i++){
@@ -602,6 +624,9 @@ GraphLayout.prototype.edge_statistic = function(diagram){
         diagram.cells[group_id].summary = summary;
         diagram.cells[group_id].simple_summary = simple_summary;
     }
+
+
+
     return edges_summary;
 };
 
@@ -623,3 +648,7 @@ GraphLayout.prototype.get_skeleton_path = function(edge, scale, voronoi_data){
         that.center_scale_x(edge[1][0]), that.center_scale_y(edge[1][1])
         );
 }
+
+GraphLayout.prototype.hetero_statistic = function(){
+
+};

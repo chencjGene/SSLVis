@@ -42,8 +42,13 @@ let GraphVoronoi = function(parent){
     //     return Math.pow(x, 0.4);
     // }
 
-    scale_function = function(x){
-        if (x < 0.05) x /= 4;
+    scale_function = function(x, simple_bar){
+        if (simple_bar){
+            if (x < 0.15) x /= 4;
+        }
+        else{
+            if (x < 0.05) x /= 4;
+        }
         if (x > 0.2 && x < 0.5) { x = x * 2;}
         return Math.pow(x, 0.4);
     };
@@ -95,6 +100,9 @@ let GraphVoronoi = function(parent){
         let step = 0.5;
         for (let i = 0; i < that.voronoi_data.cells.length; i++){
             let cell = that.voronoi_data.cells[i];
+            if (cell.x && cell.y){
+                continue;
+            }
             let cell_x = cell.site.data[0];
             let cell_y = cell.site.data[1];
             console.log("cell position", cell_x, cell_y, 
@@ -253,6 +261,7 @@ let GraphVoronoi = function(parent){
             cell.chart_width = cell.bar_width*(2*class_cnt)+large_inner_bounder*(class_cnt-1)+small_inner_bounder*class_cnt+outer_bounder*2;
             cell.chart_height = 50 * 0.8 * view.zoom_scale;
             cell.summary_data = summary;
+            cell.simple_bar = that.simple_bar[i];
             that.cell_data.push(cell);
         }
         that.place_barchart();
@@ -383,24 +392,6 @@ let GraphVoronoi = function(parent){
             .attr("transform", d => 
                 "translate("+(view.center_scale_x(d.x))
                 +","+(view.center_scale_y(d.y))+")")
-            .on("mouseover", function(d, i){
-                that.change_bar_mode(i, false);
-                let _this = d3.select(this);
-                // if(that.drag_activated && d.id != that.drag_node.id){
-                //     _this.selectAll(".barchart-background")
-                //         .style("fill", "black");
-                //     that.second_drag_node = d;
-                // }
-            })
-            .on("mouseout", function(d, i){
-                that.change_bar_mode(i, true);
-                // let _this = d3.select(this);
-                // if(that.drag_activated && d.id != that.drag_node.id){
-                //     _this.selectAll(".barchart-background")
-                //         .style("fill", "white");
-                //     that.second_drag_node = null;
-                // }
-            })
             // .call(d3.drag().on("start", function(d){
             //     console.log("start dragstarted");
             //     that.drag_activated = true;
@@ -443,7 +434,10 @@ let GraphVoronoi = function(parent){
             .attr("height", d => d.chart_height)
             .style("fill", "white")
             .style("stroke", "#d8d7d7")
-            .style("stroke-width", 1);
+            .style("stroke-width", 1)
+            .on("click", function(d, i){
+                that.change_bar_mode(i, !that.simple_bar[i]);
+            });
         that.sub_bar_group = that.voronoi_group.selectAll("g.voronoi-cell")
             .data(that.cell_data, d => d.id)
             .selectAll(".bar-group")
@@ -457,19 +451,26 @@ let GraphVoronoi = function(parent){
                 // that.max_num = 5;
                 for (let i = 0; i < d.summary_data.length; i++){
                     let value = d.summary_data[i].in / that.max_num;
+                    let path = d.summary_data[i].path;
                     if(isNaN(value)){
                         console.log("get");
                     }
                     let idx = d.summary_data[i].idx;
+                    let path_2 = [];
+                    if(idx > -1){
+                        path_2 = that.cell_data[idx].summary[d.label].path;
+                    }
                     d.summary_data[i].value = value;
                     data.push({
                         value: value,
+                        label: d.label,
                         idx: idx,
                         x: outer_bounder+(d.bar_width*2+small_inner_bounder+large_inner_bounder)*i,
-                        y: d.chart_height*0.8-d.chart_height*0.7*scale_function(value),
+                        y: d.chart_height*0.8-d.chart_height*0.7*scale_function(value, d.simple_bar),
                         w: d.bar_width,
-                        h: d.chart_height*0.7*scale_function(value),
-                        color: idx === -1 ? "gray" : color_label[idx]
+                        h: d.chart_height*0.7*scale_function(value, d.simple_bar),
+                        color: idx === -1 ? "gray" : color_label[idx],
+                        path: path.concat(path_2)
                     });
                 }
                 console.log("data, ", data);
@@ -485,7 +486,9 @@ let GraphVoronoi = function(parent){
             .attr("height", (d, i) => d.h)
             .attr("fill", (d, i) => d.color)
             .on("click", function(d){
-                console.log("bar click", d);
+                console.log("bar click", d.path);
+                view.data_manager.highlight_path(d.path);
+                d3.event.stopPropagation();
             })
         };
 

@@ -114,6 +114,7 @@ DataLoaderClass = function () {
             "in_nodes": [],
             "out_nodes": []
         },
+        highlight_path: [],
         is_show_path: false,
         highlights: [],
         area: null,
@@ -775,6 +776,7 @@ DataLoaderClass = function () {
         await that.graph_view.component_update({
             "nodes":that.state.nodes,
             "path":that.state.path,
+            "highlight_path": that.state.highlight_path,
             "is_show_path":that.state.is_show_path,
             "highlights":that.state.highlights,
             "area":that.state.area,
@@ -1033,6 +1035,14 @@ DataLoaderClass = function () {
         // that.state.highlights = that.state.focus_idxs;
         that.update_graph_view();
     };
+
+    that.highlight_path = function(path){
+        path = path.map(d => [that.state.complete_graph[d[0]],
+                                that.state.complete_graph[d[1]],
+                                d[2]]);
+        that.state.highlight_path = path;
+        that.update_graph_view();
+    }
 
     that.get_show_ids = function(){
         let show_ids = [];

@@ -268,7 +268,11 @@ let GraphLayout = function (container) {
         that.edge_filter_threshold = edge_filter_threshold;
         edge_type_range = state.edge_type_range;
         all_path = state.path;
-        path = [];
+        path = state.highlight_path;
+        if(path.length){
+            highlights = highlights.concat([].concat.apply([], path.map(d => [d[0].id, d[1].id])));
+            nodes = nodes.concat(highlights.map(d => that.data_manager.state.complete_graph[d]));
+        }
         add_labeled_nodes = state.edit_state.labeled_idxs;
         add_labeled_label = state.edit_state.labels;
         delete_edges = state.edit_state.deleted_edges.map(d => d[0]+","+d[1]);
