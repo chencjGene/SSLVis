@@ -155,7 +155,7 @@ class ExchangePortClass(object):
                     _, best_k = self.model.local_search_k(e, [1, 2, 3, 4], categories, simplifying=True, evaluate=True)
                     self.local_update_step += 1
         else:
-            _, best_k = self.model.local_search_k(data["selected_idxs"], list(range(data["range"][0], data["range"][1]+1)), data["selected_categories"])
+            _, best_k = self.model.local_search_k(data["selected_idxs"], list(range(data["range"][0], data["range"][1]+1)), data["selected_categories"], simplifying=True)
         best_k = int(best_k)
         graph = self.anchor.get_nodes(data["wh"], self.model.step)
         res = {

@@ -253,6 +253,7 @@ class SSLModel(object):
         if saving:
             pickle_save_data(influence_matrix_path, self.influence_matrix)
         self.influence_matrix.data[np.isnan(self.influence_matrix.data)] = 0
+        self.influence_matrix.data[self.influence_matrix.data > 1] = 0
         return
 
     def test(self):
@@ -882,7 +883,7 @@ class SSLModel(object):
                 self.data.add_new_categories(class_name)
         self.data.editing_data(data)
         self.data.update_graph(data["deleted_idxs"])
-        self._training(rebuild=False, evaluate=True, saving=False)
+        self._training(rebuild=False, evaluate=True, saving=False, simplifying=True)
 
     def get_data(self):
         train_X = self.data.get_train_X()
