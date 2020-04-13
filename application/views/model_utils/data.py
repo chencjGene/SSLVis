@@ -627,6 +627,7 @@ class GraphData(Data):
         self.rest_idxs = self.rest_idxs.tolist() + added_false_idxes
         self.train_idx = np.hstack((self.train_idx, added_idxs))
         self.rest_idxs = np.array(self.rest_idxs)
+        m = self.get_new_id_map()
 
         pre_num = self.affinity_matrix.shape[0]
         add_num = len(added_idxs)
@@ -641,6 +642,7 @@ class GraphData(Data):
             pickle_save_data(add_data_neighbors_path, neighbors)
             pickle_save_data(add_data_test_neighbors_path, test_neighbors)
         self.neighbors = neighbors
+        neighbors = self.get_neighbors(k_neighbors=10)
         self.test_neighbors = test_neighbors
         new_affinity_matrix  = np.zeros((pre_num + add_num, pre_num + add_num))
         new_affinity_matrix[:pre_num, :pre_num] = self.affinity_matrix.toarray()

@@ -68,6 +68,13 @@ class CaseSTL(CaseBase):
         if step >= 3:
             self.model.step += 1
             self.model.data.actions = []
+            # remove other class
+            lizard = json.loads(open(os.path.join(self.model.selected_dir, "lizard.txt"), "r").read().strip("\n"))
+            lemur = json.loads(open(os.path.join(self.model.selected_dir, "lemur.txt"), "r").read().strip("\n"))
+            removed = lizard + lemur
+            self.model.data.remove_instance(removed)
+            self.model.data.update_graph(removed)
+
             c = json.loads(open(os.path.join(self.model.selected_dir, "local_4_idxs.txt"), "r").read().strip("\n"))
             # self.model.local_search_k(c, range(7, 40), categories, simplifying=False, evaluate=True)
             self.model.local_search_k(c, range(27, 29), categories, simplifying=False, evaluate=True, record=False)
