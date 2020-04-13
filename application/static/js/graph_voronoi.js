@@ -29,7 +29,7 @@ let GraphVoronoi = function(parent){
 
     // flag
     // that.show_voronoi = false;
-    that.simple_bar = true;
+    that.simple_bar = false;
     that.drag_activated = false;
     that.drag_node = null;
     that.second_drag_node = null;
@@ -43,10 +43,10 @@ let GraphVoronoi = function(parent){
     // }
 
     scale_function = function(x){
-        if (x < 0.15) x /= 4;
+        if (x < 0.05) x /= 4;
         if (x > 0.2 && x < 0.5) { x = x * 2;}
         return Math.pow(x, 0.4);
-    }
+    };
 
     that._init = function(){
         that.set_view(parent);
@@ -60,6 +60,7 @@ let GraphVoronoi = function(parent){
     that.show_voronoi = function(nodes, outliers){
         let voronoi_nodes = nodes.filter(d => outliers[d.id] === undefined);
         that.voronoi_data = view.cal_voronoi(voronoi_nodes);
+        that.simple_bar = new Array(that.voronoi_data.cells.length).fill(1).map(d => true);
 
         for(let node of nodes){
             let find = false;
@@ -147,15 +148,15 @@ let GraphVoronoi = function(parent){
         that.update_view();
     };
 
-    that.change_bar_mode = function(){
-        that.simple_bar = !that.simple_bar;
+    that.change_bar_mode = function(i, flag){
+        that.simple_bar[i] = flag;
         that.update_view();
     };
     
     that.change_max_num = function(num){
         that.max_num = num;
         that.update_view();
-    }
+    };
 
     that.show_comparison = function(){
         that.comparison_flag = true; 
@@ -243,7 +244,7 @@ let GraphVoronoi = function(parent){
         that.cell_data = [];
         for (let i = 0; i < that.voronoi_data.cells.length; i++){
             let cell = that.voronoi_data.cells[i];
-            let summary = that.simple_bar ? cell.simple_summary : cell.summary;
+            let summary = that.simple_bar[i] ? cell.simple_summary : cell.summary;
             let class_cnt = summary.length;
             cell.bar_width = 4 * view.zoom_scale;
             small_inner_bounder = 1.5 * view.zoom_scale * 0;
@@ -382,47 +383,47 @@ let GraphVoronoi = function(parent){
             .attr("transform", d => 
                 "translate("+(view.center_scale_x(d.x))
                 +","+(view.center_scale_y(d.y))+")")
-            .on("mouseover", function(d){
-                // that.change_bar_mode();
+            .on("mouseover", function(d, i){
+                that.change_bar_mode(i, false);
                 let _this = d3.select(this);
-                if(that.drag_activated && d.id != that.drag_node.id){
-                    _this.selectAll(".barchart-background")
-                        .style("fill", "black");
-                    that.second_drag_node = d;
-                }
+                // if(that.drag_activated && d.id != that.drag_node.id){
+                //     _this.selectAll(".barchart-background")
+                //         .style("fill", "black");
+                //     that.second_drag_node = d;
+                // }
             })
-            .on("mouseout", function(d){
-                // that.change_bar_mode();
-                let _this = d3.select(this);
-                if(that.drag_activated && d.id != that.drag_node.id){
-                    _this.selectAll(".barchart-background")
-                        .style("fill", "white");
-                    that.second_drag_node = null;
-                }
+            .on("mouseout", function(d, i){
+                that.change_bar_mode(i, true);
+                // let _this = d3.select(this);
+                // if(that.drag_activated && d.id != that.drag_node.id){
+                //     _this.selectAll(".barchart-background")
+                //         .style("fill", "white");
+                //     that.second_drag_node = null;
+                // }
             })
-            .call(d3.drag().on("start", function(d){
-                console.log("start dragstarted");
-                that.drag_activated = true;
-                that.drag_node = d;
-                d3.event.sourceEvent.stopPropagation();
-            })
-            .on("drag", function(d){
-                if (!that.drag_activated) return;
-                d.x = d3.mouse(view.main_group.node())[0];
-                d.y = d3.mouse(view.main_group.node())[1];
-                d3.select(this).attr("transform", 
-                    d => "translate("+(d.x)
-                    +","+(d.y)+")");
-            })
-            .on("end", function(d){
-                d.x = d3.mouse(view.main_group.node())[0];
-                d.y = d3.mouse(view.main_group.node())[1];
-                console.log("drag end", d.x, d.y);
-                that.drag_activated = false;
-                if (that.second_drag_node){
-                    that.show_comparison();
-                }
-            }));
+            // .call(d3.drag().on("start", function(d){
+            //     console.log("start dragstarted");
+            //     that.drag_activated = true;
+            //     that.drag_node = d;
+            //     d3.event.sourceEvent.stopPropagation();
+            // })
+            // .on("drag", function(d){
+            //     if (!that.drag_activated) return;
+            //     d.x = d3.mouse(view.main_group.node())[0];
+            //     d.y = d3.mouse(view.main_group.node())[1];
+            //     d3.select(this).attr("transform",
+            //         d => "translate("+(d.x)
+            //         +","+(d.y)+")");
+            // })
+            // .on("end", function(d){
+            //     d.x = d3.mouse(view.main_group.node())[0];
+            //     d.y = d3.mouse(view.main_group.node())[1];
+            //     console.log("drag end", d.x, d.y);
+            //     that.drag_activated = false;
+            //     if (that.second_drag_node){
+            //         that.show_comparison();
+            //     }
+            // }));
 
         // let sub_v_g = that.voronoi_group.selectAll("g.voronoi-cell")
         // .data(that.cell_data, d => d.id)
@@ -482,7 +483,10 @@ let GraphVoronoi = function(parent){
             .attr("y", (d, i) => d.y)
             .attr("width", (d, i) => d.w)
             .attr("height", (d, i) => d.h)
-            .attr("fill", (d, i) => d.color);
+            .attr("fill", (d, i) => d.color)
+            .on("click", function(d){
+                console.log("bar click", d);
+            })
         };
 
     that.init = function () {

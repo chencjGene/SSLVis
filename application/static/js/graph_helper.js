@@ -554,7 +554,7 @@ GraphLayout.prototype.edge_statistic = function(diagram){
         let summary = [];
         let simple_summary = [];
         for (let i = 0; i < label_cnt; i++){
-            summary.push({in:0, out:0, idx:i});
+            summary.push({in:0, out:0, idx:i, path: []});
         }
         for (let i = 0; i < 2; i++){
             simple_summary.push({in:0, out:0, idx: i === 0 ? group_id : -1});
@@ -568,6 +568,7 @@ GraphLayout.prototype.edge_statistic = function(diagram){
                 if (1){
                     let cls = graph[from_id].label.slice(-1)[0];
                     summary[cls].in++;
+                    summary[cls].path.push([from_id, node.id, from_weight]);
                     if (cls === node_cls){
                         simple_summary[0].in++;
                     }
