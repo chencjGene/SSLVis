@@ -36,21 +36,43 @@ class CaseOCT(CaseBase):
 
         categories = [1 for i in range(12)]
         categories[11] = False
+        self.model.adaptive_evaluation(step=0)
 
         if step >= 1:
             self.model.step += 1
+            no_update = [5682,5684,1228,1482,8601,1714, 6377, 3475]
+            neighbors = self.model.data.get_neighbors(5, True)[no_update].flatten().tolist()
+            no_update = list(set(neighbors))
+            print("no update neighbors:{}".format(no_update))
             self.model.data.actions = []
             c = json.loads(open(os.path.join(self.model.selected_dir, "local_1_idxs.txt"), "r").read().strip("\n"))
+            c = list(set(c)-set(no_update))
             self.model.local_search_k(c, [1, 2, 3, 4], categories, simplifying=False, evaluate=evaluate, record=False)
         
         # if step >= 2:
             self.model.data.actions = []
             e = json.loads(open(os.path.join(self.model.selected_dir, "local_2_idxs.txt"), "r").read().strip("\n"))
+            e = list(set(e) - set(no_update))
             self.model.local_search_k(e, [1, 2, 3, 4], categories, simplifying=True, evaluate=evaluate)
 
             self.pred_result[1] = self.model.get_pred_labels()
             save = (self.model, self.model.data)
+            self.model.adaptive_evaluation(step=1)
             pickle_save_data(os.path.join(self.model.selected_dir, "case-step" + str(self.model.step) + ".pkl"), save)
+
+        if step >= 2:
+            self.model.step += 1
+            self.model.data.actions = []
+            remove_edges = json.loads(open(os.path.join(self.model.selected_dir, "removed_edges.txt"), "r").read().strip("\n"))
+            # remove_edges_vis = []
+            self.model.data.remove_edge(remove_edges)
+
+            self.model._training(rebuild=False, evaluate=True, simplifying=True)
+            self.pred_result[3] = self.model.get_pred_labels()
+            self.model.adaptive_evaluation(step=2)
+            save = (self.model, self.model.data)
+            pickle_save_data(os.path.join(self.model.selected_dir, "case-step" + str(self.model.step) + ".pkl"), save)
+
 
         if step >= 3:
             self.model.step += 1

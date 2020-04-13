@@ -2180,6 +2180,7 @@ let GraphLayout = function (container) {
                     if((path_nodes[d.id]!==undefined)){
                         return
                     }
+                    console.log(d);
                     let node = d3.select(this);
                     node.attr("r", (glyphs.indexOf(d.id)>-1?9:5) * that.zoom_scale);
 
