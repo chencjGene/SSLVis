@@ -72,9 +72,9 @@ class CaseSTL(CaseBase):
             # self.model.local_search_k(c, range(7, 40), categories, simplifying=False, evaluate=True)
             self.model.local_search_k(c, range(27, 29), categories, simplifying=False, evaluate=True, record=False)
 
-            # edge_list = json.loads(open(os.path.join(self.model.selected_dir, "removed_1.txt"), "r").read().strip("\n"))
-            # self.model.data.remove_edge(edge_list)
-            # self.model._training(rebuild=False, evaluate=True, simplifying=False)
+            edge_list = json.loads(open(os.path.join(self.model.selected_dir, "removed_1.txt"), "r").read().strip("\n"))
+            self.model.data.remove_edge(edge_list)
+            self.model._training(rebuild=False, evaluate=True, simplifying=False)
 
             self.pred_result[3] = self.model.get_pred_labels()
             self.model.adaptive_evaluation(step=3)
@@ -141,7 +141,11 @@ class CaseSTL(CaseBase):
             self.model.data.actions = []
             self.model.step += 1
 
-            self.model.data.label_instance([7429, 12422, 7393], [6, 5, 0])
+            self.model.data.label_instance([6673, 7954, 10403, 6396], [8, 0, 5, 5])
+            self.model.data.remove_edge([[10523, 4794]])
+            self.model._training(rebuild=False, evaluate=evaluate, simplifying=False)
+            save = (self.model, self.model.data)
+            pickle_save_data(os.path.join(self.model.selected_dir, "case-step" + str(self.model.step) + ".pkl"), save)
 
             # self.model.data.actions = []
             # e = json.loads(open(os.path.join(self.model.selected_dir, "local_5_idxs.txt"), "r").read().strip("\n"))
