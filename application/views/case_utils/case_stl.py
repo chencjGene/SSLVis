@@ -132,6 +132,7 @@ class CaseSTL(CaseBase):
             self.model._training(rebuild=False, evaluate=evaluate, simplifying=False)
             self.model._influence_matrix(rebuild=True, prefix="add_")
             self.model.adaptive_evaluation(step=5)
+            self.pred_result[5] = self.model.get_pred_labels()
             save = (self.model, self.model.data)
             pickle_save_data(os.path.join(self.model.selected_dir, "case-step" + str(self.model.step) + ".pkl"), save)
             # self.model.adaptive_evaluation_unasync()
