@@ -476,6 +476,7 @@ DataLoaderClass = function () {
                 // that.state.highlights = that.state.focus_idxs;
                 // that.highlight_nodes(that.state.focus_idxs);
                 // await that.update_graph_view();
+                console.log("highlight nodes:", that.state.focus_idxs);
                 await that.graph_view.highlight(that.state.focus_idxs);
                 that.update_dist_view(true);
             }), "json", "POST");

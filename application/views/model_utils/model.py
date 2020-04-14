@@ -869,12 +869,15 @@ class SSLModel(object):
                     idxs.append(i) # mapped idxs
         idxs = np.array(idxs) # mapped idxs
         idxs = np.array([i for i in idxs if i in self.selected_idxs])
+        m_reverse = self.data.get_new_map_reverse()
+
         print("selected instances num", len(idxs))
         iter = len(self.labels)
         selected_flows = np.zeros((iter-1, len(self.class_list), len(self.class_list)))
         for i in range(iter-1):
             selected_flows[i] = flow_statistic(self.labels[i][idxs], \
                 self.labels[i+1][idxs], self.class_list)
+        idxs = np.array([m_reverse[idx] for idx in idxs])
         return selected_flows, idxs
 
     def editing_data(self, data):
