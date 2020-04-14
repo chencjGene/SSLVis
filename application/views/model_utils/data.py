@@ -696,13 +696,19 @@ class GraphData(Data):
         logger.info("begin update graph according to editing info")
         rest_idxs = self.get_rest_idxs()
         remove_idxs = self.get_removed_idxs()
+        assert len(set(rest_idxs.copy().tolist()).intersection(set(deleted_idxs))) == 0
+        last_rest_idxs = np.sort(rest_idxs.copy().tolist()+deleted_idxs)
+        last_map = {}
+        for i in range(len(last_rest_idxs)):
+            last_map[last_rest_idxs[i]] = i
+        rest_idxs = [last_map[idx] for idx in rest_idxs]
+
+
         logger.info("total len: {}".format(len(rest_idxs) + len(remove_idxs)))
         self.affinity_matrix = self.affinity_matrix[rest_idxs, :]
         self.affinity_matrix = self.affinity_matrix[:, rest_idxs]
         # update neighbors info
-        self.neighbors[remove_idxs, :] = -1
-        for idx in tqdm(deleted_idxs):
-            self.neighbors[self.neighbors == idx] = -1
-            self.test_neighbors[self.test_neighbors == idx] = -1
+        self._preprocess_neighbors()
+
 
         logger.info("affinity_matrix shape after updating: {}".format(str(self.affinity_matrix.shape)))
