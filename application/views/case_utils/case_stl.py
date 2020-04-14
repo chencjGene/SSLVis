@@ -32,8 +32,7 @@ class CaseSTL(CaseBase):
             return self.model
         self.pred_result[0] = self.model.get_pred_labels()
 
-
-
+        self.model.adaptive_evaluation(step=0)
         if step >= 1:
             self.model.step += 1
             print("step 1")
@@ -68,12 +67,20 @@ class CaseSTL(CaseBase):
         if step >= 3:
             self.model.step += 1
             self.model.data.actions = []
+            # remove other class
+            lizard = json.loads(open(os.path.join(self.model.selected_dir, "lizard.txt"), "r").read().strip("\n"))
+            lemur = json.loads(open(os.path.join(self.model.selected_dir, "lemur.txt"), "r").read().strip("\n"))
+            removed = lizard + lemur
+            self.model.data.remove_instance(removed)
+            self.model.data.update_graph(removed)
+
             c = json.loads(open(os.path.join(self.model.selected_dir, "local_4_idxs.txt"), "r").read().strip("\n"))
             # self.model.local_search_k(c, range(7, 40), categories, simplifying=False, evaluate=True)
             self.model.local_search_k(c, range(27, 29), categories, simplifying=False, evaluate=True, record=False)
 
             edge_list = json.loads(open(os.path.join(self.model.selected_dir, "removed_1.txt"), "r").read().strip("\n"))
-            self.model.data.remove_edge(edge_list)
+            remove_edges_ext = [[59, 5035], [713, 5035], [3189, 6834], [3928, 3307], [4446, 48], [5963, 6837], [6347, 5035], [6834, 10917]]
+            self.model.data.remove_edge(edge_list+remove_edges_ext)
             self.model._training(rebuild=False, evaluate=True, simplifying=False)
 
             self.pred_result[3] = self.model.get_pred_labels()
@@ -101,7 +108,6 @@ class CaseSTL(CaseBase):
 
 
             edge_list = json.loads(open(os.path.join(self.model.selected_dir, "removed_2.txt"), "r").read().strip("\n"))
-
             self.model.data.remove_edge(edge_list)
             self.model.data.add_edge([[3679, 7302]])
             self.model._training(rebuild=False, evaluate=True, simplifying=False)
