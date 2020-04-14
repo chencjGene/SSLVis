@@ -103,7 +103,7 @@ class Data(object):
             idx_info = pickle_load_data(idx_info_path)
             self.train_idx = idx_info["train_idx"]
             self.selected_labeled_idx = idx_info["selected_labeled_idx"]
-            if self.dataname == "stl":
+            if self.dataname.lower() == "stl":
                 # relabel:
                 removed_idx = [self.train_idx[39], self.train_idx[33]]
                 added_idx = [self.train_idx[9081], self.train_idx[7427]]
@@ -278,9 +278,9 @@ class GraphData(Data):
             return
         logger.info("neighbors and neighbor_weight "
                     "do not exist, preprocessing!")
-        train_X = self.get_train_X()
+        train_X = self.get_full_train_X()
         train_num = train_X.shape[0]
-        train_y = self.get_train_label()
+        train_y = self.get_full_train_label()
         train_y = np.array(train_y)
         test_X = self.get_test_X()
         test_num = test_X.shape[0]
