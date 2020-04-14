@@ -698,6 +698,7 @@ let DistLayout = function (container) {
 
     that._create_legend = function(){
         console.log("begin create_legend", label_names);
+        let overlap_margin = 15;
 
         // rectangle version
         legend_group.selectAll("rect.legend")
@@ -707,7 +708,7 @@ let DistLayout = function (container) {
             .attr("class", "legend")
             .attr("width", rect_height)
             .attr("height", rect_height)
-            .attr("x", (d,i) => (rect_width * i + rect_margin * i))
+            .attr("x", (d,i) => (rect_width * i + rect_margin * i)+(i===0?0:overlap_margin))
             .attr("y", 0)
             .attr("fill", (d,i) => colors[i]);
         legend_group.selectAll("text.legend")
@@ -715,7 +716,7 @@ let DistLayout = function (container) {
             .enter()
             .append("text")
             .attr("class", "legend")
-            .attr("x", (d,i) => (rect_width * i + rect_margin * i + rect_height + 2))
+            .attr("x", (d,i) => (rect_width * i + rect_margin * i + rect_height + 2)+(i===0?0:overlap_margin))
             .attr("y", rect_height / 2 + 5)
             .attr("text-anchor", "start")
             .attr("font-size", 16)
@@ -876,14 +877,15 @@ let DistLayout = function (container) {
         //         let text = d3.select(this);
         //         set_font(text);
         //     });
+        let overlap_margin = 10;
         legend_group.selectAll("rect.legend")
             .attr("width", rect_height)
             .attr("height", rect_height)
-            .attr("x", (d,i) => (rect_width * i + rect_margin * i))
+            .attr("x", (d,i) => (rect_width * i + rect_margin * i)+(i===0?0:overlap_margin))
             .attr("y", 0)
             .attr("fill", (d,i) => colors[i]);
         legend_group.selectAll("text.legend")
-            .attr("x", (d,i) => (rect_width * i + rect_margin * i + rect_height + 2))
+            .attr("x", (d,i) => (rect_width * i + rect_margin * i + rect_height + 2)+(i===0?0:overlap_margin))
             .attr("y", rect_height / 2 + 5)
             .attr("text-anchor", "start")
             .attr("font-size", 16)

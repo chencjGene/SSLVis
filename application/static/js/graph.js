@@ -844,8 +844,8 @@ let GraphLayout = function (container) {
                     let chart_height = 50*that.zoom_scale;
                     let max_num = Math.max(d.homogeneous, d.heterogeneous);
                     group.select(".barchart-shadow")
-                        .attr("x", 1.5)
-                        .attr("y", 1.5)
+                        .attr("x", 1.5*that.zoom_scale)
+                        .attr("y", 1.5*that.zoom_scale)
                         .attr("width", d => chart_width)
                         .attr("height", d => chart_height)
                         .style("fill", "#969696");
@@ -856,7 +856,7 @@ let GraphLayout = function (container) {
                         .attr("height", d => chart_height)
                         .style("fill", "white")
                         .style("stroke", "#d8d7d7")
-                        .style("stroke-width", 1);
+                        .style("stroke-width", that.zoom_scale);
                     group.select("#edge-bar-heterogeneous")
                             .attr("x", outer_bounder+bar_width+small_inner_bounder)
                             .attr("y", chart_height*0.8-chart_height*0.7*d.heterogeneous/max_num)
@@ -1286,8 +1286,8 @@ let GraphLayout = function (container) {
                     let max_num = Math.max(d.heterogeneous, d.homogeneous);
                     group.append("rect")
                         .attr("class", "barchart-shadow")
-                        .attr("x", 1.5)
-                        .attr("y", 1.5)
+                        .attr("x", 1.5*that.zoom_scale)
+                        .attr("y", 1.5*that.zoom_scale)
                         .attr("width", d => chart_width)
                         .attr("height", d => chart_height)
                         .style("fill", "#969696");
@@ -1299,7 +1299,7 @@ let GraphLayout = function (container) {
                         .attr("height", d => chart_height)
                         .style("fill", "white")
                         .style("stroke", "#d8d7d7")
-                        .style("stroke-width", 1);
+                        .style("stroke-width", that.zoom_scale);
                     // for(let i=0; i<d.length;i++ ){
                         group.append("rect")
                             .attr("class", "edge-summary-rect")
