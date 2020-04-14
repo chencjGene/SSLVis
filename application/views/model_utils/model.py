@@ -886,6 +886,7 @@ class SSLModel(object):
                 self.data.add_new_categories(class_name)
         self.data.editing_data(data)
         self.data.update_graph(data["deleted_idxs"])
+        self.data.affinity_matrix = self.data.correct_unconnected_nodes(self.data.affinity_matrix)
         self._training(rebuild=False, evaluate=True, saving=False, simplifying=True)
 
     def get_data(self):

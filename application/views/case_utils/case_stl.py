@@ -146,6 +146,10 @@ class CaseSTL(CaseBase):
         if step >= 6:
             self.model.data.actions = []
             self.model.step += 1
+            self.model.data.label_instance([11023, 7988, 331, 8990, 8723, 11132, 6133], [0, 0, 5, 0, 5, 5, 5])
+            removed = [6356, 6434, 9429, 11552, 12795, 362, 3679, 4748, 8547, 1956, 5478, 3080, 12420, 8187]
+            self.model.data.remove_instance(removed)
+            self.model.data.update_graph(removed)
 
             self.model.data.label_instance([6673, 7954, 10403, 6396], [8, 0, 5, 5])
             self.model.data.remove_edge([[10523, 4794]])
