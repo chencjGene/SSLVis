@@ -607,8 +607,11 @@ class GraphData(Data):
 
         if len(removed_edges) > 0:
             self.actions.append("remove-edge")
+        m = self.get_new_id_map()
         for edges in removed_edges:
             s, e = edges
+            s = m[s]
+            e = m[e]
             self.affinity_matrix[s, e] = 0
             self.affinity_matrix[e, s] = 0
 

@@ -21,6 +21,8 @@ let GraphHighlight = function (parent) {
     let path_begin_width = 2*path_width_scale;
     let path_end_width = 0.4;
     let path_mid_width = (path_begin_width+path_end_width)/2;
+    let show_voronoi_flag = false;
+    let show_voronoi_path = null;
 
     that._init = function () {
         that.set_view(parent);
@@ -33,6 +35,7 @@ let GraphHighlight = function (parent) {
         edit_btn_path = d3.select("#apply-delete-btn").select("path");
         select_edge_btn_path = d3.select("#select-edge-btn").select("path");
         focus_selection_btn_path = d3.select("#focus-btn").selectAll("path");
+        show_voronoi_path = d3.select("#show-voronoi").select("svg").selectAll("*");
 
         
 
@@ -58,6 +61,22 @@ let GraphHighlight = function (parent) {
                     focus_selection_btn_path.attr("stroke", "black").attr("fill", "black");
                     view.unfocus_selection_box();
                 }
+            });
+
+        $("#show-voronoi")
+        .click(function () {
+                // that._change_lasso_mode();
+                if(!show_voronoi_flag){
+                    $("#show-voronoi").css("background-color", btn_select_color);
+                    show_voronoi_path.style("stroke", "white").style("fill", "white");
+                    show_voronoi_flag = true
+                }
+                else {
+                    $("#show-voronoi").css("background-color", "white");
+                    show_voronoi_path.style("stroke", "black").style("fill", "black");
+                    show_voronoi_flag = false
+                }
+                view.if_show_voronoi(show_voronoi_flag);
             });
 
 
@@ -94,11 +113,12 @@ let GraphHighlight = function (parent) {
 
     that.add_btn_style = function() {
         let btn_ids = ["apply-delete-btn", "lasso-btn", "fisheye-btn", "home-btn", "refresh-btn", "influence-to-btn", "influence-from-btn",
-            "select-edge-btn", "loaddataset-button", "setk-button", "localk-button", "focus-btn", "remove-nodes"];
+            "select-edge-btn", "loaddataset-button", "setk-button", "localk-button", "focus-btn", "remove-nodes", "show-voronoi"];
         for(let btn_id of btn_ids){
             let select_id = "#"+btn_id;
             let path = d3.select(select_id).selectAll("path");
             let polygon = d3.select(select_id).selectAll("polygon");
+            let line = d3.select(select_id).select("svg").selectAll("*");
             $(select_id)
             .on("mouseover", function () {
             if (d3.select(select_id).style("background-color") === "rgba(0, 0, 0, 0)"
@@ -107,6 +127,8 @@ let GraphHighlight = function (parent) {
                 d3.select(select_id).style("background", "gray");
                 path.attr("stroke", "white").attr("fill", "white");
                 polygon.attr("stroke", "white").attr("fill", "white");
+                if(select_id === "#show-voronoi")
+                    line.style("stroke", "white").style("fill", "white");
             }
         })
             .on("mousemove", function () {
@@ -116,6 +138,8 @@ let GraphHighlight = function (parent) {
                 d3.select(select_id).style("background", "gray");
                 path.attr("stroke", "white").attr("fill", "white");
                 polygon.attr("stroke", "white").attr("fill", "white");
+                if(select_id === "#show-voronoi")
+                    line.style("stroke", "white").style("fill", "white");
             }
         })
             .on("mouseout", function () {
@@ -123,6 +147,8 @@ let GraphHighlight = function (parent) {
                 d3.select(select_id).style("background", "white");
                 path.attr("stroke", "black").attr("fill", "black");
                 polygon.attr("stroke", "black").attr("fill", "black");
+                if(select_id === "#show-voronoi")
+                    line.style("stroke", "black").style("fill", "black");
             }
         });
         }

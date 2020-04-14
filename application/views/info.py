@@ -16,6 +16,7 @@ def info_get_image():
             "err_msg": "id error"
         })
     image_path = get_image_path(id)
+    print(image_path)
     return send_file(image_path)
 
 

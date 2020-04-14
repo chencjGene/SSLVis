@@ -29,6 +29,7 @@ class CaseSTL(CaseBase):
         else:
             self.model.step = step
             self.model = self.load_model(os.path.join(self.model.selected_dir, "case-step" + str(self.model.step) + ".pkl"))
+            # self.model._training(rebuild=False, simplifying=True)
             return self.model
         self.pred_result[0] = self.model.get_pred_labels()
 

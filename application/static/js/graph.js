@@ -2405,6 +2405,17 @@ let GraphLayout = function (container) {
         that.data_manager.delete_nodes_menu(highlights);
     };
 
+    that.if_show_voronoi = function(flag){
+        // show_voronoi = flag;
+        // that.data_manager.update_graph_view()
+        if (flag){
+            voronoi_plg.show_voronoi(nodes, outliers);
+        }
+        else{
+            voronoi_plg.disable_voronoi();
+        }
+    };
+
     // debug
     that.update_path_width_scale = async function(scale) {
         path_width_scale = scale;
@@ -2437,16 +2448,7 @@ let GraphLayout = function (container) {
         await that._update_view();
     };
 
-    that.if_show_voronoi = function(flag){
-        // show_voronoi = flag;
-        // that.data_manager.update_graph_view()
-        if (flag){
-            voronoi_plg.show_voronoi(nodes, outliers);
-        }
-        else{
-            voronoi_plg.disable_voronoi();
-        }
-    };
+
 
     that.if_show_outliers = function(flag) {
         if(flag) {
