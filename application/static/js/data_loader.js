@@ -6,6 +6,9 @@
 DataLoaderClass = function () {
     let that = this;
 
+    // for debug
+    let if_filter_use_complete_data = true;
+
 
     that.dataset = null;
 
@@ -532,6 +535,7 @@ DataLoaderClass = function () {
     };
 
     that.set_filter_data = function (nodes) {
+        if(if_filter_use_complete_data) nodes = that.state.complete_graph;
         let iter = that.iter;
         // uncertainty
         let certainty_distribution = [];

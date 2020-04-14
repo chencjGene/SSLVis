@@ -255,6 +255,7 @@ let GraphLayout = function (container) {
         re_focus_selection_box = state.re_focus_selection_box;
         let old_glyphs = JSON.parse(JSON.stringify(glyphs));
         glyphs = state.glyphs;
+        glyphs = glyphs.filter(d => state.nodes[d] !== undefined);
         let old_tmp_glyphs = [];
         for(let glyph_id of glyphs){
             if(old_glyphs.indexOf(glyph_id) > -1){
