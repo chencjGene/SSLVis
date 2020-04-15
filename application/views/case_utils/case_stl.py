@@ -116,7 +116,7 @@ class CaseSTL(CaseBase):
             save = (self.model, self.model.data)
             pickle_save_data(os.path.join(self.model.selected_dir, "case-step" + str(self.model.step) + ".pkl"), save)
 
-        if step >=5:
+        if step >= 5:
             self.model.step += 1
             self.model.data.actions = []
             edge_list = json.loads(open(os.path.join(self.model.selected_dir, "removed_2.txt"), "r").read().strip("\n"))
