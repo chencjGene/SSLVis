@@ -6,6 +6,9 @@
 DataLoaderClass = function () {
     let that = this;
 
+    // for debug
+    let if_filter_use_complete_data = true;
+
 
     that.dataset = null;
 
@@ -171,6 +174,10 @@ DataLoaderClass = function () {
         // TODO:
         that.update_delete_and_change_label_node = new request_node(that.update_delete_and_change_label_url + params,
             that.update_delete_and_change_label_handler(function(must_show_nodes, area, level){
+                that.state.labeled_num = Object.values(that.state.complete_graph).filter(d => d.label[0] > -1).length;
+                that.state.unlabeled_num = Object.values(that.state.complete_graph).length - that.state.labeled_num;
+                that.update_control_info();
+
                 that.state.is_zoom = false;
                 that.add_data_to_high_level(that.labeled_idxs, that.state.hierarchy);
                 that.fetch_nodes(area, level, must_show_nodes);
@@ -275,6 +282,10 @@ DataLoaderClass = function () {
         let params = "?dataset=" + that.dataset;
         that.add_data_node = new request_node(that.add_data_url + params, 
             that.add_data_handler(function(must_show_nodes, area, level){
+                that.state.labeled_num = Object.values(that.state.complete_graph).filter(d => d.label[0] > -1).length;
+                that.state.unlabeled_num = Object.values(that.state.complete_graph).length - that.state.labeled_num;
+                that.update_control_info();
+
                 let show_ids = that.get_show_ids();
                 that.get_dist_view(show_ids);
                 that.update_graph_view();
@@ -316,6 +327,9 @@ DataLoaderClass = function () {
         let params = "?dataset=" + that.dataset;
         that.local_update_k_node = new request_node(that.local_update_k_url + params,
             that.local_update_k_handler(async function(must_show_nodes, area, level, best_k){
+                that.state.labeled_num = Object.values(that.state.complete_graph).filter(d => d.label[0] > -1).length;
+                that.state.unlabeled_num = Object.values(that.state.complete_graph).length - that.state.labeled_num;
+                that.update_control_info();
                 console.log("best k", best_k);
                 $(".best-k-text").attr("hidden", false);
                 $(".best-k-text").html("Best k: "+2);
@@ -430,6 +444,9 @@ DataLoaderClass = function () {
         let params = "?dataset=" + that.dataset;
         that.set_history_node = new request_node(that.set_history_url + params,
             that.set_history_handler(function(must_show_nodes, area, level){
+                that.state.labeled_num = Object.values(that.state.complete_graph).filter(d => d.label[0] > -1).length;
+                that.state.unlabeled_num = Object.values(that.state.complete_graph).length - that.state.labeled_num;
+                that.update_control_info();
                 that.state.is_zoom = false;
                 that.fetch_nodes(area, level, must_show_nodes);
 
@@ -532,6 +549,7 @@ DataLoaderClass = function () {
     };
 
     that.set_filter_data = function (nodes) {
+        if(if_filter_use_complete_data) nodes = that.state.complete_graph;
         let iter = that.iter;
         // uncertainty
         let certainty_distribution = [];
@@ -737,6 +755,12 @@ DataLoaderClass = function () {
     //graph view:
     // first load graph
     that.get_graph_view = function() {
+
+        // update control info
+        that.state.labeled_num = Object.values(that.state.complete_graph).filter(d => d.label[0] > -1).length;
+        that.state.unlabeled_num = Object.values(that.state.complete_graph).length - that.state.labeled_num;
+        that.update_control_info();
+
 
         that.state.rescale = true;
         that.state.highlights = [];

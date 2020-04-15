@@ -241,7 +241,7 @@ let FilterLayout = function (container) {
         // label distribution
         let label_distribution = label_widget_data;
         for(let distribute of label_distribution){
-            distribute.avg_consistency = data_manager.graph_view.get_average_consistency(data_manager.state.nodes, distribute);
+            distribute.avg_consistency = data_manager.graph_view.get_average_consistency(data_manager.state.complete_graph, distribute);
             console.log("label",i,"consistency",distribute.avg_consistency);
             distribute.avg_consistency = Math.pow(distribute.avg_consistency, 3);
             i++;
