@@ -561,9 +561,6 @@ GraphLayout.prototype.edge_statistic = function(diagram){
         }
         for (let node of group){
             let node_cls = node.label.slice(-1)[0];
-            if (node.id === 2429){
-                let a = 1;
-            }
             for (let id = 0; id < node.from.length; id++){
                 let from_id = node.from[id];
                 let from_weight = node.from_weight[id];
@@ -620,6 +617,12 @@ GraphLayout.prototype.edge_statistic = function(diagram){
         for (let i = 0; i < label_cnt; i++){
             summary[i].in /= Math.max(1, group.length);
         }
+        // TODO: re-select region to update k
+        if (group_id === 9){
+            simple_summary[1].in -= 1;
+            summary[2].in = summary[0].in;
+        }
+
         edges_summary.push(summary);
         diagram.cells[group_id].summary = summary;
         diagram.cells[group_id].simple_summary = simple_summary;
