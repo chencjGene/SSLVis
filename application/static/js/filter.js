@@ -254,6 +254,7 @@ let FilterLayout = function (container) {
         }
         for(let label_ary of label_distribution){
             label_ary.height = ((label_ary.length/max_len>0.5?1:-1)*Math.pow(Math.abs(2*label_ary.length/max_len-1), 1/3)+1)/2;
+            // label_ary.height = label_ary.length / max_len;
         }
         console.log("label distribution:", label_distribution);
 
