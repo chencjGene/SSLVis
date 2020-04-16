@@ -536,9 +536,23 @@ class GraphData(Data):
                 pre_label[pre_data["pred"].max(axis=1) == 0] = -1
                 label = data["pred"].argmax(axis=1)
                 label[data["pred"].max(axis=1) == 0] = -1
-                dist[3] = sum(label[:min_len] != pre_label[:min_len])
-                change_idx = np.array(range(min_len))[label[:min_len]!=pre_label[:min_len]]
+                pre_label_dict = {}
+                change_idx = []
+                for j,idx in enumerate(pre_data["train_idx"]):
+                    pre_label_dict[idx] = pre_label[j]
+                for j,idx in enumerate(data["train_idx"]):
+                    if idx not in pre_label_dict.keys():
+                        continue
+                    if pre_label_dict[idx] != label[j]:
+                        change_idx.append(j)
+
+
+                dist[3] = len(change_idx)
+                change_idx = np.array(change_idx)
             dist = [int(k) for k in dist]
+
+            # remove other dists
+            dist = [dist[3]]
             # update max_count
             if max(dist) > max_count:
                 max_count = max(dist)

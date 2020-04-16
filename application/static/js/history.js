@@ -28,6 +28,13 @@ let HistoryLayout = function (container) {
     let update_ani = AnimationDuration;
     let remove_ani = AnimationDuration * 0;
     let action_type_size = 20;
+    let action_type_orders = {
+        "labeling":0,
+        "local-update":1,
+        "remove-edge":2,
+        "remove-node":3
+
+    };
 
     that.svg = container.select("#history-view").select("svg");
     that.line_group = that.svg.append("g").attr("id", "line");
@@ -45,7 +52,8 @@ let HistoryLayout = function (container) {
         that.cell_group.attr("transform", "translate(" + margin_horizontal + ", " + 0 + ")");
         that.legend_group.attr("transform", "translate(" + margin_horizontal + ", " + 0 + ")");
 
-        let legend = ["# edge changes", "# added labels", "# added instances", "# label changes"];
+        // let legend = ["# edge changes", "# added labels", "# added instances", "# label changes"];
+        let legend = [];
         that.legend_group.selectAll("text.legend")
             .data(legend)
             .enter()
@@ -56,7 +64,7 @@ let HistoryLayout = function (container) {
             .attr("x", 0)
             .attr("y", 0)
             .attr("transform", function(d, i){
-                return "translate(" + (dist_start + (i + 0.5) * dist_width) 
+                return "translate(" + (dist_start + (i + 0.5) * dist_width)
                     + ", " + 8 + ") rotate(30)";
             })
             .style("opacity", 0)
@@ -79,6 +87,11 @@ let HistoryLayout = function (container) {
     that._update_data = function(data) {
         // history data
         that.history_data = data.history.reverse();
+        for(let one_history of that.history_data){
+            one_history.actions.sort(function (a, b) {
+                return action_type_orders[a] - action_type_orders[b]
+            })
+        }
         for (let i = 0; i < that.history_data.length; i++){
             let hdata = that.history_data[i];
             hdata.height = [];
@@ -93,7 +106,7 @@ let HistoryLayout = function (container) {
         that.legend_height = that.history_data.length * cell_height;
         // line data
         that.line_data = [];
-        let cnt = that.history_data.length
+        let cnt = that.history_data.length;
         for(let row_idx = 0; row_idx < cnt; row_idx++){
             let row_data = that.history_data[row_idx];
             let end_idx = row_data.id;
@@ -186,7 +199,7 @@ let HistoryLayout = function (container) {
             .attr("xlink:href", d => "#action-"+d.action)
             .attr("x", function (d, i) {
                 let all = d.all;
-                return action_begin+20+action_type_size/2-(action_type_size+2)/2*all+(action_type_size+2)*i;
+                return action_begin+20+action_type_size/2-(action_type_size+5)/2*all+(action_type_size+5)*i;
             })
             .attr("y", function (d) {
                 return cell_height - 30;
@@ -214,7 +227,7 @@ let HistoryLayout = function (container) {
             .enter()
             .append("rect")
             .attr("class", "change")
-            .attr("x", (_,i) => dist_start + i * dist_width)
+            .attr("x", (_,i) => dist_start + (i+1.5) * dist_width)
             .attr("y", d => cell_height - d)
             .attr("width", dist_width * 0.95)
             .attr("height", d => d)
@@ -225,7 +238,7 @@ let HistoryLayout = function (container) {
             .append("text")
             .attr("class", "text-change")
             .attr("text-anchor", "middle")
-            .attr("x", (_,i) => dist_start + (i + 0.5) * dist_width)
+            .attr("x", (_,i) => dist_start + (i+1.5 + 0.5) * dist_width)
             .attr("y", d => cell_height - d[1] - 1)
             .attr("font-size", "12px")
             .text(d => d[0])
@@ -310,7 +323,7 @@ let HistoryLayout = function (container) {
             .duration(update_ani)
             .delay(remove_ani)
             .attr("transform", function(d, i){
-                return "translate(" + (dist_start + (i + 0.5) * dist_width )
+                return "translate(" + (dist_start + (i+1.5 + 0.5) * dist_width )
                     + ", " + (that.legend_height + 8) + ") rotate(30)";
             })
             .style("opacity", 1);
