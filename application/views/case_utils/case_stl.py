@@ -52,6 +52,7 @@ class CaseSTL(CaseBase):
 
             # self._init_model(k=k, evaluate=True, simplifying=simplifying)
             self.model.influence_matrix = None
+
             self.model._training(rebuild=False, evaluate=evaluate, simplifying=False)
             self.pred_result[1] = self.model.get_pred_labels()
             self.model.adaptive_evaluation(step=1)
@@ -70,7 +71,7 @@ class CaseSTL(CaseBase):
             lizard = json.loads(open(os.path.join(self.model.selected_dir, "lizard.txt"), "r").read().strip("\n"))
             lemur = json.loads(open(os.path.join(self.model.selected_dir, "lemur.txt"), "r").read().strip("\n"))
             removed = lizard + lemur
-            # removed = removed + [6986]
+            removed = removed + [6986, 4710, 5790, 227, 2694]
             self.model.data.remove_instance(removed)
             self.model.data.update_graph(removed)
 
@@ -92,6 +93,7 @@ class CaseSTL(CaseBase):
             remove_edges_ext = [[59, 5035], [713, 5035], [3189, 6834], [3928, 3307], [4446, 48], [5963, 6837], [6347, 5035], [6834, 10917]]
             self.model.data.remove_edge(edge_list+remove_edges_ext)
             self.model.influence_matrix = None
+
             self.model._training(rebuild=False, evaluate=True, simplifying=False)
 
             self.pred_result[3] = self.model.get_pred_labels()
@@ -121,7 +123,7 @@ class CaseSTL(CaseBase):
             save = (self.model, self.model.data)
             pickle_save_data(os.path.join(self.model.selected_dir, "case-step" + str(self.model.step) + ".pkl"), save)
 
-        if step >=5:
+        if step >= 5:
             self.model.step += 1
             self.model.data.actions = []
             removed = [3403, 1834, 11881, 9800]
@@ -182,7 +184,7 @@ class CaseSTL(CaseBase):
             self.model.data.label_instance([6673, 7954, 10403, 6396], [8, 0, 5, 5])
 
             removed = [5533, 2485]
-            truth = [11858, 3911, 11744, 3038, 3437, 5483, 3225, 8201, 7092, 4296, 9902, 3249, 8454]
+            # truth = [11858, 3911, 11744, 3038, 3437, 5483, 3225, 8201, 7092, 4296, 9902, 3249, 8454]
             removed_edge = [[1842, 4547], [11482, 4547], [106, 12035], [1798, 10393], [12265, 10352], [3527, 8569],
                             [7954, 9617], [8474, 527], [8276, 527], [1044, 10951], [11126, 10352], [3563, 5825],
                             [7622, 2833], [10456, 9298], [12431, 9589], [7249, 12431], [10945, 5723], [70, 6397],
@@ -194,8 +196,8 @@ class CaseSTL(CaseBase):
             self.model.data.update_graph(removed)
             self.model.data.remove_edge(removed_edge)
             self.model.influence_matrix = None
-            self.model._training(rebuild=False, evaluate=False, simplifying=False)
-            self.model._influence_matrix(rebuild=True)
+            self.model._training(rebuild=False, evaluate=False, simplifying=True)
+
             self.model.adaptive_evaluation(step=7)
             save = (self.model, self.model.data)
             pickle_save_data(os.path.join(self.model.selected_dir, "case-step" + str(self.model.step) + ".pkl"), save)
