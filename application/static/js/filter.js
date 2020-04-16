@@ -252,6 +252,10 @@ let FilterLayout = function (container) {
                 max_len = label_ary.length;
             }
         }
+        for(let label_ary of label_distribution){
+            label_ary.height = ((label_ary.length/max_len>0.5?1:-1)*Math.pow(Math.abs(2*label_ary.length/max_len-1), 1/3)+1)/2;
+        }
+        console.log("label distribution:", label_distribution);
 
         // draw
         label_rect = {};
@@ -281,9 +285,9 @@ let FilterLayout = function (container) {
             .style("fill", (d, i) => i===0?color_unlabel:color_label[i-1])
             .attr("x", function(d, i) { return x(i); })
             .attr("width", x.bandwidth())
-            .attr("y", function(d, i) { return y(d.length/max_len); })
+            .attr("y", function(d, i) { return y(d.height); })
             .attr("height", function(d) {
-              return container_height*  0.7 - y(d.length/max_len);
+              return container_height*  0.7 - y(d.height);
           })
             .attr("opacity", (d, i) => (label_widget_range.indexOf(i) > -1)?1:0.2)
             .on("mouseover", function (d, i) {
@@ -357,9 +361,9 @@ let FilterLayout = function (container) {
             .duration(AnimationDuration)
             .attr("x", function(d, i) { return x(i); })
             .attr("width", x.bandwidth())
-            .attr("y", function(d, i) { return y(d.length/max_len); })
+            .attr("y", function(d, i) { return y(d.height); })
             .attr("height", function(d) {
-                  return container_height*  0.7 - y(d.length/max_len);
+                  return container_height*  0.7 - y(d.height);
               })
             .attr("opacity", (d, i) => (label_widget_range.indexOf(i) > -1)?1:0.2);
         rects.exit()

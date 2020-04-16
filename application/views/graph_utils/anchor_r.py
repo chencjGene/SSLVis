@@ -524,6 +524,8 @@ class Anchors:
         logger.info("convert to dict")
         propagation_path_from = self.model.propagation_path_from
         propagation_path_to = self.model.propagation_path_to
+        if self.model.influence_matrix is None:
+            self.model._influence_matrix(rebuild=False)
         influence_matrix = self.model.influence_matrix.copy()
         # influence_matrix[np.isnan(influence_matrix)] = 0
         influence_matrix.data /= (influence_matrix.data.max() + 1e-20)

@@ -23,12 +23,13 @@ class CaseSTL(CaseBase):
         self.step = step
         self.model.step = 0
         if (not use_buffer) or (not os.path.exists(os.path.join(self.model.selected_dir, "case-step" + str(step) + ".pkl"))):
-            self._init_model(k=k, evaluate=evaluate, simplifying=True)
+            self._init_model(k=k, evaluate=evaluate, simplifying=False)
             save = (self.model, self.model.data)
             pickle_save_data(os.path.join(self.model.selected_dir, "case-step" + str(self.model.step) + ".pkl"), save)
         else:
             self.model.step = step
             self.model = self.load_model(os.path.join(self.model.selected_dir, "case-step" + str(self.model.step) + ".pkl"))
+
             # self.model._training(rebuild=False, simplifying=True)
             return self.model
         self.pred_result[0] = self.model.get_pred_labels()
@@ -50,7 +51,8 @@ class CaseSTL(CaseBase):
                 json.loads(open(os.path.join(self.model.selected_dir, "dog_idxs.txt"), "r").read().strip("\n")), [5, 5, 5])
 
             # self._init_model(k=k, evaluate=True, simplifying=simplifying)
-            self.model._training(rebuild=False, evaluate=evaluate, simplifying=True)
+            self.model.influence_matrix = None
+            self.model._training(rebuild=False, evaluate=evaluate, simplifying=False)
             self.pred_result[1] = self.model.get_pred_labels()
             self.model.adaptive_evaluation(step=1)
             save = (self.model, self.model.data)
@@ -74,7 +76,8 @@ class CaseSTL(CaseBase):
 
             c = json.loads(open(os.path.join(self.model.selected_dir, "local_4_idxs.txt"), "r").read().strip("\n"))
             # self.model.local_search_k(c, range(7, 40), categories, simplifying=False, evaluate=True)
-            self.model.local_search_k(c, range(27, 29), categories, simplifying=True, evaluate=True, record=False)
+            self.model.influence_matrix = None
+            self.model.local_search_k(c, range(27, 29), categories, simplifying=False, evaluate=True, record=False)
 
             self.pred_result[2] = self.model.get_pred_labels()
             self.model.adaptive_evaluation(step=2)
@@ -88,7 +91,8 @@ class CaseSTL(CaseBase):
             edge_list = json.loads(open(os.path.join(self.model.selected_dir, "removed_1.txt"), "r").read().strip("\n"))
             remove_edges_ext = [[59, 5035], [713, 5035], [3189, 6834], [3928, 3307], [4446, 48], [5963, 6837], [6347, 5035], [6834, 10917]]
             self.model.data.remove_edge(edge_list+remove_edges_ext)
-            self.model._training(rebuild=False, evaluate=True, simplifying=True)
+            self.model.influence_matrix = None
+            self.model._training(rebuild=False, evaluate=True, simplifying=False)
 
             self.pred_result[3] = self.model.get_pred_labels()
             self.model.adaptive_evaluation(step=3)
@@ -111,7 +115,8 @@ class CaseSTL(CaseBase):
 
             self.model.data.actions = []
             e = json.loads(open(os.path.join(self.model.selected_dir, "local_3_idxs.txt"), "r").read().strip("\n"))
-            self.model.local_search_k(e, [1, 2, 3, 4], categories, simplifying=True, evaluate=True, record=True)
+            self.model.influence_matrix = None
+            self.model.local_search_k(e, [1, 2, 3, 4], categories, simplifying=False, evaluate=True, record=True)
             self.model.adaptive_evaluation(step=4)
             save = (self.model, self.model.data)
             pickle_save_data(os.path.join(self.model.selected_dir, "case-step" + str(self.model.step) + ".pkl"), save)
@@ -119,9 +124,19 @@ class CaseSTL(CaseBase):
         if step >=5:
             self.model.step += 1
             self.model.data.actions = []
-            edge_list = json.loads(open(os.path.join(self.model.selected_dir, "removed_2.txt"), "r").read().strip("\n"))
-            self.model.data.remove_edge(edge_list)
+            removed = [3403, 1834, 11881, 9800]
+            removed_edge = [[6986, 5948], [6986, 12712], [6897, 1071], [3349, 5521], [7648, 9140], [88, 39],
+                            [10332, 39], [11229, 4748], [210, 5193], [9027, 12572], [6986, 9006], [6986, 6602],
+                            [10462, 6794], [940, 6794], [11501, 9411], [3377, 2888], [2154, 2888], [10876, 4710],
+                            [82, 7036], [8570, 7036], [2169, 3477], [6886, 2957], [3980, 12701], [2683, 12781],
+                            [1453, 10765], [1453, 6951], [1453, 8912], [1453, 10676], [1453, 7032]]
+
+            self.model.data.remove_edge(removed_edge)
             self.model.data.add_edge([[3679, 7302]])
+
+            self.model.data.remove_instance(removed)
+            self.model.data.update_graph(removed)
+            self.model.influence_matrix = None
             self.model._training(rebuild=False, evaluate=True, simplifying=True)
 
             self.pred_result[4] = self.model.get_pred_labels()
@@ -147,8 +162,8 @@ class CaseSTL(CaseBase):
             # pickle_save_data(os.path.join(self.model.selected_dir, "step-3-add-data.pkl"), cat_idxs)
             cat_idxs = pickle_load_data(os.path.join(self.model.selected_dir, "step-5-add-data.pkl"))
             self.model.add_data(cat_idxs, 3)
+            self.model.influence_matrix = None
             self.model._training(rebuild=False, evaluate=evaluate, simplifying=True)
-            self.model._influence_matrix(rebuild=True, prefix="add_")
             self.model.adaptive_evaluation(step=6)
             self.pred_result[5] = self.model.get_pred_labels()
             save = (self.model, self.model.data)
@@ -159,34 +174,31 @@ class CaseSTL(CaseBase):
         if step >= 7:
             self.model.data.actions = []
             self.model.step += 1
-            self.model.data.label_instance([11023, 7988, 331, 8990, 8723, 11132, 6133], [0, 0, 5, 0, 5, 5, 5])
+            self.model.data.label_instance([11023, 7988, 331, 8990, 8723, 11132, 6133, 9218], [0, 0, 5, 0, 5, 5, 5, 8])
             removed = [6356, 6434, 9429, 11552, 12795, 362, 3679, 4748, 8547, 1956, 5478, 3080, 12420, 8187]
             self.model.data.remove_instance(removed)
             self.model.data.update_graph(removed)
 
             self.model.data.label_instance([6673, 7954, 10403, 6396], [8, 0, 5, 5])
-            self.model.data.remove_edge([[10523, 4794]])
 
-            removed = [5416, 10581, 2325, 6244, 7501, 1895, 7140, 909]
-            truth = [9402, 9907, 3038, 2833, 9762, 11976, 4833, 2455, 9402, 527, 7760, 7134, 8886, 7403, 301]
-            removed_edge = [[11650, 3038], [10332, 39], [10717, 8129], [8370, 6591], [7177, 1142], [6891, 3509],
-                            [1649, 12479], [1361, 8969], [8505, 8969], [1054, 8969], [2957, 11629], [2957, 5233],
-                            [2957, 3477], [82, 7036], [8130, 2086], [6133, 12129], [10876, 4710], [7276, 12849],
-                            [7276, 12935], [9910, 3298], [3739, 4651], [7425, 5528], [7571, 6472], [940, 6794],
-                            [12089, 6794], [10462, 6794], [2888, 1959], [1193, 307], [10523, 10585]]
+            removed = [5533, 2485]
+            truth = [11858, 3911, 11744, 3038, 3437, 5483, 3225, 8201, 7092, 4296, 9902, 3249, 8454]
+            removed_edge = [[1842, 4547], [11482, 4547], [106, 12035], [1798, 10393], [12265, 10352], [3527, 8569],
+                            [7954, 9617], [8474, 527], [8276, 527], [1044, 10951], [11126, 10352], [3563, 5825],
+                            [7622, 2833], [10456, 9298], [12431, 9589], [7249, 12431], [10945, 5723], [70, 6397],
+                            [5393, 7394], [4199, 7760], [12265, 8569], [3465, 5725], [9883, 4276], [3872, 5407],
+                            [10665, 5407], [200, 8370], [7177, 1142], [6225, 2666], [3739, 4651], [3722, 3298],
+                            [9910, 3298], [11982, 4651], [5882, 548], [9910, 7276], [9212, 5369], [10523, 4794],
+                            [6133, 12129], [9607, 8824], [8130, 2086]]
             self.model.data.remove_instance(removed)
             self.model.data.update_graph(removed)
             self.model.data.remove_edge(removed_edge)
-
-            self.model._training(rebuild=False, evaluate=evaluate, simplifying=True)
+            self.model.influence_matrix = None
+            self.model._training(rebuild=False, evaluate=False, simplifying=False)
+            self.model._influence_matrix(rebuild=True)
             self.model.adaptive_evaluation(step=7)
             save = (self.model, self.model.data)
             pickle_save_data(os.path.join(self.model.selected_dir, "case-step" + str(self.model.step) + ".pkl"), save)
-
-            # self.model.data.actions = []
-            # e = json.loads(open(os.path.join(self.model.selected_dir, "local_5_idxs.txt"), "r").read().strip("\n"))
-            # self.model.local_search_k(e, [1, 2, 3, 4], categories, simplifying=False, evaluate=True, record=True)
-
 
         self.model.adaptive_evaluation()
         return self.model
