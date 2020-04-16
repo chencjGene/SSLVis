@@ -619,8 +619,10 @@ GraphLayout.prototype.edge_statistic = function(diagram){
         }
         // TODO: re-select region to update k
         if (group_id === 9){
-            simple_summary[1].in -= 1;
-            summary[2].in = summary[0].in;
+            if (simple_summary[1].in < 1.6){
+                simple_summary[1].in -= 1;
+                summary[2].in = summary[0].in;
+            }
         }
 
         edges_summary.push(summary);
