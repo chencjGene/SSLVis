@@ -502,8 +502,8 @@ DataLoaderClass = function () {
     };
 
     that.update_control_info = function() {
-        $("#labeled-num").text(that.state.labeled_num + " Labeled data");
-        $("#unlabeled-num").text(that.state.unlabeled_num + " Unlabeled data");
+        $("#labeled-num").text(that.state.labeled_num + " Labeled Data");
+        $("#unlabeled-num").text(that.state.unlabeled_num + " Unlabeled Data");
         SettingView.setk_ui(that.state.k);
     };
 

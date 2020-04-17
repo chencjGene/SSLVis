@@ -113,7 +113,7 @@ let FilterLayout = function (container) {
     };
 
     that._update_data = function(state) {
-        label_names = ["unlabeled"].concat(state.label_names);
+        label_names = ["Unlabeled"].concat(state.label_names);
         label_widget_data = state.label_widget_data;
         label_widget_range = state.label_widget_range;
         uncertainty_widget_data = state.uncertainty_widget_data;

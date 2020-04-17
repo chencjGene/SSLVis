@@ -130,7 +130,7 @@ let DistLayout = function (container) {
         dist_mode = state.dist_mode;
         console.log("dist_mode", dist_mode);
         // update label names
-        label_names = ["unlabeled"].concat(state.label_names);
+        label_names = ["Unlabeled"].concat(state.label_names);
         rect_width = legend_width / label_names.length / 1.2;
         rect_margin = (legend_width - label_names.length * rect_width)
             / (label_names.length - 1);

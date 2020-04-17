@@ -76,7 +76,7 @@ class ExchangePortClass(object):
         manifest = {
             "k": self.model.n_neighbor,
             "filter_threshold": self.model.filter_threshold,
-            "label_names": self.model.data.class_names,
+            "label_names": [name.capitalize() for name in self.model.data.class_names],
             "labeled_num": self.model.data.selected_labeled_num,
             "all_num": self.model.data.selected_total_num
         }
@@ -115,7 +115,7 @@ class ExchangePortClass(object):
     def get_graph(self, filter_threshold=None, wh = 1):
         print(config.use_add_tsne)
         res = self.anchor.get_nodes(wh, self.model.step)
-        res["label_names"] = self.model.data.class_names
+        res["label_names"] = [name.capitalize() for name in self.model.data.class_names]
         graph = res["graph"]
         for id in graph["nodes"]:
             self.current_ids.append(int(id))
@@ -195,7 +195,7 @@ class ExchangePortClass(object):
             "label_sums": label_sums.tolist(),
             "flows": flows.tolist(),
             "selected_flows": selected_flows.tolist(),
-            "label_names": self.model.data.get_class_names()
+            "label_names": [name.capitalize() for name in self.model.data.class_names]
         }
         return jsonify(mat)
 
