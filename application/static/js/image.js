@@ -53,6 +53,7 @@ let ImageLayout = function (container){
     let img_neighbors_g = null;
     let img_grids = svg.append("g").attr("id", "grid-group");
     let img_grids_g = null;
+    let use_ground_truth = false;
 
 
     that._init = function(){
@@ -97,6 +98,7 @@ let ImageLayout = function (container){
 
     that.component_update = async function(state) {
         console.log("image component update:", state);
+        state.img_grid_urls = state.img_grid_urls.filter(d => [91, 11779].indexOf(d.id)===-1);
         let new_ids = state.img_grid_urls.map(d => d.id);
         let old_ids = img_grid_urls.map(d => d.id);
         new_ids.sort((a, b) => a-b);
@@ -303,6 +305,7 @@ let ImageLayout = function (container){
             .attr("height", grid_size+4)
             .attr("stroke-width", 4)
             .attr("stroke", function (d) {
+                if(use_ground_truth) return color_label[d.truth];
                 if(d.label[iter] === -1) return color_unlabel;
                     else return color_label[d.label[iter]];
             })
@@ -349,6 +352,7 @@ let ImageLayout = function (container){
             .attr("height", grid_size+4)
             .attr("stroke-width", 4)
             .attr("stroke", function (d) {
+                if(use_ground_truth) return color_label[d.truth];
                 if(d.label[iter] === -1) return color_unlabel;
                     else return color_label[d.label[iter]];
             })
@@ -373,6 +377,7 @@ let ImageLayout = function (container){
             .transition()
             .duration(AnimationDuration)
             .attr("stroke", function (d) {
+                if(use_ground_truth) return color_label[d.truth];
                 if(d.label[iter] === -1) return color_unlabel;
                     else return color_label[d.label[iter]];
             });
@@ -402,6 +407,7 @@ let ImageLayout = function (container){
             .transition()
             .duration(AnimationDuration)
             .attr("stroke", function (d) {
+                if(use_ground_truth) return color_label[d.truth];
                 if(d.label[iter] === -1) return color_unlabel;
                     else return color_label[d.label[iter]];
             })
@@ -523,9 +529,11 @@ let ImageLayout = function (container){
                     for(let i=0; i<k_num+1; i++){
                         let j = row_idx*(k_num+1)+i;
                         if(i === 0){
-                            img_grid_urls[row_idx].label = d[j];
+                            img_grid_urls[row_idx].label = d[j].label;
+                            img_grid_urls[row_idx].truth = d[j].truth;
                         }
-                        img_neighbors_ids[j].label = d[j];
+                        img_neighbors_ids[j].label = d[j].label;
+                        img_neighbors_ids[j].truth = d[j].truth;
                     }
                 }
                 resolve();
@@ -542,6 +550,11 @@ let ImageLayout = function (container){
             show_neighbor_mode = true;
             that._update_view();
         }
+    };
+
+    that.if_show_ground_truth = function(flag) {
+        use_ground_truth = flag;
+        that._update_view();
     };
 
     that.init = function(){

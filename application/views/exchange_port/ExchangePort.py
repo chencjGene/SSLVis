@@ -342,4 +342,13 @@ class ExchangePortClass(object):
         m = self.model.data.get_new_id_map()
         new_ids = [m[id] for id in ids]
         labels = self.model.labels[:,new_ids].T.tolist()
-        return jsonify(labels)
+        gts = self.model.data.get_train_ground_truth()[new_ids].tolist()
+        res = []
+        for i in range(len(labels)):
+            label = labels[i]
+            gt = gts[i]
+            res.append({
+                "label":label,
+                "truth":gt
+            })
+        return jsonify(res)
