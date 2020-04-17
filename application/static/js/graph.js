@@ -413,7 +413,7 @@ let GraphLayout = function (container) {
 
         // remove glyps not in highligth
         if(highlights.length > 0){
-            glyphs = glyphs.filter(d => highlights.indexOf(d) > 0)
+            glyphs = glyphs.filter(d => highlights.indexOf(d) > -1)
         }
         // remove glyphs overlap
         let tmp_glyphs = old_glyphs;

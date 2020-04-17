@@ -95,24 +95,6 @@ class CaseOCT(CaseBase):
             save = (self.model, self.model.data)
             pickle_save_data(os.path.join(self.model.selected_dir, "case-step" + str(self.model.step) + ".pkl"), save)
 
-        if step >= 4:
-            self.model.step += 1
-            train_pred_step_2 = self.model.get_pred_labels()
-            # untrain_idxs = [i for i in self.model.data.unlabeled_idx if i not in self.model.data.train_idx]
-            # unused_idxs = [i for i in untrain_idxs if i not in self.model.data.test_idx]
-            # processed_data_filename = os.path.join(self.model.data_root, config.processed_dataname)
-            # processed_data = pickle_load_data(processed_data_filename)
-            # unused_idxs = unused_idxs + processed_data[config.test_idx_name].tolist()
-            # unused_idxs = np.array(unused_idxs)
-            # idx_2 = unused_idxs[self.model.data.y[unused_idxs] == 2]
-            # np.random.seed(12)
-            # idx_2 = np.random.choice(idx_2, 500, replace=False)
-            # pickle_save_data(os.path.join(self.model.selected_dir, "step-3-add-data.pkl"), idx_2)
-            idx_2 = pickle_load_data(os.path.join(self.model.selected_dir, "step-3-add-data.pkl"))
-            self.model.data.add_data_oct(idx_2, train_pred_step_2, 2)
-            save = (self.model, self.model.data)
-            pickle_save_data(os.path.join(self.model.selected_dir, "case-step" + str(self.model.step) + ".pkl"), save)
-
         if step >=3:
             self.model._training(rebuild=False, evaluate=evaluate, simplifying=simplifying)
 
