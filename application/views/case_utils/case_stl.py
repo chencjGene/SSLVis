@@ -180,12 +180,20 @@ class CaseSTL(CaseBase):
             self.model.data.actions = []
             self.model.step += 1
             self.model.data.label_instance([11023, 7988, 331, 8990, 8723, 11132, 6133, 9218], [0, 0, 5, 0, 5, 5, 5, 8])
+            self.model.data.label_instance([6673, 7954, 10403, 6396], [8, 0, 5, 5])
+            self.influence_matrix = None
+            self.model._training(rebuild=False, evaluate=False, simplifying=False, record=True)
+            self.model._influence_matrix(rebuild=True)
+            self.model.adaptive_evaluation(step=8)
+            save = (self.model, self.model.data)
+            pickle_save_data(os.path.join(self.model.selected_dir, "case-step" + str(self.model.step) + ".pkl"), save)
+
+        if step >= 8:
+            self.model.data.actions = []
+            self.model.step += 1
             removed = [6356, 6434, 9429, 11552, 12795, 362, 3679, 4748, 8547, 1956, 5478, 3080, 12420, 8187]
             self.model.data.remove_instance(removed)
             self.model.data.update_graph(removed)
-
-            self.model.data.label_instance([6673, 7954, 10403, 6396], [8, 0, 5, 5])
-
             removed = [5533, 2485]
             # truth = [11858, 3911, 11744, 3038, 3437, 5483, 3225, 8201, 7092, 4296, 9902, 3249, 8454]
             removed_edge = [[1842, 4547], [11482, 4547], [106, 12035], [1798, 10393], [12265, 10352], [3527, 8569],
@@ -200,9 +208,9 @@ class CaseSTL(CaseBase):
             self.model.data.remove_edge(removed_edge)
             self.model.influence_matrix = None
             self.model._training(rebuild=False, evaluate=False, simplifying=False, record=True)
-            self.model._influence_matrix(rebuild=False)
+            self.model._influence_matrix(rebuild=True)
 
-            self.model.adaptive_evaluation(step=7)
+            self.model.adaptive_evaluation(step=8)
             save = (self.model, self.model.data)
             pickle_save_data(os.path.join(self.model.selected_dir, "case-step" + str(self.model.step) + ".pkl"), save)
 

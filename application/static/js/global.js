@@ -46,31 +46,31 @@ let SettingView = null;
 
 
 // stl
-// let CategoryColor = [
-//     "#8c564b",
-//     "#ff7f0e",
-//     "#9467bd",
-//     "#d62728",
-//     "#1f77b4",
-//     "#2ca02c",
-//     "#e377c2",
-//     "#ffdb45",
-//     "#bcbd22",
-//     "#17becf",
-//     "#a6cee3"];
-
-// oct
 let CategoryColor = [
-    "#1f77b4",
-    "#ff7f0e",
-    "#2ca02c",
-    "#d62728",
     "#8c564b",
-    "#17becf",
+    "#ff7f0e",
+    "#9467bd",
+    "#d62728",
+    "#1f77b4",
+    "#2ca02c",
     "#e377c2",
     "#ffdb45",
     "#bcbd22",
-    "#9467bd"];
+    "#17becf",
+    "#a6cee3"];
+
+// oct
+// let CategoryColor = [
+//     "#1f77b4",
+//     "#ff7f0e",
+//     "#2ca02c",
+//     "#d62728",
+//     "#8c564b",
+//     "#17becf",
+//     "#e377c2",
+//     "#ffdb45",
+//     "#bcbd22",
+//     "#9467bd"];
 
     // "#a6cee3",
     // "#b2df8a"];
