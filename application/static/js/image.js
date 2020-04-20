@@ -98,7 +98,7 @@ let ImageLayout = function (container){
 
     that.component_update = async function(state) {
         console.log("image component update:", state);
-        state.img_grid_urls = state.img_grid_urls.filter(d => [91, 11779].indexOf(d.id)===-1);
+        state.img_grid_urls = state.img_grid_urls.filter(d => [91, 11779, 5882].indexOf(d.id)===-1);
         let new_ids = state.img_grid_urls.map(d => d.id);
         let old_ids = img_grid_urls.map(d => d.id);
         new_ids.sort((a, b) => a-b);

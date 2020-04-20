@@ -502,7 +502,7 @@ let GraphLayout = function (container) {
             let nodes_ary = nodes;
             let golds_ary = nodes_ary.filter(d => d.label[0] > -1 || add_labeled_nodes.indexOf(d.id) > -1);
             let glyphs_ary = nodes_ary.filter(d => glyphs.indexOf(d.id)>-1);
-            let path_ary = path;
+            let path_ary = JSON.parse(JSON.stringify(path));
 
             let nodes_dict = {};
             for(let node of nodes){
@@ -513,21 +513,197 @@ let GraphLayout = function (container) {
                     label:node.label
                 };
             }
+            let node_cnt = Object.values(nodes_dict).length;
+            let node_area = {
+                x:that.center_scale_x(area.x),
+                y:that.center_scale_y(area.y),
+                width:that.center_scale_x(area.x+area.width)-that.center_scale_x(area.x),
+                height:that.center_scale_y(area.y+area.height)-that.center_scale_y(area.y),
+            };
+            let in_area = function (node, node_area) {
+                return (node.x >= node_area.x) && (node.x <= node_area.x+node_area.width) && (node.y >= node_area.y) && (node.y <= node_area.y + node_area.height);
+            };
+
+            let line_rect_intersection = function (a, b, rect) {
+                let line_inter_line = function(ps1, pe1, ps2, pe2) {
+                        // Get A,B of first line - points : ps1 to pe1
+                        let A1 = pe1.y-ps1.y;
+                        let B1 = ps1.x-pe1.x;
+                        // Get A,B of second line - points : ps2 to pe2
+                        let A2 = pe2.y-ps2.y;
+                        let B2 = ps2.x-pe2.x;
+
+                        // Get delta and check if the lines are parallel
+                        let delta = A1*B2 - A2*B1;
+                        if(delta == 0) return null;
+
+                        // Get C of first and second lines
+                        let C2 = A2*ps2.x+B2*ps2.y;
+                        let C1 = A1*ps1.x+B1*ps1.y;
+                        //invert delta to make division cheaper
+                        let invdelta = 1/delta;
+                        // now return the Vector2 intersection point
+                        let res = {
+                            x:(B2*C1 - B1*C2)*invdelta,
+                            y: (A1*C2 - A2*C1)*invdelta
+                        };
+                        if(((res.x-ps1.x)*(res.x-pe1.x) > 0 && Math.abs((res.x-ps1.x)*(res.x-pe1.x)) > 1e-3) || ((res.x-ps2.x)*(res.x-pe2.x) > 0 && Math.abs((res.x-ps2.x)*(res.x-pe2.x)) > 1e-3)) {
+                            return null;
+                        }
+                        return res;
+                    };
+                if((a.id === 5788 && b.id === 3188) || (a.id === 7762 && b.id === 152)) {
+                    console.log("get")
+                }
+                let intersect = line_inter_line(a, b, {x:rect.x,y:rect.y}, {x:rect.x, y:rect.y+rect.height});
+                if(intersect === null) intersect = line_inter_line(a, b, {x:rect.x,y:rect.y}, {x:rect.x+rect.width, y:rect.y});
+                if(intersect === null) intersect = line_inter_line(a, b, {x:rect.x,y:rect.y+rect.height}, {x:rect.x+rect.width, y:rect.y+rect.height});
+                if(intersect === null) intersect = line_inter_line(a, b, {x:rect.x+rect.width,y:rect.y}, {x:rect.x+rect.width, y:rect.y+rect.height});
+                if(intersect === null) {
+                    console.log("err")
+                }
+                return intersect
+            };
+            let tmp_path = [];
             for(let path of path_ary){
                 if(nodes_dict[path[0].id] === undefined || nodes_dict[path[1].id] === undefined) continue;
+                tmp_path.push(path);
                 let alabel = nodes_dict[path[0].id].label[iter];
                 let blabel = nodes_dict[path[1].id].label[iter];
                 path.edge_type = alabel+","+blabel;
+                let intersect = line_rect_intersection(nodes_dict[path[0].id], nodes_dict[path[1].id], node_area);
+                if(!in_area(nodes_dict[path[0].id], node_area)) {
+                    intersect.id = node_cnt;
+                    nodes_dict[node_cnt] = intersect;
+                    path.source = node_cnt;
+                    path.target = path[1].id;
+
+                    node_cnt++;
+
+                }
+                else if(!in_area(nodes_dict[path[1].id], node_area)) {
+                    intersect.id = node_cnt;
+                    nodes_dict[node_cnt] = intersect;
+                    path.source = path[0].id;
+                    path.target = node_cnt;
+
+                    node_cnt++;
+                }
+                else {
+                    path.source = path[0].id;
+                    path.target = path[1].id;
+                }
+
+
             }
+            path_ary = tmp_path;
+            let border_groups = {};
+            for(let path of path_ary){
+                let source = nodes_dict[path.source];
+                let target = nodes_dict[path.target];
+                if(Math.abs(source.x-node_area.x) <= 1e-3) {
+                    let key = 0+","+path.edge_type;
+                    if(border_groups[key] === undefined) {
+                        let id = 0;
+                        for(let key of Object.keys(border_groups)){
+                            if(parseInt(key.split(",")[0]) === 0){
+                                id++;
+                            }
+                        }
+                        border_groups[key] = [];
+                        border_groups[key].id = id;
+                    }
+                    border_groups[key].push(path);
+                    if(border_groups[key].node === undefined) border_groups[key].node = {x:0,y:0,min_x:100000,min_y:10000,max_x:0,max_y:0};
+                    border_groups[key].node.max_x = Math.max(border_groups[key].node.max_x, source.x);
+                    border_groups[key].node.max_y = Math.max(border_groups[key].node.max_y, source.y);
+                    border_groups[key].node.min_x = Math.min(border_groups[key].node.min_x, source.x);
+                    border_groups[key].node.min_y = Math.min(border_groups[key].node.min_y, source.y);
+                }
+                if(Math.abs(source.x-node_area.x-node_area.width) <= 1e-3) {
+                     let key = 1+","+path.edge_type;
+                    if(border_groups[key] === undefined) {
+                        let id = 0;
+                        for(let key of Object.keys(border_groups)){
+                            if(parseInt(key.split(",")[0]) === 1){
+                                id++;
+                            }
+                        }
+                        border_groups[key] = [];
+                        border_groups[key].id = id;
+                    }
+                    border_groups[key].push(path);
+                    if(border_groups[key].node === undefined) border_groups[key].node = {x:0,y:0,min_x:100000,min_y:10000,max_x:0,max_y:0};
+                    border_groups[key].node.max_x = Math.max(border_groups[key].node.max_x, source.x);
+                    border_groups[key].node.max_y = Math.max(border_groups[key].node.max_y, source.y);
+                    border_groups[key].node.min_x = Math.min(border_groups[key].node.min_x, source.x);
+                    border_groups[key].node.min_y = Math.min(border_groups[key].node.min_y, source.y);
+                }
+                if(Math.abs(source.y-node_area.y) <= 1e-3) {
+                     let key = 2+","+path.edge_type;
+                    if(border_groups[key] === undefined) {
+                        let id = 0;
+                        for(let key of Object.keys(border_groups)){
+                            if(parseInt(key.split(",")[0]) === 2){
+                                id++;
+                            }
+                        }
+                        border_groups[key] = [];
+                        border_groups[key].id = id;
+                    }
+                    border_groups[key].push(path);
+                    if(border_groups[key].node === undefined) border_groups[key].node = {x:0,y:0,min_x:100000,min_y:10000,max_x:0,max_y:0};
+                    border_groups[key].node.max_x = Math.max(border_groups[key].node.max_x, source.x);
+                    border_groups[key].node.max_y = Math.max(border_groups[key].node.max_y, source.y);
+                    border_groups[key].node.min_x = Math.min(border_groups[key].node.min_x, source.x);
+                    border_groups[key].node.min_y = Math.min(border_groups[key].node.min_y, source.y);
+                }
+                if(Math.abs(source.y-node_area.y-node_area.height) <= 1e-3) {
+                     let key = 3+","+path.edge_type;
+                    if(border_groups[key] === undefined) {
+                        let id = 0;
+                        for(let key of Object.keys(border_groups)){
+                            if(parseInt(key.split(",")[0]) === 3){
+                                id++;
+                            }
+                        }
+                        border_groups[key] = [];
+                        border_groups[key].id = id;
+                    }
+                    border_groups[key].push(path);
+                    if(border_groups[key].node === undefined) border_groups[key].node = {x:0,y:0,min_x:100000,min_y:10000,max_x:0,max_y:0};
+                    border_groups[key].node.max_x = Math.max(border_groups[key].node.max_x, source.x);
+                    border_groups[key].node.max_y = Math.max(border_groups[key].node.max_y, source.y);
+                    border_groups[key].node.min_x = Math.min(border_groups[key].node.min_x, source.x);
+                    border_groups[key].node.min_y = Math.min(border_groups[key].node.min_y, source.y);
+                }
+            }
+            let max_ids = [0,0,0,0];
+            for(let key of Object.keys(border_groups)) {
+                max_ids[parseInt(key.split(",")[0])] ++;
+            }
+            for(let key of Object.keys(border_groups)) {
+                let border_group = border_groups[key];
+                let i = parseInt(key.split(",")[0]);
+                border_group.max_id = max_ids[i];
+                if(border_group.node === undefined) continue;
+                // border_group.node.x /= Math.max(border_group.length, 1);
+                // border_group.node.y /= Math.max(border_group.length, 1);
+                for(let path of border_group){
+                    nodes_dict[path.source].x = (border_group.node.max_x-border_group.node.min_x)/border_group.max_id*border_group.id+border_group.node.min_x;
+                    nodes_dict[path.source].y = (border_group.node.max_y-border_group.node.min_y)/border_group.max_id*border_group.id+border_group.node.min_y;
+                    if(i<=1) {
+                        nodes_dict[path.source].y += (Math.random()-0.5)*40*that.zoom_scale;
+                    }
+                    else {
+                        nodes_dict[path.source].x += (Math.random()-0.5)*40*that.zoom_scale;
+                    }
+                }
+            }
+
             let fbundling = d3.ForceEdgeBundling(bundling_force_S, bundling_elect_scale)
 				.nodes(nodes_dict)
-				.edges(path_ary.map(function (d) {
-                    return {
-				        "source":d[0].id,
-                        "target":d[1].id,
-                        "edge_type":d.edge_type
-				    }
-                }).filter(d => d.source !== d.target));
+				.edges(path_ary);
             let oldfbundling = d3.OldForceEdgeBundling()
 				.nodes(nodes_dict)
 				.edges(path_ary.map(function (d) {
@@ -2470,6 +2646,27 @@ let GraphLayout = function (container) {
     that.if_show_init_voronoi = function(flag) {
         that.show_init_voronoi = flag;
         voronoi_plg.show_voronoi(nodes, outliers);
+    };
+
+    that.if_show_area = function(flag) {
+        if (flag) {
+            let node_area = {
+                x:that.center_scale_x(area.x),
+                y:that.center_scale_y(area.y),
+                width:that.center_scale_x(area.x+area.width)-that.center_scale_x(area.x),
+                height:that.center_scale_y(area.y+area.height)-that.center_scale_y(area.y),
+            };
+            that.main_group.select("#area-rect").remove();
+            that.main_group.append("rect")
+                .attr("id", "area-rect")
+                .attr("x", node_area.x+2*that.zoom_scale)
+                .attr("y", node_area.y+2*that.zoom_scale)
+                .attr("width", node_area.width)
+                .attr("height", node_area.height)
+                .attr("fill", "none")
+                .attr("stroke", "black")
+                .attr("stroke-width", 5*that.zoom_scale)
+        }
     };
 
 

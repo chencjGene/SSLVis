@@ -32,7 +32,7 @@ from multiprocessing.pool import ThreadPool as Pool
 
 from .data import Data, GraphData
 from .LSLabelSpreading import LSLabelSpreading
-from .model_helper import propagation, approximated_influence, exact_influence, calculate_influence_matrix_local
+from .model_helper import propagation, approximated_influence, exact_influence, calculate_influence_matrix_local, approximated_influence_local
 from .model_update import local_search_k
 from .model_helper import build_laplacian_graph
 
@@ -255,6 +255,52 @@ class SSLModel(object):
         self.influence_matrix.data[np.isnan(self.influence_matrix.data)] = 0
         self.influence_matrix.data[self.influence_matrix.data > 1] = 0
         return
+
+    def _exact_influence(self, rebuild = False, prefix="", saving = True):
+
+        affinity_matrix = self.data.get_graph(self.n_neighbor)
+        laplacian = build_laplacian_graph(affinity_matrix)
+        self.laplacian = laplacian
+        train_y = self.data.get_train_label()
+        logger.info("begin load influence matrix")
+        logger.info("influence matrix  "
+                    "do not exist, preprocessing!")
+        self.influence_matrix = \
+            exact_influence(self.unnorm_dist, affinity_matrix,
+                                   laplacian, self.alpha, train_y)
+
+        return
+
+    def _appro_influence_local(self):
+        def get_local_appro_data(graph_matrix):
+            graph = graph_matrix.tocsc()
+            N = graph.shape[0]
+            k_degree = [{i} for i in range(N)]
+            indptr = graph.indptr
+            indices = graph.indices
+            data = graph.data
+            for i in range(N):
+                degree = 2
+                m_set = k_degree[i]
+                for _ in range(degree):
+                    add_set = set()
+                    for idx in m_set:
+                        for neighbor_idx in indices[indptr[idx]:indptr[idx + 1]]:
+                            add_set.add(neighbor_idx)
+                    m_set.update(add_set)
+            return k_degree
+        affinity_matrix = self.data.get_graph(self.n_neighbor)
+        laplacian = build_laplacian_graph(affinity_matrix)
+        self.laplacian = laplacian
+
+        train_y = self.data.get_train_label()
+        select_ids = np.arange(0, train_y.shape[0])
+        logger.info("begin load influence matrix")
+        logger.info("influence matrix  "
+                    "do not exist, preprocessing!")
+        appro_influence_matrix_local = approximated_influence_local(self.unnorm_dist, affinity_matrix, laplacian, self.alpha,
+                                                                    train_y, 3, select_ids, get_local_appro_data(affinity_matrix),
+                                                                    self.dataname)
 
     def test(self):
         thread_num = 4

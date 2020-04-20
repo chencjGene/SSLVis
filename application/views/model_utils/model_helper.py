@@ -164,7 +164,7 @@ def propagation(graph_matrix, affinity_matrix, train_y, alpha=0.2, max_iter=15,
         all_entropy[new_iter_num] = all_entropy[n_iter_ - 1]
         all_entropy = all_entropy[:new_iter_num + 1]
 
-    print("propagation time:", time() - t0)
+    # print("propagation time:", time() - t0)
 
     return label_distributions_, all_loss, all_entropy, process_data, unnorm_dist
 
@@ -173,6 +173,10 @@ def exact_influence(F, affinity_matrix, laplacian_matrix, alpha, train_y):
     t0 = time()
     influence_matrix = affinity_matrix.copy() * 0
     instance_num = affinity_matrix.shape[0]
+    all_edge_cnt = affinity_matrix.data.shape[0]
+    logger.info("all edge cnt:{}".format(all_edge_cnt))
+    max_appro_cnt = 1000
+    appro_cnt = 0
     for i in tqdm(range(instance_num)):
         start = affinity_matrix.indptr[i]
         end = affinity_matrix.indptr[i + 1]
@@ -180,6 +184,9 @@ def exact_influence(F, affinity_matrix, laplacian_matrix, alpha, train_y):
         for idx, j in enumerate(j_in_this_row):
             if i == j:
                 continue
+            if max_appro_cnt == appro_cnt:
+                break
+            appro_cnt+=1
             left_one_aff = affinity_matrix.copy()
             left_one_aff.data[start:end][idx] = 0
             left_one_lap = build_laplacian_graph(left_one_aff)
@@ -190,8 +197,11 @@ def exact_influence(F, affinity_matrix, laplacian_matrix, alpha, train_y):
                                                           normalized=False)
             left_one_dis = ((left_one_F[i] - F[i]) ** 2).sum() / (F[i, :] ** 2).sum()
             influence_matrix[i, j] = left_one_dis
+        if max_appro_cnt == appro_cnt:
+            break
     time_cost = time() - t0
     logger.info("time cost is {}".format(time_cost))
+    logger.info("appro time cost is {}".format(time_cost*all_edge_cnt/max_appro_cnt))
     return influence_matrix
 
 
@@ -227,32 +237,137 @@ def approximated_influence(F, affinity_matrix, laplacian_matrix, alpha, train_y,
     logger.info("time cost is {}".format(time_cost))
     return influence_matrix
 
-def _calculate_edge_incluence(local_i_idx, j, local_F, local_graph, local_alpha_lap, alpha, local_D, n_iters, local_influence_matrix, neighbors):
-            t0 = time()
-            class_cnt = local_F.shape[1]
-            # for i in selected_ids:
-            start = local_graph.indptr[local_i_idx]
-            end = local_graph.indptr[local_i_idx + 1]
+# def _calculate_edge_incluence(local_i_idx, j, local_F, local_graph, local_alpha_lap, alpha, local_D, n_iters, local_influence_matrix, neighbors):
+#             t0 = time()
+#             class_cnt = local_F.shape[1]
+#             # for i in selected_ids:
+#             start = local_graph.indptr[local_i_idx]
+#             end = local_graph.indptr[local_i_idx + 1]
+#
+#             local_N = local_graph.shape[0]
+#             param = alpha / np.sqrt(local_D[local_i_idx] * local_D[j])
+#                 # init F0
+#             F0_data = param * (local_F[j].copy())
+#             F0_indices = np.arange(0, class_cnt)
+#             F0_indptr = np.array([0] * (local_i_idx + 1) + [class_cnt] * (local_N - local_i_idx))
+#             F0 = csr_matrix((F0_data, F0_indices, F0_indptr), shape=(local_N, class_cnt), dtype=float)
+#             deltaF = F0.copy()
+#             matrix_time = time()-t0
+#             t0 = time()
+#             for n_iter in range(n_iters):
+#                     deltaF = safe_sparse_dot(local_alpha_lap, deltaF) + F0
+#             appro_dis = (deltaF[local_i_idx, :].toarray() ** 2).sum() / (local_F[local_i_idx, :] ** 2).sum()
+#             appro_dis = 1e-15 if appro_dis < 1e-15 else appro_dis
+#             sparse_dot_time = time()-t0
+#             # influence_matrix[i_idx, neighbors[j]] = appro_dis
+#             return appro_dis, matrix_time, sparse_dot_time
 
-            local_N = local_graph.shape[0]
+def approximated_influence_local(F, affinity_matrix, laplacian_matrix, alpha, train_y, n_iters, selected_ids, k_neighbors, dataname = ""):
+    t0 = time()
+    logger.info("begin calculating approximated influence. n_iters: {}".format(n_iters))
+    logger.info("begin calculating inverse matrix")
+    # inv_K = splinalg.inv(sparse.identity(affinity_matrix.shape[0])
+    #                      - alpha * laplacian_matrix)
+
+    tmp = affinity_matrix
+    D = tmp.sum(axis=0).getA1() - tmp.diagonal()
+    D[D == 0] = 1
+    select_cnt = len(selected_ids)
+    N = affinity_matrix.shape[0]
+    class_cnt = F.shape[1]
+    influence_matrix = affinity_matrix.copy() * 0
+    i_idx = 0
+    alpha_lap = alpha * laplacian_matrix
+    alpha_lap = alpha_lap.tocsr()
+    def calculate_influence_matrix(arg):
+        i, i_idx = arg
+        neighbors = list(k_neighbors[i])
+    # for i in selected_ids:
+        local_graph = affinity_matrix[neighbors, :][:, neighbors]
+        local_i_idx = neighbors.index(i)
+        start = local_graph.indptr[local_i_idx]
+        end = local_graph.indptr[local_i_idx + 1]
+        j_in_this_row = local_graph.indices[start:end]
+
+        local_D = D[neighbors]
+        local_F = F[neighbors, :]
+        local_N = local_graph.shape[0]
+        local_alpha_lap = alpha_lap[neighbors, :][:, neighbors]
+        for idx, j in enumerate(j_in_this_row):
+            if local_i_idx == j:
+                continue
             param = alpha / np.sqrt(local_D[local_i_idx] * local_D[j])
-                # init F0
-            F0_data = param * (local_F[j].copy())
+            # init F0
+            F0_data = param*(local_F[j].copy())
             F0_indices = np.arange(0, class_cnt)
-            F0_indptr = np.array([0] * (local_i_idx + 1) + [class_cnt] * (local_N - local_i_idx))
-            F0 = csr_matrix((F0_data, F0_indices, F0_indptr), shape=(local_N, class_cnt), dtype=float)
+            F0_indptr = np.array([0]*(local_i_idx+1) + [class_cnt]*(local_N-local_i_idx))
+            F0 = csr_matrix((F0_data, F0_indices, F0_indptr), shape= (local_N, class_cnt), dtype=float)
             deltaF = F0.copy()
-            matrix_time = time()-t0
-            t0 = time()
             for n_iter in range(n_iters):
-                    deltaF = safe_sparse_dot(local_alpha_lap, deltaF) + F0
+                deltaF = safe_sparse_dot(local_alpha_lap, deltaF) + F0
             appro_dis = (deltaF[local_i_idx, :].toarray() ** 2).sum() / (local_F[local_i_idx, :] ** 2).sum()
-            appro_dis = 1e-15 if appro_dis < 1e-15 else appro_dis
-            sparse_dot_time = time()-t0
-            # influence_matrix[i_idx, neighbors[j]] = appro_dis
-            return appro_dis, matrix_time, sparse_dot_time
+            appro_dis = 1e-15 if appro_dis<1e-15 else appro_dis
+            # appro_dis = alpha * alpha * (1 - alpha) * (1 - alpha)
+            # appro_dis = appro_dis / D[i] / D[i] / D[j] / D[j] * inv_K[i, i]
+            # appro_dis = appro_dis * (F[j, :] ** 2).sum() / (F[i, :] ** 2).sum()
+            influence_matrix[i_idx, neighbors[j]] = appro_dis
+        # influence_matrix[i_idx, i_idx] = 1e-15
 
+        # i_idx += 1
+    idxs = list(range(select_cnt))
+    # pool = ThreadPool(processes=28)
+    # pool.map(calculate_influence_matrix, zip(selected_ids, idxs))
+    # pool.close()
+    # pool.join()
+    # with concurrent.futures.ThreadPoolExecutor(max_workers=28) as executor:
+    #     all_future = [executor.submit(calculate_influence_matrix, arg) for arg in zip(selected_ids, idxs)]
+    #     print(all_future)
+    #     # concurrent.futures.wait(all_future)
+    #     concurrent.futures.wait(all_future)
+    # executor = concurrent.futures.ThreadPoolExecutor(max_workers=2)
+    # all_future = [executor.submit(calculate_influence_matrix, arg) for arg in zip(selected_ids, idxs)]
+    # print(all_future)
+    # concurrent.futures.wait(all_future)
+    for arg in zip(selected_ids, idxs):
+        calculate_influence_matrix(arg)
+    # with Pool(processes=10) as pool:
+    #     res = [pool.apply_async(calculate_influence_matrix, arg) for arg in zip(selected_ids, idxs)]
+    #     for r in res:
+    #         r.get()
+    # influence_matrix = csr_matrix(influence_matrix)
 
+    influence_matrix.data = influence_matrix.data.clip(0, 1)
+    time_cost = time() - t0
+    logger.info("time cost is {}".format(time_cost))
+    return influence_matrix
+
+def _calculate_edge_incluence(i, j, F, affinity_matrix, alpha_lap, alpha, D, n_iters, local_influence_matrix):
+        # if local_influence_matrix[i, j] != 0:
+        #     return local_influence_matrix[i, j]
+
+        N = affinity_matrix.shape[0]
+        class_cnt = F.shape[1]
+        param = alpha / np.sqrt(D[i] * D[j])
+        # init F0
+
+        F0_data = param * (F[j].copy())
+
+        F0_indices = np.arange(0, class_cnt)
+        F0_indptr = np.zeros((N + 1))
+        F0_indptr[i + 1:] = class_cnt
+        t0 = time()
+        F0 = csr_matrix((F0_data, F0_indices, F0_indptr), shape=(N, class_cnt), dtype=float)
+        matrix_time = time() - t0
+        t0 = time()
+        deltaF = F0
+        for n_iter in range(n_iters):
+            deltaF = safe_sparse_dot(alpha_lap, deltaF) + F0
+            # deltaF = alpha_lap.dot(deltaF) + F0
+        appro_dis = (deltaF[i, :].toarray() ** 2).sum() / (F[i, :] ** 2).sum()
+        sparse_dot_time = time() - t0
+        local_influence_matrix[i, j] = appro_dis
+        # print(i, j, calculate_time)
+        return appro_dis, matrix_time, sparse_dot_time
 
 def calculate_influence_matrix_local(args):
     t0 = time()

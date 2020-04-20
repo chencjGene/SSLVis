@@ -308,8 +308,8 @@
 				// 	y:0
 				// };
 
-				resulting_force.x = S * (spring_force.x + electrostatic_force.x + direction_wrong_force.x + center_force.x + arc_force.x);
-				resulting_force.y = S * (spring_force.y + electrostatic_force.y + direction_wrong_force.y + center_force.y + arc_force.y);
+				resulting_force.x = S * (spring_force.x + 10*electrostatic_force.x + direction_wrong_force.x + center_force.x + arc_force.x);
+				resulting_force.y = S * (spring_force.y + 10*electrostatic_force.y + direction_wrong_force.y + center_force.y + arc_force.y);
 
 				resulting_forces_for_subdivision_points.push(resulting_force);
 			}
