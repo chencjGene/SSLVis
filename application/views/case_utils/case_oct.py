@@ -76,27 +76,19 @@ class CaseOCT(CaseBase):
 
         if step >= 3:
             self.model.step += 1
-            train_pred_step_1 = self.model.get_pred_labels()
-            train_gt = self.model.data.get_train_ground_truth()
-            affinity_matrix = self.model.data.affinity_matrix
-            for i in range(len(train_pred_step_1)):
-                # for i in selected_idxs:
-                #     if i in selected_idxs:
-                #         continue
-                if train_pred_step_1[i] != train_gt[i]:
-                    nei_idx = affinity_matrix[i, :].indices
-                    for s in nei_idx:
-                        if train_gt[i] != train_gt[s]:
-                            affinity_matrix[i, s] = 0
-                            affinity_matrix[s, i] = 0
-        
-            self.model.data.affinity_matrix = self.model.data.correct_unconnected_nodes(affinity_matrix)
-            self.model._training(rebuild=False, evaluate=evaluate, simplifying=simplifying)
+            self.model.data.actions = []
+            self.model.data.label_instance([5734, 3638], [2, 2])
+            removed_edge = [[9867, 706]] + [[77, 8743], [352, 8529], [396, 6496], [706, 9867], [1476, 2059],
+                                            [1714, 2092], [2059, 1476], [2092, 1714], [3081, 5991], [4148, 8974],
+                                            [5497, 5383], [5991, 3081], [7028, 8944], [8529, 6643], [8944, 7028]]
+            removed_edge += [[3665, 8529], [3726, 9078], [4802, 3212], [8944, 352], [9908, 5017]]
+            self.model.data.remove_edge(removed_edge)
+            self.model._training(rebuild=False, evaluate=False, simplifying=False, record=False)
+            self.model._influence_matrix(rebuild=True)
+            _, _, base_acc = self.model.adaptive_evaluation(step=3)
             save = (self.model, self.model.data)
             pickle_save_data(os.path.join(self.model.selected_dir, "case-step" + str(self.model.step) + ".pkl"), save)
 
-        if step >=3:
-            self.model._training(rebuild=False, evaluate=evaluate, simplifying=simplifying)
 
         # if not evaluate:
         #     self.model.adaptive_evaluation_unasync()

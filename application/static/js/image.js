@@ -101,8 +101,11 @@ let ImageLayout = function (container){
         state.img_grid_urls = state.img_grid_urls.filter(d => [91, 11779, 5882].indexOf(d.id)===-1);
         let new_ids = state.img_grid_urls.map(d => d.id);
         let old_ids = img_grid_urls.map(d => d.id);
-        new_ids.sort((a, b) => a-b);
-        old_ids.sort((a, b) => a-b);
+        if(state.sort){
+            new_ids.sort((a, b) => a-b);
+            old_ids.sort((a, b) => a-b);
+        }
+
         if(new_ids+'' === old_ids+'' && (!state.re_fetch)) return ;
 
 
@@ -136,9 +139,12 @@ let ImageLayout = function (container){
             return acc;
         }, []);
         await that.get_img_entropy(ids);
-        img_grid_urls.sort(function (a, b) {
+        if(state.sort){
+            img_grid_urls.sort(function (a, b) {
             return b.entropy - a.entropy;
         });
+        }
+
         console.log("sorted urls:", img_grid_urls);
         ids = img_grid_urls.reduce(function (acc, url) {
             acc.push(url.id);

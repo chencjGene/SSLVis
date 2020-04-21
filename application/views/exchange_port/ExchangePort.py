@@ -27,7 +27,18 @@ class ExchangePortClass(object):
         self.anchor = Anchors()
         self.video_debug = True
         self.local_update_step = 0
-        self.case_mode = False
+        self.case_mode = True
+        self.stl_case_step = {
+            0:1,
+            1:3,
+            3:5,
+            5:6,
+            6:8
+        }
+        self.oct_case_step = {
+            0:1,
+            1:2
+        }
         # self.case_step = 0
         if self.dataname is None:
             self.model = None
@@ -125,38 +136,50 @@ class ExchangePortClass(object):
         return res
 
     def local_update_k(self, data):
-        # self.model.local_update(data["selected_idxs"], local_k=3)
-        self.model.data.actions = []
         if self.case_mode:
-            self.model.step += 1
-        if self.video_debug:
-            if self.model.dataname == "stl":
-                assert self.local_update_step <2
-                categories = [1 for i in range(10)]
-                if self.local_update_step == 0:
-                    c = json.loads(open(os.path.join(self.model.selected_dir, "local_2_idxs.txt"), "r").read().strip("\n"))
-                    _, best_k = self.model.local_search_k(c, [1, 2, 3, 4], categories, simplifying=False, evaluate=True)
-                    self.local_update_step += 1
-                else:
-                    e = json.loads(open(os.path.join(self.model.selected_dir, "local_1_idxs.txt"), "r").read().strip("\n"))
-                    _, best_k = self.model.local_search_k(e, [1, 2, 3, 4], categories, simplifying=True, evaluate=True)
-                    self.local_update_step += 1
-            elif self.model.dataname == "oct":
-                assert self.local_update_step < 2
-                categories = [1 for i in range(4)]
-                if self.local_update_step == 0:
-                    c = json.loads(
-                        open(os.path.join(self.model.selected_dir, "local_1_idxs.txt"), "r").read().strip("\n"))
-                    _, best_k = self.model.local_search_k(c, [1, 2, 3, 4], categories, simplifying=False, evaluate=True)
-                    self.local_update_step += 1
-                else:
-                    e = json.loads(
-                        open(os.path.join(self.model.selected_dir, "local_2_idxs.txt"), "r").read().strip("\n"))
-                    _, best_k = self.model.local_search_k(e, [1, 2, 3, 4], categories, simplifying=True, evaluate=True)
-                    self.local_update_step += 1
+            # if self.model.lower() == "stl":
+            #     step = self.stl_case_step[self.model.step]
+            # elif self.model.lower() == "oct":
+            #     step = self.oct_case_step[self.model.step]
+            step = self.model.step + 1
+            if self.dataname.lower()=="stl" and step == 4:
+                step += 1
+            self.model = self.case_util.run(use_buffer=True, step=step)
+            self.anchor.link_model(self.model)
+            # TODO best k
+            best_k = 0
         else:
-            _, best_k = self.model.local_search_k(data["selected_idxs"], list(range(data["range"][0], data["range"][1]+1)), data["selected_categories"], simplifying=True)
-        best_k = int(best_k)
+            self.model.data.actions = []
+            if self.case_mode:
+                self.model.step += 1
+            if self.video_debug:
+                if self.model.dataname == "stl":
+                    assert self.local_update_step <2
+                    categories = [1 for i in range(10)]
+                    if self.local_update_step == 0:
+                        c = json.loads(open(os.path.join(self.model.selected_dir, "local_2_idxs.txt"), "r").read().strip("\n"))
+                        _, best_k = self.model.local_search_k(c, [1, 2, 3, 4], categories, simplifying=False, evaluate=True)
+                        self.local_update_step += 1
+                    else:
+                        e = json.loads(open(os.path.join(self.model.selected_dir, "local_1_idxs.txt"), "r").read().strip("\n"))
+                        _, best_k = self.model.local_search_k(e, [1, 2, 3, 4], categories, simplifying=True, evaluate=True)
+                        self.local_update_step += 1
+                elif self.model.dataname == "oct":
+                    assert self.local_update_step < 2
+                    categories = [1 for i in range(4)]
+                    if self.local_update_step == 0:
+                        c = json.loads(
+                            open(os.path.join(self.model.selected_dir, "local_1_idxs.txt"), "r").read().strip("\n"))
+                        _, best_k = self.model.local_search_k(c, [1, 2, 3, 4], categories, simplifying=False, evaluate=True)
+                        self.local_update_step += 1
+                    else:
+                        e = json.loads(
+                            open(os.path.join(self.model.selected_dir, "local_2_idxs.txt"), "r").read().strip("\n"))
+                        _, best_k = self.model.local_search_k(e, [1, 2, 3, 4], categories, simplifying=True, evaluate=True)
+                        self.local_update_step += 1
+            else:
+                _, best_k = self.model.local_search_k(data["selected_idxs"], list(range(data["range"][0], data["range"][1]+1)), data["selected_categories"], simplifying=True)
+            best_k = int(best_k)
         graph = self.anchor.get_nodes(data["wh"], self.model.step)
         res = {
             "graph": graph,
@@ -170,8 +193,17 @@ class ExchangePortClass(object):
 
     def add_data(self, data):
         if self.case_mode:
-            self.model.step += 1
-        self.model.add_more_similar_data(data)
+            # if self.model.lower() == "stl":
+            #     step = self.stl_case_step[self.model.step]
+            # elif self.model.lower() == "oct":
+            #     step = self.oct_case_step[self.model.step]
+            step = self.model.step + 1
+            if self.dataname.lower()=="stl" and step == 6:
+                step += 2
+            self.model = self.case_util.run(use_buffer=True, step=step)
+            self.anchor.link_model(self.model)
+        else:
+            self.model.add_more_similar_data(data)
         graph = self.anchor.get_nodes(data["wh"], self.model.step)
         res = {
             "graph": graph,
@@ -264,18 +296,29 @@ class ExchangePortClass(object):
 
     def update_delete_and_change_label(self, data):
         if self.case_mode:
-            self.model.step += 1
-        self.model.editing_data(data)
+            # if self.model.lower() == "stl":
+            #     step = self.stl_case_step[self.model.step]
+            # elif self.model.lower() == "oct":
+            #     step = self.oct_case_step[self.model.step]
+            step = self.model.step + 1
+            self.model = self.case_util.run(use_buffer=True, step=step)
+            self.anchor.link_model(self.model)
+        else:
+            self.model.editing_data(data)
         remain_ids = []
         for id in self.current_ids:
             if id not in data["deleted_idxs"]:
                 remain_ids.append(id)
         self.anchor.data_degree = None
         graph = self.anchor.get_nodes(data["wh"], self.model.step)
+        print(self.case_mode and self.dataname.lower()=="stl" and self.model.step == 1)
+        print(data["area"])
+        print(graph["graph"]["area"])
+        print(graph["graph"]["area"] if (self.case_mode and self.dataname.lower()=="stl" and self.model.step == 1) else data["area"])
         res = {
             "graph": graph,
             "must_show_ids": remain_ids,
-            "area": data["area"],
+            "area": graph["graph"]["area"] if (self.case_mode and self.dataname.lower()=="stl" and self.model.step == 1) else data["area"],
             "level": data["level"]
         }
         return jsonify(res)

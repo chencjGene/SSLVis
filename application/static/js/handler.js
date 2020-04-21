@@ -64,6 +64,7 @@ DataLoaderClass.prototype.get_graph_handler = function (callback) {
             that.state.complete_graph[i].box_id = -1;
         }
         let hierarchy = data.hierarchy;
+
         // TODO: process hierarchy
         for (let i = 0; i < hierarchy.length - 1; i++){
             let index = hierarchy[i].index;
@@ -74,7 +75,9 @@ DataLoaderClass.prototype.get_graph_handler = function (callback) {
                 next[j] = next[j].map(d => next_index[d]);
             }
         }
-        that.add_data_to_high_level([693, 1402, 4688], hierarchy);
+        if(that.dataname.toLowerCase()==="stl"){
+            that.add_data_to_high_level([6602], hierarchy);
+        }
 
         that.state.hierarchy = hierarchy;
         let graph = that.get_nodes_from_complete_graph(hierarchy[0].index);
@@ -215,6 +218,9 @@ DataLoaderClass.prototype.local_update_k_handler = function(callback){
             }
         }
         that.state.hierarchy = hierarchy;
+        if(that.dataname.toLowerCase()==="stl"){
+            that.add_data_to_high_level([6602], hierarchy);
+        }
         let must_show_nodes = Object.keys(that.state.nodes).map(d => parseInt(d));
         let area = data.area;
         let level = data.level;
@@ -244,6 +250,9 @@ DataLoaderClass.prototype.set_history_handler = function(callback){
             }
         }
         that.state.hierarchy = hierarchy;
+        if(that.dataname.toLowerCase()==="stl"){
+            that.add_data_to_high_level([6602], hierarchy);
+        }
         let must_show_nodes = Object.keys(that.state.nodes).map(d => parseInt(d));
         let area = data.area;
         let level = data.level;
@@ -260,6 +269,10 @@ DataLoaderClass.prototype.add_data_handler = function(callback){
     
     function _add_data_handler(data){
         console.log("add_data_handler", data);
+        that.state.rest_idxes = {};
+        for(let id of data.graph.rest_idxs){
+            that.state.rest_idxes[id] = true;
+        }
         let complete_graph = data.graph.graph.nodes;
         that.state.complete_graph = complete_graph;
         let hierarchy = data.graph.hierarchy;
@@ -274,7 +287,13 @@ DataLoaderClass.prototype.add_data_handler = function(callback){
             }
         }
         that.state.hierarchy = hierarchy;
+        if(that.dataname.toLowerCase()==="stl"){
+            that.add_data_to_high_level([6602], hierarchy);
+        }
         let must_show_nodes = Object.keys(that.state.nodes).map(d => parseInt(d));
+        let graph = that.get_nodes_from_complete_graph(hierarchy[0].index);
+
+        that.state.nodes = graph;
         let area = data.area;
         let level = data.level;
 
@@ -323,6 +342,9 @@ DataLoaderClass.prototype.update_delete_and_change_label_handler = function(call
             }
         }
         that.state.hierarchy = hierarchy;
+        if(that.dataname.toLowerCase()==="stl"){
+            that.add_data_to_high_level([6602], hierarchy);
+        }
         let must_show_nodes = data.must_show_nodes;
         let area = data.area;
         let level = data.level;

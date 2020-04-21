@@ -180,6 +180,7 @@ DataLoaderClass = function () {
 
                 that.state.is_zoom = false;
                 that.add_data_to_high_level(that.labeled_idxs, that.state.hierarchy);
+                that.state.is_zoom = true;
                 that.fetch_nodes(area, level, must_show_nodes);
                 that.iter =Math.min(Object.values(that.state.nodes)[0].label.length-1, that.iter);
                 let show_ids = [];
@@ -292,7 +293,7 @@ DataLoaderClass = function () {
                 that.get_history();
             }), "json", "POST");
             
-        data = {show_ids};
+        data = {};
         selected_idxs = that.graph_view.get_highlights();
         data["selected_idxs"] = selected_idxs;
         let level = that.graph_view.get_level();
@@ -303,7 +304,7 @@ DataLoaderClass = function () {
 
         that.add_data_node.set_data(data);
         that.add_data_node.notify();
-    }
+    };
 
     that.update_edit_state = function(data, mode, node){
         console.log("update_edit_state", data, mode, node);
@@ -330,9 +331,9 @@ DataLoaderClass = function () {
                 that.state.labeled_num = Object.values(that.state.complete_graph).filter(d => d.label[0] > -1).length;
                 that.state.unlabeled_num = Object.values(that.state.complete_graph).length - that.state.labeled_num;
                 that.update_control_info();
-                console.log("best k", best_k);
-                $(".best-k-text").attr("hidden", false);
-                $(".best-k-text").html("Best k: "+2);
+                // console.log("best k", best_k);
+                // $(".best-k-text").attr("hidden", false);
+                // $(".best-k-text").html("Best k: "+2);
                 that.state.is_zoom = false;
                 that.fetch_nodes(area, level, must_show_nodes);
 
@@ -384,6 +385,14 @@ DataLoaderClass = function () {
 
     // update img_url in states and update ImageView
     that.update_image_view = async function(nodes){
+        let case1_step3 = [152, 812, 862, 910, 1297, 1544, 1959, 2098, 2523, 2687, 2888, 3390, 3447, 3485, 3632, 3787, 3829, 3905, 4233, 4255, 4261, 4657, 4680, 4709, 4808, 5029, 5083, 5129, 5295, 5483, 5605, 5788, 5800, 5844, 5849, 6396, 7119, 7150, 7205, 7430, 7660, 7865, 7888, 7890, 7953, 8263, 8433, 8520, 8545, 8623, 8829, 8983, 9048, 9086, 9171, 9280, 9340, 9621, 9636, 9668, 9743, 9791, 10204, 10403, 10586, 10707, 10736, 10863, 11093, 11098, 11342, 11457, 11740, 11779, 11849, 11860, 11923, 11937, 11973, 12008, 12084, 12277, 12341, 12599, 12832, 12837];
+        let intersect = nodes.filter(d => case1_step3.indexOf(d)>-1);
+        let sort = true;
+        if(that.dataname.toLowerCase() === "stl" && intersect.length > 50){
+            let must_have = [548,1664,7256,8983,12532, 5528, 3298, 9616, 7453, 10651, 1193, 7762];
+            nodes = must_have.concat(nodes);
+            sort = false;
+        }
         that.state.img_grid_urls = [];
         for(let node_id of nodes){
             that.state.img_grid_urls.push({
@@ -393,7 +402,8 @@ DataLoaderClass = function () {
         }
         await that.image_view.component_update({
             "img_grid_urls": that.state.img_grid_urls,
-            "re_fetch": that.state.re_fetch
+            "re_fetch": that.state.re_fetch,
+            "sort":sort
         })
     };
 
@@ -795,9 +805,9 @@ DataLoaderClass = function () {
         that.update_graph_view();
     };
 
-    that.update_graph_view = async function() {
+    that.update_graph_view = async function(reset = true) {
         console.log("update graph view");
-        reset_spinner();
+        if(reset) reset_spinner();
         await that.graph_view.component_update({
             "nodes":that.state.nodes,
             "path":that.state.path,
@@ -911,7 +921,7 @@ DataLoaderClass = function () {
             }
         }
         that.get_dist_view(show_ids);
-        that.update_graph_view();
+        that.update_graph_view(false);
     };
 
     that.graph_home = function() {

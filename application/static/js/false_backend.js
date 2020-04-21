@@ -4,6 +4,7 @@ DataLoaderClass.prototype.get_nodes_from_complete_graph = function (nodes_id) {
     let graph = {};
     for(let node_id of nodes_id){
         if(that.state.rest_idxes[node_id] === undefined) continue;
+        if(complete_graph[node_id] === undefined) continue;
         graph[node_id] = complete_graph[node_id];
     }
     return graph;

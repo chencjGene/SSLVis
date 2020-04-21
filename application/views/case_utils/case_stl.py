@@ -72,7 +72,6 @@ class CaseSTL(CaseBase):
             lizard = json.loads(open(os.path.join(self.model.selected_dir, "lizard.txt"), "r").read().strip("\n"))
             lemur = json.loads(open(os.path.join(self.model.selected_dir, "lemur.txt"), "r").read().strip("\n"))
             removed = lizard + lemur
-            removed = removed + [6986, 4710, 5790, 227, 2694]
             self.model.data.remove_instance(removed)
             self.model.data.update_graph(removed)
 
@@ -93,6 +92,11 @@ class CaseSTL(CaseBase):
             edge_list = json.loads(open(os.path.join(self.model.selected_dir, "removed_1.txt"), "r").read().strip("\n"))
             remove_edges_ext = [[59, 5035], [713, 5035], [3189, 6834], [3928, 3307], [4446, 48], [5963, 6837], [6347, 5035], [6834, 10917]]
             self.model.data.remove_edge(edge_list+remove_edges_ext)
+
+            removed = [6986, 4710, 5790, 227, 2694]
+            self.model.data.remove_instance(removed)
+            self.model.data.update_graph(removed)
+
             self.model.influence_matrix = None
 
             self.model._training(rebuild=False, evaluate=True, simplifying=False, record=True)

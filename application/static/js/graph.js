@@ -224,11 +224,11 @@ let GraphLayout = function (container) {
     that.set_data_manager = function(new_data_manager) {
         that.data_manager = new_data_manager;
         that.svg.on("click", function () {
-            if($("#select-edge-btn").css("background-color") === "rgba(0, 0, 0, 0)" || $("#select-edge-btn").css("background-color") === "rgb(255, 255, 255)"){
+            // if($("#select-edge-btn").css("background-color") === "rgba(0, 0, 0, 0)" || $("#select-edge-btn").css("background-color") === "rgb(255, 255, 255)"){
                 // that.data_manager.highlight_nodes([]);
                 console.log("click svg");
                 that.highlight([]);
-            }
+            // }
 
         })
     };
@@ -1758,6 +1758,8 @@ let GraphLayout = function (container) {
                     height / (yRange[1] - yRange[0]));
         scale *= 0.85;
         that.scale = scale;
+        // that.scale = 26;
+        console.log("image scale", that.scale);
         let x_width = (xRange[1] - xRange[0]) * scale;
         let y_height = (yRange[1] - yRange[0]) * scale;
         that.center_scale_x = d3.scaleLinear().domain(xRange).range([(width - x_width) / 2, (width + x_width) / 2]);
@@ -1922,6 +1924,12 @@ let GraphLayout = function (container) {
 
     that.highlight = async function(ids) {
         // highlight_plg.highlight(nodes, ids);
+        if(ids.length === 114) {
+            ids = ids.concat([6219, 11966, 12467, 7573, 11905, 717, 1455, 4915])
+        }
+        if(ids.length === 0) {
+            that.data_manager.state.highlight_path = [];
+        }
         highlights = ids.map(d => DataLoader.state.complete_graph[d]);
         that.focus_nodes = ids.map(d => DataLoader.state.complete_graph[d]);
         await that.show_edges();
@@ -2569,17 +2577,18 @@ let GraphLayout = function (container) {
         is_local_k = flag;
     };
 
-    that.remove_nodes = function() {
-        console.log("Remove nodes:", highlights);
-        if(highlights.length === 0){
+    that.remove_nodes = function(deletes = null) {
+        if(deletes === null) deletes = highlights;
+        console.log("Remove nodes:", deletes);
+        if(deletes.length === 0){
             return
         }
         delete_nodes = {};
-        for(let id of highlights){
+        for(let id of deletes){
             delete_nodes[id] = true;
         }
         that.data_manager.update_graph_view();
-        that.data_manager.delete_nodes_menu(highlights);
+        that.data_manager.delete_nodes_menu(deletes);
     };
 
     that.if_show_voronoi = function(flag){
