@@ -395,29 +395,29 @@ let GraphVoronoi = function(parent){
             .attr("transform", d => 
                 "translate("+(d.x)
                 +","+(d.y)+")")
-            .call(d3.drag().on("start", function(d){
-                console.log("start dragstarted");
-                that.drag_activated = true;
-                that.drag_node = d;
-                d3.event.sourceEvent.stopPropagation();
-            })
-            .on("drag", function(d){
-                if (!that.drag_activated) return;
-                d.x = d3.mouse(view.main_group.node())[0];
-                d.y = d3.mouse(view.main_group.node())[1];
-                d3.select(this).attr("transform",
-                    d => "translate("+(d.x)
-                    +","+(d.y)+")");
-            })
-            .on("end", function(d){
-                d.x = d3.mouse(view.main_group.node())[0];
-                d.y = d3.mouse(view.main_group.node())[1];
-                console.log("drag end", d.x, d.y);
-                that.drag_activated = false;
-                // if (that.second_drag_node){
-                //     that.show_comparison();
-                // }
-            }));
+            // .call(d3.drag().on("start", function(d){
+            //     console.log("start dragstarted");
+            //     that.drag_activated = true;
+            //     that.drag_node = d;
+            //     d3.event.sourceEvent.stopPropagation();
+            // })
+            // .on("drag", function(d){
+            //     if (!that.drag_activated) return;
+            //     d.x = d3.mouse(view.main_group.node())[0];
+            //     d.y = d3.mouse(view.main_group.node())[1];
+            //     d3.select(this).attr("transform",
+            //         d => "translate("+(d.x)
+            //         +","+(d.y)+")");
+            // })
+            // .on("end", function(d){
+            //     d.x = d3.mouse(view.main_group.node())[0];
+            //     d.y = d3.mouse(view.main_group.node())[1];
+            //     console.log("drag end", d.x, d.y);
+            //     that.drag_activated = false;
+            //     // if (that.second_drag_node){
+            //     //     that.show_comparison();
+            //     // }
+            // }));
 
         // let sub_v_g = that.voronoi_group.selectAll("g.voronoi-cell")
         // .data(that.cell_data, d => d.id)
