@@ -69,6 +69,18 @@ let EditLayout = function(){
             let menu = [];
             menu.push({
                 // title: 'Label As',
+                name: 'Delete',
+                color: '',
+                className: "iw-mnotSelected delete-menu",
+                fun: function () {
+                    console.log("Delete");
+                    that.data_manager.graph_view.remove_nodes([focus_data])
+                    // let label = -1;
+                    // that.editing(label);
+                }
+            });
+            menu.push({
+                // title: 'Label As',
                 name: 'Label as:',
                 color: '',
                 className: "iw-mnotSelected label-as",
