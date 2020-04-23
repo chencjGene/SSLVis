@@ -43,16 +43,25 @@ let GraphVoronoi = function(parent){
     // }
 
     scale_function = function(x, simple_bar){
-        if (simple_bar){
-            if (x < 0.13) x /= 2.5;
+        if (DataName === "stl"){                
+            if (simple_bar){
+                if (x < 0.13) x /= 2.5;
+            }
+            else{
+                if (x < 0.05) x /= 4;
+            }
+            if (x > 0.2 && x < 0.5) { x = x * 2;}
+            else if (x > 0.18) {x = x + 0.1;}
+            return Math.pow(x, 0.4);
         }
         else{
-            if (x < 0.05) x /= 4;
+            if (x > 1) x = x * 1.8;
+            if (x > 0.01 && x < 0.5) x = x * 4;
+            // if (x > 1) x = 1;
+            return Math.pow(x, 0.4);
         }
-        if (x > 0.2 && x < 0.5) { x = x * 2;}
-        else if (x > 0.18) {x = x + 0.1;}
-        return Math.pow(x, 0.4);
     };
+
 
     that._init = function(){
         that.set_view(parent);
