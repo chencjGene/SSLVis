@@ -44,12 +44,13 @@ let GraphVoronoi = function(parent){
 
     scale_function = function(x, simple_bar){
         if (simple_bar){
-            if (x < 0.15) x /= 4;
+            if (x < 0.13) x /= 2.5;
         }
         else{
             if (x < 0.05) x /= 4;
         }
         if (x > 0.2 && x < 0.5) { x = x * 2;}
+        else if (x > 0.18) {x = x + 0.1;}
         return Math.pow(x, 0.4);
     };
 
@@ -147,6 +148,8 @@ let GraphVoronoi = function(parent){
             }
             cell.x = cell.site.data[0] + best_dx * step;
             cell.y = cell.site.data[1] + best_dy * step;
+            cell.x = view.center_scale_x(cell.x);
+            cell.y = view.center_scale_y(cell.y);
             console.log("final cell position", cell.x, cell.y, best_dx, best_dy);
         }
     };
@@ -254,12 +257,12 @@ let GraphVoronoi = function(parent){
             let cell = that.voronoi_data.cells[i];
             let summary = that.simple_bar[i] ? cell.simple_summary : cell.summary;
             let class_cnt = summary.length;
-            cell.bar_width = 4 * view.zoom_scale;
+            cell.bar_width = 4 * view.zoom_scale * 2;
             small_inner_bounder = 1.5 * view.zoom_scale * 0;
-            large_inner_bounder = 3 * view.zoom_scale * 0;
-            outer_bounder = 3 * view.zoom_scale;
-            cell.chart_width = cell.bar_width*(2*class_cnt)+large_inner_bounder*(class_cnt-1)+small_inner_bounder*class_cnt+outer_bounder*2;
-            cell.chart_height = 50 * 0.8 * view.zoom_scale;
+            large_inner_bounder = 3 * view.zoom_scale * 2;
+            outer_bounder = 3 * view.zoom_scale * 2;
+            cell.chart_width = cell.bar_width*(class_cnt)+large_inner_bounder*(class_cnt-1)+small_inner_bounder*class_cnt+outer_bounder*2;
+            cell.chart_height = 50 * 0.8 * view.zoom_scale * 2;
             cell.summary_data = summary;
             cell.simple_bar = that.simple_bar[i];
             that.cell_data.push(cell);
@@ -303,8 +306,8 @@ let GraphVoronoi = function(parent){
         that.voronoi_in_group
             .selectAll(".bar-group")
             .attr("transform", d => 
-                "translate("+(view.center_scale_x(d.x))
-                +","+(view.center_scale_y(d.y))+")");
+                "translate("+(d.x)
+                +","+(d.y)+")");
 
         that.voronoi_in_group.selectAll(".voronoi-edges")
         .each(function (d) {
@@ -390,8 +393,8 @@ let GraphVoronoi = function(parent){
         let sub_v_g = v_g.append("g")
         .attr("class", "bar-group")
             .attr("transform", d => 
-                "translate("+(view.center_scale_x(d.x))
-                +","+(view.center_scale_y(d.y))+")")
+                "translate("+(d.x)
+                +","+(d.y)+")")
             // .call(d3.drag().on("start", function(d){
             //     console.log("start dragstarted");
             //     that.drag_activated = true;
@@ -411,9 +414,9 @@ let GraphVoronoi = function(parent){
             //     d.y = d3.mouse(view.main_group.node())[1];
             //     console.log("drag end", d.x, d.y);
             //     that.drag_activated = false;
-            //     if (that.second_drag_node){
-            //         that.show_comparison();
-            //     }
+            //     // if (that.second_drag_node){
+            //     //     that.show_comparison();
+            //     // }
             // }));
 
         // let sub_v_g = that.voronoi_group.selectAll("g.voronoi-cell")
@@ -465,8 +468,8 @@ let GraphVoronoi = function(parent){
                         value: value,
                         label: d.label,
                         idx: idx,
-                        x: outer_bounder+(d.bar_width*2+small_inner_bounder+large_inner_bounder)*i,
-                        y: d.chart_height*0.8-d.chart_height*0.7*scale_function(value, d.simple_bar),
+                        x: outer_bounder+(d.bar_width+small_inner_bounder+large_inner_bounder)*i,
+                        y: d.chart_height*0.9-d.chart_height*0.7*scale_function(value, d.simple_bar),
                         w: d.bar_width,
                         h: d.chart_height*0.7*scale_function(value, d.simple_bar),
                         color: idx === -1 ? "gray" : color_label[idx],
