@@ -664,6 +664,8 @@ GraphLayout.prototype.show_edges = async function(modes){
     that.data_manager.state.path = that.all_path;
     that.data_manager.state.highlights = that.highlights;
     console.log("selection box highlights:", that.highlights);
+    that.multi_step_out = 0;
+    that.multi_step_in = 0;
     await that.data_manager.update_graph_view(false);
     that.data_manager.set_propagation_filter_data(that.step_count[2], that.step_count[0], that.step_count[1]);
     

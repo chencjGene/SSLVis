@@ -286,7 +286,7 @@ let FilterLayout = function (container) {
             .style("fill", (d, i) => i===0?color_unlabel:color_label[i-1])
             .attr("x", function(d, i) { return x(i); })
             .attr("width", x.bandwidth())
-            .attr("y", function(d, i) { return y(d.height); })
+            .attr("y", function(d, i) { return y(d.height)-3; })
             .attr("height", function(d) {
               return container_height*  0.7 - y(d.height);
           })
@@ -362,7 +362,7 @@ let FilterLayout = function (container) {
             .duration(AnimationDuration)
             .attr("x", function(d, i) { return x(i); })
             .attr("width", x.bandwidth())
-            .attr("y", function(d, i) { return y(d.height); })
+            .attr("y", function(d, i) { return y(d.height)-3; })
             .attr("height", function(d) {
                   return container_height*  0.7 - y(d.height);
               })
@@ -754,7 +754,7 @@ let FilterLayout = function (container) {
             .style("fill", "rgb(127, 127, 127)")
             .attr("x", function(d, i) { return x(i); })
             .attr("width", x.bandwidth())
-            .attr("y", function(d, i) { return y(type==="uncertainty"?Math.pow(d.length/max_len, 1/2):d.length/max_len); })
+            .attr("y", function(d, i) { return y(type==="uncertainty"?Math.pow(d.length/max_len, 1/2):d.length/max_len)-3; })
             .attr("height", function(d) {
                 return container_height*  0.7 - y(type==="uncertainty"?Math.pow(d.length/max_len, 1/2):d.length/max_len);
             })
@@ -764,7 +764,7 @@ let FilterLayout = function (container) {
             .duration(AnimationDuration)
             .attr("x", function(d, i) { return x(i); })
             .attr("width", x.bandwidth())
-            .attr("y", function(d, i) { return y(type==="uncertainty"?Math.pow(d.length/max_len, 1/2):d.length/max_len); })
+            .attr("y", function(d, i) { return y(type==="uncertainty"?Math.pow(d.length/max_len, 1/2):d.length/max_len)-3; })
             .attr("height", function(d) {
                 return container_height*  0.7 - y(type==="uncertainty"?Math.pow(d.length/max_len, 1/2):d.length/max_len);
             })
@@ -1007,7 +1007,7 @@ let FilterLayout = function (container) {
         let type = "kdegree";
         let min_xv = -range[0];
         let max_xv = range[1];
-        let mrange = [range[0], range[1]];
+        let mrange = [0, 0];
         // distribution
         let max_len = 0;
         let bar_cnt = distribution.length;
@@ -1165,7 +1165,7 @@ let FilterLayout = function (container) {
             .style("fill", "rgb(127, 127, 127)")
             .attr("x", function(d, i) { return x(i); })
             .attr("width", x.bandwidth())
-            .attr("y", function(d, i) { return y(d/max_len); })
+            .attr("y", function(d, i) { return y(d/max_len)-3; })
             .attr("height", function(d) {
                 return container_height*  0.7 - y(d/max_len);
             })
@@ -1175,7 +1175,7 @@ let FilterLayout = function (container) {
             .duration(AnimationDuration)
             .attr("x", function(d, i) { return x(i); })
             .attr("width", x.bandwidth())
-            .attr("y", function(d, i) { return y(d/max_len); })
+            .attr("y", function(d, i) { return y(d/max_len)-3; })
             .attr("height", function(d) {
                 return container_height*  0.7 - y(d/max_len);
             })
@@ -1487,7 +1487,7 @@ let FilterLayout = function (container) {
                 let val = d/max_len;
                 val = Math.max(val, 0.05);
                 val = d===0?d:val;
-                return y(val);
+                return y(val)-3;
             })
             .attr("height", function(d) {
                 let val = d/max_len;
@@ -1505,7 +1505,7 @@ let FilterLayout = function (container) {
                 let val = d/max_len;
                 val = Math.max(val, 0.05);
                 val = d===0?d:val;
-                return y(val);
+                return y(val)-3;
             })
             .attr("height", function(d) {
                 let val = d/max_len;
@@ -1738,7 +1738,7 @@ let FilterLayout = function (container) {
             .style("fill", "rgb(127, 127, 127)")
             .attr("x", function(d, i) { return x(i); })
             .attr("width", x.bandwidth())
-            .attr("y", function(d, i) { return y(d.cnt/max_len); })
+            .attr("y", function(d, i) { return y(d.cnt/max_len)-3; })
             .attr("height", function(d) {
                 return container_height*  0.7 - y(d.cnt/max_len);
             })
@@ -1781,7 +1781,7 @@ let FilterLayout = function (container) {
             .duration(AnimationDuration)
             .attr("x", function(d, i) { return x(i); })
             .attr("width", x.bandwidth())
-            .attr("y", function(d, i) { return y(d.cnt/max_len); })
+            .attr("y", function(d, i) { return y(d.cnt/max_len)-3; })
             .attr("height", function(d) {
                 return container_height*  0.7 - y(d.cnt/max_len);
             })
