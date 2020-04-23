@@ -83,7 +83,7 @@ class CaseOCT(CaseBase):
                                             [5497, 5383], [5991, 3081], [7028, 8944], [8529, 6643], [8944, 7028]]
             removed_edge += [[3665, 8529], [3726, 9078], [4802, 3212], [8944, 352], [9908, 5017]]
             self.model.data.remove_edge(removed_edge)
-            self.model._training(rebuild=False, evaluate=False, simplifying=False, record=False)
+            self.model._training(rebuild=False, evaluate=False, simplifying=False, record=True)
             self.model._influence_matrix(rebuild=True)
             _, _, base_acc = self.model.adaptive_evaluation(step=3)
             save = (self.model, self.model.data)

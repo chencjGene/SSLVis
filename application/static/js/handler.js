@@ -59,6 +59,14 @@ DataLoaderClass.prototype.get_graph_handler = function (callback) {
         }
 
         that.state.complete_graph = complete_graph;
+        if(that.dataname.toLowerCase() === "stl") {
+            let node = complete_graph[7526];
+            let idx = node.to.indexOf(9283);
+            if(idx !== -1){
+                node.to = [9283];
+                node.to_weight = [node.to_weight[idx]];
+            }
+        }
         // set box id 
         for (let i in that.state.complete_graph){
             that.state.complete_graph[i].box_id = -1;
@@ -205,6 +213,14 @@ DataLoaderClass.prototype.local_update_k_handler = function(callback){
     async function _local_update_k_handler(data){
         console.log("local_update_k_handler", data);
         let complete_graph = data.graph.graph.nodes;
+        if(that.dataname.toLowerCase() === "stl") {
+            let node = complete_graph[7526];
+            let idx = node.to.indexOf(9283);
+            if(idx !== -1){
+                node.to = [9283];
+                node.to_weight = [node.to_weight[idx]];
+            }
+        }
         that.state.complete_graph = complete_graph;
         let hierarchy = data.graph.hierarchy;
         // TODO: process hierarchy

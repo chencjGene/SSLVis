@@ -248,6 +248,9 @@ let GraphLayout = function (container) {
         nodes = Object.values(nodes);
         is_show_path = state.is_show_path;
         highlights = state.highlights;
+        if(highlights.length === 120) {
+            highlights = highlights.concat([717, 1455, 4915])
+        }
         area = state.area;
         rescale = state.rescale;
         visible_items = state.visible_items;
@@ -572,7 +575,7 @@ let GraphLayout = function (container) {
                 let blabel = nodes_dict[path[1].id].label[iter];
                 path.edge_type = alabel+","+blabel;
                 let intersect = line_rect_intersection(nodes_dict[path[0].id], nodes_dict[path[1].id], node_area);
-                if(!in_area(nodes_dict[path[0].id], node_area)) {
+                if((!in_area(nodes_dict[path[0].id], node_area)) && (intersect !== null)) {
                     intersect.id = node_cnt;
                     nodes_dict[node_cnt] = intersect;
                     path.source = node_cnt;
@@ -581,7 +584,7 @@ let GraphLayout = function (container) {
                     node_cnt++;
 
                 }
-                else if(!in_area(nodes_dict[path[1].id], node_area)) {
+                else if((!in_area(nodes_dict[path[1].id], node_area)) && (intersect !== null)) {
                     intersect.id = node_cnt;
                     nodes_dict[node_cnt] = intersect;
                     path.source = path[0].id;
@@ -678,9 +681,42 @@ let GraphLayout = function (container) {
                     border_groups[key].node.min_y = Math.min(border_groups[key].node.min_y, source.y);
                 }
             }
+            let sources = [{x:0,y:0,min_x:100000,min_y:10000,max_x:0,max_y:0}, {x:0,y:0,min_x:100000,min_y:10000,max_x:0,max_y:0}, {x:0,y:0,min_x:100000,min_y:10000,max_x:0,max_y:0}, {x:0,y:0,min_x:100000,min_y:10000,max_x:0,max_y:0}];
+
             let max_ids = [0,0,0,0];
             for(let key of Object.keys(border_groups)) {
+                let border_id = parseInt(key.split(",")[0]);
                 max_ids[parseInt(key.split(",")[0])] ++;
+                for(let node of border_groups[key]) {
+                    sources[border_id].max_x = Math.max(sources[border_id].max_x, nodes_dict[node.source].x);
+                    sources[border_id].max_y = Math.max(sources[border_id].max_y, nodes_dict[node.source].y);
+                    sources[border_id].min_x = Math.min(sources[border_id].min_x, nodes_dict[node.source].x);
+                    sources[border_id].min_y = Math.min(sources[border_id].min_y, nodes_dict[node.source].y);
+                }
+            }
+            for(let i=0; i<4; i++) {
+                if(i <= 1){
+                    sources[i].min_y = Math.max(node_area.y+node_area.height/10, sources[i].min_y);
+                    sources[i].max_y = Math.min(node_area.y+node_area.height*9/10, sources[i].max_y);
+                }
+                else {
+                    sources[i].min_x = Math.max(node_area.x+node_area.width/10, sources[i].min_x);
+                    sources[i].max_x = Math.min(node_area.x+node_area.width*9/10, sources[i].max_x);
+                }
+            }
+
+            for(let key of Object.keys(border_groups)) {
+                let border_id = parseInt(key.split(",")[0]);
+                border_groups[key].node.max_x = sources[border_id].max_x;
+                border_groups[key].node.max_y = sources[border_id].max_y;
+                border_groups[key].node.min_x = sources[border_id].min_x;
+                border_groups[key].node.min_y = sources[border_id].min_y;
+            }
+            if(border_groups["3,5,3"] !== undefined && border_groups["1,5,3"] !== undefined) {
+                for(let node of border_groups["3,5,3"]) {
+                    border_groups["1,5,3"].push(node);
+                }
+                delete border_groups["3,5,3"]
             }
             for(let key of Object.keys(border_groups)) {
                 let border_group = border_groups[key];
@@ -921,10 +957,10 @@ let GraphLayout = function (container) {
             that.uncertainty_glyph_update();
 
             gradient_in_group
-                .attr("x1", d => that.if_focus_selection_box?d[0].focus_x:that.center_scale_x(d[0].x))
-                .attr("y1", d => that.if_focus_selection_box?d[0].focus_y:that.center_scale_y(d[0].y))
-                .attr("x2", d => that.if_focus_selection_box?d[1].focus_x:that.center_scale_x(d[1].x))
-                .attr("y2", d => that.if_focus_selection_box?d[1].focus_y:that.center_scale_y(d[1].y))
+                .attr("x1", d => that.if_focus_selection_box?d[0].focus_x:d[3][0].x)
+                .attr("y1", d => that.if_focus_selection_box?d[0].focus_y:d[3][0].y)
+                .attr("x2", d => that.if_focus_selection_box?d[1].focus_x:d[3][2].x)
+                .attr("y2", d => that.if_focus_selection_box?d[1].focus_y:d[3][2].y)
                 .each(function (d) {
                     let linearGradient = d3.select(this);
                     linearGradient.select(".stop-1")
@@ -1238,10 +1274,10 @@ let GraphLayout = function (container) {
                 .append("linearGradient")
                 .attr("gradientUnits", "userSpaceOnUse")
                 .attr("id", d => "path" + d[0].id + "-" + d[1].id)
-                .attr("x1", d => that.if_focus_selection_box?d[0].focus_x:that.center_scale_x(d[0].x))
-                .attr("y1", d => that.if_focus_selection_box?d[0].focus_y:that.center_scale_y(d[0].y))
-                .attr("x2", d => that.if_focus_selection_box?d[1].focus_x:that.center_scale_x(d[1].x))
-                .attr("y2", d => that.if_focus_selection_box?d[1].focus_y:that.center_scale_y(d[1].y));
+                .attr("x1", d => that.if_focus_selection_box?d[0].focus_x:d[3][0].x)
+                .attr("y1", d => that.if_focus_selection_box?d[0].focus_y:d[3][0].y)
+                .attr("x2", d => that.if_focus_selection_box?d[1].focus_x:d[3][2].x)
+                .attr("y2", d => that.if_focus_selection_box?d[1].focus_y:d[3][2].y);
             gradient.append("stop")
                 .attr("class", "stop-1")
                 .attr("offset", "0%")
@@ -2043,12 +2079,14 @@ let GraphLayout = function (container) {
         }
         path_in_group.attr("opacity", function (d) {
             let key = d[0].id+","+d[1].id;
+            let opacity = d3.select(this).attr("opacity");
 
             if(path_keys.indexOf(key) > -1) {
                 highlight_nodes[d[0].id] = true;
                 highlight_nodes[d[1].id] = true;
                 return that.opacity_path(d)
             }
+            else if(opacity == 0) return 0;
             else return 0.3;
         });
         nodes_in_group.attr("opacity", function (d) {
