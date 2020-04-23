@@ -41,6 +41,7 @@ class CaseSTL(CaseBase):
             self.model.data.actions = []
             self.model.data.add_new_categories("snake")
             self.model.data.label_instance([6219, 11966, 12467, 7573, 11905], [10, 10, 10, 10, 10])
+            self.model.data.label_instance([9081, 7427], [1, 4])
             # self.model._training(rebuild=False, evaluate=evaluate, simplifying=False)
             # self.pred_result[1] = self.model.get_pred_labels()
             # self.model.adaptive_evaluation(step=1)
@@ -71,14 +72,16 @@ class CaseSTL(CaseBase):
             # remove other class
             lizard = json.loads(open(os.path.join(self.model.selected_dir, "lizard.txt"), "r").read().strip("\n"))
             lemur = json.loads(open(os.path.join(self.model.selected_dir, "lemur.txt"), "r").read().strip("\n"))
-            removed = lizard + lemur
+            removed = lizard + lemur + [2437]
             self.model.data.remove_instance(removed)
             self.model.data.update_graph(removed)
-
+            self.model._training(rebuild=False, evaluate=False, simplifying=False, record=False)
             c = json.loads(open(os.path.join(self.model.selected_dir, "local_4_idxs.txt"), "r").read().strip("\n"))
             # self.model.local_search_k(c, range(7, 40), categories, simplifying=False, evaluate=True)
             self.model.influence_matrix = None
             self.model.local_search_k(c, range(27, 29), categories, simplifying=False, evaluate=True, record=False)
+            self.model.data.remove_edge([[7526, 7409], [7526, 11914], [7526, 10280]])
+            self.model._training(rebuild=False, evaluate=False, simplifying=False, record=False)
             self.model._influence_matrix(rebuild=False)
 
             self.pred_result[2] = self.model.get_pred_labels()
@@ -119,6 +122,7 @@ class CaseSTL(CaseBase):
         # if step >= 4:
 
             e = json.loads(open(os.path.join(self.model.selected_dir, "local_1_idxs.txt"), "r").read().strip("\n"))
+            e += [2098, 2888, 2983, 3905, 5219, 5816, 5844, 7205, 8545, 8829, 9340, 10360, 10403, 10774, 11457]
             self.model.local_search_k(e, [1, 2, 3, 4], categories, simplifying=False, evaluate=True, record=False)
 
             e = json.loads(open(os.path.join(self.model.selected_dir, "local_3_idxs.txt"), "r").read().strip("\n"))

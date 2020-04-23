@@ -27,7 +27,7 @@ class ExchangePortClass(object):
         self.anchor = Anchors()
         self.video_debug = True
         self.local_update_step = 0
-        self.case_mode = False
+        self.case_mode = True
         self.stl_case_step = {
             0:1,
             1:3,

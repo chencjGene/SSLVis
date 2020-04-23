@@ -464,8 +464,8 @@ function label_layout(nodes, path, zoom_scale){
     // let img_height = 12  * zoom_scale;
     // let padding = 0  * zoom_scale;
     
-    let img_width = 10 / 3 * zoom_scale;
-    let img_height = 10 / 3  * zoom_scale;
+    let img_width = 5 / 3 * zoom_scale;
+    let img_height = 5 / 3  * zoom_scale;
     let padding = 0.1  * zoom_scale;
 
     function return_rect(node, j){
@@ -590,8 +590,8 @@ function label_layout(nodes, path, zoom_scale){
 function get_multiple_connected_static(node, all_graph, threshold){
     // in step
     // Object.value(all_graph).forEach(d => d.visited = false);
-    for (let i in all_graph){
-        all_graph[i].visited = false;
+    for (let onenode of Object.values(all_graph)){
+        onenode.visited = false;
     }
     in_step_count = [];
     candi_queue = [node];
@@ -617,6 +617,9 @@ function get_multiple_connected_static(node, all_graph, threshold){
     if (in_step_count.length === 0) in_step_count = [0];
 
     // out step
+    for (let onenode of Object.values(all_graph)){
+        onenode.visited = false;
+    }
     out_step_count = [];
     candi_queue = [node];
     for(let i = 0; i < 100; i++){
@@ -625,7 +628,7 @@ function get_multiple_connected_static(node, all_graph, threshold){
         out_step_count.push(candi_queue.length);
         for (let j = 0; j < candi_queue.length; j++){
             let n = candi_queue[j];
-            if (n.visited = true) continue;
+            if (n.visited === true) continue;
             let to_list = n.to;
             let to_weight = n.to_weight;
             for (let k = 0; k < to_list.length; k++){
@@ -649,9 +652,9 @@ function get_multiple_connected_static(node, all_graph, threshold){
 
 function get_step_count_statistic(highlights, all_graph){
         // get step_count randomly
-        in_step_count = [0, 0, 0, 0, 0];
-        out_step_count = [0, 0, 0, 0, 0];
-        highlight_nodes = highlights.map(d => all_graph[d]);
+        let in_step_count = [0, 0, 0, 0, 0];
+        let out_step_count = [0, 0, 0, 0, 0];
+        let highlight_nodes = highlights.map(d => all_graph[d]);
         for (let i = 0; i < highlight_nodes.length; i++){
             // in step
             let from_list = highlight_nodes[i].from;

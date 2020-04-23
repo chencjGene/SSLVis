@@ -106,8 +106,10 @@ class Data(object):
             if self.dataname.lower() == "stl":
                 # relabel:
                 removed_idx = [self.train_idx[39], self.train_idx[33]]
-                added_idx = [self.train_idx[9081], self.train_idx[7427]]
+                added_idx = [self.train_idx[2790], self.train_idx[5855]]
                 tmp_labeled_idx = added_idx
+                # added_idx = [self.train_idx[11146], self.train_idx[7683]]
+                # tmp_labeled_idx = []
                 for old_idx in self.selected_labeled_idx:
                     if old_idx not in removed_idx:
                         tmp_labeled_idx.append(old_idx)
@@ -613,10 +615,7 @@ class GraphData(Data):
             self.affinity_matrix[e, s] = 1
 
     def remove_edge(self, removed_edges):
-        # DEBUG: for video case:
-        if len(removed_edges) == 1 and removed_edges[0][0] == 1609 and removed_edges[0][1] == 2555:
-            removed_edges.append([8581, 9088])
-            removed_edges.append([3451, 9088])
+
         print("removed edges:", removed_edges)
 
         if len(removed_edges) > 0:
