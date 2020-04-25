@@ -142,8 +142,8 @@ class ExchangePortClass(object):
             # elif self.model.lower() == "oct":
             #     step = self.oct_case_step[self.model.step]
             step = self.model.step + 1
-            if self.dataname.lower()=="stl" and step == 4:
-                step += 1
+            # if self.dataname.lower()=="stl" and step == 4:
+            #     step += 1
             self.model = self.case_util.run(use_buffer=True, step=step)
             self.anchor.link_model(self.model)
             # TODO best k
@@ -198,8 +198,8 @@ class ExchangePortClass(object):
             # elif self.model.lower() == "oct":
             #     step = self.oct_case_step[self.model.step]
             step = self.model.step + 1
-            if self.dataname.lower()=="stl" and step == 6:
-                step += 2
+            # if self.dataname.lower()=="stl" and step == 6:
+            #     step += 2
             self.model = self.case_util.run(use_buffer=True, step=step)
             self.anchor.link_model(self.model)
         else:

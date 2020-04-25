@@ -98,7 +98,7 @@ let GraphLayout = function (container) {
     let delete_edges = [];
     let scale_function = function(x, simple_bar = true){
         if (simple_bar){
-            if (x < 0.13) x /= 2.5;
+            if (x < 0.12) x /= 2.5;
         }
         else{
             if (x < 0.05) x /= 4;
@@ -490,6 +490,7 @@ let GraphLayout = function (container) {
         // }
 
         //iter
+        console.log("set iter", iter, that.data_manager.iter);
         iter = that.data_manager.iter;
     };
 

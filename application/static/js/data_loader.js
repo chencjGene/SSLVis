@@ -287,6 +287,15 @@ DataLoaderClass = function () {
                 that.state.unlabeled_num = Object.values(that.state.complete_graph).length - that.state.labeled_num;
                 that.update_control_info();
 
+                that.set_filter_data(that.state.nodes);
+                let ranges = that.filter_view.get_ranges();
+                let label_range = [];
+                for(let i=0; i<=that.state.label_names.length; i++){
+            label_range.push(i);
+        }
+                that.set_filter_range(ranges[0], label_range, ranges[2], ranges[3], ranges[4], ranges[5], ranges[6], ranges[7]);
+                that.update_filter_view();
+
                 let show_ids = that.get_show_ids();
                 that.get_dist_view(show_ids);
                 that.update_graph_view();
@@ -299,6 +308,7 @@ DataLoaderClass = function () {
         let level = that.graph_view.get_level();
         let area = that.state.area;
         data["area"] = area;
+        that.state.rescale = false;
         data["level"] = level;
         data["wh"] = that.graph_view.get_wh();
 
@@ -335,6 +345,7 @@ DataLoaderClass = function () {
                 // $(".best-k-text").attr("hidden", false);
                 // $(".best-k-text").html("Best k: "+2);
                 that.state.is_zoom = false;
+                that.iter = Object.values(that.state.complete_graph)[0].label.length - 1;
                 that.fetch_nodes(area, level, must_show_nodes);
 
                 let show_ids = [];

@@ -45,7 +45,7 @@ let GraphVoronoi = function(parent){
     scale_function = function(x, simple_bar){
         if (DataName === "stl"){                
             if (simple_bar){
-                if (x < 0.13) x /= 2.5;
+                if (x < 0.125) x /= 2.5;
             }
             else{
                 if (x < 0.05) x /= 4;
@@ -101,6 +101,9 @@ let GraphVoronoi = function(parent){
             cell.site.data[0] = cell.site[0] = center.x;
             cell.site.data[1] = cell.site[1] = center.y;
         }
+        let cat_0 = that.voronoi_data.cells[3].simple_summary[0].in;
+        let cat_1 = that.voronoi_data.cells[3].simple_summary[1].in;
+        console.log("cat heter:", cat_1/(cat_0+cat_1));
         that.update_view();
     };
 
