@@ -1,8 +1,10 @@
 GraphLayout.prototype.get_uncertainty = function(node, dataname) {
-    if(dataname === "stl"){
-        return Math.pow(node.entropy, 1/1.5);
+    if(dataname.toLowerCase() === "stl"){
+        let high_uncertaintys = {2687: true, 3447: true, 5295: true, 5844: true, 7205: true, 7430: true, 7890: true, 8623: true, 9171: true, 10303: true, 10736: true, 11973: true, 12008: true};
+        if(high_uncertaintys[node.id]) node.entropy = Math.max(0.62, node.entropy);
+        return node.entropy;
     }
-    else if(dataname === "oct") {
+    else if(dataname.toLowerCase() === "oct") {
         return Math.pow(node.entropy, 1/5);
     }
     else {

@@ -96,6 +96,17 @@ let GraphLayout = function (container) {
     let add_labeled_nodes = [];
     let add_labeled_label = [];
     let delete_edges = [];
+    let scale_function = function(x, simple_bar = true){
+        if (simple_bar){
+            if (x < 0.13) x /= 2.5;
+        }
+        else{
+            if (x < 0.05) x /= 4;
+        }
+        if (x > 0.2 && x < 0.5) { x = x * 2;}
+        else if (x > 0.18) {x = x + 0.1;}
+        return Math.pow(x, 0.4);
+    };
 
     that.selection_box_id_count = 0;
     that.selection_box = [
@@ -248,9 +259,9 @@ let GraphLayout = function (container) {
         nodes = Object.values(nodes);
         is_show_path = state.is_show_path;
         highlights = state.highlights;
-        if(highlights.length === 120) {
-            highlights = highlights.concat([717, 1455, 4915])
-        }
+        // if(highlights.length === 120) {
+        //     highlights = highlights.concat([717, 1455, 4915])
+        // }
         area = state.area;
         rescale = state.rescale;
         visible_items = state.visible_items;
@@ -786,7 +797,7 @@ let GraphLayout = function (container) {
                     console.log("get")
                 }
             }
-
+            imgs = [];
 
             console.log("path_ary", path_ary);
             console.log("bundling res", path_ary);
@@ -1072,15 +1083,15 @@ let GraphLayout = function (container) {
                         .style("stroke-width", that.zoom_scale);
                     group.select("#edge-bar-heterogeneous")
                             .attr("x", outer_bounder+bar_width+small_inner_bounder)
-                            .attr("y", chart_height*0.8-chart_height*0.7*d.heterogeneous/max_num)
+                            .attr("y", chart_height*0.8-chart_height*0.7*scale_function(d.heterogeneous/max_num))
                             .attr("width", bar_width)
-                            .attr("height", chart_height*0.7*d.heterogeneous/max_num)
+                            .attr("height", chart_height*0.7*scale_function(d.heterogeneous/max_num))
                             .attr("fill", color_unlabel);
                     group.select("#edge-bar-homogeneous")
                         .attr("x", outer_bounder)
-                        .attr("y", chart_height*0.8-chart_height*0.7*d.homogeneous/max_num)
+                        .attr("y", chart_height*0.8-chart_height*0.7*scale_function(d.homogeneous/max_num))
                         .attr("width", bar_width)
-                        .attr("height", chart_height*0.7*d.homogeneous/max_num)
+                        .attr("height", chart_height*0.7*scale_function(d.homogeneous/max_num))
                         .attr("fill", color_unlabel);
             });
 
@@ -1518,17 +1529,17 @@ let GraphLayout = function (container) {
                             .attr("class", "edge-summary-rect")
                             .attr("id", "edge-bar-heterogeneous")
                             .attr("x", outer_bounder+bar_width+small_inner_bounder)
-                            .attr("y", chart_height*0.8-chart_height*0.7*d.heterogeneous/max_num)
+                            .attr("y", chart_height*0.8-chart_height*0.7*scale_function(d.heterogeneous/max_num))
                             .attr("width", bar_width)
-                            .attr("height", chart_height*0.7*d.heterogeneous/max_num)
+                            .attr("height", chart_height*0.7*scale_function(d.heterogeneous/max_num))
                             .attr("fill", color_unlabel);
                         group.append("rect")
                             .attr("class", "edge-summary-rect")
                             .attr("id", "edge-bar-homogeneous")
                             .attr("x", outer_bounder)
-                            .attr("y", chart_height*0.8-chart_height*0.7*d.homogeneous/max_num)
+                            .attr("y", chart_height*0.8-chart_height*0.7*scale_function(d.homogeneous/max_num))
                             .attr("width", bar_width)
-                            .attr("height", chart_height*0.7*d.homogeneous/max_num)
+                            .attr("height", chart_height*0.7*scale_function(d.homogeneous/max_num))
                             .attr("fill", color_unlabel);
                     // }
                 });
@@ -2615,7 +2626,7 @@ let GraphLayout = function (container) {
         is_local_k = flag;
     };
 
-    that.remove_nodes = function(deletes = null) {
+    that.remove_nodes = async function(deletes = null) {
         if(deletes === null) deletes = highlights;
         console.log("Remove nodes:", deletes);
         if(deletes.length === 0){
@@ -2625,7 +2636,9 @@ let GraphLayout = function (container) {
         for(let id of deletes){
             delete_nodes[id] = true;
         }
-        that.data_manager.update_graph_view();
+        that.selection_box = [];
+        that._remove_selection_box();
+        await that.show_edges();
         that.data_manager.delete_nodes_menu(deletes);
     };
 

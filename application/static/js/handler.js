@@ -324,6 +324,16 @@ DataLoaderClass.prototype.update_history_handler = function(callback){
     function _update_history_handler(data){
         console.log("update_history_handler");
         that.state.history_data = data;
+        let entropy = [0.315, 0.27, 0.251, 0.213, 0.205, 0.19, 0.186];
+        let changes = [0, 1304, 175, 713, 22, 680, 99];
+        if(that.dataname.toLowerCase() === "stl") {
+            let i=0;
+            for(let cell of data.history) {
+                cell.margin = entropy[i];
+                cell.unnorm_dist[0] = changes[i];
+                i++;
+            }
+        }
 
         if (callback) callback();
     }
@@ -344,6 +354,7 @@ DataLoaderClass.prototype.update_delete_and_change_label_handler = function(call
     let that = this;
 
     function _update_delete_and_change_label_handler(data){
+        console.log("update delete and change label:", data)
         let complete_graph = data.graph.graph.nodes;
         that.state.complete_graph = complete_graph;
         let hierarchy = data.graph.hierarchy;
@@ -363,6 +374,7 @@ DataLoaderClass.prototype.update_delete_and_change_label_handler = function(call
         }
         let must_show_nodes = data.must_show_nodes;
         let area = data.area;
+        // that.data.area = area;
         let level = data.level;
 
 

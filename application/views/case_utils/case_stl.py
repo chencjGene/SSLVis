@@ -41,7 +41,7 @@ class CaseSTL(CaseBase):
             self.model.data.actions = []
             self.model.data.add_new_categories("snake")
             self.model.data.label_instance([6219, 11966, 12467, 7573, 11905], [10, 10, 10, 10, 10])
-            self.model.data.label_instance([9081, 7427], [1, 4])
+            # self.model.data.label_instance([9081, 7427], [1, 4])
             # self.model._training(rebuild=False, evaluate=evaluate, simplifying=False)
             # self.pred_result[1] = self.model.get_pred_labels()
             # self.model.adaptive_evaluation(step=1)
