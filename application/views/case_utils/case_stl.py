@@ -103,7 +103,7 @@ class CaseSTL(CaseBase):
             self.model.influence_matrix = None
 
             self.model._training(rebuild=False, evaluate=True, simplifying=False, record=True)
-            self.model._influence_matrix(rebuild=False)
+            self.model._influence_matrix(rebuild=True)
 
             self.pred_result[3] = self.model.get_pred_labels()
             self.model.adaptive_evaluation(step=3)

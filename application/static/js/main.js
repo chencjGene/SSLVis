@@ -45,10 +45,13 @@ function choose(dataset){
 
 // main (entry of the application)
 $(document).ready(function () {
-
+    // let dataname = "oct-1000-10000";
+    let dataname = "stl-50-12840";
+    DataName = dataname.slice(0,3);
+    set_color();
     set_up();
-    // SettingView.choose("oct-1000-10000");
-    SettingView.choose("stl-50-12840");
+    SettingView.choose(dataname);
+    // SettingView.choose("stl-50-12840");
     // SettingView.choose("stl-20-2000");
 
     

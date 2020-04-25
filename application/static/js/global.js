@@ -28,6 +28,8 @@ let HistoryView = null;
 let EditView = null;
 let SettingView = null;
 
+let DataName = null;
+
 /*
 *  Color
 * */
@@ -46,7 +48,7 @@ let SettingView = null;
 
 
 // stl
-let CategoryColor = [
+let CategoryColor_stl = [
     "#8c564b",
     "#ff7f0e",
     "#9467bd",
@@ -59,18 +61,30 @@ let CategoryColor = [
     "#17becf",
     "#a6cee3"];
 
+
+let CategoryColor = CategoryColor_stl;
+
 // oct
-// let CategoryColor = [
-//     "#1f77b4",
-//     "#ff7f0e",
-//     "#2ca02c",
-//     "#d62728",
-//     "#8c564b",
-//     "#17becf",
-//     "#e377c2",
-//     "#ffdb45",
-//     "#bcbd22",
-//     "#9467bd"];
+let CategoryColor_oct = [
+    "#1f77b4",
+    "#ff7f0e",
+    "#2ca02c",
+    "#d62728",
+    "#8c564b",
+    "#17becf",
+    "#e377c2",
+    "#ffdb45",
+    "#bcbd22",
+    "#9467bd"];
+
+let set_color = function(){
+    if(DataName === "stl"){
+        CategoryColor = CategoryColor_stl;
+    }
+    else{
+        CategoryColor = CategoryColor_oct;
+    }
+}
 
     // "#a6cee3",
     // "#b2df8a"];
