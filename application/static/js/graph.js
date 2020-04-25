@@ -41,7 +41,9 @@ let GraphLayout = function (container) {
     let uncertainty_type = 4;
     let unccertainty_line_stroke_width = 2;
     let uncertainty_hat_fill = "rgb(127, 127, 127)";
-    let uncertainty_glyph_radius = 9+4;
+    let uncertainty_glyph_radius = (9+4) * 2;
+    let uncertainty_glyph_width = 4 / 13 * uncertainty_glyph_radius;
+    let uncertainty_inner_radius = 7 / 13 * uncertainty_glyph_radius;
     let uncertainty_glyph_hat = 3;
 
     // draw containter
@@ -1667,7 +1669,7 @@ let GraphLayout = function (container) {
     that.r = function(id) {
 
         if(glyphs.indexOf(id) > -1 && uncertainty_type >1){
-            return 7 * that.zoom_scale;
+            return uncertainty_inner_radius * that.zoom_scale;
         }
         else if( highlights.indexOf(id) > -1){
             return 5 * that.zoom_scale;
@@ -2325,7 +2327,7 @@ let GraphLayout = function (container) {
             //     .attr("d", arc)
             //     .attr("fill", (d,i) => color_label[i]);
 
-            let arc = d3.arc().innerRadius((uncertainty_glyph_radius-4) * that.zoom_scale)
+            let arc = d3.arc().innerRadius((uncertainty_glyph_radius-uncertainty_glyph_width) * that.zoom_scale)
                         .outerRadius((uncertainty_glyph_radius) * that.zoom_scale);
             let uncertainty_values = glyphgs
                 .append("g")
@@ -2547,7 +2549,7 @@ let GraphLayout = function (container) {
                     });
         }
         else if(uncertainty_type === 4){
-            let arc = d3.arc().innerRadius((uncertainty_glyph_radius-4) * that.zoom_scale)
+            let arc = d3.arc().innerRadius((uncertainty_glyph_radius-uncertainty_glyph_width) * that.zoom_scale)
                         .outerRadius((uncertainty_glyph_radius) * that.zoom_scale);
             // let uncertainty_values = glyphgs
             //     .append("g")
