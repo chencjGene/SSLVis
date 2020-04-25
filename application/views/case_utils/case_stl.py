@@ -123,6 +123,7 @@ class CaseSTL(CaseBase):
 
             e = json.loads(open(os.path.join(self.model.selected_dir, "local_1_idxs.txt"), "r").read().strip("\n"))
             e += [2098, 2888, 2983, 3905, 5219, 5816, 5844, 7205, 8545, 8829, 9340, 10360, 10403, 10774, 11457]
+            e += [4872, 5162, 6250, 8326, 10585, 10649, 10722, 12002]
             self.model.local_search_k(e, [1, 2, 3, 4], categories, simplifying=False, evaluate=True, record=False)
 
             e = json.loads(open(os.path.join(self.model.selected_dir, "local_3_idxs.txt"), "r").read().strip("\n"))
