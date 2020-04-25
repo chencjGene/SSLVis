@@ -106,7 +106,9 @@ class Data(object):
             if self.dataname.lower() == "stl":
                 # relabel:
                 removed_idx = [self.train_idx[39], self.train_idx[33]]
-                added_idx = [self.train_idx[2790], self.train_idx[5855]]
+                added_idx = [self.train_idx[9081], self.train_idx[7427]]
+                # removed_idx = [self.train_idx[39], self.train_idx[33]]
+                # added_idx = [self.train_idx[2790], self.train_idx[5855]]
                 tmp_labeled_idx = added_idx
                 # added_idx = [self.train_idx[11146], self.train_idx[7683]]
                 # tmp_labeled_idx = []

@@ -318,7 +318,7 @@ class ExchangePortClass(object):
         res = {
             "graph": graph,
             "must_show_ids": remain_ids,
-            "area": graph["graph"]["area"] if (self.case_mode and self.dataname.lower()=="stl" and self.model.step == 1) else data["area"],
+            "area": data["area"],
             "level": data["level"]
         }
         return jsonify(res)
