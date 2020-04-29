@@ -115,7 +115,7 @@ DataLoaderClass.prototype.fetch_nodes = function (area, level, must_show_nodes) 
     let graph = that.update_nodes(area, level, must_show_nodes);
     that.state.nodes = graph.nodes;
     if(that.state.is_zoom)
-        that.state.area = graph.area;
+        that.state.area = area;
 };
 
 DataLoaderClass.prototype.get_home = function () {

@@ -330,7 +330,6 @@ DataLoaderClass = function () {
         that.get_history_node.set_pending();
         that.graph_node.notify();
     };
-
     that.local_update_k = function(){
         // set flag
         that.graph_view.set_is_local_k(false);
@@ -359,7 +358,7 @@ DataLoaderClass = function () {
                 let ranges = that.filter_view.get_ranges();
                 that.set_filter_range(ranges[0], ranges[1], ranges[2], ranges[3], ranges[4], ranges[5], ranges[6], ranges[7]);
                 await that.update_filter_view();
-
+                that.state.glyphs = [];
                 that.state.re_fetch = true;
                 await that.update_graph_view();
                 that.state.re_fetch = false;

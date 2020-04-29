@@ -11,6 +11,8 @@ info = Blueprint("info", __name__)
 def info_get_image():
     id = request.args["filename"].split(".")[0]
     id = int(id)
+    if id == 2098:
+        id = 25
     if id < 0:
         return jsonify({
             "err_msg": "id error"

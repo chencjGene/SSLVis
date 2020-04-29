@@ -302,6 +302,10 @@ DataLoaderClass.prototype.add_data_handler = function(callback){
                 next[j] = next[j].map(d => next_index[d]);
             }
         }
+        // add data to high level
+        let top_nodes = [3049, 5519, 5544, 5874, 6187, 7557, 11446, 12196, 12241, 4872, 5162, 6250, 8326, 10585, 10649, 10722, 12002, 13138, 2098, 2888, 3905, 5844, 9340, 10360, 10403, 11457];
+        that.add_data_to_high_level(top_nodes, hierarchy);
+
         that.state.hierarchy = hierarchy;
         if(that.dataname.toLowerCase()==="stl"){
             that.add_data_to_high_level([6602], hierarchy);

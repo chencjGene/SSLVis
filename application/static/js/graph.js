@@ -2550,21 +2550,38 @@ let GraphLayout = function (container) {
                     });
         }
         else if(uncertainty_type === 4){
+            let glyphs_ary = nodes.filter(d => glyphs.indexOf(d.id)>-1);
+            let pie = d3.pie().value(d => d);
             let arc = d3.arc().innerRadius((uncertainty_glyph_radius-uncertainty_glyph_width) * that.zoom_scale)
                         .outerRadius((uncertainty_glyph_radius) * that.zoom_scale);
             // let uncertainty_values = glyphgs
             //     .append("g")
             //     .attr("class", "uncertainty-value");
-             glyph_in_group
+            glyph_in_group.selectAll("uncertainty-value").data(glyphs_ary, d => d.id);
+
+
+            glyph_in_group
                     .selectAll(".uncertainty-value-path")
                     //  .transition()
                     // .duration(AnimationDuration)
+                    .data(function (d) {
+                        let data = pie(d.score[iter]);
+                        // let uncertainty = d.entropy;
+                        // let angle = Math.PI/2*uncertainty;
+                        // let scale = angle/Math.PI;
+                        for(let one_arc of data){
+                            one_arc.startAngle = one_arc.startAngle/2 - Math.PI/2;
+                            one_arc.endAngle = one_arc.endAngle/2 - Math.PI/2;
+                        }
+                        return data
+                    })
                     .attr("d", function (d) {
                         return arc(d);
                     });
 
             glyph_in_group
                     .selectAll(".uncertainty-value-hat-left")
+                    .data(glyphs_ary, d => d.id)
                     // .transition()
                     // .duration(AnimationDuration)
                     .attr("d", function (d) {
@@ -2581,6 +2598,7 @@ let GraphLayout = function (container) {
                     });
             glyph_in_group
                     .selectAll(".uncertainty-value-hat-right")
+                .data(glyphs_ary, d => d.id)
                     // .transition()
                     // .duration(AnimationDuration)
                     .attr("d", function (d) {
@@ -2598,6 +2616,7 @@ let GraphLayout = function (container) {
 
             glyph_in_group
                 .selectAll(".node-dot")
+                .data(glyphs_ary, d => d.id)
                 .attr("fill", function (d) {
                     return d.label[iter]===-1?color_unlabel:color_label[d.label[iter]];
                 })
