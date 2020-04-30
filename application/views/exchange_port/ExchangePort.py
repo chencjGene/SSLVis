@@ -17,6 +17,7 @@ from ..graph_utils.anchor_r import Anchors
 from ..utils.log_utils import logger
 from application.views.utils.helper_utils import *
 from ..case_utils import get_case_util
+import json
 
 
 class ExchangePortClass(object):
@@ -125,12 +126,21 @@ class ExchangePortClass(object):
 
     def get_graph(self, filter_threshold=None, wh = 1):
         print(config.use_add_tsne)
+        start = time.time()
         res = self.anchor.get_nodes(wh, self.model.step)
+        print("anchor time:", time.time()-start)
         res["label_names"] = [name.capitalize() for name in self.model.data.class_names]
         graph = res["graph"]
         for id in graph["nodes"]:
             self.current_ids.append(int(id))
-        res = jsonify(res)
+        # graph_path = os.path.join(self.model.selected_dir, "graph-before-step" + str(self.model.step) + ".json")
+        # json_save_data(graph_path, res)
+        # res = jsonify(res)
+        start = time.time()
+        res = json.dumps(res, separators=(',', ':'))
+        print("dump time:", time.time() - start)
+        # jsonify_path = os.path.join(self.model.selected_dir, "graph-after-step" + str(self.model.step) + ".pkl")
+        # pickle_save_data(jsonify_path, res)
         self.local_update_step = 0
         logger.info("jsonify done")
         return res
@@ -187,7 +197,8 @@ class ExchangePortClass(object):
             "level": data["level"],
             "best_k": best_k
         }
-        return jsonify(res)
+        res = json.dumps(res, separators=(',', ':'))
+        return res
         # return self.fisheye(self.current_ids, data["area"], data["level"], data["wh"])
         # return jsonify(res)
 
@@ -210,7 +221,8 @@ class ExchangePortClass(object):
             "area": data["area"],
             "level": data["level"]
         }
-        return jsonify(res)
+        res = json.dumps(res, separators=(',', ':'))
+        return res
 
     def get_loss(self):
         loss = self.model.get_loss()
@@ -321,7 +333,8 @@ class ExchangePortClass(object):
             "area": data["area"],
             "level": data["level"]
         }
-        return jsonify(res)
+        res = json.dumps(res, separators=(',', ':'))
+        return res
         # return self.fisheye(remain_ids, data["area"], data["level"], data["wh"])
 
     def add_new_categories(self, data):

@@ -330,6 +330,7 @@ DataLoaderClass = function () {
         that.get_history_node.set_pending();
         that.graph_node.notify();
     };
+
     that.local_update_k = function(){
         // set flag
         that.graph_view.set_is_local_k(false);
@@ -775,6 +776,8 @@ DataLoaderClass = function () {
     //graph view:
     // first load graph
     that.get_graph_view = function() {
+        $(".loading").hide();
+        $(".loading-svg").hide();
 
         // update control info
         that.state.labeled_num = Object.values(that.state.complete_graph).filter(d => d.label[0] > -1).length;

@@ -48,7 +48,7 @@ DataLoaderClass.prototype.get_graph_handler = function (callback) {
             that.state.outliers[outlier] = true;
         }
         that.state.label_names = data.label_names;
-        let complete_graph = data.graph.nodes;
+        let complete_graph = that.re_format(data.graph.nodes);
         if(complete_graph[977] !== undefined){
             complete_graph[977].x += 0.3;
             complete_graph[977].y += 0.3;
@@ -212,7 +212,7 @@ DataLoaderClass.prototype.local_update_k_handler = function(callback){
 
     async function _local_update_k_handler(data){
         console.log("local_update_k_handler", data);
-        let complete_graph = data.graph.graph.nodes;
+        let complete_graph = that.re_format(data.graph.graph.nodes);
         if(that.dataname.toLowerCase() === "stl") {
             let node = complete_graph[7526];
             let idx = node.to.indexOf(9283);
@@ -289,7 +289,7 @@ DataLoaderClass.prototype.add_data_handler = function(callback){
         for(let id of data.graph.rest_idxs){
             that.state.rest_idxes[id] = true;
         }
-        let complete_graph = data.graph.graph.nodes;
+        let complete_graph = that.re_format(data.graph.graph.nodes);
         that.state.complete_graph = complete_graph;
         let hierarchy = data.graph.hierarchy;
         // TODO: process hierarchy
@@ -320,7 +320,7 @@ DataLoaderClass.prototype.add_data_handler = function(callback){
         if (callback) callback(must_show_nodes, area, level);
     }
     return _add_data_handler;
-}
+};
 
 DataLoaderClass.prototype.update_history_handler = function(callback){
     let that = this;
@@ -359,7 +359,7 @@ DataLoaderClass.prototype.update_delete_and_change_label_handler = function(call
 
     function _update_delete_and_change_label_handler(data){
         console.log("update delete and change label:", data)
-        let complete_graph = data.graph.graph.nodes;
+        let complete_graph = that.re_format(data.graph.graph.nodes);
         that.state.complete_graph = complete_graph;
         let hierarchy = data.graph.hierarchy;
         // TODO: process hierarchy

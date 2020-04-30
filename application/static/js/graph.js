@@ -298,12 +298,16 @@ let GraphLayout = function (container) {
         if(that.selection_box.length > 0) {
             let graph = that.data_manager.state.complete_graph;
             for(let selection_box of that.selection_box){
-                let summary = {heterogeneous:0, homogeneous:0};
+                let summary = {heterogeneous:0, homogeneous:0, homogeneous_type:[]};
+                for(let i=0; i<that.data_manager.state.label_names.length; i++){
+                    summary.homogeneous_type.push(0);
+                }
                 for(let node of selection_box.nodes){
                     let cls = node.label[iter];
                     for(let from_id of node.from){
                         let from_cls = graph[from_id].label[iter];
                         if(cls === from_cls){
+                            summary.homogeneous_type[cls]++;
                             summary.homogeneous++;
                         }
                         else {
@@ -1544,6 +1548,23 @@ let GraphLayout = function (container) {
                             .attr("width", bar_width)
                             .attr("height", chart_height*0.7*scale_function(d.homogeneous/max_num))
                             .attr("fill", color_unlabel);
+                        let all_len = 0;
+                        let homogeneous_label = [];
+                        for(let i=0; i<that.data_manager.state.label_names.length; i++) {
+                            homogeneous_label.push(scale_function(d.homogeneous/max_num) * d.homogeneous_type[i]/d.homogeneous);
+                        }
+                        for(let i=0; i<that.data_manager.state.label_names.length; i++) {
+                            all_len+=homogeneous_label[i];
+                            console.log("all len", i, all_len);
+                            group.append("rect")
+                                .attr("class", "edge-summary-rect")
+                                .attr("id", "edge-bar-"+i)
+                                .attr("x", outer_bounder)
+                                .attr("y", chart_height*0.8-chart_height*0.7*all_len)
+                                .attr("width", bar_width)
+                                .attr("height", chart_height*0.7*homogeneous_label[i])
+                                .attr("fill", color_label[i]);
+                        }
                     // }
                 });
 

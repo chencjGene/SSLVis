@@ -163,3 +163,43 @@ DataLoaderClass.prototype.get_nodes_in_area = function (areas, center_scale_x, c
     }
     return [nodes, nodes_in_area];
 };
+
+DataLoaderClass.prototype.re_format = function (simple_graph) {
+    let graph = {};
+    let that = this;
+    let label_num = that.state.label_names.length;
+    let iter_num = Object.values(simple_graph)[0][4].length;
+    for(let node of Object.values(simple_graph)){
+        let id = node[0];
+        let full_node = {
+                "id": node[0],
+                "x": node[1],
+                "y": node[2],
+                "label": node[3],
+                "score": [],
+                "truth": node[5],
+                "from":node[6],
+                "to": node[7],
+                "in_degree": node[8],
+                "out_degree": node[9],
+                "entropy": node[10],
+                "consistency": node[11],
+                "from_weight":node[12],
+                "to_weight":node[13]
+        };
+        for(let i=0; i<iter_num; i++){
+            full_node.score.push([]);
+            for(let j=0; j<label_num; j++){
+                full_node.score[i].push(0);
+            }
+        }
+        for(let iter=0; iter<iter_num; iter++) {
+            for(let score of node[4][iter]){
+                full_node.score[iter][score[0]] = score[1];
+            }
+        }
+
+        graph[id] = full_node;
+    }
+    return graph
+};

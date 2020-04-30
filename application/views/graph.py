@@ -45,6 +45,7 @@ def app_set_influence_filter():
 def app_get_graph():
     print("GetGraph Request")
     # extract info from request
+    start = time.time()
     k = request.args.get("k", None)
     wh = request.args.get("wh", 1.0)
     if k is not None:
@@ -53,6 +54,7 @@ def app_get_graph():
         wh = float(wh)
     filter_threshold = request.args.get("filter-threshold", None)
     init_model(k, filter_threshold)
+    print("model time:{}".format(time.time()-start))
     return get_graph(wh = wh)
 
 @graph.route("/graph/LocalUpdateK", methods=["GET", "POST"])

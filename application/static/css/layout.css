@@ -3,6 +3,25 @@ html{
     height: 100%;
 }
 
+.loading {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: gray;
+    opacity: 0.8;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.loading-svg {
+    position: absolute;
+    left: 50%;
+    top: 45%;
+}
+
 body {
     overflow: hidden;
     width: 100%;

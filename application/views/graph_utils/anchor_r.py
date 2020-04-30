@@ -522,6 +522,10 @@ class Anchors:
 
     def convert_to_dict(self, selection, tsne):
         logger.info("convert to dict")
+        graph_path = os.path.join(self.selected_dir, "graph-step" + str(self.step) + ".json")
+        if os.path.exists(graph_path):
+            graph = json_load_data(graph_path)
+            return graph
         propagation_path_from = self.model.propagation_path_from
         propagation_path_to = self.model.propagation_path_to
         if self.model.influence_matrix is None:
@@ -549,35 +553,67 @@ class Anchors:
         samples_truth = samples_truth.tolist()
         samples_nodes = {}
         sample_num = len(selection)
+        # for i in range(sample_num):
+        #     id = int(selection[i])
+        #     iter_num = process_data.shape[0]
+        #     scores = [[score if score>0 else 0  for score in np.round(process_data[j][m[id]], 2).tolist()] for j in range(iter_num)]
+        #     samples_nodes[id] = {
+        #         "id": id,
+        #         "x": samples_x_tsne[i][0],
+        #         "y": samples_x_tsne[i][1],
+        #         "label": labels[:,m[id]].tolist(),
+        #         "score": scores,
+        #         "truth": samples_truth[i],
+        #         "from":list(map(mapfunc, propagation_path_from[m[id]])),
+        #         "to": list(map(mapfunc, propagation_path_to[m[id]])),
+        #         "in_degree": int(degree[m[id]][1]),
+        #         "out_degree": int(degree[m[id]][0]),
+        #         "entropy": float(self.entropy[m[id]]),
+        #         "consistency": int(consistency[m[id]]),
+        #         "from_weight":[],
+        #         "to_weight":[]
+        #     }
+        #     for from_edge in samples_nodes[id]["from"]:
+        #         samples_nodes[id]["from_weight"].append(float(np.round(influence_matrix[m[id], m[from_edge]], 7)))
+        #     for to_edge in samples_nodes[id]["to"]:
+        #         samples_nodes[id]["to_weight"].append(float(np.round(influence_matrix[m[to_edge], m[id]], 7)))
+        simple_nodes = {}
         for i in range(sample_num):
             id = int(selection[i])
             iter_num = process_data.shape[0]
-            scores = [np.round(process_data[j][m[id]], 2).tolist() for j in range(iter_num)]
-            samples_nodes[id] = {
-                "id": id,
-                "x": samples_x_tsne[i][0],
-                "y": samples_x_tsne[i][1],
-                "label": labels[:,m[id]].tolist(),
-                "score": scores,
-                "truth": samples_truth[i],
-                "from":list(map(mapfunc, propagation_path_from[m[id]])),
-                "to": list(map(mapfunc, propagation_path_to[m[id]])),
-                "in_degree": int(degree[m[id]][1]),
-                "out_degree": int(degree[m[id]][0]),
-                "entropy": float(self.entropy[m[id]]),
-                "consistency": int(consistency[m[id]]),
-                "from_weight":[],
-                "to_weight":[]
-            }
-            for from_edge in samples_nodes[id]["from"]:
-                samples_nodes[id]["from_weight"].append(float(np.round(influence_matrix[m[id], m[from_edge]], 10)))
-            for to_edge in samples_nodes[id]["to"]:
-                samples_nodes[id]["to_weight"].append(float(np.round(influence_matrix[m[to_edge], m[id]], 10)))
-        graph = {
-            "nodes":samples_nodes
+            scores = [[[i,score] for i,score in enumerate(np.round(process_data[j][m[id]], 2).tolist()) if score>0] for j in range(iter_num)]
+            simple_nodes[id] = [
+                id,
+                samples_x_tsne[i][0],
+                samples_x_tsne[i][1],
+                labels[:,m[id]].tolist(),
+                scores,
+                samples_truth[i],
+                list(map(mapfunc, propagation_path_from[m[id]])),
+                list(map(mapfunc, propagation_path_to[m[id]])),
+                int(degree[m[id]][1]),
+                int(degree[m[id]][0]),
+                float(self.entropy[m[id]]),
+                int(consistency[m[id]]),
+                [],
+                []
+            ]
+            for from_edge in simple_nodes[id][6]:
+                simple_nodes[id][12].append(float(np.round(math.pow(influence_matrix[m[id], m[from_edge]], 1/7), 2)))
+            for to_edge in simple_nodes[id][7]:
+                simple_nodes[id][13].append(float(np.round(math.pow(influence_matrix[m[to_edge], m[id]], 1/7), 2)))
+
+        # graph = {
+        #     "nodes":samples_nodes
+        # }
+        simple_graph = {
+            "nodes": simple_nodes
         }
+
         logger.info("convert done")
-        return graph
+        # graph_path = os.path.join(self.selected_dir, "graph-step"+str(self.step)+".json")
+        json_save_data(graph_path, simple_graph)
+        return simple_graph
 
     def get_path(self, ids):
         if config.show_simplified:
