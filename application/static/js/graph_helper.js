@@ -626,9 +626,14 @@ GraphLayout.prototype.edge_statistic = function(diagram){
                 summary[2].in = summary[0].in;
             }
         }
-
+        new_summary = [];
+        for (let s = 0; s < diagram.cells.length; s++){
+            if (group_id !== s){
+                new_summary.push(summary[s]);
+            }
+        }
         edges_summary.push(summary);
-        diagram.cells[group_id].summary = summary;
+        diagram.cells[group_id].summary = new_summary;
         diagram.cells[group_id].simple_summary = simple_summary;
     }
 

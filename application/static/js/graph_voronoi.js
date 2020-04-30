@@ -277,6 +277,7 @@ let GraphVoronoi = function(parent){
             cell.chart_height = 50 * 0.8 * view.zoom_scale * 2;
             cell.summary_data = summary;
             cell.simple_bar = that.simple_bar[i];
+            cell.id  = i;
             that.cell_data.push(cell);
         }
         that.place_barchart();
@@ -477,6 +478,7 @@ let GraphVoronoi = function(parent){
                     }
                     d.summary_data[i].value = value;
                     data.push({
+                        id: d.id,
                         value: value,
                         label: d.label,
                         idx: idx,
@@ -501,9 +503,14 @@ let GraphVoronoi = function(parent){
             .attr("height", (d, i) => d.h)
             .attr("fill", (d, i) => d.color)
             .on("click", function(d){
-                console.log("bar click", d.path);
-                view.data_manager.highlight_path(d.path);
-                d3.event.stopPropagation();
+                if(that.simple_bar[d.id]){
+                    that.change_bar_mode(d.id, !that.simple_bar[d.id]);
+                }
+                else{
+                    console.log("bar click", d.path, d.id);
+                    view.data_manager.highlight_path(d.path);
+                    d3.event.stopPropagation();
+                }
             })
         };
 
