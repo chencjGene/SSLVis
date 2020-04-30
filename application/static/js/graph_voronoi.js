@@ -474,7 +474,7 @@ let GraphVoronoi = function(parent){
                     let idx = d.summary_data[i].idx;
                     let path_2 = [];
                     if(idx > -1){
-                        path_2 = that.cell_data[idx].summary[d.label].path;
+                        path_2 = that.cell_data[idx].total_summary[d.label].path;
                     }
                     d.summary_data[i].value = value;
                     data.push({

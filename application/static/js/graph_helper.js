@@ -634,6 +634,7 @@ GraphLayout.prototype.edge_statistic = function(diagram){
         }
         edges_summary.push(summary);
         diagram.cells[group_id].summary = new_summary;
+        diagram.cells[group_id].total_summary = summary;
         diagram.cells[group_id].simple_summary = simple_summary;
     }
 
