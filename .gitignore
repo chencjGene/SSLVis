@@ -2,6 +2,7 @@
 ## Folders                  ##
 ##############################
 .idea
+.VSCodeCounter/
 __pycache__
 *.pyc
 result*
