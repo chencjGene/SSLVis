@@ -22,10 +22,11 @@ let GraphLayout = function (container) {
     let path_begin_width = 2*path_width_scale;
     let path_end_width = 0.8;
     let path_mid_width = (path_begin_width+path_end_width)/2;
+    let path_width = 2;
     let bundling_force_S = 0.02;
     let bundling_elect_scale = 6;
     let is_local_k = false;
-    let old_path_way = false;
+    let old_path_way = true;
 
     // other consts
     let btn_select_color = "#560731";
@@ -763,7 +764,8 @@ let GraphLayout = function (container) {
 				.edges(path_ary.map(function (d) {
                     return {
 				        "source":d[0].id,
-                        "target":d[1].id
+                        "target":d[1].id,
+                        "edge_type":d.edge_type
 				    }
                 }));
             let old_res = oldfbundling();
@@ -993,18 +995,20 @@ let GraphLayout = function (container) {
 
             path_in_group
                 .attr("stroke-width", 2.0 * that.zoom_scale)
-                .attr("stroke", d => old_path_way?"url(#path"  + d[0].id + "-" + d[1].id + ")":"none")
-                .attr("fill", d => old_path_way?"none": "url(#path"  + d[0].id + "-" + d[1].id + ")")
+                // .attr("stroke", d => old_path_way?"url(#path"  + d[0].id + "-" + d[1].id + ")":"none")
+                .attr("fill", d => "url(#path"  + d[0].id + "-" + d[1].id + ")")
+                // .attr("stroke-width", old_path_way?path_width*that.zoom_scale:"none")
                 // .attr("marker-mid", d => "url(#arrow-gray)")
                 // .attr("fill", "none")
                 .transition()
                 .duration(AnimationDuration)
                 .attr("d", function (d) {
                     if(old_path_way){
-                        let d3line = d3.line()
-                            .x(function(d){return d.x;})
-                            .y(function(d){return d.y;});
-                        return d3line(d.old_res)
+                        // let d3line = d3.line()
+                        //     .x(function(d){return d.x;})
+                        //     .y(function(d){return d.y;});
+                        // return d3line(d.old_res)
+                        return curve_tapered(d.old_res, path_begin_width * that.zoom_scale, path_end_width * that.zoom_scale);
                     }
                     return bezier_tapered(d[3][0], d[3][1], d[3][2], path_begin_width * that.zoom_scale,
                         path_mid_width * that.zoom_scale, path_end_width * that.zoom_scale);
@@ -1299,39 +1303,45 @@ let GraphLayout = function (container) {
             gradient.append("stop")
                 .attr("class", "stop-1")
                 .attr("offset", "0%")
+                // .attr("stop-opacity", 1)
                 .attr("stop-color", d => d[0].label[iter]===-1?color_unlabel:color_label[d[0].label[iter]]);
             gradient.append("stop")
                 .attr("class", "stop-2")
                 .attr("offset", "45%")
+                // .attr("stop-opacity", 0.6)
                 .attr("stop-color", d => d[0].label[iter]===-1?color_unlabel:color_label[d[0].label[iter]]);
             gradient.append("stop")
                 .attr("class", "stop-3")
                 .attr("offset", "55%")
+                // .attr("stop-opacity", 0.5)
                 .attr("stop-color", d => d[1].label[iter]===-1?color_unlabel:color_label[d[1].label[iter]]);
             gradient.append("stop")
                 .attr("class", "stop-4")
                 .attr("offset", "100%")
+                // .attr("stop-opacity", 0.2)
                 .attr("stop-color", d => d[1].label[iter]===-1?color_unlabel:color_label[d[1].label[iter]]);
 
             path_in_group.enter()
                 .append("path")
                 .attr("class", "propagation-path")
                 .attr("cursor", "default")
-                .attr("stroke", d => old_path_way?"url(#path"  + d[0].id + "-" + d[1].id + ")":"none")
-                .attr("fill", d => old_path_way?"none": "url(#path"  + d[0].id + "-" + d[1].id + ")")
+                // .attr("stroke", d => old_path_way?"url(#path"  + d[0].id + "-" + d[1].id + ")":"none")
+                .attr("fill", d => "url(#path"  + d[0].id + "-" + d[1].id + ")")
                 .attr("opacity", 0)
                 // .attr("marker-mid", d => "url(#arrow-gray)")
                 // .attr("fill", "none")
                 .attr("d", function (d) {
                     if(old_path_way){
-                        let d3line = d3.line()
-                            .x(function(d){return d.x;})
-                            .y(function(d){return d.y;});
-                        return d3line(d.old_res)
+                        // let d3line = d3.line()
+                        //     .x(function(d){return d.x;})
+                        //     .y(function(d){return d.y;});
+                        // return d3line(d.old_res)
+                        return curve_tapered(d.old_res, path_begin_width * that.zoom_scale, path_end_width * that.zoom_scale);
                     }
                     return bezier_tapered(d[3][0], d[3][1], d[3][2], path_begin_width * that.zoom_scale,
                         path_mid_width * that.zoom_scale, path_end_width * that.zoom_scale);
                 })
+                // .attr("stroke-width", old_path_way?path_width*that.zoom_scale:"none")
                 .on("mouseover", function (d) {
                             console.log(d);
                             that.highlight_paths(d[0].id+","+d[1].id);
