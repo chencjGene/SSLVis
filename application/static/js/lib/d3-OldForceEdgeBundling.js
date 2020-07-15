@@ -18,8 +18,9 @@
 			C = 6, // number of cycles to perform
 			I_initial = 90, // init. number of iterations for cycle
 			I_rate = 0.6666667, // rate at which iteration number decreases i.e. 2/3
-			compatibility_threshold = 0.1,
-			eps = 1e-6;
+			compatibility_threshold = 0.4,
+			eps = 1e-6,
+			zoom_scale = 1;
 
 
 		/*** Geometry Helper Methods ***/
@@ -170,9 +171,9 @@
 						"y": T.x
 					};
 					// let l = euclidean_distance(subdivision_points_for_edge[compatible_edges_list[oe]][j], subdivision_points_for_edge[e_idx][i])/4;
-					let l = 0.5;
+					let l = 30*zoom_scale;
 					let dis = euclidean_distance(subdivision_points_for_edge[compatible_edges_list[oe]][j], subdivision_points_for_edge[e_idx][i]);
-					if(dis > 1){
+					if(dis > l){
 						m.x = subdivision_points_for_edge[e_idx][i].x;
 						m.y = subdivision_points_for_edge[e_idx][i].y;
 					}
@@ -183,9 +184,12 @@
 					// let l = Math.sqrt(euclidean_distance(edge_as_vector(data_edges[e_idx]), edge_as_vector(data_edges[oe]))/5);
 
 				}
-				let s = 2;
+				let s = 0.5;
 				// let k = 6/subdivision_points_for_edge[e_idx].length;
-				let k = 4;
+				let k = 2;
+				if(Math.sqrt(vector_dot_product(edge_as_vector(data_edges[e_idx]), edge_as_vector(data_edges[e_idx]))) < 100*zoom_scale) {
+					k /= 10;
+				}
 				// if(direction<0) k=0;
 				let dis =  euclidean_distance(m, subdivision_points_for_edge[e_idx][i]);
 				let force = s*k*dis/(Math.PI*Math.pow(s*s+dis*dis, 2));
@@ -443,6 +447,16 @@
 				data_edges = filter_self_loops(ll); //remove edges to from to the same point
 			}
 
+			return forcebundle;
+		};
+
+		forcebundle.zoom_scale = function(scale) {
+			if (arguments.length === 0) {
+				return zoom_scale
+			}
+			else {
+				zoom_scale = scale;
+			}
 			return forcebundle;
 		};
 

@@ -20,7 +20,7 @@ let GraphLayout = function (container) {
     let star_outer_r = 15;
     let path_width_scale = 1.75;
     let path_begin_width = 2*path_width_scale;
-    let path_end_width = 0.8;
+    let path_end_width = 0.1;
     let path_mid_width = (path_begin_width+path_end_width)/2;
     let path_width = 2;
     let bundling_force_S = 0.02;
@@ -760,6 +760,7 @@ let GraphLayout = function (container) {
 				.nodes(nodes_dict)
 				.edges(path_ary);
             let oldfbundling = d3.OldForceEdgeBundling()
+                .zoom_scale(that.zoom_scale)
 				.nodes(nodes_dict)
 				.edges(path_ary.map(function (d) {
                     return {
