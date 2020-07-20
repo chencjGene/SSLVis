@@ -19,14 +19,15 @@ let GraphLayout = function (container) {
     let star_inner_r = 6;
     let star_outer_r = 15;
     let path_width_scale = 1.75;
-    let path_begin_width = 2*path_width_scale;
-    let path_end_width = 0.1;
+    let path_begin_width = 2.5*path_width_scale;
+    let path_end_width = 0.03;
     let path_mid_width = (path_begin_width+path_end_width)/2;
     let path_width = 2;
     let bundling_force_S = 0.02;
     let bundling_elect_scale = 6;
     let is_local_k = false;
     let old_path_way = true;
+    let highlight_outer_width = 6;
 
     // other consts
     let btn_select_color = "#560731";
@@ -56,6 +57,8 @@ let GraphLayout = function (container) {
     let edge_summary_group = null;
     let path_in_group = null;
     let nodes_in_group = null;
+    let highlight_nodes_in_group = null;
+    let highlight_nodes_group = null;
     let golds_in_group = null;
     let glyph_in_group = null;
     let edge_summary_in_group = null;
@@ -86,7 +89,7 @@ let GraphLayout = function (container) {
     let rect_nodes = [];
     let imgs = [];
     that.voronoi_data = {"edges": [], "cells": []};
-    let nodes_dict = null;
+    let nodes_dicts = null;
     that.if_focus_selection_box = false;
     that.show_init_voronoi = false;
     let re_focus_selection_box = false;
@@ -159,15 +162,16 @@ let GraphLayout = function (container) {
             .attr("width", that.width)
             .attr("height", that.height);
         that.main_group = that.svg.append('g').attr('id', 'main_group');
+        that.selection_group = that.main_group.append("g").attr("id", "graph-selection-g");
         gradient_group = that.main_group.append('defs').attr("id", "gradient-group");
         legend_group = that.main_group.append("g").attr("id", "legend-group-g");
         path_group = that.main_group.append("g").attr("id", "graph-path-g");
+        highlight_nodes_group = that.main_group.append("g").attr("id", "highlight-point-g");
         nodes_group = that.main_group.append("g").attr("id", "graph-tsne-point-g");
         golds_group = that.main_group.append("g").attr("id", "graph-gold-g");
         glyph_group = that.main_group.append("g").attr("id", "graph-glyph-g");
         edge_summary_group = that.main_group.append("g").attr("id", "edge-summary-g");
         that.label_group = that.main_group.append("g").attr("id", "graph-label-g");
-        that.selection_group = that.main_group.append("g").attr("id", "graph-selection-g");
         that.snapshot_group = that.svg.append("g").attr("id", "snapshot-group");
         that.voronoi_group = that.main_group.append("g").attr("id", "voronoi-group");
         tmp_show_imgs = that.main_group.append("g").attr("id", "tmp-graph-label-g");
@@ -254,10 +258,44 @@ let GraphLayout = function (container) {
         await that._update_view(state);
     };
 
+    that._get_subgraph = function (state) {
+        let select_nodes = state.highlights.map(function (id) {
+            return {
+                id:id,
+                x:state.nodes[id].x,
+                y:state.nodes[id].y
+            }
+        });
+        let edges = [];
+        let threshold = 0.2;
+        for(let _node of select_nodes) {
+            let node_id = _node.id;
+            let node = state.nodes[node_id];
+            for(let i=0; i<node.from.length; i++) {
+                let from_id = node.from[i];
+                let from_weight = node.from_weight[i];
+                if(from_weight >= threshold) {
+                    edges.push({
+                        source:from_id,
+                        target:node_id
+                    })
+                }
+            }
+        }
+        let res = {
+            nodes:select_nodes,
+            edges:edges
+        };
+        if(select_nodes.length > 0)
+            console.log("select nodes length:", select_nodes.length);
+        console.log(res);
+        return res;
+    };
+
     that._update_data = function(state) {
         nodes_in_this_level = state.nodes;
         outliers = state.outliers;
-        nodes_dict = state.nodes;
+        nodes_dicts = state.nodes;
         nodes = JSON.parse(JSON.stringify(nodes_in_this_level));
         nodes = Object.values(nodes);
         is_show_path = state.is_show_path;
@@ -770,6 +808,7 @@ let GraphLayout = function (container) {
 				    }
                 }));
             let old_res = oldfbundling();
+            let compatibility_edges = oldfbundling.get_compatibility_edges();
 
             let res = fbundling();
             for(let line of res){
@@ -793,6 +832,7 @@ let GraphLayout = function (container) {
             path_ary = path_ary.map((d,i) => d.concat([ori_res[i]]));
             path_ary = path_ary.map(function (d, i) {
                 d.old_res = old_res[i];
+                d.com_edges = compatibility_edges[i];
                 return d
             });
             that.path_ary = path_ary;
@@ -811,6 +851,9 @@ let GraphLayout = function (container) {
 
             console.log("path_ary", path_ary);
             console.log("bundling res", path_ary);
+
+            highlight_nodes_in_group = highlight_nodes_group.selectAll("circle")
+                .data(highlights.map(d => nodes_dicts[d]), d => d.id);
             nodes_in_group = nodes_group.selectAll("circle")
                 .data(nodes_ary, d => d.id);
             golds_in_group = golds_group.selectAll("path")
@@ -840,6 +883,7 @@ let GraphLayout = function (container) {
             await that._create();
             console.log("create end");
 
+            highlight_nodes_in_group = highlight_nodes_group.selectAll("circle");
             nodes_in_group = nodes_group.selectAll("circle");
             golds_in_group = golds_group.selectAll("path");
             glyph_in_group = glyph_group.selectAll(".pie-chart");
@@ -876,6 +920,13 @@ let GraphLayout = function (container) {
     that._remove = function () {
         return new Promise(function (resolve, reject) {
             nodes_in_group.exit()
+                .transition()
+                .duration(remove_ani)
+                .attr("opacity", 0)
+                .remove()
+               .on("end", resolve);
+
+            highlight_nodes_in_group.exit()
                 .transition()
                 .duration(remove_ani)
                 .attr("opacity", 0)
@@ -949,6 +1000,16 @@ let GraphLayout = function (container) {
                 })
                 .attr("opacity", d => that.opacity(d.id))
                 .attr("r", d => that.r(d.id))
+                .attr("cx", d => that.if_focus_selection_box?d.focus_x:that.center_scale_x(d.x))
+                .attr("cy", d => that.if_focus_selection_box?d.focus_y:that.center_scale_y(d.y))
+                .on("end", resolve);
+
+            highlight_nodes_in_group
+                .transition()
+                .duration(AnimationDuration)
+                .attr("fill", "white")
+                .attr("opacity", d => that.opacity(d.id))
+                .attr("r", d => highlight_outer_width * that.zoom_scale)
                 .attr("cx", d => that.if_focus_selection_box?d.focus_x:that.center_scale_x(d.x))
                 .attr("cy", d => that.if_focus_selection_box?d.focus_y:that.center_scale_y(d.y))
                 .on("end", resolve);
@@ -1225,6 +1286,21 @@ let GraphLayout = function (container) {
                 .attr("opacity", d => that.opacity(d.id))
                 .on("end", resolve);
 
+            highlight_nodes_in_group.enter()
+                .append("circle")
+                .attr("id", d => "id-" + d.id)
+                .attr("cursor", "default")
+                .attr("class", "node-dot")
+                .attr("cx", d => that.if_focus_selection_box?d.focus_x:that.center_scale_x(d.x))
+                .attr("cy", d => that.if_focus_selection_box?d.focus_y:that.center_scale_y(d.y))
+                .attr("r", d => highlight_outer_width*that.zoom_scale)
+                .attr("opacity", 0)
+                .attr("fill", "white")
+                .transition()
+                .duration(AnimationDuration)
+                .attr("opacity", d => that.opacity(d.id))
+                .on("end", resolve);
+
             golds_in_group.enter()
                 .append("path")
                 .attr("id", d => "gold-" + d.id)
@@ -1345,7 +1421,7 @@ let GraphLayout = function (container) {
                 // .attr("stroke-width", old_path_way?path_width*that.zoom_scale:"none")
                 .on("mouseover", function (d) {
                             console.log(d);
-                            that.highlight_paths(d[0].id+","+d[1].id);
+                            that.highlight_paths(d.com_edges);
                             let imgs = label_layout([d[0], d[1]], [d], that.zoom_scale);
                             console.log("imgs ", imgs);
                             tmp_show_imgs.selectAll("*").remove();
@@ -1579,7 +1655,7 @@ let GraphLayout = function (container) {
                     // }
                 });
 
-            if((nodes_in_group.enter().size() === 0) && (golds_in_group.enter().size() === 0)
+            if((highlight_nodes_in_group.enter().size() === 0) && (nodes_in_group.enter().size() === 0) && (golds_in_group.enter().size() === 0)
                 && (glyph_in_group.enter().size() === 0) &&(path_in_group.enter().size() === 0) && (img_in_group.enter().size() === 0) && (edge_summary_group.enter().size() === 0)){
                 console.log("no create");
                 resolve();
@@ -1862,6 +1938,10 @@ let GraphLayout = function (container) {
             .transition()
             .duration(AnimationDuration)
             .attr("r", d => that.r(d.id));
+            highlight_nodes_in_group
+            .transition()
+            .duration(AnimationDuration)
+            .attr("r", d => highlight_outer_width * that.zoom_scale);
         golds_in_group
             .transition()
             .duration(AnimationDuration)
@@ -1902,6 +1982,8 @@ let GraphLayout = function (container) {
         else {
             nodes_in_group
             .attr("r", d => that.r(d.id));
+            highlight_nodes_in_group
+            .attr("r", d => highlight_outer_width * that.zoom_scale);
         golds_in_group
             .attr("d", d => star_path(star_outer_r * that.zoom_scale, star_inner_r * that.zoom_scale, that.center_scale_x(d.x), that.center_scale_y(d.y)))
             .attr("stroke-width", 1.5*that.zoom_scale);
@@ -2028,6 +2110,8 @@ let GraphLayout = function (container) {
     that.remove_all = async function() {
         nodes_in_group = nodes_group.selectAll("circle")
                 .data([], d => d.id);
+        highlight_nodes_in_group = highlight_nodes_group.selectAll("circle")
+            .data([], d => d.id);
             golds_in_group = golds_group.selectAll("path")
                 .data([], d => d.id);
             glyph_in_group = glyph_group.selectAll(".pie-chart")
@@ -2133,19 +2217,19 @@ let GraphLayout = function (container) {
                 return that.opacity_path(d)
             }
             else if(opacity == 0) return 0;
-            else return 0.3;
+            else return 0;
         });
         nodes_in_group.attr("opacity", function (d) {
             if(highlight_nodes[d.id] === true){
                 return that.opacity(d.id);
             }
-            else return 0.3;
+            else return 0;
         });
         golds_in_group.attr("opacity", function (d) {
             if(highlight_nodes[d.id] === true){
                 return that.opacity(d.id);
             }
-            else return 0.3;
+            else return 0;
         });
     };
 
@@ -2664,7 +2748,7 @@ let GraphLayout = function (container) {
         // TODO : extend algorithm
         let new_highlights = JSON.parse(JSON.stringify(highlights_id));
         for(let id of highlights_id){
-            let in_nodes = nodes_dict[id].from;
+            let in_nodes = nodes_dicts[id].from;
             for(let neighbor_id of in_nodes){
                 if(new_highlights.indexOf(neighbor_id) === -1){
                     new_highlights.push(neighbor_id);
