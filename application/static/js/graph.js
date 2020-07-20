@@ -633,6 +633,7 @@ let GraphLayout = function (container) {
                 path.edge_type = alabel+","+blabel;
                 let intersect = line_rect_intersection(nodes_dict[path[0].id], nodes_dict[path[1].id], node_area);
                 if((!in_area(nodes_dict[path[0].id], node_area)) && (intersect !== null)) {
+                    while (nodes_dict[node_cnt]!==undefined) node_cnt++;
                     intersect.id = node_cnt;
                     nodes_dict[node_cnt] = intersect;
                     path.source = node_cnt;
@@ -642,6 +643,7 @@ let GraphLayout = function (container) {
 
                 }
                 else if((!in_area(nodes_dict[path[1].id], node_area)) && (intersect !== null)) {
+                    while (nodes_dict[node_cnt]!==undefined) node_cnt++;
                     intersect.id = node_cnt;
                     nodes_dict[node_cnt] = intersect;
                     path.source = path[0].id;
@@ -799,42 +801,32 @@ let GraphLayout = function (container) {
                 node.y = that.center_scale_y_reverse(node.y);
             }
 
-            let fbundling = d3.ForceEdgeBundling(bundling_force_S, bundling_elect_scale)
-				.nodes(nodes_dict)
-				.edges(path_ary);
+            // let fbundling = d3.ForceEdgeBundling(bundling_force_S, bundling_elect_scale)
+			// 	.nodes(nodes_dict)
+			// 	.edges(path_ary);
             let oldfbundling = d3.OldForceEdgeBundling()
                 .zoom_scale(that.zoom_scale)
 				.nodes(nodes_dict)
 				.edges(path_ary.map(function (d) {
                     return {
-				        "source":d[0].id,
-                        "target":d[1].id,
+				        "source":d.source,
+                        "target":d.target,
                         "edge_type":d.edge_type
 				    }
                 }));
             let old_res = oldfbundling();
             let compatibility_edges = oldfbundling.get_compatibility_edges();
 
-            let res = fbundling();
-            for(let line of res){
-                for(let path_node_id = 0; path_node_id < line.length; path_node_id++){
-                    if(path_node_id === 0 || path_node_id === line.length-1){
-                        let tmp = line[path_node_id];
-                        line[path_node_id] = {};
-                        line[path_node_id].x = tmp.x;
-                        line[path_node_id].y = tmp.y;
-                    }
-                }
-            }
-            path_ary = path_ary.map((d,i) => d.concat([res[i]]));
-            let ori_res = deepCopy(res);
-            ori_res.forEach(d => {
-                for(let i = 0; i < d.length; i++){
-                    d[i].x = that.center_scale_x_reverse(d[i].x);
-                    d[i].y = that.center_scale_y_reverse(d[i].y);
-                }
-            });
-            path_ary = path_ary.map((d,i) => d.concat([ori_res[i]]));
+            // let res = fbundling();
+            // path_ary = path_ary.map((d,i) => d.concat([res[i]]));
+            // let ori_res = deepCopy(res);
+            // ori_res.forEach(d => {
+            //     for(let i = 0; i < d.length; i++){
+            //         d[i].x = that.center_scale_x_reverse(d[i].x);
+            //         d[i].y = that.center_scale_y_reverse(d[i].y);
+            //     }
+            // });
+            // path_ary = path_ary.map((d,i) => d.concat([ori_res[i]]));
             path_ary = path_ary.map(function (d, i) {
                 d.old_res = old_res[i].map(function (d) {
                     return {
@@ -863,7 +855,7 @@ let GraphLayout = function (container) {
             console.log("bundling res", path_ary);
 
             highlight_nodes_in_group = highlight_nodes_group.selectAll("circle")
-                .data(highlights.map(d => nodes_dicts[d]), d => d.id);
+                .data(highlights.filter(d => nodes_dicts[d]!==undefined).map(d => nodes_dicts[d]), d => d.id);
             nodes_in_group = nodes_group.selectAll("circle")
                 .data(nodes_ary, d => d.id);
             golds_in_group = golds_group.selectAll("path")
