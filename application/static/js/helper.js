@@ -207,8 +207,8 @@ let curve_tapered = function(pts, begin_width, end_width) {
     let pt_num = pts.length;
     let cur_width = begin_width;
     let width_step = [];
-    let begin_per = 1/4;
-    let end_per = 3/4;
+    let begin_per = 2/5;
+    let end_per = 9/10;
     for(let i=0; i<pt_num; i++) {
         let per = i/pt_num;
         if(per < begin_per) {
@@ -521,8 +521,11 @@ var intersect = function(rect1, rect2, padding_label) {
 };
 
 let path_rect_intersect = function(path, rect){
-    return bezierIntersect.quadBezierAABB(path[4][0].x, path[4][0].y,
-        path[4][1].x, path[4][1].y, path[4][2].x, path[4][2].y,
+    let res = path.old_res;
+    let len = res.length;
+    let half = Math.round(len/2);
+    return bezierIntersect.quadBezierAABB(res[0].x, res[0].y,
+        res[half].x, res[half].y, res[len-1].x, res[len-1].y,
         rect.x, rect.y, rect.x + rect.w, rect.y + rect.h)
 };
 
