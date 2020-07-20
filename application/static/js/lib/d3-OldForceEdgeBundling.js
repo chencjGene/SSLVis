@@ -178,7 +178,7 @@
 						"y": T.x
 					};
 					// let l = euclidean_distance(subdivision_points_for_edge[compatible_edges_list[oe]][j], subdivision_points_for_edge[e_idx][i])/4;
-					let l = 40*zoom_scale;
+					let l = 6*zoom_scale;
 					let dis = euclidean_distance(subdivision_points_for_edge[compatible_edges_list[oe]][j], subdivision_points_for_edge[e_idx][i]);
 					if(dis > l*2){
 						m.x = subdivision_points_for_edge[e_idx][i].x;
@@ -193,7 +193,7 @@
 				}
 				let s = 0.5;
 				// let k = 6/subdivision_points_for_edge[e_idx].length;
-				let k = 1;
+				let k = 0.3;
 				if(Math.sqrt(vector_dot_product(edge_as_vector(data_edges[e_idx]), edge_as_vector(data_edges[e_idx]))) < 100*zoom_scale) {
 					k /= 10;
 				}

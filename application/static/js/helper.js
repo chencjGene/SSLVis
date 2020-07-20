@@ -206,7 +206,21 @@ let curve_tapered = function(pts, begin_width, end_width) {
     end_width /= 2;
     let pt_num = pts.length;
     let cur_width = begin_width;
-    let width_step = (begin_width - end_width)/(pt_num - 1);
+    let width_step = [];
+    let begin_per = 1/4;
+    let end_per = 3/4;
+    for(let i=0; i<pt_num; i++) {
+        let per = i/pt_num;
+        if(per < begin_per) {
+            width_step.push(0)
+        }
+        else if(per > end_per) {
+            width_step.push(0)
+        }
+        else {
+            width_step.push((begin_width-end_width)/((end_per-begin_per)* pt_num))
+        }
+    }
     let curve_pts = [];
     for(let i=1; i<pt_num-1; i++) {
         let last = pts[i-1];
@@ -232,7 +246,7 @@ let curve_tapered = function(pts, begin_width, end_width) {
                 y: last.y - direct.y * cur_width
             }])
         }
-        cur_width -= width_step;
+        cur_width -= width_step[i-1];
         curve_pts.push([{
                 x: cur.x + direct.x * cur_width,
                 y: cur.y + direct.y * cur_width
@@ -241,7 +255,7 @@ let curve_tapered = function(pts, begin_width, end_width) {
                 y: cur.y - direct.y * cur_width
         }]);
         if(i === pt_num-2){
-            cur_width -= width_step;
+            cur_width -= width_step[i];
             curve_pts.push([{
                 x: next.x + direct.x * cur_width,
                 y: next.y + direct.y * cur_width

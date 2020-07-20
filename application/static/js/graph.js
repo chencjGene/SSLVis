@@ -20,7 +20,7 @@ let GraphLayout = function (container) {
     let star_outer_r = 15;
     let path_width_scale = 1.75;
     let path_begin_width = 2.5*path_width_scale;
-    let path_end_width = 0.03;
+    let path_end_width = 0.2;
     let path_mid_width = (path_begin_width+path_end_width)/2;
     let path_width = 2;
     let bundling_force_S = 0.02;
@@ -794,6 +794,11 @@ let GraphLayout = function (container) {
                 }
             }
 
+            for(let node of Object.values(nodes_dict)) {
+                node.x = that.center_scale_x_reverse(node.x);
+                node.y = that.center_scale_y_reverse(node.y);
+            }
+
             let fbundling = d3.ForceEdgeBundling(bundling_force_S, bundling_elect_scale)
 				.nodes(nodes_dict)
 				.edges(path_ary);
@@ -831,7 +836,12 @@ let GraphLayout = function (container) {
             });
             path_ary = path_ary.map((d,i) => d.concat([ori_res[i]]));
             path_ary = path_ary.map(function (d, i) {
-                d.old_res = old_res[i];
+                d.old_res = old_res[i].map(function (d) {
+                    return {
+                        x:that.center_scale_x(d.x),
+                        y:that.center_scale_y(d.y)
+                    }
+                });
                 d.com_edges = compatibility_edges[i];
                 return d
             });
@@ -1039,10 +1049,10 @@ let GraphLayout = function (container) {
             that.uncertainty_glyph_update();
 
             gradient_in_group
-                .attr("x1", d => that.if_focus_selection_box?d[0].focus_x:d[3][0].x)
-                .attr("y1", d => that.if_focus_selection_box?d[0].focus_y:d[3][0].y)
-                .attr("x2", d => that.if_focus_selection_box?d[1].focus_x:d[3][2].x)
-                .attr("y2", d => that.if_focus_selection_box?d[1].focus_y:d[3][2].y)
+                .attr("x1", d => that.if_focus_selection_box?d[0].focus_x:d.old_res[0].x)
+                .attr("y1", d => that.if_focus_selection_box?d[0].focus_y:d.old_res[0].y)
+                .attr("x2", d => that.if_focus_selection_box?d[1].focus_x:d.old_res[d.old_res.length-1].x)
+                .attr("y2", d => that.if_focus_selection_box?d[1].focus_y:d.old_res[d.old_res.length-1].y)
                 .each(function (d) {
                     let linearGradient = d3.select(this);
                     linearGradient.select(".stop-1")
@@ -1373,10 +1383,10 @@ let GraphLayout = function (container) {
                 .append("linearGradient")
                 .attr("gradientUnits", "userSpaceOnUse")
                 .attr("id", d => "path" + d[0].id + "-" + d[1].id)
-                .attr("x1", d => that.if_focus_selection_box?d[0].focus_x:d[3][0].x)
-                .attr("y1", d => that.if_focus_selection_box?d[0].focus_y:d[3][0].y)
-                .attr("x2", d => that.if_focus_selection_box?d[1].focus_x:d[3][2].x)
-                .attr("y2", d => that.if_focus_selection_box?d[1].focus_y:d[3][2].y);
+                .attr("x1", d => that.if_focus_selection_box?d[0].focus_x:d.old_res[0].x)
+                .attr("y1", d => that.if_focus_selection_box?d[0].focus_y:d.old_res[0].y)
+                .attr("x2", d => that.if_focus_selection_box?d[1].focus_x:d.old_res[d.old_res.length-1].x)
+                .attr("y2", d => that.if_focus_selection_box?d[1].focus_y:d.old_res[d.old_res.length-1].y);
             gradient.append("stop")
                 .attr("class", "stop-1")
                 .attr("offset", "0%")
