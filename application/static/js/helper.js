@@ -199,7 +199,97 @@ let bezier_tapered = function(begin, mid, end, begin_width, mid_width, end_width
         begin1.x, begin1.y, mid1.x, mid1.y, end1.x, end1.y,
         end2.x, end2.y, mid2.x, mid2.y, begin2.x, begin2.y
     )
+};
 
+let curve_tapered = function(pts, begin_width, end_width) {
+    begin_width /= 2;
+    end_width /= 2;
+    let pt_num = pts.length;
+    let cur_width = begin_width;
+    let width_step = [];
+    let begin_per = 2/5;
+    let end_per = 9/10;
+    for(let i=0; i<pt_num; i++) {
+        let per = i/pt_num;
+        if(per < begin_per) {
+            width_step.push(0)
+        }
+        else if(per > end_per) {
+            width_step.push(0)
+        }
+        else {
+            width_step.push((begin_width-end_width)/((end_per-begin_per)* pt_num))
+        }
+    }
+    let curve_pts = [];
+    for(let i=1; i<pt_num-1; i++) {
+        let last = pts[i-1];
+        let cur = pts[i];
+        let next = pts[i+1];
+        let cen = {
+            x: cur.x - last.x,
+            y: cur.y - last.y
+        };
+        let direct = {
+            x: -cen.y,
+            y: cen.x
+        };
+        let direct_len = Math.sqrt(direct.x*direct.x + direct.y*direct.y);
+        direct.x /= direct_len;
+        direct.y /= direct_len;
+        if(i === 1){
+            curve_pts.push([{
+                x: last.x + direct.x * cur_width,
+                y: last.y + direct.y * cur_width
+            }, {
+                x: last.x - direct.x * cur_width,
+                y: last.y - direct.y * cur_width
+            }])
+        }
+        cur_width -= width_step[i-1];
+        curve_pts.push([{
+                x: cur.x + direct.x * cur_width,
+                y: cur.y + direct.y * cur_width
+        }, {
+                x: cur.x - direct.x * cur_width,
+                y: cur.y - direct.y * cur_width
+        }]);
+        if(i === pt_num-2){
+            cur_width -= width_step[i];
+            curve_pts.push([{
+                x: next.x + direct.x * cur_width,
+                y: next.y + direct.y * cur_width
+            }, {
+                    x: next.x - direct.x * cur_width,
+                    y: next.y - direct.y * cur_width
+            }])
+        }
+    }
+    let curve_str = "M "+curve_pts[0][0].x+" "+curve_pts[0][0].y+" ";
+    let last = curve_pts[0][0];
+    let another = curve_pts[0][1];
+    let anothers = [another];
+    for(let i=1; i<pt_num; i++) {
+        // let direct = [last.x-another.x, last.y-another.y];
+        // let direct2 = [curve_pts[i][0].x-curve_pts[i][1].x, curve_pts[i][0].y-curve_pts[i][1].y];
+        // if((direct[0]*direct2[0] + direct[1]*direct2[1]) > 0)
+        if(true)
+        {
+            last = curve_pts[i][0];
+            another = curve_pts[i][1];
+        }
+        else {
+            last = curve_pts[i][1];
+            another = curve_pts[i][0];
+        }
+        anothers.push(another);
+        curve_str += "L "+last.x+" "+last.y+" ";
+    }
+    for(let i=pt_num-1; i>=0; i--) {
+        curve_str += "L "+anothers[i].x+" "+anothers[i].y+" ";
+    }
+    curve_str += "Z";
+    return curve_str;
 };
 
 let curve_mid = function (u, v, radius) {
@@ -431,8 +521,11 @@ var intersect = function(rect1, rect2, padding_label) {
 };
 
 let path_rect_intersect = function(path, rect){
-    return bezierIntersect.quadBezierAABB(path[4][0].x, path[4][0].y,
-        path[4][1].x, path[4][1].y, path[4][2].x, path[4][2].y,
+    let res = path.old_res;
+    let len = res.length;
+    let half = Math.round(len/2);
+    return bezierIntersect.quadBezierAABB(res[0].x, res[0].y,
+        res[half].x, res[half].y, res[len-1].x, res[len-1].y,
         rect.x, rect.y, rect.x + rect.w, rect.y + rect.h)
 };
 

@@ -204,9 +204,9 @@ class SSLModel(object):
         propagation_path_from, propagation_path_to = self.get_path_to_label(self.process_data,
                                                                             self.graph)
         # if simplifying:
-        self._influence_matrix(rebuild=simplifying, saving = saving)
-        self.propagation_path_from = propagation_path_from
-        self.propagation_path_to = propagation_path_to
+        # self._influence_matrix(rebuild=simplifying, saving = saving)
+        # self.propagation_path_from = propagation_path_from
+        # self.propagation_path_to = propagation_path_to
 
 
         # if simplifying and config.show_simplified:

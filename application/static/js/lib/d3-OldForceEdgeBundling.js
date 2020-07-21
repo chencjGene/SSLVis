@@ -18,8 +18,9 @@
 			C = 6, // number of cycles to perform
 			I_initial = 90, // init. number of iterations for cycle
 			I_rate = 0.6666667, // rate at which iteration number decreases i.e. 2/3
-			compatibility_threshold = 0.6,
-			eps = 1e-6;
+			compatibility_threshold = 0.4,
+			eps = 1e-6,
+			zoom_scale = 1;
 
 
 		/*** Geometry Helper Methods ***/
@@ -145,20 +146,89 @@
 			var compatible_edges_list = compatibility_list_for_edge[e_idx];
 
 			for (var oe = 0; oe < compatible_edges_list.length; oe++) {
-				var force = {
-					'x': subdivision_points_for_edge[compatible_edges_list[oe]][i].x - subdivision_points_for_edge[e_idx][i].x,
-					'y': subdivision_points_for_edge[compatible_edges_list[oe]][i].y - subdivision_points_for_edge[e_idx][i].y
+				let direction = vector_dot_product(edge_as_vector(data_edges[e_idx]), edge_as_vector(data_edges[compatible_edges_list[oe]]));
+				let repulse = (direction < 0) || (data_edges[e_idx].edge_type !== data_edges[compatible_edges_list[oe]].edge_type);
+				let m = {
+					"x":0,
+					"y":0
 				};
-
-				if ((Math.abs(force.x) > eps) || (Math.abs(force.y) > eps)) {
-					var diff = (1 / Math.pow(custom_edge_length({
-						'source': subdivision_points_for_edge[compatible_edges_list[oe]][i],
-						'target': subdivision_points_for_edge[e_idx][i]
-					}), 1));
-
-					sum_of_forces.x += force.x * diff;
-					sum_of_forces.y += force.y * diff;
+				// if((data_edges[e_idx].source == 1959) && (data_edges[e_idx].target == 12599)) {
+				// 	if(direction >= 0){}
+				// 	else {
+				// 		console.log("get")
+				// 	}
+				// }
+				if(!repulse){
+					// same direction
+					m.x = subdivision_points_for_edge[compatible_edges_list[oe]][i].x;
+					m.y = subdivision_points_for_edge[compatible_edges_list[oe]][i].y;
 				}
+				else {
+					// opposite direction
+					let j = Math.round(subdivision_points_for_edge[compatible_edges_list[oe]].length * (1-(i+1)/subdivision_points_for_edge[e_idx].length));
+					let T = {
+						"x": subdivision_points_for_edge[compatible_edges_list[oe]][j+1].x - subdivision_points_for_edge[compatible_edges_list[oe]][j-1].x,
+						"y": subdivision_points_for_edge[compatible_edges_list[oe]][j+1].y - subdivision_points_for_edge[compatible_edges_list[oe]][j-1].y
+					};
+					let _dis = Math.sqrt(Math.pow(T.x, 2)+Math.pow(T.y, 2));
+					T.x /= _dis;
+					T.y /= _dis;
+					let N = {
+						"x": -T.y,
+						"y": T.x
+					};
+					// let l = euclidean_distance(subdivision_points_for_edge[compatible_edges_list[oe]][j], subdivision_points_for_edge[e_idx][i])/4;
+					let l = 6*zoom_scale;
+					let dis = euclidean_distance(subdivision_points_for_edge[compatible_edges_list[oe]][j], subdivision_points_for_edge[e_idx][i]);
+					if(dis > l*2){
+						m.x = subdivision_points_for_edge[e_idx][i].x;
+						m.y = subdivision_points_for_edge[e_idx][i].y;
+					}
+					else {
+						m.x = subdivision_points_for_edge[compatible_edges_list[oe]][j].x + l*N.x;
+						m.y = subdivision_points_for_edge[compatible_edges_list[oe]][j].y + l*N.y;
+					}
+					// let l = Math.sqrt(euclidean_distance(edge_as_vector(data_edges[e_idx]), edge_as_vector(data_edges[oe]))/5);
+
+				}
+				let s = 0.5;
+				// let k = 6/subdivision_points_for_edge[e_idx].length;
+				let k = 0.3;
+				if(Math.sqrt(vector_dot_product(edge_as_vector(data_edges[e_idx]), edge_as_vector(data_edges[e_idx]))) < 100*zoom_scale) {
+					k /= 10;
+				}
+				// if(direction<0) k=0;
+				let dis =  euclidean_distance(m, subdivision_points_for_edge[e_idx][i]);
+				let force = s*k*dis/(Math.PI*Math.pow(s*s+dis*dis, 2));
+				let D = {
+					"x": m.x - subdivision_points_for_edge[e_idx][i].x,
+					"y": m.y - subdivision_points_for_edge[e_idx][i].y,
+				};
+				let _dis = Math.sqrt(Math.pow(D.x, 2)+Math.pow(D.y, 2));
+				if(dis > 0) {
+					D.x /= _dis;
+					D.y /= _dis;
+					sum_of_forces.x += force *D.x;
+					sum_of_forces.y += force *D.y;
+				}
+
+				if(isNaN(sum_of_forces.x) ||isNaN(sum_of_forces.y)) {
+					console.log("force error!");
+				}
+				// var force = {
+				// 	'x': subdivision_points_for_edge[compatible_edges_list[oe]][i].x - subdivision_points_for_edge[e_idx][i].x,
+				// 	'y': subdivision_points_for_edge[compatible_edges_list[oe]][i].y - subdivision_points_for_edge[e_idx][i].y
+				// };
+				//
+				// if ((Math.abs(force.x) > eps) || (Math.abs(force.y) > eps)) {
+				// 	var diff = (1 / Math.pow(custom_edge_length({
+				// 		'source': subdivision_points_for_edge[compatible_edges_list[oe]][i],
+				// 		'target': subdivision_points_for_edge[e_idx][i]
+				// 	}), 1));
+				//
+				// 	sum_of_forces.x += force.x * diff;
+				// 	sum_of_forces.y += force.y * diff;
+				// }
 			}
 
 			return sum_of_forces;
@@ -204,6 +274,16 @@
 				if (P === 1) {
 					subdivision_points_for_edge[e_idx].push(data_nodes[data_edges[e_idx].source]); // source
 					subdivision_points_for_edge[e_idx].push(edge_midpoint(data_edges[e_idx])); // mid point
+					// let begin = [data_nodes[data_edges[e_idx].source].x, data_nodes[data_edges[e_idx].source].y];
+					// let end = [data_nodes[data_edges[e_idx].target].x, data_nodes[data_edges[e_idx].target].y];
+					// let path_curve = 1.2;
+					// let dis = Math.sqrt(Math.pow(begin[0]-end[0], 2) + Math.pow(begin[1]-end[1], 2));
+					// let radius = dis*path_curve;
+					// let mid = curve_mid(begin, end, radius);
+					// subdivision_points_for_edge[e_idx].push({
+					// 	x:mid[0],
+					// 	y:mid[1]
+					// });
 					subdivision_points_for_edge[e_idx].push(data_nodes[data_edges[e_idx].target]); // target
 				} else {
 					var divided_edge_length = compute_divided_edge_length(e_idx);
@@ -238,11 +318,15 @@
 			}
 		}
 
+		function edge_type_compatibility(P, Q) {
+			return P.edge_type === Q.edge_type?1:0
+		}
+
 		/*** ********************** ***/
 
 		/*** Edge compatibility measures ***/
 		function angle_compatibility(P, Q) {
-			return Math.abs(vector_dot_product(edge_as_vector(P), edge_as_vector(Q)) / (edge_length(P) * edge_length(Q)));
+			return Math.abs(vector_dot_product(edge_as_vector(P), edge_as_vector(Q)) / (edge_length(P) * edge_length(Q)))>0.7?1:0;
 		}
 
 		function scale_compatibility(P, Q) {
@@ -320,6 +404,9 @@
 			initialize_compatibility_lists();
 			update_edge_divisions(P);
 			compute_compatibility_lists();
+			if(data_nodes[12008] && data_nodes[7890] && data_nodes[12599]) {
+				console.log("compability:", are_compatible({source:12008, target:7890}, {source: 12008, target: 12599}))
+			}
 
 			for (var cycle = 0; cycle < C; cycle++) {
 				for (var iteration = 0; iteration < I; iteration++) {
@@ -346,6 +433,20 @@
 			}
 			return subdivision_points_for_edge;
 		};
+
+		forcebundle.get_compatibility_edges = function () {
+			let res = [];
+			let tedge_id = 0;
+			for(let com_edge_ids of compatibility_list_for_edge) {
+				let com_edges = com_edge_ids.map(function (edge_id) {
+					return data_edges[edge_id].source+","+data_edges[edge_id].target;
+				});
+				com_edges.push(data_edges[tedge_id].source+","+data_edges[tedge_id].target);
+				res.push(com_edges);
+				tedge_id++;
+			}
+			return res;
+		};
 		/*** ************************ ***/
 
 
@@ -367,6 +468,16 @@
 				data_edges = filter_self_loops(ll); //remove edges to from to the same point
 			}
 
+			return forcebundle;
+		};
+
+		forcebundle.zoom_scale = function(scale) {
+			if (arguments.length === 0) {
+				return zoom_scale
+			}
+			else {
+				zoom_scale = scale;
+			}
 			return forcebundle;
 		};
 

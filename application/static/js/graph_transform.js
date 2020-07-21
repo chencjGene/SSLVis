@@ -174,7 +174,7 @@ let GraphTransform = function (parent) {
                             }}, 500);
         };
         zoom = d3.zoom()
-            .scaleExtent([0.6, 25])
+            .scaleExtent([0.6, 250])
             .on('start', function () {
                 // d3.selectAll(".iw-contextMenu").style("display", "none");
                 // focus_node_change_switch = true;
