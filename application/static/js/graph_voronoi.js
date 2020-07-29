@@ -9,7 +9,10 @@ let GraphVoronoi = function(parent){
     // group
     that.voronoi_group = null;
     that.voronoi_in_group = null;
+    that.boundary_in_group = null;
+    that.boundary_group = null;
     that.sub_bar_group = null;
+
     
     // data
     let color_unlabel = UnlabeledColor;
@@ -24,6 +27,7 @@ let GraphVoronoi = function(parent){
     let large_inner_bounder = null;
     let outer_bounder = null;
     that.cell_data = [];
+    that.boundarys = [];
     that.max_num = 10;
 
 
@@ -70,16 +74,132 @@ let GraphVoronoi = function(parent){
     that.set_view = function (new_parent) {
         view = new_parent;
         that.voronoi_group = view.voronoi_group;
+        that.boundary_group = view.voronoi_group.append("g").attr("class", "boundary-g");
+    };
+
+    that.convexity = function (paths) {
+        return 1;
+    };
+
+    that.separation = function (nodes, cells, lines) {
+        return 1
+    };
+
+    that.get_nearest_nodes = function(cells) {
+        for(let cell of cells) {
+            let nodes = cell.nodes;
+            for(let node of nodes) {
+                let min_dis = 0;
+                let min_line = null;
+                for(let segments of cell.segments) {
+                    for(let line_node of segments.lines) {
+                        let dis = Math.pow(line_node[0]-node.x, 2) + Math.pow(line_node[1]-node.y, 2);
+                        if(dis < min_dis) {
+                            min_dis = dis;
+                            min_line = line_node;
+                        }
+                    }
+                }
+                if(min_line.nodes === undefined) min_line.nodes = [];
+                min_line.nodes.push(node);
+            }
+        }
+    };
+
+    that.optimize_paths = function (segments, cells) {
+        let all_new_lines = [];
+        let alpha = 1;
+        that.get_nearest_nodes(cells);
+        for(let segment of segments) {
+            if(segment.cells.length < 2) {
+                all_new_lines.push(segment.lines);
+                continue;
+            }
+            let lines = segment.lines;
+
+            // init score matrix
+            let scores = [];
+            for(let i=0; i<=lines.length; i++){
+                let score = [];
+                for(let j=0; j<=i; j++) {
+                    score.push({
+                        convexity: ((i===0)||(j===0))?0:10000000,
+                        separation: ((i===0)||(j===0))?0:10000000,
+                        lines: (j===0)?[lines[0]]:[]
+                    })
+                }
+                scores.push(score);
+            }
+            let cell_paths = [[], []];
+            for(let _segment of cells[segment.cells[0]].segments) {
+                if(segment === _segment) continue;
+                cell_paths[0] = cell_paths[0].concat(_segment.lines);
+            }
+            for(let _segment of cells[segment.cells[1]].segments) {
+                if(segment === _segment) continue;
+                cell_paths[1] = cell_paths[1].concat(_segment.lines);
+            }
+
+            for (let i = 1; i <= lines.length; i++) {
+                for (let j = 1; j < i; j++) {
+                    let min_score = {
+                        convexity: 10000000,
+                        separation: 10000000,
+                        lines:[]
+                    };
+                    for (let k = j; k < i; k++) {
+                        // convex
+                        let cur_lines = scores[k][j-1].lines.map(d=>d);
+                        cur_lines.push(segment.lines[i-1]);
+                        let cur_lines_all = cur_lines.concat(segment.lines.slice(i));
+                        let convex = that.convexity(cell_paths[0].concat(cur_lines_all)) * that.convexity(cell_paths[1].concat(cur_lines_all));
+                        // separation
+                        let nodes = segment.lines.reduce(function (acc, cur) {
+                            return acc.concat(cur.nodes)
+                        }, []);
+                        let separation = that.separation(nodes, cells, cur_lines_all);
+                        if((min_score.convexity+min_score.separation*alpha) > (convex+separation*alpha)) {
+                            min_score = {
+                                convexity: convex,
+                                separation: separation,
+                                lines: cur_lines
+                            }
+                        }
+                    }
+                    scores[i][j] = min_score;
+                }
+            }
+            let min_score = {
+                        convexity: 10000000,
+                        separation: 10000000,
+                        lines:[]
+                    };
+            for(let j = 1; j < lines.length; j++) {
+                let cur_score = scores[lines.length][j];
+                if((min_score.convexity+min_score.separation*alpha) > (cur_score.convexity + cur_score.separation*alpha)) {
+                            min_score = {
+                                convexity: cur_score.convexity,
+                                separation: cur_score.separation,
+                                lines: cur_score.lines
+                            }
+                }
+            }
+            all_new_lines.push(min_score.lines)
+        }
+        for(let i=0; i<segments.length; i++) {
+            segments[i].lines = all_new_lines[i];
+        }
     };
 
     that.show_voronoi = function(nodes, outliers){
         let voronoi_nodes = nodes.filter(d => outliers[d.id] === undefined);
         that.voronoi_data = view.cal_voronoi(voronoi_nodes);
-        that.simple_bar = new Array(that.voronoi_data.cells.length).fill(1).map(d => true);
+        that.simple_bar = new Array(that.voronoi_data.length).fill(1).map(d => true);
+        that.optimize_paths(that.voronoi_data.segments, that.voronoi_data);
 
         for(let node of nodes){
             let find = false;
-            for(let cell of that.voronoi_data.cells){
+            for(let cell of that.voronoi_data){
                 if(view.if_in_cell(node, cell)) {
                     find = true;
                     cell.nodes.push(node);
@@ -87,10 +207,10 @@ let GraphVoronoi = function(parent){
                 }
             }
             if(!find) {
-                console.log("Error: point not in any cells");
+                console.log("Error: point not in any cells", node);
             }
         }
-        for(let cell of that.voronoi_data.cells) {
+        for(let cell of that.voronoi_data) {
             let center = cell.nodes.reduce(function (acc, node) {
                 acc.x += node.x;
                 acc.y += node.y;
@@ -98,12 +218,14 @@ let GraphVoronoi = function(parent){
             }, {x:0,y:0});
             center.x /= cell.nodes.length;
             center.y /= cell.nodes.length;
-            cell.site.data[0] = cell.site[0] = center.x;
-            cell.site.data[1] = cell.site[1] = center.y;
+            cell.site = [0, 0];
+            cell.site[0] = center.x;
+            cell.site[1] = center.y;
         }
-        let cat_0 = that.voronoi_data.cells[3].simple_summary[0].in;
-        let cat_1 = that.voronoi_data.cells[3].simple_summary[1].in;
-        console.log("cat heter:", cat_1/(cat_0+cat_1));
+        // let cat_0 = that.voronoi_data.cells[3].simple_summary[0].in;
+        // let cat_1 = that.voronoi_data.cells[3].simple_summary[1].in;
+        // console.log("cat heter:", cat_1/(cat_0+cat_1));
+        console.log("Voronoi diagrams:", that.voronoi_data);
         that.update_view();
     };
 
@@ -111,13 +233,13 @@ let GraphVoronoi = function(parent){
 
     that.place_barchart = function(){
         let step = 0.5;
-        for (let i = 0; i < that.voronoi_data.cells.length; i++){
-            let cell = that.voronoi_data.cells[i];
+        for (let i = 0; i < that.voronoi_data.length; i++){
+            let cell = that.voronoi_data[i];
             if (cell.x && cell.y){
                 continue;
             }
-            let cell_x = cell.site.data[0];
-            let cell_y = cell.site.data[1];
+            let cell_x = cell.site[0];
+            let cell_y = cell.site[1];
             console.log("cell position", cell_x, cell_y, 
                 cell.chart_width / view.scale, cell.chart_height/view.scale);
             let nodes = cell.nodes;
@@ -129,8 +251,9 @@ let GraphVoronoi = function(parent){
             for (; deep < that.max_search_deep; deep++){
                 for(let dx = -deep; dx <= deep; dx++){
                     for(let dy = -(deep-Math.abs(dx)); dy <= deep-Math.abs(dx); dy++){
-                        cell_x = cell.site.data[0] + dx * step;
-                        cell_y = cell.site.data[1] + dy * step;
+                        cell_x = cell.site[0] + dx * step;
+                        cell_y = cell.site[1] + dy * step;
+                        if(view.center_scale_y(cell_y+cell.chart_height/view.scale) > 650) continue;
                         let contain_nodes_cnt = 0;
                         let k = 0;
                         let if_in_poly = view.if_in_cell({x:cell_x, y:cell_y}, cell)
@@ -158,16 +281,17 @@ let GraphVoronoi = function(parent){
                 }
                 if(find) break;
             }
-            cell.x = cell.site.data[0] + best_dx * step;
-            cell.y = cell.site.data[1] + best_dy * step;
+            cell.x = cell.site[0] + best_dx * step;
+            cell.y = cell.site[1] + best_dy * step;
             cell.x = view.center_scale_x(cell.x);
             cell.y = view.center_scale_y(cell.y);
-            console.log("final cell position", cell.x, cell.y, best_dx, best_dy);
+            console.log("final cell position", cell.x, cell.y, best_dx, best_dy, cell.label);
         }
     };
 
     that.disable_voronoi = function(){
-        that.voronoi_data = {"edges": [], "cells": []};
+        that.voronoi_data = [];
+        that.voronoi_data.segments = [];
         that.update_view();
     };
 
@@ -265,8 +389,9 @@ let GraphVoronoi = function(parent){
 
     that.update_view = function(){
         that.cell_data = [];
-        for (let i = 0; i < that.voronoi_data.cells.length; i++){
-            let cell = that.voronoi_data.cells[i];
+        if(that.voronoi_data)
+        for (let i = 0; i < that.voronoi_data.length; i++){
+            let cell = that.voronoi_data[i];
             let summary = that.simple_bar[i] ? cell.simple_summary : cell.summary;
             let class_cnt = summary.length;
             cell.bar_width = 4 * view.zoom_scale * 2;
@@ -283,7 +408,9 @@ let GraphVoronoi = function(parent){
         that.place_barchart();
         console.log("that.cell_data", that.cell_data.map(d => d.summary_data), "simple_bar", that.simple_bar);
         that.voronoi_in_group = that.voronoi_group.selectAll("g.voronoi-cell")
-        .data(that.cell_data, d => d.id);
+            .data(that.cell_data, d => d.id);
+        that.boundary_in_group = that.boundary_group.selectAll("path.boundary")
+            .data(that.voronoi_data.segments, d => d.begin_node+","+d.end_node);
 
         that._create();
         that._update();
@@ -302,9 +429,21 @@ let GraphVoronoi = function(parent){
             .duration(remove_ani)
             .attr("opacity", 0)
             .remove();
+        that.boundary_in_group
+            .exit()
+            .transition()
+            .duration(remove_ani)
+            .attr("opacity", 0)
+            .remove();
     };
 
     that._update = function(){
+        that.boundary_in_group.selectAll("path.boundary")
+            .attr("d", d => drawer(d.lines))
+            .attr("fill", "none")
+            .attr("stroke-width", 2)
+            .attr("stroke", "#a9a9a9");
+
         that.voronoi_in_group
             // .selectAll(".voronoi-edge")
             .selectAll(".barchart-shadow")
@@ -324,6 +463,7 @@ let GraphVoronoi = function(parent){
 
         that.voronoi_in_group.selectAll(".voronoi-edges")
         .each(function (d) {
+            return
             let group = d3.select(this);
             if(view.show_init_voronoi) {
                 group.selectAll("path")
@@ -365,12 +505,28 @@ let GraphVoronoi = function(parent){
     };
 
     that._create = function(){
+        let drawer = d3.line().x(d => view.center_scale_x(d[0])).y(d => view.center_scale_y(d[1]));
+        that.boundary_in_group.enter()
+            .append("path")
+            .attr("class", "boundary")
+            .attr("d", d => drawer(d.lines))
+            .attr("fill", "none")
+            .attr("stroke-width", 2)
+            .attr("stroke", "#a9a9a9")
+            .on("mouseover", function (d) {
+                console.log("boundary:", d)
+            });
+
+
+
         let v_g = that.voronoi_in_group.enter()
         .append("g")
         .attr("class", "voronoi-cell");
+
         v_g.append("g")
         .attr("class", "voronoi-edges")
         .each(function (d) {
+            return
             let group = d3.select(this);
             if(view.show_init_voronoi) {
                 group.selectAll("path")
@@ -403,6 +559,7 @@ let GraphVoronoi = function(parent){
             }
 
         });
+
         let sub_v_g = v_g.append("g")
         .attr("class", "bar-group")
             .attr("transform", d => 
