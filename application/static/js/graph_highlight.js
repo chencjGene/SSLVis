@@ -203,6 +203,14 @@ let GraphHighlight = function (parent) {
             return Math.sqrt(Math.pow(x1-x2, 2)+ Math.pow(y1-y2, 2));
         }
         function convexHull (arr) {
+            //
+            let hull_generator = new ConvexHullGrahamScan();
+            for(let a of arr) {
+                hull_generator.addPoint(a[0], a[1]);
+            }
+            return hull_generator.getHull().map(d => [d.x, d.y]);
+
+            //
                 const n = arr.length;
                 // There must be at least 3 points
                 if(n < 3) {

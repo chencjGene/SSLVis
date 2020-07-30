@@ -556,17 +556,20 @@ GraphLayout.prototype.cal_voronoi = function(node_dict) {
     }
     new_diagram.segments = Object.values(segments);
     that.edge_statistic(new_diagram);
-    that.if_in_cell(new_diagram[2]._old_nodes[0], new_diagram[2]);
     return new_diagram;
 };
 
-GraphLayout.prototype.if_in_cell = function(node, cell) {
+GraphLayout.prototype.if_in_cell = function(node, cell, if_paths = false) {
     // ray-casting algorithm based on
     // http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
     let that = this;
     let point = node;
-
-    let vs = cell.segments.reduce(function (acm, cur) {
+    let vs = null;
+    if(if_paths){
+        vs = cell;
+    }
+    else {
+        vs = cell.segments.reduce(function (acm, cur) {
         let ary = [];
         if(acm.length === 0) {
             ary = cur.lines.slice(1, cur.lines.length)
@@ -584,6 +587,7 @@ GraphLayout.prototype.if_in_cell = function(node, cell) {
         acm = acm.concat(ary);
         return acm;
     }, []);
+    }
     var x = point.x, y = point.y;
     let cx = that.center_scale_x(x);
     let cy = that.center_scale_y(y);

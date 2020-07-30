@@ -77,19 +77,176 @@ let GraphVoronoi = function(parent){
         that.boundary_group = view.voronoi_group.append("g").attr("class", "boundary-g");
     };
 
-    that.convexity = function (paths) {
-        return 1;
+    that.convexity = function (paths, nodes) {
+        // convex
+        function orientation (p, q, r) {
+            const val = (q[1] - p[1]) * (r[0] - q[0]) - (q[0] - p[0]) * (r[1] - q[1]);
+            if(val === 0) {
+                return 0;
+            }
+            return (val > 0) ? 1 : 2;
+        }
+        function convexHull (arr) {
+            //
+            let hull_generator = new ConvexHullGrahamScan();
+            for(let a of arr) {
+                hull_generator.addPoint(a[0], a[1]);
+            }
+            return hull_generator.getHull().map(d => [d.x, d.y]);
+
+            //
+                const n = arr.length;
+                // There must be at least 3 points
+                if(n < 3) {
+                    return arr;
+                }
+                const hull = [];
+                let l = 0;
+                for(let i = 0; i < n; i++) {
+                    if(arr[i][0] < arr[l][0]) {
+                        l = i;
+                    }
+                }
+
+                let p = l, q;
+                do{
+                    hull.push(arr[p]);
+                    q = (p + 1) % n;
+                    for(let i = 0; i < n; i++) {
+                        if(orientation(arr[p], arr[i], arr[q]) === 2) {
+                            q = i;
+                        }
+                    }
+                    p = q;
+                }while(p !== l);
+                return hull;
+
+        }
+        function perimeter(arr) {
+            let dis = 0;
+            for(let i=0; i<arr.length; i++) {
+                dis += Math.sqrt(Math.pow(arr[i][0] - arr[(i+1)%arr.length][0], 2) + Math.pow(arr[i][1] - arr[(i+1)%arr.length][1], 2))
+            }
+            return dis;
+        }
+        let convexhull = convexHull(paths);
+        return perimeter(convexhull) / perimeter(paths);
+
+        // vertex
+        let line_inter_line = function(ps1, pe1, ps2, pe2) {
+                        // Get A,B of first line - points : ps1 to pe1
+                        let A1 = pe1[1]-ps1[1];
+                        let B1 = ps1[0]-pe1[0];
+                        // Get A,B of second line - points : ps2 to pe2
+                        let A2 = pe2[1]-ps2[1];
+                        let B2 = ps2[0]-pe2[0];
+
+                        // Get delta and check if the lines are parallel
+                        let delta = A1*B2 - A2*B1;
+                        if(delta == 0) return null;
+
+                        // Get C of first and second lines
+                        let C2 = A2*ps2[0]+B2*ps2[1];
+                        let C1 = A1*ps1[0]+B1*ps1[1];
+                        //invert delta to make division cheaper
+                        let invdelta = 1/delta;
+                        // now return the Vector2 intersection point
+                        let res = {
+                            x:(B2*C1 - B1*C2)*invdelta,
+                            y: (A1*C2 - A2*C1)*invdelta
+                        };
+                        if(((res.x-ps1[0])*(res.x-pe1[0]) > 0 && Math.abs((res.x-ps1[0])*(res.x-pe1[0])) > 1e-3) || ((res.x-ps2[0])*(res.x-pe2[0]) > 0 && Math.abs((res.x-ps2[0])*(res.x-pe2[0])) > 1e-3)) {
+                            return null;
+                        }
+                        return res;
+                    };
+        let in_nodes = nodes.filter(d => view.if_in_cell(d, paths, true));
+        if(in_nodes.length === 0) {
+            console.log("No nodes in this cell");
+            return 0;
+        }
+        let convex_cnt = 0;
+        let all_cnt = Math.pow(in_nodes.length, 2);
+        for(let u of in_nodes) {
+            for(let v of in_nodes) {
+                if(u === v) {
+                    convex_cnt++;
+                    continue
+                }
+                let intersect = false;
+                for(let i=0; i<paths.length; i++) {
+                    if(line_inter_line([view.center_scale_x(u.x), view.center_scale_y(u.y)], [view.center_scale_x(v.x), view.center_scale_y(v.y)],
+                        paths[i], paths[(i+1)%paths.length])) {
+                        intersect = true;
+                        break;
+                    }
+                }
+                if(!intersect) convex_cnt++;
+            }
+        }
+        return convex_cnt/all_cnt;
     };
 
-    that.separation = function (nodes, cells, lines) {
-        return 1
+    that.separation = function (nodes, cell_path1, cell_path2, cell_label1, cell_label2, lines) {
+        let pDistance = function (x, y, x1, y1, x2, y2) {
+
+              var A = x - x1;
+              var B = y - y1;
+              var C = x2 - x1;
+              var D = y2 - y1;
+
+              var dot = A * C + B * D;
+              var len_sq = C * C + D * D;
+              var param = -1;
+              if (len_sq != 0) //in case of 0 length line
+                  param = dot / len_sq;
+
+              var xx, yy;
+
+              if (param < 0) {
+                xx = x1;
+                yy = y1;
+              }
+              else if (param > 1) {
+                xx = x2;
+                yy = y2;
+              }
+              else {
+                xx = x1 + param * C;
+                yy = y1 + param * D;
+              }
+
+              var dx = x - xx;
+              var dy = y - yy;
+              return Math.sqrt(dx * dx + dy * dy);
+            };
+
+        let wrong_nodes = nodes.filter(function (node) {
+            if(view.if_in_cell(node, cell_path1, true) && (node.label !== cell_label1)){
+                return true
+            }
+            else if(view.if_in_cell(node, cell_path2, true) && (node.label !== cell_label2)) {
+                return true
+            }
+            return false
+        });
+        let dis = wrong_nodes.reduce(function (acc, cur) {
+            let min_dis = 100000;
+            for(let i=0; i<lines.length; i++) {
+                let dis = pDistance(view.center_scale_x(cur.x), view.center_scale_y(cur.y), lines[i][0], lines[i][1],
+                    lines[(i+1)%lines.length][0], lines[(i+1)%lines.length][1]);
+                if(dis < min_dis) min_dis = dis;
+            }
+            return acc + min_dis;
+        }, 0);
+        return dis/10;
     };
 
     that.get_nearest_nodes = function(cells) {
         for(let cell of cells) {
-            let nodes = cell.nodes;
+            let nodes = cell._old_nodes;
             for(let node of nodes) {
-                let min_dis = 0;
+                let min_dis = 10000000;
                 let min_line = null;
                 for(let segments of cell.segments) {
                     for(let line_node of segments.lines) {
@@ -100,7 +257,6 @@ let GraphVoronoi = function(parent){
                         }
                     }
                 }
-                if(min_line.nodes === undefined) min_line.nodes = [];
                 min_line.nodes.push(node);
             }
         }
@@ -109,6 +265,11 @@ let GraphVoronoi = function(parent){
     that.optimize_paths = function (segments, cells) {
         let all_new_lines = [];
         let alpha = 1;
+        for(let segment of segments) {
+            for(let line of segment.lines) {
+                line.nodes = [];
+            }
+        }
         that.get_nearest_nodes(cells);
         for(let segment of segments) {
             if(segment.cells.length < 2) {
@@ -139,6 +300,18 @@ let GraphVoronoi = function(parent){
                 if(segment === _segment) continue;
                 cell_paths[1] = cell_paths[1].concat(_segment.lines);
             }
+            let cell_nodes = [[], []];
+            cell_nodes[0] = cell_paths[0].reduce(function (acc, cur) {
+                return acc.concat(cur.nodes);
+            }, []);
+            cell_nodes[1] = cell_paths[1].reduce(function (acc, cur) {
+                return acc.concat(cur.nodes);
+            }, []);
+            let nodes = segment.lines.reduce(function (acc, cur) {
+                            return acc.concat(cur.nodes)
+                        }, []);
+            cell_nodes[0] = cell_nodes[0].concat(nodes);
+            cell_nodes[1] = cell_nodes[1].concat(nodes);
 
             for (let i = 1; i <= lines.length; i++) {
                 for (let j = 1; j < i; j++) {
@@ -149,15 +322,17 @@ let GraphVoronoi = function(parent){
                     };
                     for (let k = j; k < i; k++) {
                         // convex
+
                         let cur_lines = scores[k][j-1].lines.map(d=>d);
                         cur_lines.push(segment.lines[i-1]);
                         let cur_lines_all = cur_lines.concat(segment.lines.slice(i));
-                        let convex = that.convexity(cell_paths[0].concat(cur_lines_all)) * that.convexity(cell_paths[1].concat(cur_lines_all));
+
+                        let convex = that.convexity(cell_paths[0].concat(cur_lines_all), cell_nodes[0])
+                            * that.convexity(cell_paths[1].concat(cur_lines_all), cell_nodes[1]);
                         // separation
-                        let nodes = segment.lines.reduce(function (acc, cur) {
-                            return acc.concat(cur.nodes)
-                        }, []);
-                        let separation = that.separation(nodes, cells, cur_lines_all);
+
+                        let separation = that.separation(nodes, cell_paths[0].concat(cur_lines_all), cell_paths[1].concat(cur_lines_all),
+                            segment.cells[0], segment.cells[1], cur_lines_all);
                         if((min_score.convexity+min_score.separation*alpha) > (convex+separation*alpha)) {
                             min_score = {
                                 convexity: convex,
