@@ -69,60 +69,60 @@ GraphLayout.prototype.cal_voronoi = function(node_dict) {
     let that = this;
     //let nodes_dic = nodes;
     nodes = Object.values(node_dict);
-    if(DataLoader.dataset.startsWith("stl")){
-        let nodes_center = {};
-        for(let node of nodes){
-            let label = node.label[node.label.length-1];
-            if(nodes_center[label] === undefined) nodes_center[label] = {x:0, y:0, cnt:0, label:label};
-            nodes_center[label].x += node.x;
-            nodes_center[label].y += node.y;
-            nodes_center[label].cnt += 1;
-        }
-        let scale_label = [1, 5, 9];
-        let score_small = [3];
-        for(let center of Object.values(nodes_center)) {
-            center.x /= center.cnt;
-            center.y /= center.cnt;
-            let scale = false;
-            let small_scale = false;
-            center.dis = Math.sqrt(Math.pow(center.x, 2) + Math.pow(center.y, 2));
-            if(scale_label.indexOf(center.label) === -1) scale = true;
-            if(score_small.indexOf(center.label) > -1) small_scale = true;
-            if(small_scale) {
-                nodes.push({
-                    x:scale?center.x*1.5:center.x,
-                    y:scale?center.y*1.5:center.y,
-                    label:[center.label,center.label,center.label,center.label,center.label,center.label,center.label,center.label,center.label,center.label,center.label,center.label,center.label,center.label]
-                })
-            }
-            nodes.push({
-                x:scale?center.x*2:center.x,
-                y:scale?center.y*2:center.y,
-                label:[center.label,center.label,center.label,center.label,center.label,center.label,center.label,center.label,center.label,center.label,center.label,center.label,center.label,center.label]
-            })
-        }
-        console.log("center:", nodes_center);
-        // nodes.push({
-        //     x:25,
-        //     y:-4,
-        //     label:[2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2]
-        // });
-        // nodes.push({
-        //     x:35,
-        //     y:0,
-        //     label:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-        // });
-        // nodes.push({
-        //     x:25,
-        //     y:-10,
-        //     label:[6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6]
-        // });
-        // nodes.push({
-        //     x:-16,
-        //     y:-8,
-        //     label:[3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3]
-        // });
-    }
+    // if(DataLoader.dataset.startsWith("stl")){
+    //     let nodes_center = {};
+    //     for(let node of nodes){
+    //         let label = node.label[node.label.length-1];
+    //         if(nodes_center[label] === undefined) nodes_center[label] = {x:0, y:0, cnt:0, label:label};
+    //         nodes_center[label].x += node.x;
+    //         nodes_center[label].y += node.y;
+    //         nodes_center[label].cnt += 1;
+    //     }
+    //     let scale_label = [1, 5, 9];
+    //     let score_small = [3];
+    //     for(let center of Object.values(nodes_center)) {
+    //         center.x /= center.cnt;
+    //         center.y /= center.cnt;
+    //         let scale = false;
+    //         let small_scale = false;
+    //         center.dis = Math.sqrt(Math.pow(center.x, 2) + Math.pow(center.y, 2));
+    //         if(scale_label.indexOf(center.label) === -1) scale = true;
+    //         if(score_small.indexOf(center.label) > -1) small_scale = true;
+    //         if(small_scale) {
+    //             nodes.push({
+    //                 x:scale?center.x*1.5:center.x,
+    //                 y:scale?center.y*1.5:center.y,
+    //                 label:[center.label,center.label,center.label,center.label,center.label,center.label,center.label,center.label,center.label,center.label,center.label,center.label,center.label,center.label]
+    //             })
+    //         }
+    //         nodes.push({
+    //             x:scale?center.x*2:center.x,
+    //             y:scale?center.y*2:center.y,
+    //             label:[center.label,center.label,center.label,center.label,center.label,center.label,center.label,center.label,center.label,center.label,center.label,center.label,center.label,center.label]
+    //         })
+    //     }
+    //     console.log("center:", nodes_center);
+    //     // nodes.push({
+    //     //     x:25,
+    //     //     y:-4,
+    //     //     label:[2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2]
+    //     // });
+    //     // nodes.push({
+    //     //     x:35,
+    //     //     y:0,
+    //     //     label:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    //     // });
+    //     // nodes.push({
+    //     //     x:25,
+    //     //     y:-10,
+    //     //     label:[6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6]
+    //     // });
+    //     // nodes.push({
+    //     //     x:-16,
+    //     //     y:-8,
+    //     //     label:[3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3]
+    //     // });
+    // }
 
     let centers = {};
 
@@ -131,6 +131,41 @@ GraphLayout.prototype.cal_voronoi = function(node_dict) {
         if (centers[pos_key] === undefined) centers[pos_key] = [];
         centers[pos_key].push(node);
     }
+
+    // calculate convexhull
+    let tmp_centers = {};
+    let max_label = 10;
+    if(DataLoader.dataset.toLowerCase().startsWith("stl")) {
+        max_label = 10;
+    }
+    else if(DataLoader.dataset.toLowerCase().startsWith("oct")) {
+        max_label = 3;
+    }
+    let label_nodes = [];
+    for(let i=-1; i<=max_label; i++) label_nodes.push([]);
+    for(let _node of Object.values(centers)) {
+        let node = _node[0];
+        if(node.label === undefined) tmp_centers[node.x+","+node.y] = centers[node.x+","+node.y];
+        let label = node.label[node.label.length-1];
+        label_nodes[label+1].push(node);
+    }
+    for(let nodes of label_nodes) {
+        if(nodes.length < 3) continue;
+        let convex_generator = new ConvexHullGrahamScan();
+        for(let node of nodes) {
+            convex_generator.addPoint(node.x, node.y);
+        }
+        let hull = convex_generator.getHull();
+        for(let hull_node of hull) {
+            let key = hull_node.x+","+hull_node.y;
+            if(centers[key] === undefined){
+                console.log("Error! centers")
+            }
+            tmp_centers[key] = centers[key];
+        }
+    }
+    // centers = tmp_centers;
+
     let Diagram = null;
     let voronoi = d3.voronoi()
         .extent([[that.xRange[0] * 2, that.yRange[0] * 2],
@@ -224,7 +259,7 @@ GraphLayout.prototype.cal_voronoi = function(node_dict) {
     while (true) {
         let all_large = false;
         for (let i = 0; i < Diagram.cells.length; i++) {
-            if (Diagram.cells[i].nodes.length < 30) {
+            if (Diagram.cells[i].nodes.length < 5) {
                 all_large = true;
                 let halfpath = Diagram.cells[i].all_edges;
                 let max_halfpath = -1;

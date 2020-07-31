@@ -2789,6 +2789,18 @@ let GraphLayout = function (container) {
         // show_voronoi = flag;
         // that.data_manager.update_graph_view()
         if (flag){
+            if(DataLoader.dataset.toLowerCase().startsWith("stl")) {
+                let no_outliers = [9301, 3594, 11839, 3841, 10349, 1474, 12355, 11182, 283];
+                let is_outliers = [12479, 5844, 1297, 10344, 10993];
+                for(let id of no_outliers) {
+                    if(outliers[id] === true) {
+                        outliers[id] = undefined;
+                    }
+                }
+                for(let id of is_outliers) {
+                    outliers[id] = true;
+                }
+            }
             voronoi_plg.show_voronoi(nodes, outliers);
         }
         else{

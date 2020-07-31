@@ -79,6 +79,7 @@ class ExchangePortClass(object):
         # if self.dataname.lower() == "stl" and self.case_util.base_config["step"] >= 3:
         #     self.if_add_data = True
         self.model = self.case_util.run(k=k, use_buffer=True)
+        self.model.selected_dir = self.model.data.selected_dir = "D:\Projects\SSLVis\data\STL\labeled-50.total-12840.seed-123"
         self.anchor.link_model(self.model)
 
     def setK(self, k):
@@ -125,6 +126,8 @@ class ExchangePortClass(object):
         return dist
 
     def get_graph(self, filter_threshold=None, wh = 1):
+        # debug
+
         print(config.use_add_tsne)
         start = time.time()
         res = self.anchor.get_nodes(wh, self.model.step)

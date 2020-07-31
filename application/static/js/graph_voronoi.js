@@ -130,7 +130,7 @@ let GraphVoronoi = function(parent){
             return dis;
         }
         let convexhull = convexHull(paths);
-        return perimeter(convexhull) / perimeter(paths);
+        return perimeter(paths) / perimeter(convexhull);
 
         // vertex
         let line_inter_line = function(ps1, pe1, ps2, pe2) {
@@ -222,10 +222,10 @@ let GraphVoronoi = function(parent){
             };
 
         let wrong_nodes = nodes.filter(function (node) {
-            if(view.if_in_cell(node, cell_path1, true) && (node.label !== cell_label1)){
+            if(view.if_in_cell(node, cell_path1, true) && (node.label === cell_label2)){
                 return true
             }
-            else if(view.if_in_cell(node, cell_path2, true) && (node.label !== cell_label2)) {
+            else if(view.if_in_cell(node, cell_path2, true) && (node.label === cell_label1)) {
                 return true
             }
             return false
@@ -239,7 +239,7 @@ let GraphVoronoi = function(parent){
             }
             return acc + min_dis;
         }, 0);
-        return dis/10;
+        return dis;
     };
 
     that.get_nearest_nodes = function(cells) {
@@ -265,6 +265,8 @@ let GraphVoronoi = function(parent){
     that.optimize_paths = function (segments, cells) {
         let all_new_lines = [];
         let alpha = 1;
+        let all_separation = 0;
+        let all_separation_cnt = 0;
         for(let segment of segments) {
             for(let line of segment.lines) {
                 line.nodes = [];
@@ -333,6 +335,10 @@ let GraphVoronoi = function(parent){
 
                         let separation = that.separation(nodes, cell_paths[0].concat(cur_lines_all), cell_paths[1].concat(cur_lines_all),
                             segment.cells[0], segment.cells[1], cur_lines_all);
+                        if(separation>0) {
+                            all_separation += separation;
+                            all_separation_cnt ++;
+                        }
                         if((min_score.convexity+min_score.separation*alpha) > (convex+separation*alpha)) {
                             min_score = {
                                 convexity: convex,
@@ -361,6 +367,7 @@ let GraphVoronoi = function(parent){
             }
             all_new_lines.push(min_score.lines)
         }
+        console.log("separation average:", all_separation/all_separation_cnt);
         for(let i=0; i<segments.length; i++) {
             segments[i].lines = all_new_lines[i];
         }
@@ -404,7 +411,7 @@ let GraphVoronoi = function(parent){
         that.update_view();
     };
 
-    that.max_search_deep = 40;
+    that.max_search_deep = 30;
 
     that.place_barchart = function(){
         let step = 0.5;
@@ -423,6 +430,24 @@ let GraphVoronoi = function(parent){
             let best_dx = -1;
             let best_dy = -1;
             let find = false;
+            let cell_paths = cell.segments.reduce(function (acm, cur) {
+                let ary = [];
+                if(acm.length === 0) {
+                    ary = cur.lines.slice(1, cur.lines.length)
+                }
+                else {
+                    let last_node = acm[acm.length-1];
+                    let cur_node = cur.begin_node;
+                    if((last_node[0] === cur_node[0]) && (last_node[1] === cur_node[1])) {
+                        ary = cur.lines.slice(1, cur.lines.length)
+                    }
+                    else {
+                        ary = cur.lines.map(d => d).reverse().slice(1, cur.lines.length)
+                    }
+                }
+                acm = acm.concat(ary);
+                return acm;
+            }, []);
             for (; deep < that.max_search_deep; deep++){
                 for(let dx = -deep; dx <= deep; dx++){
                     for(let dy = -(deep-Math.abs(dx)); dy <= deep-Math.abs(dx); dy++){
@@ -431,10 +456,10 @@ let GraphVoronoi = function(parent){
                         if(view.center_scale_y(cell_y+cell.chart_height/view.scale) > 650) continue;
                         let contain_nodes_cnt = 0;
                         let k = 0;
-                        let if_in_poly = view.if_in_cell({x:cell_x, y:cell_y}, cell)
-                                    && view.if_in_cell({x:cell_x, y:cell_y + cell.chart_height/view.scale}, cell)
-                                    && view.if_in_cell({x:cell_x + cell.chart_width / view.scale, y:cell_y}, cell)
-                                    && view.if_in_cell({x:cell_x + cell.chart_width / view.scale, y:cell_y + cell.chart_height/view.scale}, cell);
+                        let if_in_poly = view.if_in_cell({x:cell_x, y:cell_y}, cell_paths, true)
+                                    && view.if_in_cell({x:cell_x, y:cell_y + cell.chart_height/view.scale}, cell_paths, true)
+                                    && view.if_in_cell({x:cell_x + cell.chart_width / view.scale, y:cell_y}, cell_paths, true)
+                                    && view.if_in_cell({x:cell_x + cell.chart_width / view.scale, y:cell_y + cell.chart_height/view.scale}, cell_paths, true);
                         if(!if_in_poly) continue;
                         for (; k < nodes.length; k++){
                             if (nodes[k].x > (cell_x- cell.chart_width / view.scale) && nodes[k].x < (cell_x + cell.chart_width*1.5 / view.scale)
