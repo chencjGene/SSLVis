@@ -151,20 +151,45 @@ GraphLayout.prototype.cal_voronoi = function(node_dict) {
     }
     for(let nodes of label_nodes) {
         if(nodes.length < 3) continue;
-        let convex_generator = new ConvexHullGrahamScan();
-        for(let node of nodes) {
-            convex_generator.addPoint(node.x, node.y);
-        }
-        let hull = convex_generator.getHull();
-        for(let hull_node of hull) {
-            let key = hull_node.x+","+hull_node.y;
-            if(centers[key] === undefined){
-                console.log("Error! centers")
+        // let convex_generator = new ConvexHullGrahamScan();
+        let convex_hull = hull(nodes.map(d => [d.x, d.y]), 3);
+        for(let hull_node of convex_hull) {
+            // find nearest
+            let min_dis = 100000;
+            let min_node = null;
+            for(let node of nodes) {
+                let dis = Math.pow(node.x-hull_node[0], 2) + Math.pow(node.y-hull_node[1], 2);
+                if(dis < min_dis) {
+                    min_dis = dis;
+                    min_node = node;
+                }
             }
+            let key = min_node.x+","+min_node.y;
             tmp_centers[key] = centers[key];
         }
+        // for(let node of nodes) {
+        //     convex_generator.addPoint(node.x, node.y);
+        // }
+        // let hull = convex_generator.getHull();
+        // for(let hull_node of hull) {
+        //     let key = hull_node.x+","+hull_node.y;
+        //     if(centers[key] === undefined){
+        //         console.log("Error! centers")
+        //     }
+        //     tmp_centers[key] = centers[key];
+        // }
     }
-    // centers = tmp_centers;
+    // for(let nodes of Object.values(tmp_centers)) {
+    //     for(let node of nodes) {
+    //         let r = node.label[0] > -1?1.2:0.25;
+    //         let directions = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+    //         for(let direction of directions) {
+    //             let new_node = {x:node.x+direction[0]*r, y:node.y+direction[1]*r, label:node.label};
+    //             tmp_centers[new_node.x+","+new_node.y] = [new_node];
+    //         }
+    //     }
+    // }
+    centers = tmp_centers;
 
     let Diagram = null;
     let voronoi = d3.voronoi()
@@ -554,7 +579,8 @@ GraphLayout.prototype.cal_voronoi = function(node_dict) {
             label: i,
             segments: [],
             nodes: [],
-            _old_nodes: Diagram.cells[i]._old_nodes
+            _old_nodes: Diagram.cells[i]._old_nodes,
+            segment_directions: []
         };
         for(let segment of Object.values(segments)) {
             if(segment.cells.indexOf(i) > -1) {
@@ -572,6 +598,7 @@ GraphLayout.prototype.cal_voronoi = function(node_dict) {
                     find_flag = true;
                     begin_node = segment.begin_node;
                     end_node = segment.end_node;
+                    new_cell.segment_directions.push(1);
                     break
                 }
                 else if((_same_node(segment.end_node, end_node)) && (!_same_node(segment.begin_node, begin_node))) {
@@ -579,6 +606,7 @@ GraphLayout.prototype.cal_voronoi = function(node_dict) {
                     find_flag = true;
                     begin_node = segment.end_node;
                     end_node = segment.begin_node;
+                    new_cell.segment_directions.push(-1);
                     break
                 }
             }
@@ -594,7 +622,7 @@ GraphLayout.prototype.cal_voronoi = function(node_dict) {
     return new_diagram;
 };
 
-GraphLayout.prototype.if_in_cell = function(node, cell, if_paths = false) {
+GraphLayout.prototype.if_in_cell = function(node, cell, if_paths = false, scale = true) {
     // ray-casting algorithm based on
     // http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
     let that = this;
@@ -626,6 +654,10 @@ GraphLayout.prototype.if_in_cell = function(node, cell, if_paths = false) {
     var x = point.x, y = point.y;
     let cx = that.center_scale_x(x);
     let cy = that.center_scale_y(y);
+    if(!scale) {
+        cx = x;
+        cy = y;
+    }
     if(cx < 70 || cx > 1000 || cy < 70 || cy > 740) return false;
 
     var inside = false;

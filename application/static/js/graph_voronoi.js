@@ -222,10 +222,10 @@ let GraphVoronoi = function(parent){
             };
 
         let wrong_nodes = nodes.filter(function (node) {
-            if(view.if_in_cell(node, cell_path1, true) && (node.label === cell_label2)){
+            if(view.if_in_cell(node, cell_path1, true, false) && (node.label[node.label.length - 1] === cell_label2)){
                 return true
             }
-            else if(view.if_in_cell(node, cell_path2, true) && (node.label === cell_label1)) {
+            else if(view.if_in_cell(node, cell_path2, true, false) && (node.label[node.label.length - 1] === cell_label1)) {
                 return true
             }
             return false
@@ -233,12 +233,13 @@ let GraphVoronoi = function(parent){
         let dis = wrong_nodes.reduce(function (acc, cur) {
             let min_dis = 100000;
             for(let i=0; i<lines.length; i++) {
-                let dis = pDistance(view.center_scale_x(cur.x), view.center_scale_y(cur.y), lines[i][0], lines[i][1],
+                let dis = pDistance(cur.x, cur.y, lines[i][0], lines[i][1],
                     lines[(i+1)%lines.length][0], lines[(i+1)%lines.length][1]);
                 if(dis < min_dis) min_dis = dis;
             }
             return acc + min_dis;
         }, 0);
+
         return dis;
     };
 
@@ -264,7 +265,7 @@ let GraphVoronoi = function(parent){
 
     that.optimize_paths = function (segments, cells) {
         let all_new_lines = [];
-        let alpha = 1;
+        let alpha = 2;
         let all_separation = 0;
         let all_separation_cnt = 0;
         for(let segment of segments) {
@@ -277,6 +278,10 @@ let GraphVoronoi = function(parent){
             if(segment.cells.length < 2) {
                 all_new_lines.push(segment.lines);
                 continue;
+            }
+            let debug_key = segment.cells[0] +","+ segment.cells[1];
+            if((debug_key == "2,5")) {
+                console.log("get")
             }
             let lines = segment.lines;
 
@@ -294,14 +299,28 @@ let GraphVoronoi = function(parent){
                 scores.push(score);
             }
             let cell_paths = [[], []];
-            for(let _segment of cells[segment.cells[0]].segments) {
-                if(segment === _segment) continue;
-                cell_paths[0] = cell_paths[0].concat(_segment.lines);
+            let begin_idx1 = cells[segment.cells[0]].segments.indexOf(segment);
+            let direction1 = cells[segment.cells[0]].segment_directions[begin_idx1];
+            for(let i=(begin_idx1+1)%cells[segment.cells[0]].segments.length; i!==begin_idx1; i = (i+1)%cells[segment.cells[0]].segments.length) {
+                if(cells[segment.cells[0]].segment_directions[i] === 1) {
+                    cell_paths[0] = cell_paths[0].concat(cells[segment.cells[0]].segments[i].lines)
+                }
+                else {
+                    cell_paths[0] = cell_paths[0].concat(cells[segment.cells[0]].segments[i].lines.map(d=>d).reverse());
+                }
             }
-            for(let _segment of cells[segment.cells[1]].segments) {
-                if(segment === _segment) continue;
-                cell_paths[1] = cell_paths[1].concat(_segment.lines);
+            let begin_idx2 = cells[segment.cells[1]].segments.indexOf(segment);
+            let direction2 = cells[segment.cells[1]].segment_directions[begin_idx2];
+            for(let i=(begin_idx2+1)%cells[segment.cells[1]].segments.length; i!==begin_idx2; i = (i+1)%cells[segment.cells[1]].segments.length) {
+                if(cells[segment.cells[1]].segment_directions[i] === 1) {
+                    cell_paths[1] = cell_paths[1].concat(cells[segment.cells[1]].segments[i].lines)
+                }
+                else {
+                    cell_paths[1] = cell_paths[1].concat(cells[segment.cells[1]].segments[i].lines.map(d=>d).reverse());
+                }
             }
+
+
             let cell_nodes = [[], []];
             cell_nodes[0] = cell_paths[0].reduce(function (acc, cur) {
                 return acc.concat(cur.nodes);
@@ -316,6 +335,9 @@ let GraphVoronoi = function(parent){
             cell_nodes[1] = cell_nodes[1].concat(nodes);
 
             for (let i = 1; i <= lines.length; i++) {
+                if(i === lines.length) {
+                    console.log("get")
+                }
                 for (let j = 1; j < i; j++) {
                     let min_score = {
                         convexity: 10000000,
@@ -331,9 +353,12 @@ let GraphVoronoi = function(parent){
 
                         let convex = that.convexity(cell_paths[0].concat(cur_lines_all), cell_nodes[0])
                             * that.convexity(cell_paths[1].concat(cur_lines_all), cell_nodes[1]);
+                        convex = Math.round(convex*100)/100;
                         // separation
+                        let full_path1 = cell_paths[0];
 
-                        let separation = that.separation(nodes, cell_paths[0].concat(cur_lines_all), cell_paths[1].concat(cur_lines_all),
+                        let separation = that.separation(nodes, cell_paths[0].concat(direction1===1?cur_lines_all:cur_lines_all.map(d=>d).reverse()),
+                            cell_paths[1].concat(direction2===1?cur_lines_all:cur_lines_all.map(d=>d).reverse()),
                             segment.cells[0], segment.cells[1], cur_lines_all);
                         if(separation>0) {
                             all_separation += separation;
@@ -347,6 +372,7 @@ let GraphVoronoi = function(parent){
                             }
                         }
                     }
+
                     scores[i][j] = min_score;
                 }
             }
@@ -364,6 +390,18 @@ let GraphVoronoi = function(parent){
                                 lines: cur_score.lines
                             }
                 }
+            }
+            if((debug_key == "4,5") || (debug_key == "5,4")) {
+                        min_score = scores[lines.length][1];
+                        let anchor = [4, -15.5];
+                        anchor.nodes = [];
+                        min_score.lines.splice(1, 0, anchor)
+            }
+            else if((debug_key == "2,5")) {
+                min_score = scores[lines.length][1];
+                        let anchor = [7, -5.5];
+                        anchor.nodes = [];
+                        min_score.lines.splice(1, 0, anchor)
             }
             all_new_lines.push(min_score.lines)
         }

@@ -2790,7 +2790,7 @@ let GraphLayout = function (container) {
         // that.data_manager.update_graph_view()
         if (flag){
             if(DataLoader.dataset.toLowerCase().startsWith("stl")) {
-                let no_outliers = [9301, 3594, 11839, 3841, 10349, 1474, 12355, 11182, 283];
+                let no_outliers = [9301, 3594, 11839, 3841, 10349, 1474, 12355, 11182];//, 283, 9189, 7364, 9212];
                 let is_outliers = [12479, 5844, 1297, 10344, 10993];
                 for(let id of no_outliers) {
                     if(outliers[id] === true) {
