@@ -125,6 +125,8 @@ class ExchangePortClass(object):
         return dist
 
     def get_graph(self, filter_threshold=None, wh = 1):
+        # debug
+
         print(config.use_add_tsne)
         start = time.time()
         res = self.anchor.get_nodes(wh, self.model.step)

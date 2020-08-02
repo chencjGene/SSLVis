@@ -91,7 +91,7 @@ let GraphLayout = function (container) {
     that.voronoi_data = {"edges": [], "cells": []};
     let nodes_dicts = null;
     that.if_focus_selection_box = false;
-    that.show_init_voronoi = false;
+    that.show_init_voronoi = true;
     let re_focus_selection_box = false;
     let edges_summary = [];
     let show_voronoi = false;
@@ -253,6 +253,9 @@ let GraphLayout = function (container) {
 
     that.component_update = async function(state) {
         console.log("get graph state:", state);
+        if(state.highlights.length > 0){
+            that._get_subgraph(state);
+        }
         that._update_data(state);
         await that.data_manager.update_image_view(highlights);
         await that._update_view(state);
@@ -274,7 +277,7 @@ let GraphLayout = function (container) {
             for(let i=0; i<node.from.length; i++) {
                 let from_id = node.from[i];
                 let from_weight = node.from_weight[i];
-                if(from_weight >= threshold) {
+                if((from_weight >= threshold) && (state.highlights.indexOf(from_id)>-1)) {
                     edges.push({
                         source:from_id,
                         target:node_id
@@ -2786,6 +2789,18 @@ let GraphLayout = function (container) {
         // show_voronoi = flag;
         // that.data_manager.update_graph_view()
         if (flag){
+            if(DataLoader.dataset.toLowerCase().startsWith("stl")) {
+                let no_outliers = [9301, 3594, 11839, 3841, 10349, 1474, 12355, 11182];//, 283, 9189, 7364, 9212];
+                let is_outliers = [12479, 5844, 1297, 10344, 10993];
+                for(let id of no_outliers) {
+                    if(outliers[id] === true) {
+                        outliers[id] = undefined;
+                    }
+                }
+                for(let id of is_outliers) {
+                    outliers[id] = true;
+                }
+            }
             voronoi_plg.show_voronoi(nodes, outliers);
         }
         else{
