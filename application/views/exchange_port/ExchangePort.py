@@ -78,7 +78,7 @@ class ExchangePortClass(object):
         #     config.use_add_tsne = False
         # if self.dataname.lower() == "stl" and self.case_util.base_config["step"] >= 3:
         #     self.if_add_data = True
-        self.model = self.case_util.run(k=k, use_buffer=False)
+        self.model = self.case_util.run(k=k, use_buffer=True)
         self.anchor.link_model(self.model)
 
     def setK(self, k):
@@ -259,7 +259,7 @@ class ExchangePortClass(object):
 
     def get_image_path(self, id):
         if self.dataname == "stl":
-            train_idx = self.model.data.get_full_train_idx()
+            train_idx = self.model.data.real_train_idx
             real_id = train_idx[id]
             img_dir = os.path.join(config.image_root, self.dataname)
             img_path = os.path.join(img_dir, str(real_id) + ".jpg")

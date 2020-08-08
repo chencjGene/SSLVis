@@ -391,18 +391,21 @@ let GraphVoronoi = function(parent){
                             }
                 }
             }
-            if((debug_key == "4,5") || (debug_key == "5,4")) {
-                        min_score = scores[lines.length][1];
-                        let anchor = [4, -15.5];
-                        anchor.nodes = [];
-                        min_score.lines.splice(1, 0, anchor)
+            if(false) {
+                if((debug_key == "4,5") || (debug_key == "5,4")) {
+                            min_score = scores[lines.length][1];
+                            let anchor = [4, -15.5];
+                            anchor.nodes = [];
+                            min_score.lines.splice(1, 0, anchor)
+                }
+                else if((debug_key == "2,5")) {
+                    min_score = scores[lines.length][1];
+                            let anchor = [7, -5.5];
+                            anchor.nodes = [];
+                            min_score.lines.splice(1, 0, anchor)
+                }
             }
-            else if((debug_key == "2,5")) {
-                min_score = scores[lines.length][1];
-                        let anchor = [7, -5.5];
-                        anchor.nodes = [];
-                        min_score.lines.splice(1, 0, anchor)
-            }
+
             all_new_lines.push(min_score.lines)
         }
         console.log("separation average:", all_separation/all_separation_cnt);

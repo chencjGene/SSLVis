@@ -100,7 +100,9 @@ class Data(object):
         idx_info_path = os.path.join(dir_path, "idx_info.pkl")
         if self.dataname.lower() == "stl":
             new_features = np.load(os.path.join(self.selected_dir, "features.pkl"))
+            new_featuers_y = np.load(os.path.join(self.selected_dir, "features_y.pkl"))
             self.X = new_features
+            self.y = new_featuers_y
             self.train_idx = np.array([i for i in range(12840)], dtype=int)
             self.test_idx = np.array([i+12840 for i in range(len(self.test_idx))], dtype=int)
             for i in range(12840):
@@ -111,7 +113,7 @@ class Data(object):
         if os.path.exists(idx_info_path):
             logger.info("idx info exists in: {}".format(idx_info_path))
             idx_info = pickle_load_data(idx_info_path)
-            # self.train_idx = idx_info["train_idx"]
+            self.real_train_idx = idx_info["train_idx"]
             self.selected_labeled_idx = [i for i in range(len(idx_info["selected_labeled_idx"]))]
             if self.dataname.lower() == "stl":
                 # relabel:
