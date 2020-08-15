@@ -264,6 +264,15 @@ let GraphVoronoi = function(parent){
     };
 
     that.optimize_paths = function (segments, cells) {
+        cells.forEach(function (value) {
+           value.border = false;
+        });
+        for (var i = 0;i < segments.length;i++) {
+            var segment = segments[i];
+            if (segment.cells.length == 1) {
+                cells[segment.cells[0]].border = true;
+            }
+        }
         let all_new_lines = [];
         let alpha = 2;
         let all_separation = 0;
@@ -278,9 +287,6 @@ let GraphVoronoi = function(parent){
             if(segment.cells.length < 2) {
                 all_new_lines.push(segment.lines);
                 continue;
-            }
-            if((segment.cells[0] === 4) && (segment.cells[1] === 7)) {
-                console.log("get")
             }
             let debug_key = segment.cells[0] +","+ segment.cells[1];
             if((debug_key == "2,5")) {
@@ -302,6 +308,9 @@ let GraphVoronoi = function(parent){
                 scores.push(score);
             }
             let cell_paths = [[], []];
+            let cell_borders = [];
+            cell_borders[0] = cells[segment.cells[0]]['border'];
+            cell_borders[1] = cells[segment.cells[1]]['border'];
             let begin_idx1 = cells[segment.cells[0]].segments.indexOf(segment);
             let direction1 = cells[segment.cells[0]].segment_directions[begin_idx1];
             for(let i=(begin_idx1+1)%cells[segment.cells[0]].segments.length; i!==begin_idx1; i = (i+1)%cells[segment.cells[0]].segments.length) {
@@ -336,7 +345,6 @@ let GraphVoronoi = function(parent){
                         }, []);
             cell_nodes[0] = cell_nodes[0].concat(nodes);
             cell_nodes[1] = cell_nodes[1].concat(nodes);
-
             for (let i = 1; i <= lines.length; i++) {
                 if(i === lines.length) {
                     console.log("get")
@@ -353,9 +361,21 @@ let GraphVoronoi = function(parent){
                         let cur_lines = scores[k][j-1].lines.map(d=>d);
                         cur_lines.push(segment.lines[i-1]);
                         let cur_lines_all = cur_lines.concat(segment.lines.slice(i));
-
-                        let convex = that.convexity(cell_paths[0].concat(cur_lines_all), cell_nodes[0])
-                            * that.convexity(cell_paths[1].concat(cur_lines_all), cell_nodes[1]);
+                        let convex = 1.0;
+                        if (cell_borders[0] && !cell_borders[1]) {
+                            convex = that.convexity(cell_paths[1].concat(cur_lines_all), cell_nodes[1]);
+                            convex *= convex;
+                        }
+                        else if (cell_borders[1] && !cell_borders[0]) {
+                            convex = that.convexity(cell_paths[0].concat(cur_lines_all), cell_nodes[0]);
+                            convex *= convex;
+                        }
+                        else {
+                            convex = that.convexity(cell_paths[0].concat(cur_lines_all), cell_nodes[0])
+                                * that.convexity(cell_paths[1].concat(cur_lines_all), cell_nodes[1]);
+                        }
+                        // let convex = that.convexity(cell_paths[0].concat(cur_lines_all), cell_nodes[0])
+                        //     * that.convexity(cell_paths[1].concat(cur_lines_all), cell_nodes[1]);
                         convex = Math.round(convex*100)/100;
                         // separation
                         let full_path1 = cell_paths[0];
@@ -363,6 +383,7 @@ let GraphVoronoi = function(parent){
                         let separation = that.separation(nodes, cell_paths[0].concat(direction1===1?cur_lines_all:cur_lines_all.map(d=>d).reverse()),
                             cell_paths[1].concat(direction2===1?cur_lines_all:cur_lines_all.map(d=>d).reverse()),
                             segment.cells[0], segment.cells[1], cur_lines_all);
+                        // separation = 0;
                         if(separation>0) {
                             all_separation += separation;
                             all_separation_cnt ++;
@@ -387,28 +408,31 @@ let GraphVoronoi = function(parent){
             for(let j = 1; j < lines.length; j++) {
                 let cur_score = scores[lines.length][j];
                 if((min_score.convexity+min_score.separation*alpha) > (cur_score.convexity + cur_score.separation*alpha)) {
-                            min_score = {
-                                convexity: cur_score.convexity,
-                                separation: cur_score.separation,
-                                lines: cur_score.lines
-                            }
+                    min_score = {
+                        convexity: cur_score.convexity,
+                        separation: cur_score.separation,
+                        lines: cur_score.lines
+                    }
                 }
             }
             if(false) {
                 if((debug_key == "4,5") || (debug_key == "5,4")) {
-                            min_score = scores[lines.length][1];
-                            let anchor = [4, -15.5];
-                            anchor.nodes = [];
-                            min_score.lines.splice(1, 0, anchor)
+                    min_score = scores[lines.length][1];
+                    let anchor = [4, -15.5];
+                    anchor.nodes = [];
+                    min_score.lines.splice(1, 0, anchor)
                 }
                 else if((debug_key == "2,5")) {
                     min_score = scores[lines.length][1];
-                            let anchor = [7, -5.5];
-                            anchor.nodes = [];
-                            min_score.lines.splice(1, 0, anchor)
+                    let anchor = [7, -5.5];
+                    anchor.nodes = [];
+                    min_score.lines.splice(1, 0, anchor)
                 }
             }
 
+            if (min_score.lines.length > 2) {
+                console.log(min_score.lines);
+            }
             all_new_lines.push(min_score.lines)
         }
         console.log("separation average:", all_separation/all_separation_cnt);
@@ -418,7 +442,8 @@ let GraphVoronoi = function(parent){
     };
 
     that.show_voronoi = function(nodes, outliers){
-        let voronoi_nodes = nodes.filter(d => outliers[d.id] === undefined);
+        // let voronoi_nodes = nodes.filter(d => outliers[d.id] === undefined);
+        let voronoi_nodes = nodes.filter(d => true);
         that.voronoi_data = view.cal_voronoi(voronoi_nodes);
         that.simple_bar = new Array(that.voronoi_data.length).fill(1).map(d => true);
         that.optimize_paths(that.voronoi_data.segments, that.voronoi_data);

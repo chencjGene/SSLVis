@@ -92,7 +92,7 @@ class Anchors:
 
     def get_train_x_tsne(self):
         self.tsne_path = os.path.join(self.selected_dir, "tsne-step"+str(self.step)+".npy")
-        assert os.path.exists(self.tsne_path)
+        assert os.path.exists(self.tsne_path), self.tsne_path
         self.tsne = np.load(self.tsne_path)
         self.tsne = np.round(self.tsne, 2)
         return self.tsne
