@@ -288,9 +288,6 @@ let GraphVoronoi = function(parent){
                 all_new_lines.push(segment.lines);
                 continue;
             }
-            if((segment.cells[0] === 4) && (segment.cells[1] === 7)) {
-                console.log("get")
-            }
             let debug_key = segment.cells[0] +","+ segment.cells[1];
             if((debug_key == "2,5")) {
                 console.log("get")
@@ -445,7 +442,8 @@ let GraphVoronoi = function(parent){
     };
 
     that.show_voronoi = function(nodes, outliers){
-        let voronoi_nodes = nodes.filter(d => outliers[d.id] === undefined);
+        // let voronoi_nodes = nodes.filter(d => outliers[d.id] === undefined);
+        let voronoi_nodes = nodes.filter(d => true);
         that.voronoi_data = view.cal_voronoi(voronoi_nodes);
         that.simple_bar = new Array(that.voronoi_data.length).fill(1).map(d => true);
         that.optimize_paths(that.voronoi_data.segments, that.voronoi_data);
