@@ -99,8 +99,8 @@ class Data(object):
         self.selected_dir = dir_path
         idx_info_path = os.path.join(dir_path, "idx_info.pkl")
         if self.dataname.lower() == "stl":
-            new_features = np.load(os.path.join(self.selected_dir, "features.pkl"))
-            new_featuers_y = np.load(os.path.join(self.selected_dir, "features_y.pkl"))
+            new_features = np.load(os.path.join(self.selected_dir, "features.pkl"), allow_pickle=True)
+            new_featuers_y = np.load(os.path.join(self.selected_dir, "features_y.pkl"), allow_pickle=True)
             self.X = new_features
             self.y = new_featuers_y
             self.train_idx = np.array([i for i in range(12840)], dtype=int)
