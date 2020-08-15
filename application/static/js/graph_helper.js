@@ -596,7 +596,7 @@ GraphLayout.prototype.cal_voronoi = function(node_dict) {
             segments: [],
             nodes: [],
             _old_nodes: Diagram.cells[i]._old_nodes,
-            segment_directions: []
+            segment_directions: [1]
         };
         for(let segment of Object.values(segments)) {
             if(segment.cells.indexOf(i) > -1) {
@@ -674,7 +674,7 @@ GraphLayout.prototype.if_in_cell = function(node, cell, if_paths = false, scale 
         cx = x;
         cy = y;
     }
-    if(cx < 70 || cx > 1000 || cy < 70 || cy > 740) return false;
+    // if(cx < 70 || cx > 1000 || cy < 70 || cy > 740) return false;
 
     var inside = false;
     for (var i = 0, j = vs.length - 1; i < vs.length; j = i++) {

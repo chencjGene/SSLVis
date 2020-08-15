@@ -279,6 +279,9 @@ let GraphVoronoi = function(parent){
                 all_new_lines.push(segment.lines);
                 continue;
             }
+            if((segment.cells[0] === 4) && (segment.cells[1] === 7)) {
+                console.log("get")
+            }
             let debug_key = segment.cells[0] +","+ segment.cells[1];
             if((debug_key == "2,5")) {
                 console.log("get")
