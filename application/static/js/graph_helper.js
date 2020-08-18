@@ -363,6 +363,22 @@ GraphLayout.prototype.cal_voronoi = function(node_dict) {
     let is_skeleton = {};
     let segments = {};
     let cell_id = 0;
+    let min_boundary_x = 100000;
+    let max_boundary_x = -1000000;
+    let min_boundary_y = 100000;
+    let max_boundary_y = -1000000;
+    for(let edge of Diagram.edges) {
+        if(edge === undefined) continue;
+        min_boundary_x = Math.min(edge[0][0], min_boundary_x, edge[1][0]);
+        min_boundary_y = Math.min(edge[0][1], min_boundary_y, edge[1][1]);
+        max_boundary_x = Math.max(edge[0][0], max_boundary_x, edge[1][0]);
+        max_boundary_y = Math.max(edge[0][1], max_boundary_y, edge[1][1]);
+    }
+    min_boundary_x += 0.1;
+    min_boundary_y += 0.1;
+    max_boundary_x -= 0.1;
+    max_boundary_y -= 0.1;
+
     for(let cell of Diagram.cells){
         let halfedges = cell.halfedges;
         let start_node = edges[halfedges[0]][0];
@@ -423,7 +439,7 @@ GraphLayout.prototype.cal_voronoi = function(node_dict) {
                     skeleton.push(mid_node);
                     skeleton_ids.push(sort_nodes.length-1);
                 }
-                else if(Math.abs(mid_node[0]) > 40 || Math.abs(mid_node[1]) > 40 &&
+                else if(((mid_node[0] < min_boundary_x) || (mid_node[0] > max_boundary_x) || (mid_node[1] < min_boundary_y) || (mid_node[1] > max_boundary_y)) &&
                     (skeleton.length===0 || skeleton[skeleton.length-1][0] !== mid_node[0] || skeleton[skeleton.length-1][1] !== mid_node[1])) {
                     skeleton.push(mid_node);
                     skeleton_ids.push(sort_nodes.length-1);
@@ -580,7 +596,7 @@ GraphLayout.prototype.cal_voronoi = function(node_dict) {
             segments: [],
             nodes: [],
             _old_nodes: Diagram.cells[i]._old_nodes,
-            segment_directions: []
+            segment_directions: [1]
         };
         for(let segment of Object.values(segments)) {
             if(segment.cells.indexOf(i) > -1) {
@@ -658,7 +674,7 @@ GraphLayout.prototype.if_in_cell = function(node, cell, if_paths = false, scale 
         cx = x;
         cy = y;
     }
-    if(cx < 70 || cx > 1000 || cy < 70 || cy > 740) return false;
+    // if(cx < 70 || cx > 1000 || cy < 70 || cy > 740) return false;
 
     var inside = false;
     for (var i = 0, j = vs.length - 1; i < vs.length; j = i++) {

@@ -54,9 +54,9 @@ class Data(object):
             self.test_idx = pickle_load_data(new_test_data_path).reshape(-1)
 
         if self.dataname.lower() == config.stl.lower():
-            new_id = [i+12840+8000 for i in range(100)]
+            new_id = [16394, 10254, 38934, 30743, 53275, 79903, 94247, 61484, 16430, 84015, 51251, 59454, 98367, 16453, 55367, 67665, 14418, 67668, 53334, 86104, 36959, 53345, 51299, 98406, 49265, 16502, 49276, 49278, 34942, 80003, 94345, 77963, 30863, 57489, 24723, 51350, 8347, 69801, 32941, 102577, 88246, 78007, 78011, 88257, 18627, 69833, 102601, 10443, 10448, 57553, 92375, 14557, 53472, 39146, 51436, 10486, 84217, 69885, 78079, 35076, 20766, 28961, 57634, 16679, 90419, 82228, 33081, 31036, 10557, 100673, 33096, 78154, 78155, 16716, 14670, 26959, 94544, 47439, 80216, 88414, 10599, 24935, 27000, 92547, 16774, 104844, 88466, 61846, 84377, 100761, 74140, 70045, 88477, 20895, 100768, 88481, 82339, 6565, 57766, 78246]
             self.test_idx = self.test_idx.tolist() + new_id
-            self.y[np.array(new_id)] = 10            
+            self.y[np.array(new_id)] = 10
 
     def _load_data(self):
         processed_data_filename = os.path.join(self.data_root, config.processed_dataname)
@@ -98,24 +98,11 @@ class Data(object):
         check_dir(dir_path)
         self.selected_dir = dir_path
         idx_info_path = os.path.join(dir_path, "idx_info.pkl")
-        if self.dataname.lower() == "stl":
-            new_features = np.load(os.path.join(self.selected_dir, "features.pkl"))
-            new_featuers_y = np.load(os.path.join(self.selected_dir, "features_y.pkl"))
-            self.X = new_features
-            self.y = new_featuers_y
-            self.train_idx = np.array([i for i in range(12840)], dtype=int)
-            self.test_idx = np.array([i+12840 for i in range(len(self.test_idx))], dtype=int)
-            for i in range(12840):
-                self.X[self.train_idx[i]] = new_features[i]
-            for i in range(len(self.test_idx)):
-                self.X[self.test_idx[i]] = new_features[12840 + i]
-            self.rest_idxs = np.array(range(len(self.train_idx)))
         if os.path.exists(idx_info_path):
             logger.info("idx info exists in: {}".format(idx_info_path))
             idx_info = pickle_load_data(idx_info_path)
-            self.real_train_idx = idx_info["train_idx"]
             self.train_idx = idx_info["train_idx"]
-            self.selected_labeled_idx = [i for i in range(len(idx_info["selected_labeled_idx"]))]
+            self.selected_labeled_idx = idx_info["selected_labeled_idx"]
             if self.dataname.lower() == "stl":
                 # relabel:
                 removed_idx = [self.train_idx[39], self.train_idx[33]]
@@ -542,7 +529,7 @@ class GraphData(Data):
                 min_len = pre_affinity.shape[0]
                 if now_affinity.shape[0] < pre_affinity.shape[0]:
                     min_len = now_affinity.shape[0]
-                dist[0] = ((now_affinity[:min_len, :min_len] 
+                dist[0] = ((now_affinity[:min_len, :min_len]
                     + pre_affinity[:min_len, :min_len]) == 1).sum()
                 # added labels
                 dist[1] = sum(data["train_y"] != -1) - sum(pre_data["train_y"] != -1)
