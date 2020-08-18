@@ -12,6 +12,7 @@ data/
 *.rar
 flask_session/
 test/
+exp/
 scripts/
 *.vsdx
 logs/

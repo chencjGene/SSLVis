@@ -180,7 +180,7 @@ let DistLayout = function (container) {
             label_sums[i + 1] = next_vec;
         }
 
-        // // test
+        // // exp
         // for (let i = 0; i < (total_iters - 1); i++) {
         //     console.log(twoD_sum(flows[i]));
         // }
@@ -452,7 +452,7 @@ let DistLayout = function (container) {
     };
 
     that._focus_link = function(_d_list){
-        // console.log("test focus_link", _d);
+        // console.log("exp focus_link", _d);
         // console.log("focus_link", that.click_id);
         d3.selectAll(".dist-link")
             .selectAll("path")

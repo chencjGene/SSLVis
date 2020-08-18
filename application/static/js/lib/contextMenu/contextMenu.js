@@ -466,7 +466,7 @@
                         leftShift = -triggerWidth;
                     }
                 }
-                //test end
+                //exp end
                 if (option.position == 'top') {
                     top = triggerTop - menuHeight;
                     va = verAdjust;

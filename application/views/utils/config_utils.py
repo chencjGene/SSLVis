@@ -27,10 +27,13 @@ class Config(object):
         self.cifar10 = "cifar10"
         self.oct = "OCT"
         self.stl = "STL"
+        self.svhn = "svhn"
+        self.coil = "COIL"
+        self.cancer = "Cancer"
 
         # third-level directory
         self.train_path_name = "train"
-        self.test_path_name = "test"
+        self.test_path_name = "exp"
         self.all_data_cache_name = "all_data_cache" + self.pkl_ext
 
         # filename

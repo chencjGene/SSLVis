@@ -489,7 +489,7 @@ class SSLModel(object):
         labeled_idx = train_y != -1
         logger.info("labeled num: {}".format(sum(labeled_idx)))
         simplified_affinity_matrix[labeled_idx] *= 0
-        # test
+        # exp
         simplified_laplacian_matrix = \
             build_laplacian_graph(simplified_affinity_matrix)
         simplified_F, L, _, _, _ = self._propagation(simplified_laplacian_matrix,
@@ -595,7 +595,7 @@ class SSLModel(object):
         probabilities /= normalizer
         acc = accuracy_score(test_y, probabilities.argmax(axis=1))
         print(confusion_matrix(test_y, probabilities.argmax(axis=1)))
-        logger.info("test accuracy: {}".format(acc))
+        logger.info("exp accuracy: {}".format(acc))
         return probabilities.argmax(axis=1)
 
     def adaptive_evaluation_new_test(self, pred, test_X, test_y):
@@ -631,7 +631,7 @@ class SSLModel(object):
 
         acc = accuracy_score(test_y, labels)
         confusion_mat = confusion_matrix(test_y, labels)
-        logger.info("test accuracy: {}".format(acc))
+        logger.info("exp accuracy: {}".format(acc))
         logger.info("confusion matrix: \n{}".format(confusion_mat))
         print(s / test_X.shape[0])
         return labels
@@ -666,7 +666,7 @@ class SSLModel(object):
 
         acc = accuracy_score(test_y, labels)
         confusion_mat = confusion_matrix(test_y, labels)
-        logger.info("test accuracy: {}".format(acc))
+        logger.info("exp accuracy: {}".format(acc))
         logger.info("confusion matrix: \n{}".format(confusion_mat))
         print(s / test_X.shape[0])
         return labels, np.array(adaptive_ks), acc
@@ -703,9 +703,9 @@ class SSLModel(object):
         acc = accuracy_score(test_y, labels)
         confusion_mat = confusion_matrix(test_y, labels)
         if step == None:
-            logger.info("test accuracy: {}".format(acc))
+            logger.info("exp accuracy: {}".format(acc))
         else:
-            logger.info("test accuracy step {}: {}".format(step, acc))
+            logger.info("exp accuracy step {}: {}".format(step, acc))
         logger.info("confusion matrix: \n{}".format(confusion_mat))
 
         # for k, i in [[2, 7], [2, 6], [2, 5]]:
@@ -756,7 +756,7 @@ class SSLModel(object):
             s += adaptive_k
             # print(adaptive_k)
         acc = accuracy_score(test_y, labels)
-        logger.info("test accuracy: {}".format(acc))
+        logger.info("exp accuracy: {}".format(acc))
         print(s/test_X.shape[0])
 
     # @async_once
@@ -778,7 +778,7 @@ class SSLModel(object):
         degree = self.get_in_out_degree(affinity_matrix)[:,1]
         degree = np.sqrt(1/degree)
         labels = []
-        logger.info("begin test")
+        logger.info("begin exp")
         neighbors = []
         neighbors_pred = []
         fs = []
@@ -829,7 +829,7 @@ class SSLModel(object):
             f_tests.append(min_f_test)
         print(confusion_matrix(test_y, labels))
         acc = accuracy_score(test_y, labels)
-        logger.info("Bound is {}, test accuracy: {}".format(low_bound, acc))
+        logger.info("Bound is {}, exp accuracy: {}".format(low_bound, acc))
         print(s / test_X.shape[0])
         return np.array(labels), np.array(fs), np.array(ks), np.array(neighbors), np.array(neighbors_pred), f_tests
 
