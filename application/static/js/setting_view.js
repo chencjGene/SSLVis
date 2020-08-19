@@ -272,7 +272,7 @@ f: {
 			{ 
 				id: "slider2",
 				min: 1,
-				max: 50,
+				max: 9,
 				range: true, 
 				value: [1,4]
 			});
