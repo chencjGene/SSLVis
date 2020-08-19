@@ -259,7 +259,7 @@ class ExchangePortClass(object):
 
     def get_image_path(self, id):
         if self.dataname == "stl":
-            train_idx = self.model.data.real_train_idx
+            train_idx = self.model.data.get_full_train_idx()
             real_id = train_idx[id]
             img_dir = os.path.join(config.image_root, self.dataname)
             img_path = os.path.join(img_dir, str(real_id) + ".jpg")

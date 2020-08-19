@@ -206,7 +206,7 @@ let GraphHighlight = function (parent) {
             //
             let hull_generator = new ConvexHullGrahamScan();
             for(let a of arr) {
-                hull_generator.addPoint(a[0], a[1]);
+                hull_generator.addPoint(a.x, a.y);
             }
             return hull_generator.getHull().map(d => [d.x, d.y]);
 
@@ -257,7 +257,7 @@ let GraphHighlight = function (parent) {
             let max_s= 0;
             for(let node of convex_hull){
                 //let s = distance(node.x, node.y, F1.x, F1.y) + distance(node.x, node.y, F2.x, F2.y);
-                max_s = Math.max(max_s, distance(node.x, node.y, F1.x, F1.y) + distance(node.x, node.y, F2.x, F2.y))
+                max_s = Math.max(max_s, distance(node[0], node[1], F1.x, F1.y) + distance(node[0], node[1], F2.x, F2.y))
             }
             if(return_max_s) return {
                 area:Math.PI*max_s/4*Math.sqrt(max_s*max_s-d*d),
