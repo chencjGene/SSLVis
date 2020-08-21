@@ -12,10 +12,7 @@ class CaseSTL(CaseBase):
         super(CaseSTL, self).__init__(dataname)
         self.step = self.base_config
 
-
-
-
-    def run(self, k=6, evaluate=True, simplifying=False, step=None, use_buffer = False):
+    def run(self, k=6, evaluate=True, simplifying=False, step=None, use_buffer=False):
         self.model.data.actions = []
         if step is None:
             step = self.base_config["step"]
@@ -29,7 +26,8 @@ class CaseSTL(CaseBase):
         else:
             self.model.step = step
             self.model = self.load_model(os.path.join(self.model.selected_dir, "case-step" + str(self.model.step) + ".pkl"))
-
+            if evaluate:
+                self.model.adaptive_evaluation(step=0)
             # self.model._training(rebuild=False, simplifying=True)
             return self.model
         self.pred_result[0] = self.model.get_pred_labels()

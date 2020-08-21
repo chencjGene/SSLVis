@@ -32,7 +32,8 @@ from multiprocessing.pool import ThreadPool as Pool
 
 from .data import Data, GraphData
 from .LSLabelSpreading import LSLabelSpreading
-from .model_helper import propagation, approximated_influence, exact_influence, calculate_influence_matrix_local, approximated_influence_local
+from .model_helper import propagation, approximated_influence, exact_influence, \
+    calculate_influence_matrix_local, approximated_influence_local, modify_graph
 from .model_update import local_search_k
 from .model_helper import build_laplacian_graph
 
@@ -160,6 +161,11 @@ class SSLModel(object):
     def _training(self, rebuild=True, evaluate=False, simplifying=True, record=True, saving = True):
         self._clean_buffer()
         affinity_matrix = self.data.get_graph(self.n_neighbor, rebuild=rebuild)
+
+        # # postprocess graph
+        # affinity_matrix = modify_graph(affinity_matrix, self.alpha, self.n_neighbor)
+        # # TODO: change the affinity_matrix buffer
+
         laplacian = build_laplacian_graph(affinity_matrix)
         train_y = self.data.get_train_label()
         train_gt = self.data.get_train_ground_truth()
@@ -672,7 +678,7 @@ class SSLModel(object):
         return labels, np.array(adaptive_ks), acc
 
     # @async_once
-    def adaptive_evaluation(self, pred=None, step = None):
+    def adaptive_evaluation(self, pred=None, step=None):
         affinity_matrix = self.data.get_graph()
         affinity_matrix.setdiag(0)
         if pred is None:
@@ -879,14 +885,14 @@ class SSLModel(object):
         for i in range(iter-1):
             selected_flows[i] = flow_statistic(self.labels[i][idxs], \
                 self.labels[i+1][idxs], self.class_list)
-        print("get_flows time 1: ", time() - t0)
+        # print("get_flows time 1: ", time() - t0)
         label_sums = np.zeros((self.labels.shape[0], selected_flows.shape[1]))
         for i in range(self.labels.shape[0]):
             labels = self.labels[i][idxs]
             bins = np.bincount(labels + 1)
             missed_num = label_sums[i].shape[0] - len(bins)
             label_sums[i,:] = np.concatenate((bins, np.zeros(missed_num)))
-        print("get_flows time 2: ", time() - t0)
+        # print("get_flows time 2: ", time() - t0)
         return label_sums, selected_flows
 
     def get_selected_flows(self, data):

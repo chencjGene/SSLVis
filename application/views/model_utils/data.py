@@ -14,6 +14,7 @@ from application.views.utils.config_utils import config
 from application.views.utils.helper_utils import pickle_save_data, json_load_data, \
     pickle_load_data, json_save_data, check_dir
 from application.views.utils.log_utils import logger
+from application.views.model_utils.model_helper import modify_graph
 
 from .model_helper import build_laplacian_graph
 
@@ -385,6 +386,9 @@ class GraphData(Data):
                                              affinity_matrix.indices, affinity_matrix.indptr),
                                             shape=(instance_num, instance_num))
 
+        # affinity_matrix = modify_graph(affinity_matrix, train_y, 0.2)
+        # affinity_matrix = self.correct_unconnected_nodes(affinity_matrix)
+
         # affinity_matrix = self.correct_unconnected_nodes(affinity_matrix)
         logger.info("affinity_matrix construction finished!!")
 
@@ -577,7 +581,7 @@ class GraphData(Data):
             unnorm_dist = state["dist"].copy()
             state["dist"] = [i / max_count for i in unnorm_dist]
             state["unnorm_dist"] = unnorm_dist
-        print("return state time cost: ", time() - t0)
+        # print("return state time cost: ", time() - t0)
         return {
             "history": history,
             "current_id": int(self.current_state.name)

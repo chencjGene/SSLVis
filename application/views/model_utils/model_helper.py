@@ -9,14 +9,59 @@ from time import time, sleep
 from tqdm import tqdm
 import warnings
 
+from scipy.optimize import minimize
+from scipy.stats import entropy
+from scipy.sparse import csr_matrix, coo_matrix
 from sklearn.utils.extmath import safe_sparse_dot
-from sklearn.neighbors.unsupervised import NearestNeighbors
+from sklearn.utils.extmath import safe_sparse_dot
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.metrics.pairwise import euclidean_distances, paired_distances
 
 from ..utils.log_utils import logger
 import concurrent.futures
 from ..utils.helper_utils import *
+
+from numba import jit, float64, int32
+
+
+#@autojit
+def _sparse_mult4(a, b, cd, cr, cc):
+    N = cd.size
+    data = np.empty_like(cd)
+    for i in range(N):
+        num = 0.0
+        for j in range(a.shape[1]):
+            num += a[cr[i], j] * b[j, cc[i]]
+        data[i] = cd[i]*num
+    return data
+
+
+_fast_sparse_mult4 = \
+    jit(float64[:,:](float64[:,:],float64[:,:],float64[:],int32[:],int32[:]))(_sparse_mult4)
+
+
+def sparse_numba(a,b,c):
+    """Multiply sparse matrix `c` by np.dot(a,b) using Numba's jit."""
+    assert c.shape == (a.shape[0],b.shape[1])
+    data = _fast_sparse_mult4(a,b,c.data,c.row,c.col)
+    return coo_matrix((data,(c.row,c.col)),shape=(a.shape[0],b.shape[1]))
+
+def multi_processing_cost(W, graph_matrix, label_distributions_, gt, regularization_weight, alpha, y_static):
+        tmp = graph_matrix.copy()
+        W[W <= 0] = 1e-20
+        tmp.data = tmp.data * W
+        # W must be non-zero
+        P = safe_sparse_dot(tmp, label_distributions_)
+        P = np.multiply(alpha, P) + y_static
+        cost_1 = entropy(P.T+1e-20).sum()
+        cost_2 = regularization_weight * ((P-gt)**2).sum()
+        cost = cost_1 + cost_2
+        # print("total_cost: {},\tcost_1: {},\tcost_2: {}".format(cost, cost_1, cost_2))
+        # cost = entropy(P.T+1e-20).sum() # for DEBUG
+        # cost = 0.1 * ((P-gt)**2).sum() # for DEBUG
+        # cost = P.sum() # for DEBUG
+        # print("cost", cost)
+        return cost
 
 
 def build_laplacian_graph(affinity_matrix):
@@ -431,3 +476,144 @@ def calculate_influence_matrix_local(args):
     calculate_time = time()-t0
     print("calculate time:{}".format(calculate_time))
     print(start_idx, end_idx, time()-t0, all_matrix_time, all_sparse_time, edge_cnt)
+
+
+def weight_selection(graph_matrix, origin_graph, label_distributions_, alpha, y_static, ent, label):
+    gt = safe_sparse_dot(graph_matrix, label_distributions_)
+    gt = np.multiply(alpha, gt) + y_static
+
+    regularization_weight = 1e11 * 0.5
+
+    ind = ent > np.log(label.shape[1]) * 0.04
+    ind[ent > (np.log(label.shape[1]) - 0.001)] = False
+
+    graph_matrix.eliminate_zeros()
+    graph_matrix[:, ind] = graph_matrix[:, ind] * 0
+
+    W0 = graph_matrix.data > 0
+    W0 = np.array(W0).astype(float)
+    bounds = [(0,1) for i in range(len(W0))]
+
+    def cost_function(W):
+        return multi_processing_cost(W, graph_matrix, label_distributions_, gt, regularization_weight, alpha, y_static)
+
+    def cost_der(W):
+        t0 = time()
+        coo = graph_matrix.tocoo()
+        tmp = graph_matrix.copy()
+        tmp.data = tmp.data * W
+        P = safe_sparse_dot(tmp, label_distributions_)
+        P = np.multiply(alpha, P) + y_static + 1e-20
+        normalizer = np.sum(P, axis=1)[:, np.newaxis]
+        normalizer = normalizer + 1e-20
+        norm_P = P / normalizer + 1e-20
+        log_P = np.log(norm_P)
+        P_sum = (P.sum(axis=1) + 1e-20)
+        G11 = (norm_P * log_P).sum(axis=1) / P_sum
+
+        G11 = G11[np.newaxis, :].repeat(axis=0, repeats=label_distributions_.shape[1])
+        G11 = G11.T
+        # G1 = np.dot(G11, label_distributions_.T)
+        # G1 = np.dot(G11[:, np.newaxis], G12[np.newaxis, :])
+        # G1 = sparse_numba(G11[:, np.newaxis], G12[np.newaxis, :], coo)
+
+        # G2 = np.dot(log_P / P_sum[:, np.newaxis], label_distributions_.T)
+        # G3 = np.dot(P-gt, label_distributions_.T)
+        # G = G1 - G2 + 0.1 * G3
+        # G = np.dot(G11 - log_P / P_sum[:, np.newaxis] + 0.1 * (P-gt), label_distributions_.T)
+        G = sparse_numba(G11 - log_P / P_sum[:, np.newaxis] + regularization_weight * (P-gt), label_distributions_.T, coo)
+        # G = 0.1 * G3 # for DEBUG
+        # G = G1 - G2 # for DEBUG
+        # final_G = graph_matrix.data * G[graph_matrix.nonzero()[0], graph_matrix.nonzero()[1]]
+        final_G = G.tocsr().data * alpha
+        # print("t4:", time() - t0)
+
+        return final_G
+
+    res = minimize(cost_function, W0, method="L-BFGS-B", jac=cost_der, bounds=bounds,
+                   options={'disp': False}, tol=1e-3).x
+
+    W = res
+    graph_matrix.data = (W > 0.5).astype(int)
+
+    # postprocess for case where some instances are not propagated to
+    num_point_to = graph_matrix.sum(axis=1).reshape(-1)
+    num_point_to = np.array(num_point_to).reshape(-1)
+    ids = np.array(range(len(num_point_to)))[num_point_to==0]
+    for id in ids:
+        point_to_idxs = origin_graph[:,id].nonzero()[0]
+        dists = label_distributions_[point_to_idxs, :]
+        labels = dists.argmax(axis=1)
+        bins = np.bincount(labels)
+        max_labels = bins.argmax()
+        point_to_idxs = point_to_idxs[labels==max_labels]
+        for p in point_to_idxs:
+            graph_matrix[id, p] = 1
+        a = 1
+
+    removed_num = len(W0) - graph_matrix.data.sum()
+    # print("removed_num:", removed_num)
+    return graph_matrix
+
+
+def modify_graph(affinity_matrix, train_y, alpha, max_iter=15):
+    y = np.array(train_y)
+    # label construction
+    # construct a categorical distribution for classification only
+    classes = np.unique(y)
+    classes = (classes[classes != -1])
+
+    modified_matrix = affinity_matrix.copy()
+    graph_matrix = build_laplacian_graph(modified_matrix)
+
+    n_samples, n_classes = len(y), len(classes)
+
+    if (alpha is None or alpha <= 0.0 or alpha >= 1.0):
+        raise ValueError('alpha=%s is invalid: it must be inside '
+                         'the open interval (0, 1)' % alpha)
+    y = np.asarray(y)
+
+    # initialize distributions
+    label_distributions_ = np.zeros((n_samples, n_classes))
+    for label in classes:
+        label_distributions_[y == label, classes == label] = 1
+
+    y_static_labeled = np.copy(label_distributions_)
+    y_static = y_static_labeled * (1 - alpha)
+
+    if sparse.isspmatrix(graph_matrix):
+        graph_matrix = graph_matrix.tocsr()
+
+    n_iter_ = 1
+    for _ in range(max_iter):
+        label_distributions_a = safe_sparse_dot(
+            graph_matrix, label_distributions_)
+
+        label_distributions_ = np.multiply(
+            alpha, label_distributions_a) + y_static
+
+        n_iter_ += 1
+
+        # calculate entropy
+        label = label_distributions_.copy()
+        normalizer = np.sum(label, axis=1)[:, np.newaxis]
+        normalizer = normalizer + 1e-20
+        label /= normalizer
+        ent = entropy(label.T + 1e-20)
+
+        modified_matrix = weight_selection(graph_matrix.tocsr(), affinity_matrix, label_distributions_, alpha, y_static, ent, label)
+
+        graph_matrix = build_laplacian_graph(modified_matrix)
+    else:
+        warnings.warn(
+            'max_iter=%d was reached without convergence.' % max_iter,
+            category=ConvergenceWarning
+        )
+    # normalization
+    normalizer = np.sum(label_distributions_, axis=1)[:, np.newaxis]
+    normalizer = normalizer + 1e-20
+    label_distributions_ /= normalizer
+
+    return modified_matrix
+
+
