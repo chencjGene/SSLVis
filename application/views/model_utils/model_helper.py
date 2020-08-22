@@ -605,6 +605,18 @@ def new_propagation(affinity_matrix, train_y, alpha, neighbors, max_iter=15):
     for label in classes:
         label_distributions_[y == label, classes == label] = 1
 
+    all_loss = []
+    all_entropy = []
+    # record process data
+    label = label_distributions_.copy()
+    normalizer = np.sum(label, axis=1)[:, np.newaxis]
+    normalizer = normalizer + 1e-20
+    label /= normalizer
+    process_data = [label]
+    ent = entropy(label.T + 1e-20)
+    all_entropy.append(ent.sum())
+
+
     y_static_labeled = np.copy(label_distributions_)
     y_static = y_static_labeled * (1 - alpha)
 
@@ -628,6 +640,9 @@ def new_propagation(affinity_matrix, train_y, alpha, neighbors, max_iter=15):
         label /= normalizer
         ent = entropy(label.T + 1e-20)
 
+        process_data.append(label)
+        all_entropy.append(ent.sum())
+
         modified_matrix = uncertainty_selection(ent, label, modified_matrix,
                                                 label_distributions_, alpha, y_static, train_y,
                                                 build_laplacian_graph, affinity_matrix, neighbors)
@@ -639,12 +654,34 @@ def new_propagation(affinity_matrix, train_y, alpha, neighbors, max_iter=15):
             'max_iter=%d was reached without convergence.' % max_iter,
             category=ConvergenceWarning
         )
+    unnorm_dist = label_distributions_.copy()
     # normalization
     normalizer = np.sum(label_distributions_, axis=1)[:, np.newaxis]
     normalizer = normalizer + 1e-20
     label_distributions_ /= normalizer
 
-    return modified_matrix, label_distributions_
+    if process_data is not None:
+        process_data = np.array(process_data)
+
+        labels = process_data.argmax(axis=2)
+        max_process_data = process_data.max(axis=2)
+        labels[max_process_data == 0] = -1
+
+        # remove unnecessary iterations
+        assert n_iter_ == len(process_data), "{}, {}".format(n_iter_, len(process_data))
+        new_iter_num = n_iter_ - 1
+        # if not (n_iter_ > 6 and k <= 3): # for case
+        for new_iter_num in range(n_iter_ - 1, 0, -1):
+                if sum(labels[new_iter_num - 1] != labels[n_iter_- 1]) != 0:
+                    break
+
+        process_data[new_iter_num] = process_data[n_iter_ - 1]
+        process_data = process_data[:new_iter_num + 1]
+        all_entropy[new_iter_num] = all_entropy[n_iter_ - 1]
+        all_entropy = all_entropy[:new_iter_num + 1]
+
+    return label_distributions_, all_entropy, process_data, unnorm_dist
+    return modified_matrix, label_distributions_, process_data
 
 def modify_graph(affinity_matrix, train_y, alpha, max_iter=15):
     modified_matrix, label_distributions_ = new_propagation(affinity_matrix, train_y, alpha, max_iter)

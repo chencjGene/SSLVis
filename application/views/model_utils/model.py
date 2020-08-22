@@ -174,9 +174,10 @@ class SSLModel(object):
             self._propagation(laplacian, affinity_matrix, train_y,
                               alpha=self.alpha, process_record=True,
                               normalized=True, k=self.n_neighbor)
+        pred_dist, ent, process_data, unnorm_dist = new_propagation(affinity_matrix, train_y, self.alpha, self.data.neighbors)
         # labels = [int(np.argmax(process_data[j][id])) if np.max(process_data[j][id]) > 1e-4 else -1 for j in
         #           range(iter_num)]
-        iter = len(loss)
+        iter = len(ent)
         self.n_iters = iter
         # get labels and flows
         self.labels = process_data.argmax(axis=2)
@@ -208,8 +209,8 @@ class SSLModel(object):
         # exp_affinity_matrix = exp.construct_graph(n_neighbor=conf["k"])
 
         # new propagation
-        _, pred_dist = new_propagation(affinity_matrix, train_y, self.alpha, self.data.neighbors)
-        self.pred_dist = pred_dist
+        # _, pred_dist = new_propagation(affinity_matrix, train_y, self.alpha, self.data.neighbors)
+        # self.pred_dist = pred_dist
 
         pred_y = pred_dist.argmax(axis=1)
         acc = accuracy_score(train_gt, pred_y)
@@ -227,7 +228,8 @@ class SSLModel(object):
         self.propagation_path_to = propagation_path_to
 
 
-
+        if False:
+            self.fetch_simplify_influence_matrix()
         # if simplifying and config.show_simplified:
         #     # get simplififed matrix asynchronously
         #     print("begin simplify")
