@@ -33,7 +33,7 @@ from multiprocessing.pool import ThreadPool as Pool
 from .data import Data, GraphData
 from .LSLabelSpreading import LSLabelSpreading
 from .model_helper import propagation, approximated_influence, exact_influence, \
-    calculate_influence_matrix_local, approximated_influence_local, modify_graph
+    calculate_influence_matrix_local, approximated_influence_local, modify_graph, new_propagation
 from .model_update import local_search_k
 from .model_helper import build_laplacian_graph
 
@@ -199,6 +199,18 @@ class SSLModel(object):
         unconnected = self.data._find_unconnected_nodes(self.graph, np.where(self.data.get_train_label()>-1)[0])
         print("Unconnected cnt:{}".format(unconnected.shape[0]))
         print(process_data.shape)
+
+        # # for test
+        # from scripts.Propa.STL import STLExp
+        # from scripts.Propa.exp_config import ExpConfig
+        # exp = STLExp()
+        # conf = ExpConfig.conf[exp.dataname]
+        # exp_affinity_matrix = exp.construct_graph(n_neighbor=conf["k"])
+
+        # new propagation
+        _, pred_dist = new_propagation(affinity_matrix, train_y, self.alpha, self.data.neighbors)
+        self.pred_dist = pred_dist
+
         pred_y = pred_dist.argmax(axis=1)
         acc = accuracy_score(train_gt, pred_y)
         self.acc = acc
@@ -213,6 +225,7 @@ class SSLModel(object):
         # self._influence_matrix(rebuild=simplifying, saving = saving)
         self.propagation_path_from = propagation_path_from
         self.propagation_path_to = propagation_path_to
+
 
 
         # if simplifying and config.show_simplified:
