@@ -174,7 +174,7 @@ class SSLModel(object):
             self._propagation(laplacian, affinity_matrix, train_y,
                               alpha=self.alpha, process_record=True,
                               normalized=True, k=self.n_neighbor)
-        pred_dist, ent, process_data, unnorm_dist = new_propagation(affinity_matrix, train_y, self.alpha, self.data.neighbors)
+        pred_dist, ent, process_data, unnorm_dist = new_propagation(affinity_matrix, train_y, self.alpha, self.data.get_neighbors())
         # labels = [int(np.argmax(process_data[j][id])) if np.max(process_data[j][id]) > 1e-4 else -1 for j in
         #           range(iter_num)]
         iter = len(ent)

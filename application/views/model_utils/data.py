@@ -465,14 +465,14 @@ class GraphData(Data):
     def get_neighbors(self, k_neighbors = None, if_map = True):
         self._preprocess_neighbors()
         if k_neighbors is None:
-            return self.neighbors[self.rest_idxs]
-        else:
-            m = self.get_new_id_map()
-            new_neighbors = np.zeros((len(self.rest_idxs), k_neighbors), dtype=int)
-            rest_dict = {}
-            for id in self.rest_idxs:
+            # return self.neighbors[self.rest_idxs]
+            k_neighbors = 150
+        m = self.get_new_id_map()
+        new_neighbors = np.zeros((len(self.rest_idxs), k_neighbors), dtype=int)
+        rest_dict = {}
+        for id in self.rest_idxs:
                 rest_dict[id] = True
-            for i, row_neighbors in enumerate(self.neighbors[self.rest_idxs]):
+        for i, row_neighbors in enumerate(self.neighbors[self.rest_idxs]):
                 neighbor_cnt = 0
                 for neighbor_id in row_neighbors:
                     if neighbor_id in rest_dict.keys():
@@ -484,7 +484,7 @@ class GraphData(Data):
                         neighbor_cnt += 1
                         if neighbor_cnt == k_neighbors:
                             break
-            return new_neighbors
+        return new_neighbors
 
     def record_state(self, pred):
         new_state = Node(self.state_idx, parent=self.current_state)

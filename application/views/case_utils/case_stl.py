@@ -12,7 +12,7 @@ class CaseSTL(CaseBase):
         super(CaseSTL, self).__init__(dataname)
         self.step = self.base_config
 
-    def run(self, k=6, evaluate=True, simplifying=False, step=None, use_buffer=False):
+    def run(self, k=6, evaluate=True, simplifying=False, step=None, use_buffer=False, use_old = False):
         self.model.data.actions = []
         if step is None:
             step = self.base_config["step"]
@@ -25,7 +25,10 @@ class CaseSTL(CaseBase):
             pickle_save_data(os.path.join(self.model.selected_dir, "case-step" + str(self.model.step) + ".pkl"), save)
         else:
             self.model.step = step
-            self.model = self.load_model(os.path.join(self.model.selected_dir, "case-step" + str(self.model.step) + ".pkl"))
+            model_path = os.path.join(self.model.selected_dir, "case-step" + str(self.model.step) + ".pkl")
+            if use_old:
+                model_path = os.path.join(self.model.selected_dir, "saved_case\case-step" + str(self.model.step) + ".pkl")
+            self.model = self.load_model(model_path)
             if evaluate:
                 self.model.adaptive_evaluation(step=0)
             # self.model._training(rebuild=False, simplifying=True)
@@ -33,12 +36,15 @@ class CaseSTL(CaseBase):
         self.pred_result[0] = self.model.get_pred_labels()
 
         self.model.adaptive_evaluation(step=0)
-        if step >= 1:
+        if step >= 1 and use_buffer and os.path.exists(os.path.join(self.model.selected_dir, "case-step1.pkl")):
+            self.model = self.load_model(
+                os.path.join(self.model.selected_dir, "case-step1.pkl"))
+        elif step >= 1:
             self.model.step += 1
             print("step 1")
             self.model.data.actions = []
             self.model.data.add_new_categories("snake")
-            self.model.data.label_instance([6219, 11966, 12467, 7573, 11905], [10, 10, 10, 10, 10])
+            self.model.data.label_instance([6219, 8832, 11905, 11784], [10, 10, 10, 10])
             # self.model.data.label_instance([9081, 7427], [1, 4])
             # self.model._training(rebuild=False, evaluate=evaluate, simplifying=False)
             # self.pred_result[1] = self.model.get_pred_labels()
@@ -46,8 +52,7 @@ class CaseSTL(CaseBase):
             # save = (self.model, self.model.data)
             # pickle_save_data(os.path.join(self.model.selected_dir, "case-step" + str(self.model.step) + ".pkl"), save)
     
-            self.model.data.label_instance(
-                json.loads(open(os.path.join(self.model.selected_dir, "dog_idxs.txt"), "r").read().strip("\n")), [5, 5, 5])
+            self.model.data.label_instance([717, 10987, 9946], [5, 5, 5])
 
             # self._init_model(k=k, evaluate=True, simplifying=simplifying)
             self.model.influence_matrix = None
@@ -64,7 +69,10 @@ class CaseSTL(CaseBase):
         #     self.model._training(rebuild=False, evaluate=False, simplifying=False)
 
         categories = [1 for i in range(11)]
-        if step >= 2:
+        if step >= 2 and use_buffer and os.path.exists(os.path.join(self.model.selected_dir, "case-step2.pkl")):
+            self.model = self.load_model(
+                os.path.join(self.model.selected_dir, "case-step2.pkl"))
+        elif step >= 2:
             self.model.step += 1
             self.model.data.actions = []
             # remove other class
@@ -78,7 +86,7 @@ class CaseSTL(CaseBase):
             # self.model.local_search_k(c, range(7, 40), categories, simplifying=False, evaluate=True)
             self.model.influence_matrix = None
             self.model.local_search_k(c, range(27, 29), categories, simplifying=False, evaluate=True, record=False)
-            self.model.data.remove_edge([[7526, 7409], [7526, 11914], [7526, 10280]])
+
             self.model._training(rebuild=False, evaluate=False, simplifying=False, record=False)
             self.model._influence_matrix(rebuild=False)
 
@@ -87,13 +95,15 @@ class CaseSTL(CaseBase):
             save = (self.model, self.model.data)
             pickle_save_data(os.path.join(self.model.selected_dir, "case-step" + str(self.model.step) + ".pkl"), save)
 
-
-        if step >= 3:
+        if step >= 3 and use_buffer and os.path.exists(os.path.join(self.model.selected_dir, "case-step3.pkl")):
+            self.model = self.load_model(
+                os.path.join(self.model.selected_dir, "case-step3.pkl"))
+        elif step >= 3:
             self.model.step += 1
             edge_list = json.loads(open(os.path.join(self.model.selected_dir, "removed_1.txt"), "r").read().strip("\n"))
             remove_edges_ext = [[59, 5035], [713, 5035], [3189, 6834], [3928, 3307], [4446, 48], [5963, 6837], [6347, 5035], [6834, 10917]]
             self.model.data.remove_edge(edge_list+remove_edges_ext)
-
+            self.model.data.remove_edge([[7526, 7409], [7526, 11914], [7526, 10280]])
             removed = [6986, 4710, 5790, 227, 2694]
             self.model.data.remove_instance(removed)
             self.model.data.update_graph(removed)
@@ -111,7 +121,10 @@ class CaseSTL(CaseBase):
 
 
         categories = [1 for i in range(11)]
-        if step >= 4:
+        if step >= 4 and use_buffer and os.path.exists(os.path.join(self.model.selected_dir, "case-step4.pkl")):
+            self.model = self.load_model(
+                os.path.join(self.model.selected_dir, "case-step4.pkl"))
+        elif step >= 4:
             self.model.step += 1
             self.model.data.actions = []
             c = json.loads(open(os.path.join(self.model.selected_dir, "local_2_idxs.txt"), "r").read().strip("\n"))
@@ -131,7 +144,10 @@ class CaseSTL(CaseBase):
             save = (self.model, self.model.data)
             pickle_save_data(os.path.join(self.model.selected_dir, "case-step" + str(self.model.step) + ".pkl"), save)
 
-        if step >= 5:
+        if step >= 5 and use_buffer and os.path.exists(os.path.join(self.model.selected_dir, "case-step5.pkl")):
+            self.model = self.load_model(
+                os.path.join(self.model.selected_dir, "case-step5.pkl"))
+        elif step >= 5:
             self.model.step += 1
             removed = [3403, 1834, 11881, 9800]
             removed_edge = [ [6897, 1071], [3349, 5521], [7648, 9140], [88, 39],
@@ -163,7 +179,10 @@ class CaseSTL(CaseBase):
         #     save = (self.model, self.model.data)
         #     pickle_save_data(os.path.join(self.model.selected_dir, "case-step" + str(self.model.step) + ".pkl"), save)
 
-        if step >= 6:
+        if step >= 6 and use_buffer and os.path.exists(os.path.join(self.model.selected_dir, "case-step6.pkl")):
+            self.model = self.load_model(
+                os.path.join(self.model.selected_dir, "case-step6.pkl"))
+        elif step >= 6:
             self.model.data.actions = []
             self.model.step += 1
             # all_labeled_idxs = self.model.data.labeled_idx
@@ -181,11 +200,13 @@ class CaseSTL(CaseBase):
             pickle_save_data(os.path.join(self.model.selected_dir, "case-step" + str(self.model.step) + ".pkl"), save)
             # self.model.adaptive_evaluation_unasync()
 
-
-        if step >= 7:
+        if step >= 7 and use_buffer and os.path.exists(os.path.join(self.model.selected_dir, "case-step7.pkl")):
+            self.model = self.load_model(
+                os.path.join(self.model.selected_dir, "case-step7.pkl"))
+        elif step >= 7:
             self.model.data.actions = []
             self.model.step += 1
-            self.model.data.label_instance([11023, 7988, 331, 8990, 8723, 11132, 6133, 9218], [0, 0, 5, 0, 5, 5, 5, 8])
+
             self.model.data.label_instance([6673, 7954, 10403, 6396], [8, 0, 5, 5])
             self.influence_matrix = None
             self.model._training(rebuild=False, evaluate=False, simplifying=False, record=True)
@@ -194,9 +215,13 @@ class CaseSTL(CaseBase):
             save = (self.model, self.model.data)
             pickle_save_data(os.path.join(self.model.selected_dir, "case-step" + str(self.model.step) + ".pkl"), save)
 
-        if step >= 8:
+        if step >= 8 and use_buffer and os.path.exists(os.path.join(self.model.selected_dir, "case-step8.pkl")):
+            self.model = self.load_model(
+                os.path.join(self.model.selected_dir, "case-step8.pkl"))
+        elif step >= 8:
             self.model.data.actions = []
             self.model.step += 1
+            self.model.data.label_instance([11023, 7988, 331, 8990, 8723, 11132, 6133, 9218], [0, 0, 5, 0, 5, 5, 5, 8])
             removed = [6356, 6434, 9429, 11552, 12795, 362, 3679, 4748, 8547, 1956, 5478, 3080, 12420, 8187]
             self.model.data.remove_instance(removed)
             self.model.data.update_graph(removed)

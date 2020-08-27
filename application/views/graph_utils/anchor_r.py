@@ -91,7 +91,7 @@ class Anchors:
         return labels
 
     def get_train_x_tsne(self):
-        self.tsne_path = os.path.join(self.selected_dir, "tsne-step"+str(self.step)+".npy")
+        self.tsne_path = os.path.join(self.selected_dir, "ntsne-step"+str(self.step)+".npy")
         assert os.path.exists(self.tsne_path), self.tsne_path
         self.tsne = np.load(self.tsne_path)
         self.tsne = np.round(self.tsne, 2)
@@ -521,9 +521,10 @@ class Anchors:
         return self.home
 
     def convert_to_dict(self, selection, tsne):
+        use_buffer = False
         logger.info("convert to dict")
         graph_path = os.path.join(self.selected_dir, "graph-step" + str(self.step) + ".json")
-        if os.path.exists(graph_path):
+        if os.path.exists(graph_path) and use_buffer:
             graph = json_load_data(graph_path)
             return graph
         propagation_path_from = self.model.propagation_path_from

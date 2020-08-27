@@ -324,6 +324,8 @@ let GraphLayout = function (container) {
         aggregate = state.aggregate;
         rect_nodes = state.rect_nodes;
         edge_filter_threshold = state.edge_filter_threshold;
+        edge_filter_threshold[0] -= 1e-4;
+        edge_filter_threshold[1] += 1e-4;
         that.edge_filter_threshold = edge_filter_threshold;
         edge_type_range = state.edge_type_range;
         all_path = state.path;
@@ -852,7 +854,7 @@ let GraphLayout = function (container) {
                     console.log("get")
                 }
             }
-            imgs = [];
+            // imgs = [];
 
             console.log("path_ary", path_ary);
             console.log("bundling res", path_ary);
@@ -1956,6 +1958,7 @@ let GraphLayout = function (container) {
             .transition()
             .duration(AnimationDuration)
             .attr("d", function (d) {
+                return curve_tapered(d.old_res, path_begin_width * that.zoom_scale, path_end_width * that.zoom_scale);
                 return bezier_tapered(d[3][0], d[3][1], d[3][2], path_begin_width * that.zoom_scale,
                         path_mid_width * that.zoom_scale, path_end_width * that.zoom_scale);
                 return "M{0} {1}, Q {2} {3}, {4} {5}".format(
@@ -1995,6 +1998,7 @@ let GraphLayout = function (container) {
         path_in_group
 
             .attr("d", function (d) {
+                return curve_tapered(d.old_res, path_begin_width * that.zoom_scale, path_end_width * that.zoom_scale);
                 return bezier_tapered(d[3][0], d[3][1], d[3][2], path_begin_width * that.zoom_scale,
                         path_mid_width * that.zoom_scale, path_end_width * that.zoom_scale);
                 return "M{0} {1}, Q {2} {3}, {4} {5}".format(

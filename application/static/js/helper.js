@@ -557,8 +557,8 @@ function label_layout(nodes, path, zoom_scale){
     // let img_height = 12  * zoom_scale;
     // let padding = 0  * zoom_scale;
     
-    let img_width = 10 / 3 * zoom_scale;
-    let img_height = 10 / 3  * zoom_scale;
+    let img_width = 5 / 3 * zoom_scale;
+    let img_height = 5 / 3  * zoom_scale;
     let padding = 0.1  * zoom_scale;
 
     function return_rect(node, j){
