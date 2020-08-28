@@ -896,17 +896,34 @@ class SSLModel(object):
         idxs = np.array([m[i] for i in idxs])
         self.selected_idxs = idxs
         iter = len(self.labels)
+
+        same_cnt = 0
+        label_sums = np.zeros((iter, len(self.class_list)))
+        for i in range(iter):
+
+            labels = self.labels[i][idxs]
+            bins = np.bincount(labels + 1)
+            missed_num = label_sums[i].shape[0] - len(bins)
+            label_sums[i, :] = np.concatenate((bins, np.zeros(missed_num)))
+            if i > 0:
+                same_as_last = True
+                for j in range(len(self.class_list)):
+                    if label_sums[i][j] != label_sums[i-1][j]:
+                        same_as_last = False
+                        break
+                if same_as_last:
+                    same_cnt += 1
+                if same_cnt == 3:
+                    iter = i
+                    label_sums = label_sums[:iter]
+                    break
+
         selected_flows = np.zeros((iter-1, len(self.class_list), len(self.class_list)))
         for i in range(iter-1):
             selected_flows[i] = flow_statistic(self.labels[i][idxs], \
                 self.labels[i+1][idxs], self.class_list)
         # print("get_flows time 1: ", time() - t0)
-        label_sums = np.zeros((self.labels.shape[0], selected_flows.shape[1]))
-        for i in range(self.labels.shape[0]):
-            labels = self.labels[i][idxs]
-            bins = np.bincount(labels + 1)
-            missed_num = label_sums[i].shape[0] - len(bins)
-            label_sums[i,:] = np.concatenate((bins, np.zeros(missed_num)))
+
         # print("get_flows time 2: ", time() - t0)
         return label_sums, selected_flows
 

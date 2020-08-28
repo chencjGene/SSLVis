@@ -14,7 +14,7 @@ class CaseOCT(CaseBase):
         self.step = self.base_config
 
 
-    def run(self, k=None, evaluate=False, simplifying=False, step=None, use_buffer = False):
+    def run(self, k=None, evaluate=False, simplifying=False, step=None, use_buffer = False, use_old = False):
         if step is None:
             step = self.base_config["step"]
         
@@ -29,8 +29,14 @@ class CaseOCT(CaseBase):
             pickle_save_data(os.path.join(self.model.selected_dir, "case-step" + str(self.model.step) + ".pkl"), save)
         else:
             self.model.step = step
-            self.model = self.load_model(
-                os.path.join(self.model.selected_dir, "case-step" + str(self.model.step) + ".pkl"))
+            model_path = os.path.join(self.model.selected_dir, "case-step" + str(self.model.step) + ".pkl")
+            if use_old:
+                model_path = os.path.join(self.model.selected_dir,
+                                          "saved_case\case-step" + str(self.model.step) + ".pkl")
+            self.model = self.load_model(model_path)
+            if evaluate:
+                self.model.adaptive_evaluation(step=0)
+            # self.model._training(rebuild=False, simplifying=True)
             return self.model
         self.pred_result[0] = self.model.get_pred_labels()
 
@@ -38,7 +44,10 @@ class CaseOCT(CaseBase):
         categories[11] = False
         self.model.adaptive_evaluation(step=0)
 
-        if step >= 1:
+        if step >= 1 and use_buffer and os.path.exists(os.path.join(self.model.selected_dir, "case-step1.pkl")):
+            self.model = self.load_model(
+                os.path.join(self.model.selected_dir, "case-step1.pkl"))
+        elif step >= 1:
             self.model.step += 1
             no_update = [5682,5684,1228,1482,8601,1714, 6377, 3475]
             neighbors = self.model.data.get_neighbors(5, True)[no_update].flatten().tolist()
@@ -60,7 +69,10 @@ class CaseOCT(CaseBase):
             self.model.adaptive_evaluation(step=1)
             pickle_save_data(os.path.join(self.model.selected_dir, "case-step" + str(self.model.step) + ".pkl"), save)
 
-        if step >= 2:
+        if step >= 2 and use_buffer and os.path.exists(os.path.join(self.model.selected_dir, "case-step2.pkl")):
+            self.model = self.load_model(
+                os.path.join(self.model.selected_dir, "case-step2.pkl"))
+        elif step >= 2:
             self.model.step += 1
             self.model.data.actions = []
             remove_edges = json.loads(open(os.path.join(self.model.selected_dir, "removed_edges.txt"), "r").read().strip("\n"))
@@ -73,8 +85,10 @@ class CaseOCT(CaseBase):
             save = (self.model, self.model.data)
             pickle_save_data(os.path.join(self.model.selected_dir, "case-step" + str(self.model.step) + ".pkl"), save)
 
-
-        if step >= 3:
+        if step >= 3 and use_buffer and os.path.exists(os.path.join(self.model.selected_dir, "case-step3.pkl")):
+            self.model = self.load_model(
+                os.path.join(self.model.selected_dir, "case-step3.pkl"))
+        elif step >= 3:
             self.model.step += 1
             self.model.data.actions = []
             self.model.data.label_instance([5734, 3638], [2, 2])

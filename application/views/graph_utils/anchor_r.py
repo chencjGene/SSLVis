@@ -521,7 +521,7 @@ class Anchors:
         return self.home
 
     def convert_to_dict(self, selection, tsne):
-        use_buffer = False
+        use_buffer = True
         logger.info("convert to dict")
         graph_path = os.path.join(self.selected_dir, "graph-step" + str(self.step) + ".json")
         if os.path.exists(graph_path) and use_buffer:
