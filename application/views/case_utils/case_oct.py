@@ -14,7 +14,7 @@ class CaseOCT(CaseBase):
         self.step = self.base_config
 
 
-    def run(self, k=None, evaluate=False, simplifying=False, step=None, use_buffer = False, use_old = False):
+    def run(self, k=None, evaluate=True, simplifying=False, step=None, use_buffer = False, use_old = False):
         if step is None:
             step = self.base_config["step"]
         

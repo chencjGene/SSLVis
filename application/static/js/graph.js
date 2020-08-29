@@ -495,7 +495,7 @@ let GraphLayout = function (container) {
                     y: that.center_scale_y(remain_glyph_node.y)
                 };
                 let distance = that.get_distance(source, target);
-                if(distance < (uncertainty_glyph_radius*2) * that.zoom_scale ){
+                if(distance < (uncertainty_glyph_radius) * that.zoom_scale ){
                     overlap = true;
                     break;
                 }
@@ -1808,7 +1808,7 @@ let GraphLayout = function (container) {
             if(delete_nodes[id] === true){
                 return 0;
             }
-            if(highlights.length === 0 && glyphs.length > 10){
+            if(highlights.length === 0 && glyphs.length > 100){
                 if(visible_items[id] === false){
                     return 0;
                 }
@@ -2794,8 +2794,21 @@ let GraphLayout = function (container) {
         // that.data_manager.update_graph_view()
         if (flag){
             if(DataLoader.dataset.toLowerCase().startsWith("stl")) {
-                let no_outliers = [9301, 3594, 11839, 3841, 10349, 1474, 12355, 11182];//, 283, 9189, 7364, 9212];
-                let is_outliers = [12479, 5844, 1297, 10344, 10993];
+                let no_outliers = [9301, 3594, 11839, 3841, 10349, 1474, 12355, 11182, 20, 2070];//, 283, 9189, 7364, 9212];
+                let is_outliers = [12479, 5844, 1297, 10344, 10993, 11881, 8149, 9301, 8824, 10349, 1474, 4697, 6780, 8149, 9800, 11881, 5427, 6646, 12461,
+                    12355, 3679, 4748, 8561, 10187, 12388, 876, 1304, 2360, 6344, 6554, 7808, 8612, 9870, 10117, 10775, 11744, 548, 2183, 3298, 4560, 4651, 4880, 5528, 6472, 12712];
+                for(let id of no_outliers) {
+                    if(outliers[id] === true) {
+                        outliers[id] = undefined;
+                    }
+                }
+                for(let id of is_outliers) {
+                    outliers[id] = true;
+                }
+            }
+            else if(DataLoader.dataset.toLowerCase().startsWith("oct")) {
+                let no_outliers = [];//, 283, 9189, 7364, 9212];
+                let is_outliers = [3475, 4130, 6643, 7524, 7530, 9066, 9761];
                 for(let id of no_outliers) {
                     if(outliers[id] === true) {
                         outliers[id] = undefined;

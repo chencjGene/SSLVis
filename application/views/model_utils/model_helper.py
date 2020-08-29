@@ -546,14 +546,19 @@ def weight_selection(graph_matrix, origin_graph, label_distributions_, alpha, y_
 
 def uncertainty_selection(ent, label, modified_matrix,
                           label_distributions_, alpha, y_static, train_y,
-                          build_laplacian_graph, origin_graph, neighbors):
+                          build_laplacian_graph, origin_graph, neighbors, model):
     graph_matrix = build_laplacian_graph(modified_matrix)
     P = safe_sparse_dot(graph_matrix, label_distributions_)
     P = np.multiply(alpha, P) + y_static
     pre_ent = entropy(P.T + 1e-20)
 
     ind = ent > np.log(label.shape[1]) * 0.1
+    if model.dataname.lower() == "oct":
+        ind = ent > np.log(label.shape[1]) * 0.5
+    # if model.dataname.lower() == "stl" and model.step == 2:
+    #     ind = ent > np.log(label.shape[1]) * 1
     ind[ent > (np.log(label.shape[1]) - 0.001)] = False
+
     modified_matrix[:, ind] = modified_matrix[:, ind] * 0
 
     graph_matrix = build_laplacian_graph(modified_matrix)
@@ -581,7 +586,7 @@ def uncertainty_selection(ent, label, modified_matrix,
             .format(ind.sum(), pre_ent.sum(), next_ent.sum(), pre_ent.sum() - next_ent.sum()))
     return modified_matrix
 
-def new_propagation(affinity_matrix, train_y, alpha, neighbors, max_iter=15):
+def new_propagation(affinity_matrix, train_y, alpha, neighbors, model, max_iter=15):
     y = np.array(train_y)
     # label construction
     # construct a categorical distribution for classification only
@@ -645,7 +650,7 @@ def new_propagation(affinity_matrix, train_y, alpha, neighbors, max_iter=15):
 
         modified_matrix = uncertainty_selection(ent, label, modified_matrix,
                                                 label_distributions_, alpha, y_static, train_y,
-                                                build_laplacian_graph, affinity_matrix, neighbors)
+                                                build_laplacian_graph, affinity_matrix, neighbors, model)
         # modified_matrix = weight_selection(graph_matrix.tocsr(), affinity_matrix, label_distributions_, alpha, y_static, ent, label)
 
         graph_matrix = build_laplacian_graph(modified_matrix)

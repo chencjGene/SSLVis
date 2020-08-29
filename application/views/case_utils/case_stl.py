@@ -53,6 +53,7 @@ class CaseSTL(CaseBase):
             # pickle_save_data(os.path.join(self.model.selected_dir, "case-step" + str(self.model.step) + ".pkl"), save)
     
             self.model.data.label_instance([717, 10987, 9946], [5, 5, 5])
+            self.model.data.label_instance([1455], [5])
 
             # self._init_model(k=k, evaluate=True, simplifying=simplifying)
             self.model.influence_matrix = None
@@ -86,6 +87,8 @@ class CaseSTL(CaseBase):
             # self.model.local_search_k(c, range(7, 40), categories, simplifying=False, evaluate=True)
             self.model.influence_matrix = None
             self.model.local_search_k(c, range(27, 29), categories, simplifying=False, evaluate=True, record=False)
+
+            # self.model.data.remove_edge([[1455, 11427], [1455, 5058]])
 
             self.model._training(rebuild=False, evaluate=False, simplifying=False, record=False)
             self.model._influence_matrix(rebuild=False)

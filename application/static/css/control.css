@@ -266,7 +266,7 @@ label.field.focused .psuedo_select ul {
 
 .encoding-container,
 .mslider-container {
-  margin: 10px;
+  /*margin: 10px;*/
   display: flex;
   height: 60px;
   align-items: center;
@@ -299,7 +299,7 @@ label.field.focused .psuedo_select ul {
 .widget-info-widget {
   display: flex;
   flex-direction: row;
-  height: 95px;
+  height: 60px;
   justify-content: space-between;
 }
 

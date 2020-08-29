@@ -54,8 +54,9 @@ let GraphVoronoi = function(parent){
             // else{
             //     if (x < 0.05) x /= 4;
             // }
-            if (x > 0.145 && x < 0.5) { x = x * 2;}
-            else if (x > 0.145) {x = x + 0.1;}
+            // if (x > 0.117 && x < 0.118) { x = x * 2;}
+            if (x > 0.134 && x < 0.5) { x = x * 2;}
+            else if (x > 0.134) {x = x + 0.1;}
             return Math.pow(x, 0.4);
         }
         else{
@@ -230,6 +231,7 @@ let GraphVoronoi = function(parent){
             }
             return false
         });
+        return wrong_nodes.length;
         let dis = wrong_nodes.reduce(function (acc, cur) {
             let min_dis = 100000;
             for(let i=0; i<lines.length; i++) {
@@ -274,7 +276,10 @@ let GraphVoronoi = function(parent){
             }
         }
         let all_new_lines = [];
-        let alpha = 2;
+        let alpha = 0.2;
+        if(DataName == "oct") {
+            alpha = 0.005;
+        }
         let all_separation = 0;
         let all_separation_cnt = 0;
         for(let segment of segments) {
@@ -415,23 +420,11 @@ let GraphVoronoi = function(parent){
                     }
                 }
             }
-            if(false) {
-                if((debug_key == "4,5") || (debug_key == "5,4")) {
-                    min_score = scores[lines.length][1];
-                    let anchor = [4, -15.5];
-                    anchor.nodes = [];
-                    min_score.lines.splice(1, 0, anchor)
-                }
-                else if((debug_key == "2,5")) {
-                    min_score = scores[lines.length][1];
-                    let anchor = [7, -5.5];
-                    anchor.nodes = [];
-                    min_score.lines.splice(1, 0, anchor)
-                }
-            }
 
             if (min_score.lines.length > 2) {
                 console.log(min_score.lines);
+                if(DataName === "stl")
+                    min_score.lines[1][1] += 1;
             }
             all_new_lines.push(min_score.lines)
         }
@@ -442,8 +435,8 @@ let GraphVoronoi = function(parent){
     };
 
     that.show_voronoi = function(nodes, outliers){
-        // let voronoi_nodes = nodes.filter(d => outliers[d.id] === undefined);
-        let voronoi_nodes = nodes.filter(d => true);
+        let voronoi_nodes = nodes.filter(d => outliers[d.id] === undefined);
+        // let voronoi_nodes = nodes.filter(d => true);
         that.voronoi_data = view.cal_voronoi(voronoi_nodes);
         that.simple_bar = new Array(that.voronoi_data.length).fill(1).map(d => true);
         that.optimize_paths(that.voronoi_data.segments, that.voronoi_data);
@@ -522,7 +515,7 @@ let GraphVoronoi = function(parent){
                     for(let dy = -(deep-Math.abs(dx)); dy <= deep-Math.abs(dx); dy++){
                         cell_x = cell.site[0] + dx * step;
                         cell_y = cell.site[1] + dy * step;
-                        if(view.center_scale_y(cell_y+cell.chart_height/view.scale) > 650) continue;
+                        if(view.center_scale_y(cell_y+cell.chart_height/view.scale) > 600) continue;
                         let contain_nodes_cnt = 0;
                         let k = 0;
                         let if_in_poly = view.if_in_cell({x:cell_x, y:cell_y}, cell_paths, true)

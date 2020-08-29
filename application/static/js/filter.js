@@ -57,20 +57,20 @@ let FilterLayout = function (container) {
     let edge_type_icons = {
         "in":null,
         "out":null,
-        "within":null,
-        "between":null
+        // "within":null,
+        // "between":null
     };
     let edge_type_rects = {
         "in":null,
         "out":null,
-        "within":null,
-        "between":null
+        // "within":null,
+        // "between":null
     };
     let edge_type_checkboxes = {
         "in": null,
         "out": null,
-        "within": null,
-        "between": null
+        // "within": null,
+        // "between": null
     };
 
     //label
@@ -91,13 +91,13 @@ let FilterLayout = function (container) {
 
         edge_type_icons["in"] = container.select("#in_icon");
         edge_type_icons["out"] = container.select("#out_icon");
-        edge_type_icons["within"] = container.select("#within_icon");
-        edge_type_icons["between"] = container.select("#between_icon");
+        // edge_type_icons["within"] = container.select("#within_icon");
+        // edge_type_icons["between"] = container.select("#between_icon");
 
         edge_type_checkboxes["in"] = container.select("#in-checkbox");
         edge_type_checkboxes["out"] = container.select("#out-checkbox");
-        edge_type_checkboxes["within"] = container.select("#within-checkbox");
-        edge_type_checkboxes["between"] = container.select("#between-checkbox");
+        // edge_type_checkboxes["within"] = container.select("#within-checkbox");
+        // edge_type_checkboxes["between"] = container.select("#between-checkbox");
 
 
     };
@@ -1702,7 +1702,7 @@ let FilterLayout = function (container) {
 
     that.draw_edge_type_widget = function(distribution, container, type, range){
         // distribution
-        let types = ["in", "out", "within", "between"];
+        let types = ["in", "out"];
         let data = [];
         for(let edge_type of types){
             data.push({
@@ -1720,8 +1720,8 @@ let FilterLayout = function (container) {
         }
         // draw
         let container_width = widget_width;
-        let container_height = widget_height;
-        let x = d3.scaleBand().rangeRound([container_width*0.1, container_width*0.9], .05).paddingInner(0.7).paddingOuter(0.4).domain(d3.range(bar_cnt));
+        let container_height = d3.select("#current-edgetype-widget").node().getBoundingClientRect().height;
+        let x = d3.scaleBand().rangeRound([container_width*0.1, container_width*0.9], .05).paddingInner(0.7).paddingOuter(0.7).domain(d3.range(bar_cnt));
         let y = d3.scaleLinear().range([container_height*  0.7, container_height*0.05]).domain([0, 1]);
 
         //draw bar chart
@@ -1740,7 +1740,7 @@ let FilterLayout = function (container) {
             .attr("width", x.bandwidth())
             .attr("y", function(d, i) { return y(d.cnt/max_len)-3; })
             .attr("height", function(d) {
-                return container_height*  0.7 - y(d.cnt/max_len);
+                return container_height*  0.62 - y(d.cnt/max_len);
             })
             .attr("opacity", (d, i) => d.show?1:0.2)
             .on("mouseover", function (d, i) {
@@ -1783,7 +1783,7 @@ let FilterLayout = function (container) {
             .attr("width", x.bandwidth())
             .attr("y", function(d, i) { return y(d.cnt/max_len)-3; })
             .attr("height", function(d) {
-                return container_height*  0.7 - y(d.cnt/max_len);
+                return container_height*  0.62 - y(d.cnt/max_len);
             })
             .attr("opacity", (d, i) => d.show?1:0.2);
         rects.each(function (d) {
@@ -1809,9 +1809,9 @@ let FilterLayout = function (container) {
                 .attr("id","current-"+type+"-axis")
                 .append("line")
                 .attr("x1", container_width*0.1)
-                .attr("y1", container_height*  0.7)
+                .attr("y1", container_height*  0.62)
                 .attr("x2", container_width*0.9)
-                .attr("y2", container_height*  0.7)
+                .attr("y2", container_height*  0.62)
                 .attr("stroke", "black")
                 .attr("stroke-width", 1);
         }
