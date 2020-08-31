@@ -265,15 +265,15 @@ let GraphLayout = function (container) {
         let select_nodes = state.highlights.map(function (id) {
             return {
                 id:id,
-                x:state.nodes[id].x,
-                y:state.nodes[id].y
+                x:DataLoader.state.complete_graph[id].x,
+                y:DataLoader.state.complete_graph[id].y
             }
         });
         let edges = [];
         let threshold = 0.2;
         for(let _node of select_nodes) {
             let node_id = _node.id;
-            let node = state.nodes[node_id];
+            let node = DataLoader.state.complete_graph[node_id];
             for(let i=0; i<node.from.length; i++) {
                 let from_id = node.from[i];
                 let from_weight = node.from_weight[i];
@@ -1428,7 +1428,7 @@ let GraphLayout = function (container) {
                 // .attr("stroke-width", old_path_way?path_width*that.zoom_scale:"none")
                 .on("mouseover", function (d) {
                             console.log(d);
-                            that.highlight_paths(d.com_edges);
+                            that.highlight_paths(d[0].id+","+d[1].id);
                             let imgs = label_layout([d[0], d[1]], [d], that.zoom_scale);
                             console.log("imgs ", imgs);
                             tmp_show_imgs.selectAll("*").remove();
@@ -2226,19 +2226,19 @@ let GraphLayout = function (container) {
                 return that.opacity_path(d)
             }
             else if(opacity == 0) return 0;
-            else return 0;
+            else return 0.3;
         });
         nodes_in_group.attr("opacity", function (d) {
             if(highlight_nodes[d.id] === true){
                 return that.opacity(d.id);
             }
-            else return 0;
+            else return 0.3;
         });
         golds_in_group.attr("opacity", function (d) {
             if(highlight_nodes[d.id] === true){
                 return that.opacity(d.id);
             }
-            else return 0;
+            else return 0.3;
         });
     };
 
@@ -2794,17 +2794,18 @@ let GraphLayout = function (container) {
         // that.data_manager.update_graph_view()
         if (flag){
             if(DataLoader.dataset.toLowerCase().startsWith("stl")) {
-                let no_outliers = [9301, 3594, 11839, 3841, 10349, 1474, 12355, 11182, 20, 2070];//, 283, 9189, 7364, 9212];
-                let is_outliers = [12479, 5844, 1297, 10344, 10993, 11881, 8149, 9301, 8824, 10349, 1474, 4697, 6780, 8149, 9800, 11881, 5427, 6646, 12461,
-                    12355, 3679, 4748, 8561, 10187, 12388, 876, 1304, 2360, 6344, 6554, 7808, 8612, 9870, 10117, 10775, 11744, 548, 2183, 3298, 4560, 4651, 4880, 5528, 6472, 12712];
+                let no_outliers = [11182, 20, 2070, 9800, 11881];//, 283, 9189, 7364, 9212];
+                let is_outliers = [9800, 11881, 2455, 3509, 7403, 7412, 7826, 8969, 12170, 12479, 2421, 2429, 3561, 5331, 8083, 8123, 12528, 407, 2220, 2325, 6356, 6434, 7223, 9666, 10025, 11552, 11629,
+                1474, 3594, 3841, 9301, 10349, 11839, 12355];
+                for(let id of is_outliers) {
+                    outliers[id] = true;
+                }
                 for(let id of no_outliers) {
                     if(outliers[id] === true) {
                         outliers[id] = undefined;
                     }
                 }
-                for(let id of is_outliers) {
-                    outliers[id] = true;
-                }
+
             }
             else if(DataLoader.dataset.toLowerCase().startsWith("oct")) {
                 let no_outliers = [];//, 283, 9189, 7364, 9212];

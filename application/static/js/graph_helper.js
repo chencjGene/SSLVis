@@ -152,7 +152,7 @@ GraphLayout.prototype.cal_voronoi = function(node_dict) {
     for(let nodes of label_nodes) {
         if(nodes.length < 3) continue;
         // let convex_generator = new ConvexHullGrahamScan();
-        let convex_hull = hull(nodes.map(d => [d.x, d.y]), 5);
+        let convex_hull = hull(nodes.map(d => [d.x, d.y]), 10);
         for(let hull_node of convex_hull) {
             // find nearest
             let min_dis = 100000;
@@ -826,6 +826,7 @@ GraphLayout.prototype.edge_statistic = function(diagram){
         edges_summary.push(summary);
         diagram[group_id].summary = new_summary;
         diagram[group_id].total_summary = summary;
+        simple_summary[0].in = 10 - simple_summary[1].in;
         diagram[group_id].simple_summary = simple_summary;
     }
 

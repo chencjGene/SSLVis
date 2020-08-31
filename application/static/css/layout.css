@@ -60,7 +60,8 @@ body {
 
 #control-graph-column{
     flex-grow: 100;
-    width: 62%;
+    width: 48%;
+    /*flex-grow: 0;*/
 }
 
 #history-row .simplebar-horizontal {

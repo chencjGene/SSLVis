@@ -46,17 +46,39 @@ let GraphVoronoi = function(parent){
     //     return Math.pow(x, 0.4);
     // }
 
+    // scale_function = function(x, simple_bar){
+    //     if (DataName === "stl"){
+    //         if (simple_bar){
+    //             if (x < 0.127) x /= 2.5;
+    //             if (x > 0.8) {
+    //                 if(x > 0.859 && (x < 0.8749 || x > 0.875)) x *= 1.7;
+    //             }
+    //         }
+    //         else{
+    //             if (x < 0.05) x /= 4;
+    //         }
+    //         if (x > 0.2 && x < 0.5) { x = x * 2;}
+    //         else if (x > 0.18) {x = x + 0.1;}
+    //         return Math.pow(x, 0.4);
+    //     }
+    //     else{
+    //         if (x > 1) x = x * 1.8;
+    //         if (x > 0.01 && x < 0.5) x = x * 4;
+    //         // if (x > 1) x = 1;
+    //         return Math.pow(x, 0.4);
+    //     }
+    // };
+
     scale_function = function(x, simple_bar){
-        if (DataName === "stl"){                
+        if (DataName === "stl"){
             // if (simple_bar){
             //     if (x < 0.145) x /= 2.5;
             // }
             // else{
             //     if (x < 0.05) x /= 4;
             // }
-            // if (x > 0.117 && x < 0.118) { x = x * 2;}
-            if (x > 0.134 && x < 0.5) { x = x * 2;}
-            else if (x > 0.134) {x = x + 0.1;}
+            if (x > 0.145 && x < 0.5) { x = x * 2;}
+            else if (x > 0.145) {x = x + 0.1;}
             return Math.pow(x, 0.4);
         }
         else{
@@ -66,6 +88,7 @@ let GraphVoronoi = function(parent){
             return Math.pow(x, 0.4);
         }
     };
+
 
 
     that._init = function(){
@@ -276,10 +299,11 @@ let GraphVoronoi = function(parent){
             }
         }
         let all_new_lines = [];
-        let alpha = 0.2;
+        let alpha = 0.02;
         if(DataName == "oct") {
-            alpha = 0.005;
+            alpha = 0.0000000001;
         }
+
         let all_separation = 0;
         let all_separation_cnt = 0;
         for(let segment of segments) {
@@ -420,6 +444,28 @@ let GraphVoronoi = function(parent){
                     }
                 }
             }
+            if(DataName == "stl") {
+                if((debug_key == "3,5") || (debug_key == "5,3")) {
+                    min_score = scores[lines.length][1];
+                    // let anchor = [4, -15.5];
+                    // anchor.nodes = [];
+                    // min_score.lines.splice(1, 0, anchor)
+                }
+                else if((debug_key == "4,5") || (debug_key == "5,4") || (debug_key == "7,5") || (debug_key == "5,7")) {
+                    min_score = scores[lines.length][1];
+                    // let anchor = [7, -5.5];
+                    // anchor.nodes = [];
+                    // min_score.lines.splice(1, 0, anchor)
+                }
+            }
+            if(DataName == "oct") {
+                if((debug_key == "3,1") || (debug_key == "1,3")) {
+                    min_score = scores[lines.length][2];
+                }
+                else if((debug_key != "0,2") && (debug_key != "2,0")) {
+                    min_score = scores[lines.length][1];
+                }
+            }
 
             if (min_score.lines.length > 2) {
                 console.log(min_score.lines);
@@ -515,7 +561,7 @@ let GraphVoronoi = function(parent){
                     for(let dy = -(deep-Math.abs(dx)); dy <= deep-Math.abs(dx); dy++){
                         cell_x = cell.site[0] + dx * step;
                         cell_y = cell.site[1] + dy * step;
-                        if(view.center_scale_y(cell_y+cell.chart_height/view.scale) > 600) continue;
+                        if((view.center_scale_y(cell_y+cell.chart_height/view.scale) > 600) || (view.center_scale_y(cell_y) < 0)) continue;
                         let contain_nodes_cnt = 0;
                         let k = 0;
                         let if_in_poly = view.if_in_cell({x:cell_x, y:cell_y}, cell_paths, true)

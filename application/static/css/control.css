@@ -299,7 +299,7 @@ label.field.focused .psuedo_select ul {
 .widget-info-widget {
   display: flex;
   flex-direction: row;
-  height: 60px;
+  height: 100px;
   justify-content: space-between;
 }
 

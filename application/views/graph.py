@@ -118,6 +118,12 @@ def app_update_delete_and_change_label():
     dataset = request.args['dataset']
     data = json.loads(request.data)
     print(data)
+    data["area"] = {
+        "x":-29.578276657033285,
+        "y":-31.763236610899718,
+        "width":60.90310706359734,
+        "height":60.42934552020235
+        }
     graph = {"exp": 1}
     graph = update_delete_and_change_label(data)
     end = time.time()

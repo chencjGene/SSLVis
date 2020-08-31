@@ -174,7 +174,7 @@ class SSLModel(object):
             self._propagation(laplacian, affinity_matrix, train_y,
                               alpha=self.alpha, process_record=True,
                               normalized=True, k=self.n_neighbor)
-        pred_dist, ent, process_data, unnorm_dist = new_propagation(affinity_matrix, train_y, self.alpha, self.data.get_neighbors(), self)
+        # pred_dist, ent, process_data, unnorm_dist = new_propagation(affinity_matrix, train_y, self.alpha, self.data.get_neighbors(), self)
         # labels = [int(np.argmax(process_data[j][id])) if np.max(process_data[j][id]) > 1e-4 else -1 for j in
         #           range(iter_num)]
         iter = len(ent)
@@ -917,13 +917,21 @@ class SSLModel(object):
                     iter = i
                     label_sums = label_sums[:iter]
                     break
-
+        # if self.dataname.lower() == "stl" and self.step == 1:
+        #     iter = 8
+        #     label_sums = label_sums[:iter]
+        #     label_sums[iter-1] = label_sums[iter-2]
         selected_flows = np.zeros((iter-1, len(self.class_list), len(self.class_list)))
         for i in range(iter-1):
             selected_flows[i] = flow_statistic(self.labels[i][idxs], \
                 self.labels[i+1][idxs], self.class_list)
         # print("get_flows time 1: ", time() - t0)
-
+        # if self.dataname.lower() == "stl" and self.step == 1:
+        #     class_len = len(selected_flows[iter-2])
+        #     for i in range(class_len):
+        #         for j in range(class_len):
+        #             if i != j:
+        #                 selected_flows[iter-2][i][j] = 0
         # print("get_flows time 2: ", time() - t0)
         return label_sums, selected_flows
 
@@ -962,6 +970,14 @@ class SSLModel(object):
             selected_flows[i] = flow_statistic(self.labels[i][idxs], \
                 self.labels[i+1][idxs], self.class_list)
         idxs = np.array([m_reverse[idx] for idx in idxs])
+        if self.dataname.lower() == "stl" and self.step == 1:
+            iter = len(selected_flows)
+            for i in range(iter-4, iter):
+                class_cnt = len(selected_flows[i])
+                for j in range(class_cnt):
+                    for k in range(class_cnt):
+                        if j != k:
+                            selected_flows[i][j][k] = 0
         return selected_flows, idxs
 
     def editing_data(self, data):
