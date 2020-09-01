@@ -102,16 +102,17 @@ let GraphLayout = function (container) {
     let add_labeled_nodes = [];
     let add_labeled_label = [];
     let delete_edges = [];
-    let scale_function = function(x, simple_bar = true){
+    let scale_function = function(x, simple_bar = true, rescale = false){
         if (simple_bar){
-            if (x < 0.12) x /= 2.5;
+            if (rescale) x /= 4;
         }
         else{
             if (x < 0.05) x /= 4;
         }
         if (x > 0.2 && x < 0.5) { x = x * 2;}
         else if (x > 0.18) {x = x + 0.1;}
-        return Math.pow(x, 0.4);
+        // if(rescale) return Math.pow(x, 0.4)*2/3;
+        return Math.pow(x, 0.4)*2/3;
     };
 
     that.selection_box_id_count = 0;
@@ -1163,9 +1164,9 @@ let GraphLayout = function (container) {
                         .style("stroke-width", that.zoom_scale);
                     group.select("#edge-bar-heterogeneous")
                             .attr("x", outer_bounder+bar_width+small_inner_bounder)
-                            .attr("y", chart_height*0.8-chart_height*0.7*scale_function(d.heterogeneous/max_num))
+                            .attr("y", chart_height*0.8-chart_height*0.7*scale_function(d.heterogeneous/max_num, true, true))
                             .attr("width", bar_width)
-                            .attr("height", chart_height*0.7*scale_function(d.heterogeneous/max_num))
+                            .attr("height", chart_height*0.7*scale_function(d.heterogeneous/max_num, true, true))
                             .attr("fill", color_unlabel);
                     group.select("#edge-bar-homogeneous")
                         .attr("x", outer_bounder)
@@ -1602,8 +1603,8 @@ let GraphLayout = function (container) {
                 .each(function (d) {
                     let group = d3.select(this);
                     let class_cnt = 1;
-                    let bar_width = 8*that.zoom_scale;
-                    let small_inner_bounder = 1.5*that.zoom_scale;
+                    let bar_width = 5*that.zoom_scale;
+                    let small_inner_bounder = 2*that.zoom_scale;
                     let large_inner_bounder = 3*that.zoom_scale;
                     let outer_bounder = 3*that.zoom_scale;
                     let chart_width = bar_width*(2*class_cnt)+large_inner_bounder*(class_cnt-1)+small_inner_bounder*class_cnt+outer_bounder*2;
@@ -1630,9 +1631,9 @@ let GraphLayout = function (container) {
                             .attr("class", "edge-summary-rect")
                             .attr("id", "edge-bar-heterogeneous")
                             .attr("x", outer_bounder+bar_width+small_inner_bounder)
-                            .attr("y", chart_height*0.8-chart_height*0.7*scale_function(d.heterogeneous/max_num))
+                            .attr("y", chart_height*0.8-chart_height*0.7*scale_function(d.heterogeneous/max_num, true, true))
                             .attr("width", bar_width)
-                            .attr("height", chart_height*0.7*scale_function(d.heterogeneous/max_num))
+                            .attr("height", chart_height*0.7*scale_function(d.heterogeneous/max_num, true, true))
                             .attr("fill", color_unlabel);
                         group.append("rect")
                             .attr("class", "edge-summary-rect")

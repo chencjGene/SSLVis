@@ -28,6 +28,7 @@ let GraphTransform = function (parent) {
     };
 
     that.apply_transform = function(transform){
+
         view.main_group.attr("transform", transform);
         that.set_zoom_slider_value(transform.k);
     };

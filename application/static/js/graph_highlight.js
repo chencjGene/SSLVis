@@ -320,7 +320,7 @@ let GraphHighlight = function (parent) {
                 if(max_d-min_d < 1e-4) break;
             }
             let min_res = get_area(mid_d, h, k, tao, convexhull, true);
-            let s = min_res.s * 1.1;
+            let s = min_res.s * 1;
             let rx = s/2;
             let ry = Math.sqrt(s*s-mid_d*mid_d)/2;
             console.log(min_res);

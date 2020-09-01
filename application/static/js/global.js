@@ -29,7 +29,7 @@ let EditView = null;
 let SettingView = null;
 
 let DataName = null;
-
+debug = false;
 /*
 *  Color
 * */

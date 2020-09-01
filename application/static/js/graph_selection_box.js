@@ -129,6 +129,7 @@ GraphLayout.prototype._create_selection_box = function(){
                 that._update_selection_box();
             })
             .on("end", async function(){
+
                 await that.show_edges();
             });
     let transform = that.get_transform();
@@ -470,6 +471,8 @@ GraphLayout.prototype._update_selection_box = function(){
 
 GraphLayout.prototype._remove_selection_box = function(){
     let that = this;
+    that.selection_group.on('mousedown.drag', null);
+                that.lasso_or_zoom("zoom");
     that.selection_group.selectAll(".selection-box")
         .data(that.selection_box, d => d.id)
         .exit()

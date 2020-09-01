@@ -69,20 +69,23 @@ let GraphVoronoi = function(parent){
     //     }
     // };
 
-    scale_function = function(x, simple_bar){
+     scale_function = function(x, simple_bar){
         if (DataName === "stl"){
-            // if (simple_bar){
-            //     if (x < 0.145) x /= 2.5;
-            // }
-            // else{
-            //     if (x < 0.05) x /= 4;
-            // }
-            if (x > 0.145 && x < 0.5) { x = x * 2;}
-            else if (x > 0.145) {x = x + 0.1;}
+            if (simple_bar){
+                if (x < 0.127 && (Math.abs(x - 0.125)>0.001)) x /= 2.5;
+                if (x > 0.8) {
+                    if(x > 0.859 && (x < 0.8749 || x > 0.875)) x *= 1.7;
+                }
+            }
+            else{
+                if (x < 0.05) x /= 4;
+            }
+            if (x > 0.2 && x < 0.5) { x = x * 2;}
+            else if (x > 0.18) {x = x + 0.1;}
             return Math.pow(x, 0.4);
         }
         else{
-            if (x > 1) x = x * 1.8;
+            if (x > 0.99) x = x * 1.8;
             if (x > 0.01 && x < 0.5) x = x * 4;
             // if (x > 1) x = 1;
             return Math.pow(x, 0.4);
@@ -459,7 +462,7 @@ let GraphVoronoi = function(parent){
                 }
             }
             if(DataName == "oct") {
-                if((debug_key == "3,1") || (debug_key == "1,3")) {
+                if((debug_key == "0,2") || (debug_key == "2,0")) {
                     min_score = scores[lines.length][2];
                 }
                 else if((debug_key != "0,2") && (debug_key != "2,0")) {

@@ -913,10 +913,10 @@ class SSLModel(object):
                         break
                 if same_as_last:
                     same_cnt += 1
-                if same_cnt == 3:
-                    iter = i
-                    label_sums = label_sums[:iter]
-                    break
+                # if same_cnt == 3:
+                #     iter = i
+                #     label_sums = label_sums[:iter]
+                #     break
         # if self.dataname.lower() == "stl" and self.step == 1:
         #     iter = 8
         #     label_sums = label_sums[:iter]
@@ -970,14 +970,6 @@ class SSLModel(object):
             selected_flows[i] = flow_statistic(self.labels[i][idxs], \
                 self.labels[i+1][idxs], self.class_list)
         idxs = np.array([m_reverse[idx] for idx in idxs])
-        if self.dataname.lower() == "stl" and self.step == 1:
-            iter = len(selected_flows)
-            for i in range(iter-4, iter):
-                class_cnt = len(selected_flows[i])
-                for j in range(class_cnt):
-                    for k in range(class_cnt):
-                        if j != k:
-                            selected_flows[i][j][k] = 0
         return selected_flows, idxs
 
     def editing_data(self, data):
