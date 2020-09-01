@@ -4,7 +4,7 @@ DataLinker
 Introduction
 --
 DataLinker is a visual analysis tool for graph-based semi-supervised learning (GSSL).
-It supports users to explore the graph structure and understand label propagation in GSSL,
+It supports users to explore the graph structure for better understanding of label propagation in GSSL,
 identify which part of the graph may cause performance deterioration,
 and modify the graph structure for better model performance.
 An online demo is available at: http://datalinker.thuvis.org/Demo.
