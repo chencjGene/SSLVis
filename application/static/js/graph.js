@@ -34,7 +34,7 @@ let GraphLayout = function (container) {
     let color_unlabel = UnlabeledColor;
     let color_label = CategoryColor;
     let edge_color = UnlabeledColor;
-    let AnimationDuration = 300;
+    let AnimationDuration = 1500;
     let create_ani = AnimationDuration;
     let update_ani = AnimationDuration;
     let remove_ani = AnimationDuration * 0.1;
@@ -548,6 +548,7 @@ let GraphLayout = function (container) {
     that.setIter = async function (newiter) {
         iter = newiter;
         await that._update_view(false);
+        // that.highlight_changes();
     };
 
     that.zoom_into_area = function (new_area) {
@@ -1007,14 +1008,21 @@ let GraphLayout = function (container) {
         return new Promise(function (resolve, reject) {
             nodes_in_group
                 .transition()
-                .duration(AnimationDuration)
+                .duration(AnimationDuration * 1)
                 .attr("fill", function (d) {
-                    return d.label[iter]===-1?color_unlabel:color_label[d.label[iter]];
+                    // return d.label[iter]===-1?color_unlabel:color_label[d.label[iter]];
+                    return d3.interpolate(d3.select(this).attr("fill"),
+                        d.label[iter]===-1?color_unlabel:color_label[d.label[iter]])(0.5)
                 })
                 .attr("opacity", d => that.opacity(d.id))
                 .attr("r", d => that.r(d.id))
                 .attr("cx", d => that.if_focus_selection_box?d.focus_x:that.center_scale_x(d.x))
                 .attr("cy", d => that.if_focus_selection_box?d.focus_y:that.center_scale_y(d.y))
+                .transition()
+                .duration(AnimationDuration * 0.5)
+                .attr("fill", function (d) {
+                    return d.label[iter]===-1?color_unlabel:color_label[d.label[iter]];
+                })
                 .on("end", resolve);
 
             highlight_nodes_in_group
@@ -2914,6 +2922,7 @@ let GraphLayout = function (container) {
     that.highlight_changes = function(){
         let changed_nodes = nodes.filter(d => d.pre_label !== d.label.slice(-1)[0]);
         console.log(changed_nodes);
+        if (changed_nodes.length < 1) return;
         that.main_group.selectAll("circle.node-dot")
             .attr("opacity", 0.7);
         for(let i = 0; i < changed_nodes.length; i++){
