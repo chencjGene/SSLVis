@@ -548,6 +548,7 @@ let GraphLayout = function (container) {
     that.setIter = async function (newiter) {
         iter = newiter;
         await that._update_view(false);
+        that.highlight_changes();
     };
 
     that.zoom_into_area = function (new_area) {
