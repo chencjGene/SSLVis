@@ -145,6 +145,7 @@ GraphLayout.prototype._create_selection_box = function(){
         .data(that.selection_box, d => d.id)
         .enter()
         .append("g")
+        .attr("opacity", 0)
         .attr("class", "selection-box")
         .attr("transform", d => "rotate("+(d.tao/Math.PI*180)+","+d.x+","+d.y+") translate("+(d.x)+","+ (d.y) +")")
         .call(drag)        
@@ -162,6 +163,9 @@ GraphLayout.prototype._create_selection_box = function(){
             hovering = false;
             show_resize_rect(d3.select(this));
         });
+    sg.transition()
+        .duration(AnimationDuration*3)
+        .attr("opacity", 1);
     sg.append("ellipse")
         .attr("class", "box")
         .attr("rx", d => d.rx)
