@@ -2915,6 +2915,7 @@ let GraphLayout = function (container) {
     that.highlight_changes = function(){
         let changed_nodes = nodes.filter(d => d.pre_label !== d.label.slice(-1)[0]);
         console.log(changed_nodes);
+        if (changed_nodes.length < 1) return;
         that.main_group.selectAll("circle.node-dot")
             .attr("opacity", 0.7);
         for(let i = 0; i < changed_nodes.length; i++){
