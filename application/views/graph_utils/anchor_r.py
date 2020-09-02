@@ -539,6 +539,10 @@ class Anchors:
         ground_truth = self.model.data.get_full_train_ground_truth()
         samples_truth = ground_truth[selection]
         consistency = self.model.get_train_neighbors_consistency(n_neighbor=6).tolist()
+        try:
+            pre_labels = self.model.pre_labels
+        except:
+            pre_labels = self.model.pred_dist.argmax(axis=1)
         if self.data_degree is None:
             self.data_degree = self.model.get_in_out_degree(self.data.get_graph())
         degree = self.data_degree
@@ -598,7 +602,8 @@ class Anchors:
                 float(self.entropy[m[id]]),
                 int(consistency[m[id]]),
                 [],
-                []
+                [],
+                int(pre_labels[id]),
             ]
             for from_edge in simple_nodes[id][6]:
                 simple_nodes[id][12].append(float(np.round(math.pow(influence_matrix[m[id], m[from_edge]], 1/7), 2)))

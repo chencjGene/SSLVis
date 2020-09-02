@@ -1,6 +1,7 @@
 import numpy as np
 import os
 from ..utils.helper_utils import json_load_data, pickle_load_data
+from ..utils.helper_utils import pickle_save_data, json_save_data
 from ..utils.config_utils import config
 
 class CaseBase():
@@ -30,7 +31,19 @@ class CaseBase():
         save = pickle_load_data(name)
         model = save[0]
         model.data = save[1]
+
+        # change abs path in buffer
         selected_setting = os.path.split(model.selected_dir)[1]
         model.data.selected_dir = os.path.join(config.data_root, model.data.dataname, selected_setting)
         model.selected_dir = model.data.selected_dir
+
+        # save label buffer
+        labels = model.get_labels_dict()
+        pickle_save_data(os.path.join(model.selected_dir, "label-step" + str(self.step) + ".json"), labels)
+
+        if self.step > 0:
+            pre_label = pickle_load_data(os.path.join(model.selected_dir,
+                                              "label-step" + str(self.step-1) + ".json"))
+            model.pre_labels = pre_label
+
         return model
