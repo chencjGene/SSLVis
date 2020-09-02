@@ -2905,6 +2905,36 @@ let GraphLayout = function (container) {
 
 
 
+    // highlight change
+    that.highlight_changes = function(){
+        let changed_nodes = nodes.filter(d => d.pre_label !== d.label.slice(-1)[0]);
+        console.log(changed_nodes);
+        that.main_group.selectAll("circle.node-dot")
+            .attr("opacity", 0.7);
+        for(let i = 0; i < changed_nodes.length; i++){
+            let id = changed_nodes[i].id;
+            let r = that.r(id) * 1.5;
+            d3.select("#id-"+ id)
+                .attr("r", r)
+                .attr("opacity", 1);
+        }
+        // changed_nodes.forEach(d => d.pre_label = d.label.slice(-1)[0]);
+        // that.data_manager.state.complete_graph.forEach(d => d.pre_label = d.label.slice(-1)[0]);
+        for(let i in that.data_manager.state.complete_graph){
+            let n = that.data_manager.state.complete_graph[i];
+            n.pre_label = n.label.slice(-1)[0];
+        }
+    };
+
+    // dehighlight change
+    that.dehighlight_changes = function(){
+        that.main_group.selectAll("circle.node-dot")
+            .attr("r", d=> that.r(d.id));
+
+    };
+
+
+
     // that.get_area = function(){
     //     return transform_plg.get_area();
     // };

@@ -1090,7 +1090,7 @@ DataLoaderClass = function () {
                                 d[2]]);
         that.state.highlight_path = path;
         that.update_graph_view();
-    }
+    };
 
     that.get_show_ids = function(){
         let show_ids = [];

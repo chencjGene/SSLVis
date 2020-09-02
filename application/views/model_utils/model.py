@@ -23,7 +23,7 @@ from sklearn.metrics.pairwise import euclidean_distances, paired_distances
 from ..utils.config_utils import config
 from ..utils.log_utils import logger
 from ..utils.helper_utils import check_exist, \
-    pickle_load_data, pickle_save_data, flow_statistic, async, async_once
+    pickle_load_data, pickle_save_data, flow_statistic, async, async_once, json_load_data, json_save_data
 from ..utils.embedder_utils import Embedder
 import concurrent.futures
 
@@ -1019,3 +1019,13 @@ class SSLModel(object):
             labels = [label for i in idxs]
             self.data.label_instance(idxs, labels)
         self._training(rebuild=False, evaluate=True)
+
+    def get_labels_dict(self):
+        # m = self.data.get_new_id_map()
+        rest_idx = self.data.rest_idxs
+        labels = self.pred_dist.argmax(axis=1)
+        assert len(rest_idx) == labels.shape[0]
+        label_dict = {}
+        for i in range(len(labels)):
+            label_dict[rest_idx[i]] = labels[i]
+        return label_dict

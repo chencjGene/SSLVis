@@ -369,6 +369,17 @@ let GraphHighlight = function (parent) {
         that.reset_selection();
     };
 
+
+    // highlight change
+    that.highlight_changes = function(){
+
+    };
+
+    // dehighlight change
+    that.dehighlight_change = function(){
+
+    };
+
     that.highlight = function(nodes, select_ids) {
         console.log("Highlight nodes:", select_ids);
         // if(select_ids.length<20)

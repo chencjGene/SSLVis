@@ -185,7 +185,8 @@ DataLoaderClass.prototype.re_format = function (simple_graph) {
                 "entropy": node[10],
                 "consistency": node[11],
                 "from_weight":node[12],
-                "to_weight":node[13]
+                "to_weight":node[13],
+                "pre_label": node[14]
         };
         for(let i=0; i<iter_num; i++){
             full_node.score.push([]);
