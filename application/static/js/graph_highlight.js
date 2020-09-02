@@ -9,6 +9,7 @@ let GraphHighlight = function (parent) {
     let if_select_edge = false;
     let lasso_btn_path = null;
     let fisheye_btn_path = null;
+    let zoom_in_path = null;
     let influence_to_btn_path = null;
     let influence_from_btn_path =null;
     let select_edge_btn_path = null;
@@ -16,6 +17,7 @@ let GraphHighlight = function (parent) {
     let focus_selection_btn_path = null;
     let lasso_select_path = [];
     let btn_select_color = "#560731";
+    let if_focus_selection = false;
 
     let path_width_scale = 1.75;
     let path_begin_width = 2*path_width_scale;
@@ -30,6 +32,7 @@ let GraphHighlight = function (parent) {
             .closePathSelect(true)
             .closePathDistance(100);
         lasso_btn_path = d3.select("#lasso-btn").select("path");
+        zoom_in_path = d3.select("#zoomin-btn").selectAll("path");
         influence_from_btn_path = d3.select("#influence-from-btn").select("path");
         influence_to_btn_path = d3.select("#influence-to-btn").select("path");
         edit_btn_path = d3.select("#apply-delete-btn").select("path");
@@ -42,9 +45,19 @@ let GraphHighlight = function (parent) {
 
         $("#lasso-btn")
             .click(function () {
+                if_focus_selection = false;
                 // that._change_lasso_mode();
                 $("#lasso-btn").css("background-color", btn_select_color);
                 lasso_btn_path.attr("stroke", "white").attr("fill", "white");
+                view.lasso_or_zoom("lasso");
+            });
+
+        $("#zoomin-btn")
+            .click(function () {
+                if_focus_selection = true;
+                // that._change_lasso_mode();
+                $("#zoomin-btn").css("background-color", btn_select_color);
+                zoom_in_path.attr("stroke", "white").attr("fill", "white");
                 view.lasso_or_zoom("lasso");
             });
 
@@ -106,14 +119,21 @@ let GraphHighlight = function (parent) {
     };
 
     that.reset_selection = function(){
-        $("#lasso-btn").css("background-color", "white");
-        lasso_btn_path.attr("stroke", "black").attr("fill", "black");
-        view.lasso_or_zoom("zoom");
+        if(!if_focus_selection){
+            $("#lasso-btn").css("background-color", "white");
+            lasso_btn_path.attr("stroke", "black").attr("fill", "black");
+            view.lasso_or_zoom("zoom");
+        }
+        else {
+            $("#zoomin-btn").css("background-color", "white");
+            zoom_in_path.attr("stroke", "black").attr("fill", "black");
+            view.lasso_or_zoom("zoom");
+        }
     };
 
     that.add_btn_style = function() {
         let btn_ids = ["apply-delete-btn", "lasso-btn", "fisheye-btn", "home-btn", "refresh-btn", "influence-to-btn", "influence-from-btn",
-            "select-edge-btn", "loaddataset-button", "setk-button", "localk-button", "focus-btn", "remove-nodes", "show-voronoi"];
+            "select-edge-btn", "loaddataset-button", "setk-button", "localk-button", "focus-btn", "remove-nodes", "show-voronoi", "zoomin-btn", "zoomout-btn"];
         for(let btn_id of btn_ids){
             let select_id = "#"+btn_id;
             let path = d3.select(select_id).selectAll("path");
@@ -349,6 +369,40 @@ let GraphHighlight = function (parent) {
         // let lasso_paths = lasso_select_path;
         console.log(lasso_paths);
         if(lasso_paths.length === 0) return ;
+        // zoom in
+        if(if_focus_selection){
+            let new_area = {};
+            let min_x = 10000;
+            let min_y = 10000;
+            let max_x = -10000;
+            let max_y = -10000;
+            for(let node of lasso.selectedItems().data()) {
+                min_x = Math.min(min_x, node.x);
+                max_x = Math.max(max_x, node.x);
+                min_y = Math.min(min_y, node.y);
+                max_y = Math.max(max_y, node.y);
+            }
+            let width = max_x - min_x;
+            let height = max_y - min_y;
+            min_x -= width * 0.5;
+            min_y -= height * 0.5;
+            width *= 2;
+            height *= 2;
+            new_area = {
+                x:min_x,
+                y:min_y,
+                width:width,
+                height:height
+            };
+            view.zoom_into_area(new_area);
+            view._center_tsne(view.data_manager.state.nodes);
+            lasso_paths = lasso.selectedItems().data().map(function (d) {
+                    return {x:view.center_scale_x(d.x), y:view.center_scale_y(d.y)}
+            });
+            await view.data_manager.update_graph_view(false);
+            that.reset_selection();
+            return ;
+        }
         let ellipse_path = ellipse(lasso_paths);
         view.selection_box.push({
             "x": ellipse_path.cx,
@@ -363,10 +417,11 @@ let GraphHighlight = function (parent) {
             "id": view.selection_box_id_count
         });
         view.selection_box_id_count += 1;
+
         view._create_selection_box();
         view._update_selection_box();
         await view.show_edges();
-        that.reset_selection();
+
     };
 
 

@@ -321,6 +321,43 @@ let GraphTransform = function (parent) {
         return new_rect
     };
 
+    that.zoom_into_area = function (new_area) {
+         view.width = $("#graph-view-svg").width();
+         view.height = $("#graph-view-svg").height();
+         let main_group_min_x = view.center_scale_x(new_area.x);
+         let main_group_min_y = view.center_scale_y(new_area.y);
+         let main_group_max_x = view.center_scale_x(new_area.x + new_area.width);
+         let main_group_max_y = view.center_scale_y(new_area.y + new_area.height);
+         let maingroup_k = Math.min(view.width/(main_group_max_x-main_group_min_x), view.height/(main_group_max_y-main_group_min_y));
+         console.log("old transform", transform);
+         if(transform === null){
+                transform = {
+                    toString: function () {
+                        let self = this;
+                        return 'translate(' + self.x + "," + self.y + ") scale(" + self.k + ")";
+                    }
+                };
+         }
+         transform.k = maingroup_k;
+         transform.x = view.width/2-(main_group_min_x+main_group_max_x)/2*maingroup_k;
+         transform.y = view.height/2-(main_group_min_y+main_group_max_y)/2*maingroup_k;
+         let target_level = current_level;
+        let current_level_scale = Math.pow(2, target_level);
+        while (transform.k > 2 * current_level_scale) {
+            current_level_scale *= 2;
+            target_level += 1;
+        }
+        while (transform.k < current_level_scale / 1.5 && target_level > 0) {
+            current_level_scale /= 2;
+            target_level -= 1;
+        }
+        current_level = target_level;
+
+        view.data_manager.state.area = new_area;
+        view.data_manager.fetch_nodes(new_area, current_level, []);
+
+    };
+
     that._update_transform = function(new_area) {
         return new Promise(function (resolve, reject) {
             view.width = $("#graph-view-svg").width();

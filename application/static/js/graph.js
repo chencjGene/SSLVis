@@ -550,6 +550,11 @@ let GraphLayout = function (container) {
         await that._update_view(false);
     };
 
+    that.zoom_into_area = function (new_area) {
+        transform_plg.zoom_into_area(new_area);
+        nodes_in_this_level = that.data_manager.state.nodes;
+    };
+
     // for debug
     that.set_path = function(){
         path = that.all_path["in"];
@@ -884,7 +889,7 @@ let GraphLayout = function (container) {
             console.log("remove");
             await that._remove();
             console.log("transform");
-            await transform_plg._update_transform(area);
+            transform_plg._update_transform(area);
             console.log("update");
             await that._update();
             console.log("create");
