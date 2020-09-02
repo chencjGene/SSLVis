@@ -1154,10 +1154,10 @@ let GraphLayout = function (container) {
                 .each(function (d) {
                     let group = d3.select(this);
                     let class_cnt = 1;
-                    let bar_width = 8*that.zoom_scale;
-                    let small_inner_bounder = 1.5*that.zoom_scale;
-                    let large_inner_bounder = 3*that.zoom_scale;
                     let outer_bounder = 3*that.zoom_scale;
+                    let bar_width = 5*that.zoom_scale;
+                    let small_inner_bounder = 2*that.zoom_scale;
+                    let large_inner_bounder = 3*that.zoom_scale;
                     let chart_width = bar_width*(2*class_cnt)+large_inner_bounder*(class_cnt-1)+small_inner_bounder*class_cnt+outer_bounder*2;
                     let chart_height = 50*that.zoom_scale;
                     let max_num = Math.max(d.homogeneous, d.heterogeneous);
