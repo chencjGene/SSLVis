@@ -190,6 +190,9 @@ let GraphHighlight = function (parent) {
     };
 
     that.remove_lasso = function() {
+        view.svg.on(".dragstart", null);
+        view.svg.on(".drag", null);
+        view.svg.on(".dragend", null);
         view.svg.select(".lasso").remove();
     };
 
@@ -395,10 +398,11 @@ let GraphHighlight = function (parent) {
                 height:height
             };
             view.zoom_into_area(new_area);
-            view._center_tsne(view.data_manager.state.nodes);
-            lasso_paths = lasso.selectedItems().data().map(function (d) {
-                    return {x:view.center_scale_x(d.x), y:view.center_scale_y(d.y)}
-            });
+            // view._center_tsne(view.data_manager.state.nodes);
+            // lasso_paths = lasso.selectedItems().data().map(function (d) {
+            //         return {x:view.center_scale_x(d.x), y:view.center_scale_y(d.y)}
+            // });
+            view.data_manager.state.rescale = false;
             await view.data_manager.update_graph_view(false);
             that.reset_selection();
             return ;
@@ -421,7 +425,7 @@ let GraphHighlight = function (parent) {
         view._create_selection_box();
         view._update_selection_box();
         await view.show_edges();
-
+        that.reset_selection();
     };
 
     that.highlight = function(nodes, select_ids) {
