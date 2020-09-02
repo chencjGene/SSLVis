@@ -387,6 +387,20 @@ let GraphHighlight = function (parent) {
             }
             let width = max_x - min_x;
             let height = max_y - min_y;
+            let new_wh = width/height;
+            let wh = view.width/view.height;
+            if(wh > new_wh){
+                    min_x -= (height * wh - width) / 2;
+                    max_x += (height * wh - width) / 2;
+                    min_x = min_x;
+                    width = max_x - min_x;
+            }
+            else if(wh < new_wh){
+                    min_y -= (width / wh - height) / 2;
+                    max_y += (width / wh - height) / 2;
+                    min_y = min_y;
+                    height = max_y - min_y;
+            }
             min_x -= width * 0.5;
             min_y -= height * 0.5;
             width *= 2;
