@@ -603,7 +603,7 @@ class Anchors:
                 int(consistency[m[id]]),
                 [],
                 [],
-                int(pre_labels[id]),
+                int(0),
             ]
             for from_edge in simple_nodes[id][6]:
                 simple_nodes[id][12].append(float(np.round(math.pow(influence_matrix[m[id], m[from_edge]], 1/7), 2)))

@@ -411,6 +411,9 @@ let GraphHighlight = function (parent) {
                 width:width,
                 height:height
             };
+            // TODO  hardcode
+            new_area = {x: -21.060507611925164, y: 3.8834914383688783, width: 12.422276976334317, height: 8.524021103592894};
+            new_area = {x: -13.64258317739627, y: -12.939947223124229, width: 8.342622598111861, height: 5.724610006771972}
             view.zoom_into_area(new_area);
             // view._center_tsne(view.data_manager.state.nodes);
             // lasso_paths = lasso.selectedItems().data().map(function (d) {

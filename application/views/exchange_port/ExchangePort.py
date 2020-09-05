@@ -315,6 +315,8 @@ class ExchangePortClass(object):
             # elif self.model.lower() == "oct":
             #     step = self.oct_case_step[self.model.step]
             step = self.model.step + 1
+            if step == 7:
+                step = step + 1
             self.model = self.case_util.run(use_buffer=True, step=step)
             self.anchor.link_model(self.model)
         else:
