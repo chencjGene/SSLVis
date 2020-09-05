@@ -153,7 +153,7 @@ let FontColor = "#333333";
 /*
     variables that debug needed
 */
-let AnimationDuration = 500;
+AnimationDuration = 1500;
 
 
 /*

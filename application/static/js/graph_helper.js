@@ -189,7 +189,7 @@ GraphLayout.prototype.cal_voronoi = function(node_dict) {
     //         }
     //     }
     // }
-    // centers = tmp_centers;
+    centers = tmp_centers;
 
     let Diagram = null;
     let voronoi = d3.voronoi()

@@ -34,7 +34,7 @@ let GraphLayout = function (container) {
     let color_unlabel = UnlabeledColor;
     let color_label = CategoryColor;
     let edge_color = UnlabeledColor;
-    let AnimationDuration = 1500;
+    // AnimationDuration = 3000;
     let create_ani = AnimationDuration;
     let update_ani = AnimationDuration;
     let remove_ani = AnimationDuration * 0.1;
@@ -861,6 +861,7 @@ let GraphLayout = function (container) {
                     console.log("get")
                 }
             }
+            // TODO case1
             // imgs = [];
 
             console.log("path_ary", path_ary);
@@ -1023,6 +1024,7 @@ let GraphLayout = function (container) {
                 .attr("fill", function (d) {
                     return d.label[iter]===-1?color_unlabel:color_label[d.label[iter]];
                 })
+                .attr("opacity", d => that.opacity(d.id))
                 .on("end", resolve);
 
             highlight_nodes_in_group
@@ -2934,16 +2936,16 @@ let GraphLayout = function (container) {
         }
         // changed_nodes.forEach(d => d.pre_label = d.label.slice(-1)[0]);
         // that.data_manager.state.complete_graph.forEach(d => d.pre_label = d.label.slice(-1)[0]);
-        for(let i in that.data_manager.state.complete_graph){
-            let n = that.data_manager.state.complete_graph[i];
-            n.pre_label = n.label.slice(-1)[0];
-        }
+        // for(let i in that.data_manager.state.complete_graph){
+        //     let n = that.data_manager.state.complete_graph[i];
+        //     n.pre_label = n.label.slice(-1)[0];
+        // }
     };
 
     // dehighlight change
     that.dehighlight_changes = function(){
-        that.main_group.selectAll("circle.node-dot")
-            .attr("r", d=> that.r(d.id));
+        // that.main_group.selectAll("circle.node-dot")
+        //     .attr("r", d=> that.r(d.id));
 
     };
 
