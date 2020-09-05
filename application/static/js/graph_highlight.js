@@ -411,6 +411,7 @@ let GraphHighlight = function (parent) {
                 width:width,
                 height:height
             };
+            new_area = {x: -21.060507611925164, y: 3.8834914383688783, width: 12.422276976334317, height: 8.524021103592894};
             view.zoom_into_area(new_area);
             // view._center_tsne(view.data_manager.state.nodes);
             // lasso_paths = lasso.selectedItems().data().map(function (d) {
