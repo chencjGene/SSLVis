@@ -46,8 +46,8 @@ function choose(dataset){
 // main (entry of the application)
 $(document).ready(function () {
     // let dataname = "oct-1000-10000";
-    let dataname = "stl-50-12840";
-    DataName = dataname.slice(0,3);
+    let dataname = "ImageNet-20-4000";
+    // DataName = dataname.split("-")[0];
     set_color();
     set_up();
     SettingView.choose(dataname);
