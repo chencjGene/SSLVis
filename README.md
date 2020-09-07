@@ -14,7 +14,7 @@ Quick Start with Demo Data
 -----------------
 Step 1: create a folder data/ in the root folder.
 
-Step 2: download demo data from [here](https://drive.google.com/file/d/1B6C7dQTgtVahTXSyLXNuMbEgP15r2lQ-/view?usp=sharing), and unpack it in the folder data/.
+Step 2: download demo data from [here](https://drive.google.com/file/d/1B6C7dQTgtVahTXSyLXNuMbEgP15r2lQ-/view?usp=sharing), and unpack it in root folder.
 
 Step 3: setup the system:
 ```python manager.py run 8181```
