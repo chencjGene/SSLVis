@@ -12,11 +12,9 @@ An online demo is available at: http://datalinker.thuvis.org/Demo.
 
 Quick Start with Demo Data
 -----------------
-Step 1: create a folder data/ in the root folder.
+Step 1: download demo data from [here](https://drive.google.com/file/d/1B6C7dQTgtVahTXSyLXNuMbEgP15r2lQ-/view?usp=sharing), and unpack it in root folder.
 
-Step 2: download demo data from [here](https://drive.google.com/file/d/1B6C7dQTgtVahTXSyLXNuMbEgP15r2lQ-/view?usp=sharing), and unpack it in root folder.
-
-Step 3: setup the system:
+Step 2: setup the system:
 ```python manager.py run 8181```
 
-Step 4: visit http://localhost:8181/ in a browser.
+Step 3: visit http://localhost:8181/ in a browser.
