@@ -25,7 +25,17 @@ class CaseBase():
 
     def _load_base_config(self):
         json_data = json_load_data(os.path.join(config.case_util_root, "case_config.json"))
-        self.base_config = json_data[self.dataname]
+        try:
+            self.base_config = json_data[self.dataname]
+        except:
+            self.base_config = {
+                "k": 6,
+                "step": 0
+            }
+
+    def run(self, k=6, evaluate=True, simplifying=False, step=None, use_buffer=False, use_old = False):
+        self._init_model(k=k, evaluate=evaluate, simplifying=False)
+        return self.model
 
     def load_model(self, name):
         save = pickle_load_data(name)
