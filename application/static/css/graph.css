@@ -38,6 +38,13 @@
     /*border-bottom: 1px solid #c1c1c1;*/
 }
 
+#explore-btns {
+    display: flex;
+    flex-direction: row;
+    justify-content: start;
+    align-items: center;
+}
+
 #graph-view-svg {
 }
 

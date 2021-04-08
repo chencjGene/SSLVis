@@ -260,6 +260,10 @@ label.field.focused .psuedo_select ul {
   display: inline-block;
 }
 
+#filter-panel {
+  height: 97.5%;
+}
+
 #encoding{
   margin-top: 80px;
 }
@@ -271,6 +275,11 @@ label.field.focused .psuedo_select ul {
   height: 60px;
   align-items: center;
   justify-content: center;
+}
+
+#parameter-tune {
+  display: flex;
+  flex-direction: column;
 }
 
 .dataset-container {

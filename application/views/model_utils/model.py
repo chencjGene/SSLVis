@@ -694,7 +694,7 @@ class SSLModel(object):
 
     # @async_once
     def adaptive_evaluation(self, pred=None, step=None):
-        return;
+        # return;
         affinity_matrix = self.data.get_graph()
         affinity_matrix.setdiag(0)
         if pred is None:
