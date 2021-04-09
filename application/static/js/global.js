@@ -261,3 +261,7 @@ let introStart = function () {
           }]
     }).start();
 };
+
+$(".help").click(function () {
+    introStart()
+});
