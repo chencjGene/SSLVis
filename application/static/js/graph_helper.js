@@ -791,15 +791,15 @@ GraphLayout.prototype.edge_statistic = function(diagram){
 
         for (let i = 0; i < label_cnt; i++){
             path = summary[i].path;
-            if (group_id === 5 && i === 3){
-                path = path.filter(d => [6919, 10774, 6305, 5606, 9140, 11171].indexOf(d[1]) === -1);
-                path = path.filter(function(d){
-                    let a = graph[d[0]];
-                    let b = graph[d[1]];
-                    let dis = (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y);
-                    return dis > 5;
-                })
-            }
+            // if (group_id === 5 && i === 3){
+            //     path = path.filter(d => [6919, 10774, 6305, 5606, 9140, 11171].indexOf(d[1]) === -1);
+            //     path = path.filter(function(d){
+            //         let a = graph[d[0]];
+            //         let b = graph[d[1]];
+            //         let dis = (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y);
+            //         return dis > 5;
+            //     })
+            // }
             path.sort((a,b) => b[2] - a[2]);
             path = path.slice(0,5);
             summary[i].path = path;
@@ -810,13 +810,13 @@ GraphLayout.prototype.edge_statistic = function(diagram){
         for (let i = 0; i < label_cnt; i++){
             summary[i].in /= Math.max(1, group.length);
         }
-        // TODO: re-select region to update k
-        if (group_id === 9){
-            if (simple_summary[1].in < 1.6){
-                simple_summary[1].in -= 1;
-                summary[2].in = summary[0].in;
-            }
-        }
+        // // TODO: re-select region to update k
+        // if (group_id === 9){
+        //     if (simple_summary[1].in < 1.6){
+        //         simple_summary[1].in -= 1;
+        //         summary[2].in = summary[0].in;
+        //     }
+        // }
         new_summary = [];
         for (let s = 0; s < diagram.length; s++){
             if (group_id !== s){
