@@ -1,7 +1,7 @@
 tqdm==4.36.1
 Flask_Script==2.0.6
 Flask_Session==0.3.2
-numpy==1.13.3+mkl
+numpy==1.22.0
 matplotlib==2.1.0
 pandas==0.25.1
 scipy==0.19.1
