@@ -6,7 +6,7 @@ matplotlib==2.1.0
 pandas==0.25.1
 scipy==0.19.1
 paramiko==2.6.0
-Flask==1.1.1
+Flask==2.3.2
 scp==0.13.2
 scikit_learn==0.21.3
 anytree==2.8.0
